@@ -19,6 +19,7 @@ export default [
   route("phrase/:phraseHanzi", "routes/phrase/$phraseHanzi.tsx"),
   route("study", "routes/study.tsx"),
   route("test1", "routes/test1.tsx"),
+  route("tags", "routes/tags.tsx"),
   route("practice", "routes/practice.tsx"),
   route("sylable/:sylable", "routes/sylable/$sylable.tsx"),
   route("tag/:tagName", "routes/tag/$tagName.tsx"),

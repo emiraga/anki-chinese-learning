@@ -38,6 +38,7 @@ type Params = {
   };
   "/study": {};
   "/test1": {};
+  "/tags": {};
   "/practice": {};
   "/sylable/:sylable": {
     "sylable": string;
