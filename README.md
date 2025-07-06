@@ -6,6 +6,7 @@ Set of useful tools as a companion for learning Mandarin Chinese 中文 with Ank
 
 Install AnkiConnect extension to anki by following instructions here:
 https://ankiweb.net/shared/info/2055492159
+or here https://git.sr.ht/~foosoft/anki-connect
 
 On the main screen, it's under "Tools -> Addons"
 

@@ -126,7 +126,8 @@ export function useAnkiPhrases() {
             chars[t][p].count++;
           }
         } else {
-          throw new Error(
+          // TODO: show this somewhere more prominent
+          console.log(
             "Warning invalid Pinyin: " +
               sPinyin +
               " Traditional: " +
