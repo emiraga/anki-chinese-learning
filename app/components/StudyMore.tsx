@@ -27,6 +27,10 @@ function TodoPhrases() {
     return <div>Loading...</div>;
   }
 
+  if (notes.length === 0) {
+    return undefined;
+  }
+
   return (
     <>
       <h3 className="font-serif text-3xl">TODO phrases:</h3>
@@ -62,6 +66,10 @@ function SuspendedMyWords() {
 
   if (!suspended) {
     return <div>Loading...</div>;
+  }
+
+  if (suspended.length === 0) {
+    return undefined;
   }
 
   return (

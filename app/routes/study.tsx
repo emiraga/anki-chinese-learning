@@ -58,7 +58,12 @@ export default function Study() {
         <LearnLink char={current} />
       </Section>
 
-      <Section className="mt-5" loading={loadingProblem} error={errorProblem}>
+      <Section
+        className="mt-5"
+        loading={loadingProblem}
+        error={errorProblem}
+        display={problematic && problematic.length > 0}
+      >
         <Link to="/problematic" className="text-xl">
           Problematic cards:
         </Link>

@@ -2,8 +2,9 @@ const Section: React.FC<{
   className?: string;
   loading?: boolean;
   error?: Error;
+  display?: boolean;
   children: React.ReactNode;
-}> = ({ className, loading, error, children }) => {
+}> = ({ className, loading, error, display, children }) => {
   if (error) {
     return (
       <section className="pt-4 pb-4 text-center">
@@ -19,6 +20,10 @@ const Section: React.FC<{
         <p className="text-lg">Loading data...</p>
       </section>
     );
+  }
+
+  if (display === false) {
+    return undefined;
   }
 
   return <section className={className}>{children}</section>;
