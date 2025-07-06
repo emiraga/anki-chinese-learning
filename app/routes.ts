@@ -1,0 +1,27 @@
+import { type RouteConfig, index, route } from "@react-router/dev/routes";
+
+export default [
+  route("stats", "routes/stats.tsx"),
+  route("props", "routes/props.tsx"),
+  route("prop/:propName", "routes/prop/$propName.tsx"),
+  route("chars", "routes/chars.tsx"),
+  route("char/:charHanzi", "routes/char/$charHanzi.tsx"),
+  route("todo_chars", "routes/todo_chars.tsx"),
+  route("conflicts", "routes/conflicts.tsx"),
+  route("migration", "routes/migration.tsx"),
+  route("actors", "routes/actors.tsx"),
+  route("actor/:actorName", "routes/actor/$actorName.tsx"),
+  route("places", "routes/places.tsx"),
+  route("place/:placeName", "routes/place/$placeName.tsx"),
+  route("tones", "routes/tones.tsx"),
+  route("tone/:toneName", "routes/tone/$toneName.tsx"),
+  route("phrases", "routes/phrases.tsx"),
+  route("phrase/:phraseHanzi", "routes/phrase/$phraseHanzi.tsx"),
+  route("study", "routes/study.tsx"),
+  route("test1", "routes/test1.tsx"),
+  route("practice", "routes/practice.tsx"),
+  route("sylable/:sylable", "routes/sylable/$sylable.tsx"),
+  route("tag/:tagName", "routes/tag/$tagName.tsx"),
+  route("problematic", "routes/problematic.tsx"),
+  index("routes/index.tsx"),
+] satisfies RouteConfig;

@@ -137,3 +137,19 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# python
+__pycache__
+
+# Secrets
+keys_secret.txt
+ai_key.txt
+gcloud_account.json
+
+# MacOSX nonsense
+.DS_Store
+
+# Generated files
+utils/tts/201*
+utils/tts/202*
+utils/tts/203*
