@@ -2,6 +2,31 @@
 
 Set of useful tools as a companion for learning Mandarin Chinese 中文 with Anki
 
+# Setup of Anki
+
+Install AnkiConnect extension to anki by following instructions here:
+https://ankiweb.net/shared/info/2055492159
+
+On the main screen, it's under "Tools -> Addons"
+
+Then you can configure this addon and use the following settings:
+("Config" button on the Add-ons screen.)
+
+```
+{
+    "apiKey": null,
+    "apiLogPath": null,
+    "ignoreOriginList": [],
+    "webBindAddress": "127.0.0.1",
+    "webBindPort": 8765,
+    "webCorsOriginList": [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ]
+}
+```
+
 # Welcome to React Router!
 
 A modern, production-ready template for building full-stack React applications using React Router.
