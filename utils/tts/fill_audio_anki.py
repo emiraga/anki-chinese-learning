@@ -4,9 +4,7 @@ import base64
 from google.cloud import texttospeech
 
 
-#
-# API key = AIzaSyBswOPMQ7qLQlCoo7J-mA2m1ICqZjGlHiU
-#
+# Generate API key via https://console.cloud.google.com/apis/credentials
 
 def setup_credentials():
     """
