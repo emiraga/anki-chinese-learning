@@ -13,6 +13,7 @@ import type { OutletContext } from "./data/types";
 import { useAnkiPhrases } from "./data/phrases";
 import { useAnkiCharacters } from "./data/characters";
 import { MainToolbarNoOutlet } from "./toolbar/toolbar";
+import { SettingsProvider } from "./settings/SettingsContext";
 
 export const links: Route.LinksFunction = () => [
   // { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -37,7 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <SettingsProvider>{children}</SettingsProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

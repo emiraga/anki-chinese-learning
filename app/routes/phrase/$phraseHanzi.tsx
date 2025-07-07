@@ -8,6 +8,7 @@ import { TodoCharsList } from "~/components/TodoChars";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { removeDuplicateChars } from "~/data/utils";
 import { HanziText } from "~/components/HanziText";
+import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -22,11 +23,13 @@ export function meta({ params }: Route.MetaArgs) {
 export default function PhraseHanzi() {
   const { phraseHanzi } = useParams();
   const { phrases, characters } = useOutletContext<OutletContext>();
+  const { settings } = useSettings();
 
   if (!phraseHanzi) {
     throw new Error("Expected hanzi");
   }
 
+  const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   const filteredPhrases = phrases.filter((phrase) =>
     phrase.traditional.includes(phraseHanzi)
   );
@@ -50,14 +53,14 @@ export default function PhraseHanzi() {
       <hr className="my-4" />
       <h2 className="text-2xl">Known character phrases:</h2>
       <SearchMorePhrases
-        noteType={["TOCFL", "Dangdai", "MyWords"]}
+        noteTypes={noteTypes}
         search={phraseHanzi}
         filterKnownChars={true}
       />
       <hr className="my-4" />
       <h2 className="text-2xl">All other phrases:</h2>
       <SearchMorePhrases
-        noteType={["TOCFL", "Dangdai", "MyWords"]}
+        noteTypes={noteTypes}
         search={phraseHanzi}
         filterKnownChars={false}
       />

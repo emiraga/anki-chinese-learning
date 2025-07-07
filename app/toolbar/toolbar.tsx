@@ -39,6 +39,7 @@ export const MainToolbarNoOutlet: React.FC<{
       name: "Conflicts",
       show: getConflictingChars(knownProps, characters).length > 0,
     },
+    { pathname: "/settings", name: "Settings" },
   ].filter((element) => element.show !== false);
 
   return (

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSettings } from "~/settings/SettingsContext";
 
 // Define the main App component
 const App: React.FC = () => {
   // State variables for text input, audio URL, loading status, and error messages
   const [textInput, setTextInput] = useState<string>(
-    "你好，這是一個台灣華語語音合成的範例。",
+    "你好，這是一個台灣華語語音合成的範例。"
   );
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -19,10 +20,9 @@ const App: React.FC = () => {
   const [speakingRate, setSpeakingRate] = useState<number>(0.6);
   const [pitch, setPitch] = useState<number>(0.0);
   const [volumeGainDb, setVolumeGainDb] = useState<number>(0.0);
-
-  // IMPORTANT: Replace with your actual Google Cloud API Key.
-  // Be aware that exposing API keys directly in frontend code is a security risk.
-  const GOOGLE_CLOUD_API_KEY = "TODO"; // <<<--- REPLACE THIS
+  const {
+    settings: { googleCloudApiKey },
+  } = useSettings();
 
   // List of available Taiwanese Mandarin voices (examples, you can expand this)
   const taiwaneseVoices = [
@@ -53,7 +53,7 @@ const App: React.FC = () => {
       }
 
       const response = await fetch(
-        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_CLOUD_API_KEY}`,
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudApiKey}`,
         {
           method: "POST",
           headers: {
@@ -73,13 +73,13 @@ const App: React.FC = () => {
               volumeGainDb: volumeGainDb,
             },
           }),
-        },
+        }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error?.message || "Failed to synthesize speech.",
+          errorData.error?.message || "Failed to synthesize speech."
         );
       }
 
@@ -107,7 +107,7 @@ const App: React.FC = () => {
     pitch,
     volumeGainDb,
     audioUrl,
-    GOOGLE_CLOUD_API_KEY,
+    googleCloudApiKey,
   ]);
 
   // Utility function to convert base64 string to Blob
@@ -193,7 +193,7 @@ const App: React.FC = () => {
               value={selectedGender}
               onChange={(e) =>
                 setSelectedGender(
-                  e.target.value as "FEMALE" | "MALE" | "NEUTRAL",
+                  e.target.value as "FEMALE" | "MALE" | "NEUTRAL"
                 )
               }
             >

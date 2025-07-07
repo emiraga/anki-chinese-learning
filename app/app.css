@@ -53,3 +53,7 @@ tr.row-fictional > th {
 tr.row-male > th {
   background-color: lightgreen;
 }
+
+.rjsf a {
+  color: blue;
+}

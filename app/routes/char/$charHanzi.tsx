@@ -10,6 +10,7 @@ import { LearnLink } from "~/components/Claude";
 import { getNewCharacter } from "~/data/characters";
 import { SearchMorePhrases } from "~/components/StudyMore";
 import { PinyinText } from "~/components/PinyinText";
+import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -20,6 +21,7 @@ export function meta({ params }: Route.MetaArgs) {
 
 export default function CharDetail() {
   const { charHanzi } = useParams();
+  const { settings } = useSettings();
   const { characters, knownProps, characterList, phrases, charPhrasesPinyin } =
     useOutletContext<OutletContext>();
   const chars = Object.values(characters).filter(
@@ -48,6 +50,7 @@ export default function CharDetail() {
       ? characterList[currentIndex + 1]
       : null;
 
+  const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   return (
     <main>
       <MainToolbar />
@@ -96,14 +99,14 @@ export default function CharDetail() {
         <hr className="my-4" />
         <h2 className="text-2xl">Known character phrases:</h2>
         <SearchMorePhrases
-          noteType={["TOCFL", "Dangdai", "MyWords"]}
+          noteTypes={noteTypes}
           search={char.traditional}
           filterKnownChars={true}
         />
         <hr className="my-4" />
         <h2 className="text-2xl">All other phrases:</h2>
         <SearchMorePhrases
-          noteType={["TOCFL", "Dangdai", "MyWords"]}
+          noteTypes={noteTypes}
           search={char.traditional}
           filterKnownChars={false}
         />

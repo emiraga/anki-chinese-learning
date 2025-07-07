@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import pinyinSplit from "pinyin-split";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
+import { useSettings } from "~/settings/SettingsContext";
 
 export type PhraseType = {
   source: string;
@@ -65,6 +66,8 @@ export function useAnkiPhrases() {
     useState<CharsToPhrasesPinyin>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { settings } = useSettings();
+  const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
 
   // Define the load function with useCallback so it doesn't recreate on every render
   const loadData = useCallback(async () => {
@@ -74,7 +77,9 @@ export function useAnkiPhrases() {
       // Load from Anki
       const notesId = await anki.note.findNotes({
         query:
-          "(((note:Dangdai OR note:TOCFL) -is:suspended -is:new) OR (note:MyWords -is:suspended))",
+          "(" +
+          noteTypes.map((n) => "note:" + n).join(" OR ") +
+          ") -is:suspended -is:new",
       });
       const notes = await anki.note.notesInfo({ notes: notesId });
 

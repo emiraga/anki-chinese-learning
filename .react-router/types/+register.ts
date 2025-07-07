@@ -8,43 +8,44 @@ declare module "react-router" {
 
 type Params = {
   "/": {};
-  "/stats": {};
-  "/props": {};
-  "/prop/:propName": {
-    "propName": string;
-  };
-  "/chars": {};
-  "/char/:charHanzi": {
-    "charHanzi": string;
-  };
-  "/todo_chars": {};
-  "/conflicts": {};
-  "/migration": {};
-  "/actors": {};
   "/actor/:actorName": {
     "actorName": string;
   };
-  "/places": {};
-  "/place/:placeName": {
-    "placeName": string;
+  "/actors": {};
+  "/char/:charHanzi": {
+    "charHanzi": string;
   };
-  "/tones": {};
-  "/tone/:toneName": {
-    "toneName": string;
-  };
-  "/phrases": {};
+  "/chars": {};
+  "/conflicts": {};
+  "/migration": {};
   "/phrase/:phraseHanzi": {
     "phraseHanzi": string;
   };
-  "/study": {};
-  "/test1": {};
-  "/tags": {};
+  "/phrases": {};
+  "/place/:placeName": {
+    "placeName": string;
+  };
+  "/places": {};
   "/practice": {};
+  "/problematic": {};
+  "/prop/:propName": {
+    "propName": string;
+  };
+  "/props": {};
+  "/settings": {};
+  "/stats": {};
+  "/study": {};
   "/sylable/:sylable": {
     "sylable": string;
   };
   "/tag/:tagName": {
     "tagName": string;
   };
-  "/problematic": {};
+  "/tags": {};
+  "/test1": {};
+  "/todo_chars": {};
+  "/tone/:toneName": {
+    "toneName": string;
+  };
+  "/tones": {};
 };

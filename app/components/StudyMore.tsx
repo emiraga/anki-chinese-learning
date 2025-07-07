@@ -87,12 +87,12 @@ function SuspendedMyWords() {
 }
 
 export function SearchMorePhrases({
-  noteType,
+  noteTypes: noteTypes,
   withTags,
   search,
   filterKnownChars,
 }: {
-  noteType: string[];
+  noteTypes: string[];
   withTags?: string[];
   search?: string;
   filterKnownChars: boolean;
@@ -102,7 +102,7 @@ export function SearchMorePhrases({
 
   useEffect(() => {
     const load = async () => {
-      var query = `(${noteType
+      var query = `(${noteTypes
         .map((name) => "note:" + name)
         .join(" OR ")}) card:0 is:new`;
       if (search) {
@@ -225,7 +225,7 @@ export const StudyMore: React.FC<{}> = ({}) => {
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
             <SearchMorePhrases
-              noteType={["TOCFL"]}
+              noteTypes={["TOCFL"]}
               withTags={["TOCFL::L0", "TOCFL::L1"]}
               filterKnownChars={true}
             />
@@ -241,7 +241,7 @@ export const StudyMore: React.FC<{}> = ({}) => {
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
             <SearchMorePhrases
-              noteType={["TOCFL"]}
+              noteTypes={["TOCFL"]}
               withTags={["TOCFL::" + TOCFL_NEXT_LEVEL]}
               filterKnownChars={false}
             />
@@ -257,7 +257,7 @@ export const StudyMore: React.FC<{}> = ({}) => {
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
             <SearchMorePhrases
-              noteType={["Dangdai"]}
+              noteTypes={["Dangdai"]}
               withTags={["Dangdai::Lesson::" + DANGDAI_NEXT_LEVEL]}
               filterKnownChars={false}
             />
