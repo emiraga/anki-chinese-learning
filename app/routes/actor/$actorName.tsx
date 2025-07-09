@@ -2,7 +2,6 @@ import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "../+types/index";
 import { Link, useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
-import { PropCard } from "~/components/PropCard";
 import { CharList } from "~/components/CharList";
 import { CharCardDetails } from "~/components/CharCard";
 

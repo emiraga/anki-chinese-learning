@@ -257,8 +257,8 @@ def main():
     # for trad in ["請"]:
     #     update_audio_on_a_note("Hanzi", trad)
 
-    for trad in ["冰"]:
-        update_audio_on_a_note("TOCFL", trad)
+    # for trad in ["冰"]:
+    #     update_audio_on_a_note("TOCFL", trad)
 
     for note_id in find_note_by_empty_audio("TOCFL")[0:100]:
         note_info = get_note_info(note_id)

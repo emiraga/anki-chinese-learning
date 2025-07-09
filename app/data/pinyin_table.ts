@@ -125,6 +125,7 @@ const ACTOR_TAGS_MAP: { [key: string]: string } = {
   "fu-": "actor::fu-fury-nick-marvel",
   "ku-": "actor::ku-cookie-monster",
   "tu-": "actor::tu-turk",
+  "cu-": "actor::cu-DECIDE",
 
   // Scientists
   "nv-": "actor::nu-newton-isaac",
