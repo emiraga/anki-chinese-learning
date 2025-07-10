@@ -31,7 +31,7 @@ export const MainToolbarNoOutlet: React.FC<{
   let { settings } = useSettings();
 
   var list = [
-    { pathname: "/", name: "Pinyin", show: true },
+    { pathname: "/pinyin", name: "Pinyin", show: true },
     {
       pathname: "/props",
       name: "Props",

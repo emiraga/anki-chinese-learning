@@ -4,11 +4,10 @@ import { Tooltip } from "@base-ui-components/react/tooltip";
 import MainToolbar from "~/toolbar/toolbar";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
-import SettingsPage from "~/components/Settings";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Anki Chinese Learning" },
+    { title: "Pinyin table" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
@@ -19,19 +18,11 @@ export default function Index() {
   return (
     <Tooltip.Provider delay={0} closeDelay={0}>
       <MainToolbar />
-      {Object.keys(characters).length ? (
-        <main className="pt-4 pb-4">
-          <section className="block">
-            <PinyinTable knownSounds={knownSounds} />
-          </section>
-        </main>
-      ) : (
-        <main>
-          <section className="block m-4">
-            <SettingsPage />
-          </section>
-        </main>
-      )}
+      <main className="pt-4 pb-4">
+        <section className="block">
+          <PinyinTable knownSounds={knownSounds} />
+        </section>
+      </main>
     </Tooltip.Provider>
   );
 }
