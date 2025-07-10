@@ -111,6 +111,7 @@ export const settingsJsonSchema: JSONSchema7 = {
 export const settingsUiSchema = {
   googleCloudApiKey: {
     "ui:enableMarkdownInDescription": true,
+    "ui:widget": "password",
   },
   phraseNotes: {
     "ui:options": {
