@@ -74,7 +74,6 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
       const loadedCharacterList: string[] = [];
       const characterNoteType = settings.characterNote?.noteType;
       if (!characterNoteType || characterNoteType.length === 0) {
-        console.log("p2", charPhrasesPinyin);
         // Load character info from phrases.
         for (const hanzi of Object.keys(charPhrasesPinyin)) {
           const primaryPinyin = Object.values(charPhrasesPinyin[hanzi]).sort(
@@ -95,7 +94,6 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             withSound: true,
             withMeaning: true,
           };
-          console.log("info:", hanzi, info);
           if (loadedKnownSounds[info.sylable] === undefined) {
             loadedKnownSounds[info.sylable] = {};
           }

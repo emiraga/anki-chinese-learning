@@ -61,7 +61,6 @@ export default function App() {
     error: errorPhrases,
     reload: reloadPhrases,
   } = useAnkiPhrases();
-  console.log("p1", charPhrasesPinyin);
   const {
     characters,
     knownSounds,

@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from "react";
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import React, { useState } from "react";
+import { SchemaType } from "@google/generative-ai";
 import type { GenerationConfig } from "@google/generative-ai";
 import type { PhraseType } from "~/data/phrases";
 import { pickRandomElements } from "~/data/utils";
 import { useSettings } from "~/settings/SettingsContext";
-
-const MODEL = "gemini-1.5-flash";
+import { useGenerativeModel } from "~/apis/google_genai";
 
 // Defines the structure for a pair of sentences (English and Chinese)
 interface SentencePair {
@@ -35,21 +34,10 @@ const Practice: React.FC<{
   const [isGrading, setIsGrading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showCorrect, setShowCorrect] = useState<boolean>(false);
-  const {
-    settings: { googleCloudApiKey },
-  } = useSettings();
+  const { settings } = useSettings();
 
   // Memoize the AI model instance to avoid re-creation on every render
-  const genAI = useMemo(() => {
-    if (!googleCloudApiKey) return null;
-    try {
-      return new GoogleGenerativeAI(googleCloudApiKey);
-    } catch (e) {
-      console.error(e);
-      setError("Failed to initialize AI. Please check your API key.");
-      return null;
-    }
-  }, [googleCloudApiKey]);
+  const genAImodel = useGenerativeModel(settings);
 
   // --- Core Functions ---
 
@@ -80,7 +68,7 @@ but mix elements from various phrases to make a new sentence.
    * Generates 10 simple English sentences and their Traditional Chinese translations.
    */
   const handleGenerateSentences = async () => {
-    if (!genAI) {
+    if (!genAImodel) {
       setError("Please enter a valid API key first.");
       return;
     }
@@ -90,8 +78,6 @@ but mix elements from various phrases to make a new sentence.
     setCurrentSentenceIndex(0);
     setFeedback(null);
     setUserInput("");
-
-    const model = genAI.getGenerativeModel({ model: MODEL });
 
     const generationConfig: GenerationConfig = {
       responseMimeType: "application/json",
@@ -120,7 +106,7 @@ but mix elements from various phrases to make a new sentence.
     };
 
     try {
-      const result = await model.generateContent(request);
+      const result = await genAImodel.generateContent(request);
       const responseText = result.response.text();
       const parsedResponse = JSON.parse(responseText);
 
@@ -169,7 +155,7 @@ but mix elements from various phrases to make a new sentence.
    * Gets feedback from the AI on the user's incorrect translation.
    */
   const handleGetFeedback = async () => {
-    if (!genAI) {
+    if (!genAImodel) {
       setError("API key is not set.");
       return;
     }
@@ -177,7 +163,6 @@ but mix elements from various phrases to make a new sentence.
     setError(null);
     setFeedback(null);
 
-    const model = genAI.getGenerativeModel({ model: MODEL });
     const currentSentence = sentences[currentSentenceIndex];
 
     const generationConfig: GenerationConfig = {
@@ -214,7 +199,7 @@ but mix elements from various phrases to make a new sentence.
     };
 
     try {
-      const result = await model.generateContent(request);
+      const result = await genAImodel.generateContent(request);
       const responseText = result.response.text();
       const parsedFeedback: AIFeedback = JSON.parse(responseText);
 

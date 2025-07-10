@@ -13,6 +13,9 @@ export interface AppSettings {
     showPropsLink?: boolean;
     showStatsLink?: boolean;
   };
+  generativeAi?: {
+    llmModelName?: string;
+  };
 }
 
 export const defaultSettings: AppSettings = {
@@ -23,6 +26,8 @@ export const defaultSettings: AppSettings = {
     },
   ],
 };
+
+export const DEFAULT_GEN_AI_MODEL = "gemini-1.5-flash";
 
 export const settingsJsonSchema: JSONSchema7 = {
   title: "Application Settings",
@@ -105,6 +110,19 @@ export const settingsJsonSchema: JSONSchema7 = {
         },
       },
     },
+    generativeAi: {
+      type: "object",
+      title: "Generative AI (LLM) settings",
+      properties: {
+        llmModelName: {
+          type: "string",
+          title: "LLM model name",
+          description:
+            "Take a look at https://ai.google.dev/gemini-api/docs/models and https://ai.google.dev/gemini-api/docs/pricing",
+          default: DEFAULT_GEN_AI_MODEL,
+        },
+      },
+    },
   },
 };
 
@@ -116,6 +134,11 @@ export const settingsUiSchema = {
   phraseNotes: {
     "ui:options": {
       orderable: false,
+    },
+  },
+  generativeAi: {
+    llmModelName: {
+      "ui:enableMarkdownInDescription": true,
     },
   },
 };
