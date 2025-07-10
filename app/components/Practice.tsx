@@ -21,6 +21,11 @@ interface AIFeedback {
   grammarPoint: string;
 }
 
+enum PracticeType {
+  ENGLISH_TO_CHINESE_TEXT,
+  LISTENING_TO_CHINESE,
+}
+
 const Practice: React.FC<{
   phrases: PhraseType[];
   characterList: string[];
@@ -34,6 +39,9 @@ const Practice: React.FC<{
   const [isGrading, setIsGrading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showCorrect, setShowCorrect] = useState<boolean>(false);
+  const [practiceType, setPracticeType] = useState<PracticeType>(
+    PracticeType.ENGLISH_TO_CHINESE_TEXT
+  );
   const { settings } = useSettings();
 
   // Memoize the AI model instance to avoid re-creation on every render
@@ -244,36 +252,53 @@ but mix elements from various phrases to make a new sentence.
     }
   };
 
-  return (
-    <div className="text-slate-800">
-      <div className="container mx-auto max-w-2xl">
-        {/* Practice Area */}
-        {sentences.length === 0 ? (
-          <div className="text-center p-3">
-            <button
-              onClick={handleGenerateSentences}
-              disabled={isGenerating}
-              className="flex mx-auto justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="animate-spin rounded-full h-6 w-6 m-4 border-b-2 border-gray-900 mb-4"></div>
-                  Generating...
-                </>
-              ) : (
-                "English to Chinese Practice"
-              )}
-            </button>
-            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-
-            <div className="mt-20">
-              <span className="text-xs text-gray-500">Prompt preview:</span>
-              <pre className="text-sm text-gray-400 whitespace-pre-wrap break-all font-mono bg-gray-100 text-left">
-                {promptMain}
-              </pre>
-            </div>
-          </div>
+  if (sentences.length === 0) {
+    /* Choosing which type of practice we will do. */
+    return (
+      <div className="container mx-auto max-w-2xl text-center p-3">
+        {isGenerating ? (
+          <>
+            <div className="animate-spin mx-auto rounded-full h-16 w-16 m-4 border-b-2 border-gray-900 mb-4"></div>
+            Generating...
+          </>
         ) : (
+          <>
+            <button
+              onClick={async () => {
+                setPracticeType(PracticeType.ENGLISH_TO_CHINESE_TEXT);
+                await handleGenerateSentences();
+              }}
+              className="mr-2 justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+            >
+              English to Chinese Practice
+            </button>
+            <button
+              onClick={async () => {
+                setPracticeType(PracticeType.LISTENING_TO_CHINESE);
+                await handleGenerateSentences();
+              }}
+              className="ml-2 justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+            >
+              Chinese Listening Practice
+            </button>
+          </>
+        )}
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+
+        <div className="mt-20">
+          <span className="text-xs text-gray-500">Prompt preview:</span>
+          <pre className="text-sm text-gray-400 whitespace-pre-wrap break-all font-mono bg-gray-100 text-left">
+            {promptMain}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
+  switch (practiceType) {
+    case PracticeType.ENGLISH_TO_CHINESE_TEXT:
+      return (
+        <div className="container mx-auto max-w-2xl">
           <div className="p-3">
             <div className="text-center mb-4">
               <p className="text-sm font-semibold text-slate-500">
@@ -312,7 +337,7 @@ but mix elements from various phrases to make a new sentence.
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
-                                 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                                   focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                   placeholder="Please enter your translation here"
                   disabled={!!feedback || showCorrect || isGrading}
                 />
@@ -395,21 +420,24 @@ but mix elements from various phrases to make a new sentence.
               </div>
             )}
           </div>
-        )}
-        {currentSentenceIndex > 0 ? (
-          <>
-            History:
-            {sentences.slice(0, currentSentenceIndex).map((s, i) => (
-              <p key={i}>
-                {s.userIsCorrect ? "✅" : "⛔️"}
-                {s.chinese} || {s.userInput} || {s.english}
-              </p>
-            ))}
-          </>
-        ) : undefined}
-      </div>
-    </div>
-  );
+
+          {currentSentenceIndex > 0 ? (
+            <>
+              History:
+              {sentences.slice(0, currentSentenceIndex).map((s, i) => (
+                <p key={i}>
+                  {s.userIsCorrect ? "✅" : "⛔️"}
+                  {s.chinese} || {s.userInput} || {s.english}
+                </p>
+              ))}
+            </>
+          ) : undefined}
+        </div>
+      );
+    case PracticeType.LISTENING_TO_CHINESE: {
+      return <>TODO.</>;
+    }
+  }
 };
 
 export default Practice;
