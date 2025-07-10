@@ -31,7 +31,13 @@ export default function TodoChars() {
           to="/chars"
           className="ml-2 mt-1 text-blue-900 font-extrabold hover:text-blue-700 underline"
         >
-          See all chars!
+          See all chars.
+        </Link>
+        <Link
+          to="/props"
+          className="ml-2 mt-1 text-blue-900 font-extrabold hover:text-blue-700 underline"
+        >
+          See all props.
         </Link>
         <h3 className="font-serif text-2xl m-4">
           Sentence:{" "}

@@ -1,8 +1,9 @@
 import { type CharactersType, type CharacterType } from "~/data/characters";
-import { CharCard } from "./CharCard";
+import { CharCard, CharLink } from "./CharCard";
 import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
+import type { CharsToPhrasesPinyin } from "~/data/phrases";
 
 export const CharList: React.FC<{ characters: CharacterType[] }> = ({
   characters,
@@ -20,7 +21,8 @@ export const CharList: React.FC<{ characters: CharacterType[] }> = ({
 
 export function getConflictingChars(
   knownProps: KnownPropsType,
-  characters: CharactersType
+  characters: CharactersType,
+  charPhrasesPinyin: CharsToPhrasesPinyin
 ): CharacterType[] {
   return Object.values(characters).filter((v) => {
     for (const tag of v.tags) {
@@ -30,21 +32,27 @@ export function getConflictingChars(
         }
       }
     }
-    if (v.pinyin_anki_1.includes(">" + v.pinyin + "<")) {
-      return false;
+    if (
+      !v.pinyin_anki_1.includes(">" + v.pinyin + "<") &&
+      v.pinyin_anki_1 !== v.pinyin
+    ) {
+      return true;
     }
-    if (v.pinyin_anki_1 === v.pinyin) {
-      return false;
+    if (v.withSound && !charPhrasesPinyin[v.traditional]) {
+      return true;
     }
-    return true;
+    if (v.withSound && !charPhrasesPinyin[v.traditional][v.pinyin]) {
+      return true;
+    }
   });
 }
 
 export const CharListConflicts: React.FC<{
   knownProps: KnownPropsType;
   characters: CharactersType;
-}> = ({ knownProps, characters }) => {
-  let chars = getConflictingChars(knownProps, characters);
+  charPhrasesPinyin: CharsToPhrasesPinyin;
+}> = ({ knownProps, characters, charPhrasesPinyin }) => {
+  let chars = getConflictingChars(knownProps, characters, charPhrasesPinyin);
   if (chars.length === 0) {
     return <div className="m-5">No Character Conflicts</div>;
   }
@@ -52,28 +60,47 @@ export const CharListConflicts: React.FC<{
   return (
     <div className="block">
       {chars.map((v, i) => {
+        const missingProps = v.tags.filter(
+          (t) => t.startsWith("prop::") && knownProps[t] === undefined
+        );
         return (
           <div className="flex w-full mx-2" key={i}>
-            <div className="w-12 text-4xl">{v.traditional}</div>
+            <div className="w-12 text-4xl">
+              <CharLink traditional={v.traditional} />
+            </div>
             <div className="flex-1">
-              <PinyinText v={v} />
-              <div>
-                <span
-                  dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
-                ></span>
-                <span
+              JS library:
+              <div className="ml-10">
+                <PinyinText v={v} />
+              </div>
+              Anki1:
+              <div
+                className="ml-10"
+                dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
+              ></div>
+              Anki2:
+              {v.pinyin_anki_2.length ? (
+                <div
                   className="ml-10"
                   dangerouslySetInnerHTML={{ __html: v.pinyin_anki_2 }}
-                ></span>
+                ></div>
+              ) : undefined}
+              {missingProps.length ? (
                 <div>
-                  <TagList
-                    tags={v.tags.filter(
-                      (t) =>
-                        t.startsWith("prop::") && knownProps[t] === undefined
-                    )}
-                  />
+                  Missing props list:
+                  <TagList tags={missingProps} />
                 </div>
-              </div>
+              ) : undefined}
+              From phrases:
+              {charPhrasesPinyin[v.traditional]
+                ? Object.values(charPhrasesPinyin[v.traditional]).map(
+                    (pinyin) => (
+                      <div key={pinyin.pinyin} className="ml-10">
+                        <PinyinText v={pinyin} /> - {pinyin.count}
+                      </div>
+                    )
+                  )
+                : undefined}
             </div>
           </div>
         );

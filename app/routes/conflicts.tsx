@@ -12,14 +12,19 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Conflicts() {
-  const { knownProps, characters } = useOutletContext<OutletContext>();
+  const { knownProps, characters, charPhrasesPinyin } =
+    useOutletContext<OutletContext>();
 
   return (
     <main>
       <MainToolbar />
       <section className="block">
         <h3 className="font-serif text-3xl m-4">Character conflicts:</h3>
-        <CharListConflicts knownProps={knownProps} characters={characters} />
+        <CharListConflicts
+          knownProps={knownProps}
+          characters={characters}
+          charPhrasesPinyin={charPhrasesPinyin}
+        />
       </section>
     </main>
   );

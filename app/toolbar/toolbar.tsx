@@ -3,44 +3,51 @@ import * as React from "react";
 import { useLocation, NavLink, useOutletContext, Link } from "react-router";
 import { getConflictingChars } from "~/components/CharList";
 import type { CharactersType } from "~/data/characters";
+import type { CharsToPhrasesPinyin } from "~/data/phrases";
 import type { KnownPropsType } from "~/data/props";
 import type { OutletContext } from "~/data/types";
+import { useSettings } from "~/settings/SettingsContext";
 
 export const MainToolbarNoOutlet: React.FC<{
   knownProps: KnownPropsType;
   characters: CharactersType;
+  charPhrasesPinyin: CharsToPhrasesPinyin;
   reload: () => void;
   loading: boolean;
-}> = ({ knownProps, characters, reload, loading }) => {
+}> = ({ knownProps, characters, reload, loading, charPhrasesPinyin }) => {
   let styleSelected =
     "block mx-1 py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500";
   let styleInactive =
     "block mx-1 py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-500 md:p-0 dark:text-white md:dark:hover:text-blue-400 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent";
   let location = useLocation();
+  let { settings } = useSettings();
 
+  console.log(settings.toolbar?.showPropsLink);
   var list = [
-    { pathname: "/", name: "Pinyin" },
+    { pathname: "/", name: "Pinyin", show: true },
     {
       pathname: "/props",
       name: "Props",
-      show: Object.keys(knownProps).length > 0,
+      show: settings.toolbar?.showPropsLink,
     },
     {
       pathname: "/todo_chars",
       name: "Characters",
       show: Object.keys(characters).length > 0,
     },
-    { pathname: "/phrases", name: "Phrases" },
-    { pathname: "/study", name: "Study" },
-    { pathname: "/practice", name: "Practice" },
-    { pathname: "/stats", name: "Stats" },
+    { pathname: "/phrases", name: "Phrases", show: true },
+    { pathname: "/study", name: "Study", show: true },
+    { pathname: "/practice", name: "Practice", show: true },
+    { pathname: "/stats", name: "Stats", show: true },
     {
       pathname: "/conflicts",
       name: "Conflicts",
-      show: getConflictingChars(knownProps, characters).length > 0,
+      show:
+        getConflictingChars(knownProps, characters, charPhrasesPinyin).length >
+        0,
     },
-    { pathname: "/settings", name: "Settings" },
-  ].filter((element) => element.show !== false);
+    { pathname: "/settings", name: "Settings", show: true },
+  ].filter((element) => !!element.show);
 
   return (
     <nav className="bg-white border-gray-200 dark:bg-gray-900">
@@ -81,12 +88,13 @@ export const MainToolbarNoOutlet: React.FC<{
 };
 
 const MainToolbar: React.FC<{}> = ({}) => {
-  const { knownProps, characters, reload, loading } =
+  const { knownProps, characters, charPhrasesPinyin, reload, loading } =
     useOutletContext<OutletContext>();
   return (
     <MainToolbarNoOutlet
       knownProps={knownProps}
       characters={characters}
+      charPhrasesPinyin={charPhrasesPinyin}
       reload={reload}
       loading={loading}
     />

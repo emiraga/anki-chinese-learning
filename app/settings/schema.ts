@@ -6,6 +6,9 @@ export interface AppSettings {
     noteType: string;
     cards?: { name?: string; deck?: string; validateCardsDeck?: boolean };
   }[];
+  toolbar?: {
+    showPropsLink?: boolean;
+  };
 }
 
 export const defaultSettings: AppSettings = {
@@ -70,6 +73,16 @@ export const settingsJsonSchema: JSONSchema7 = {
           },
         },
         required: ["noteType"],
+      },
+    },
+    toolbar: {
+      type: "object",
+      title: "UI toolbar settings",
+      properties: {
+        showPropsLink: {
+          type: "boolean",
+          title: "Show 'Props' link in the toolbar.",
+        },
       },
     },
   },

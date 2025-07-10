@@ -7,6 +7,7 @@ import {
   type AppSettings,
 } from "../settings/schema";
 import type { IChangeEvent } from "@rjsf/core";
+import { useDebouncedCallback } from "use-debounce";
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -18,6 +19,18 @@ export default function SettingsPage() {
     }
   };
 
+  const debouncedSave = useDebouncedCallback((data: AppSettings) => {
+    // This is where you would make your API call to save the data
+    console.log("Saving data");
+    updateSettings(data);
+  }, 1000); // Debounce for 1 second
+
+  const handleOnChange = (data: IChangeEvent<AppSettings>) => {
+    if (data.formData) {
+      debouncedSave(data.formData);
+    }
+  };
+
   return (
     <>
       <Form
@@ -26,6 +39,7 @@ export default function SettingsPage() {
         validator={validator}
         formData={settings}
         onSubmit={handleSubmit}
+        onChange={handleOnChange}
       >
         <button
           type="submit"

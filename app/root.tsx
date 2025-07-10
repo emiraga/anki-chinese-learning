@@ -78,6 +78,7 @@ export default function App() {
         <MainToolbarNoOutlet
           knownProps={{}}
           characters={{}}
+          charPhrasesPinyin={{}}
           reload={() => {}}
           loading={loading}
         />
