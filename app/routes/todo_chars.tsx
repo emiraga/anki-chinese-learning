@@ -54,7 +54,7 @@ export default function TodoChars() {
           </Link>
         ) : undefined}
         <h3 className="font-serif text-2xl m-4">
-          Sentence:{" "}
+          <p>Write some chinese text (or copy-paste it):</p>
           <textarea
             className="border-2"
             value={sentence}

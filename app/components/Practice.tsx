@@ -282,10 +282,12 @@ but mix elements from various phrases to make a new sentence.
             </button>
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-            <span className="text-xs text-gray-600">Prompt preview:</span>
-            <pre className="text-sm text-gray-600 font-mono bg-gray-200 wrap-anywhere text-left">
-              {promptMain}
-            </pre>
+            <div className="mt-20">
+              <span className="text-xs text-gray-500">Prompt preview:</span>
+              <pre className="text-sm text-gray-400 font-mono bg-gray-100 wrap-anywhere text-left">
+                {promptMain}
+              </pre>
+            </div>
           </div>
         ) : (
           <div className="p-3">
