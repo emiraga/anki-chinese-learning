@@ -87,8 +87,8 @@ function MigrationActorPlaceAnki() {
   const filtered = Object.values(characters)
     .map((char) => {
       if (reverseMap[char.sylable] === undefined) {
-        console.log(char.sylable);
-        console.log(Object.keys(reverseMap));
+        console.error(char.sylable);
+        console.error(Object.keys(reverseMap));
         throw new Error("reverseMap[char.sylable] === undefined");
       }
       const { initial, final } = reverseMap[char.sylable] || {

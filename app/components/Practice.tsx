@@ -54,6 +54,29 @@ const Practice: React.FC<{
 
   // --- Core Functions ---
 
+  const promptMain: string = `\
+Generate 10 simple English sentences for a beginner learning Mandarin
+Chinese in Taiwan. For each sentence, provide the corresponding
+translation in informal Traditional Chinese used in Taiwan.
+
+${
+  characterList.length > 0
+    ? "Only use following traditional characters:\n" + characterList.join("")
+    : ""
+}
+
+${
+  phrases.length > 0
+    ? "To inspire your creativity, here are some phrases or words:\n" +
+      pickRandomElements(phrases, 30)
+        .map((phrase) => phrase.traditional)
+        .join("\n")
+    : ""
+}
+
+Consider using these phrases or words in sentences that you genenerate,
+but mix elements from various phrases to make a new sentence.
+`;
   /**
    * Generates 10 simple English sentences and their Traditional Chinese translations.
    */
@@ -92,23 +115,8 @@ const Practice: React.FC<{
       },
     };
 
-    const prompt = `Generate 10 simple English sentences for a beginner learning Mandarin Chinese in Taiwan.
-For each sentence, provide the corresponding translation in informal Traditional Chinese used in Taiwan.
-
-Only use following traditional characters: ${characterList.join("")}
-
-To inspire your creativity, here are some phrases or words:
-${pickRandomElements(phrases, 30)
-  .map((phrase) => phrase.traditional)
-  .join("\n")}
-
-Consider using these phrases or words in sentences that you genenerate,
-but mix elements from various phrases to make a new sentence.
-`;
-    console.log(prompt);
-
     const request = {
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: [{ role: "user", parts: [{ text: promptMain }] }],
       generationConfig,
     };
 
@@ -186,7 +194,7 @@ but mix elements from various phrases to make a new sentence.
       },
     };
 
-    const prompt = `
+    const promptFeeback: string = `
       A language learner is practicing Chinese. Please evaluate their translation.
 
       - English Sentence: "${currentSentence.english}"
@@ -202,7 +210,7 @@ but mix elements from various phrases to make a new sentence.
     `;
 
     const request = {
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: [{ role: "user", parts: [{ text: promptFeeback }] }],
       generationConfig,
     };
 
@@ -269,16 +277,15 @@ but mix elements from various phrases to make a new sentence.
                   Generating...
                 </>
               ) : (
-                "Start Practice Session"
+                "✍️ Start Writting Practice"
               )}
             </button>
-            <button
-              onClick={() => setApiKey("")}
-              className="text-sm text-slate-500 hover:text-slate-700 mt-4"
-            >
-              Change API Key
-            </button>
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+
+            <span className="text-xs text-gray-600">Prompt preview:</span>
+            <pre className="text-sm text-gray-600 font-mono bg-gray-200 wrap-anywhere text-left">
+              {promptMain}
+            </pre>
           </div>
         ) : (
           <div className="p-3">

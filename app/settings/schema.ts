@@ -6,6 +6,9 @@ export interface AppSettings {
     noteType: string;
     cards?: { name?: string; deck?: string; validateCardsDeck?: boolean };
   }[];
+  characterNote?: {
+    noteType?: string;
+  };
   toolbar?: {
     showPropsLink?: boolean;
     showStatsLink?: boolean;
@@ -34,12 +37,12 @@ export const settingsJsonSchema: JSONSchema7 = {
     },
     phraseNotes: {
       type: "array",
-      title: "Anki Phrases Configuration",
+      title: "Anki Phrases/Words/Sentences Configuration",
       items: {
         type: "object",
         title: "Note type",
         description:
-          "For the source of the phrases/words from anki, we load them from a note",
+          "For the source of the phrases/words/sentences from anki, we load them from a note",
         properties: {
           noteType: {
             type: "string",
@@ -74,6 +77,18 @@ export const settingsJsonSchema: JSONSchema7 = {
           },
         },
         required: ["noteType"],
+      },
+    },
+    characterNote: {
+      type: "object",
+      title: "(optional) Anki Character Notes Configuration",
+      properties: {
+        noteType: {
+          type: "string",
+          title: "Name of the 'Note type' in Anki, sometimes called Model Name",
+          description:
+            "If you leave this empty, we will infer character data from phrase notes.",
+        },
       },
     },
     toolbar: {

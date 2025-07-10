@@ -61,6 +61,7 @@ export default function App() {
     error: errorPhrases,
     reload: reloadPhrases,
   } = useAnkiPhrases();
+  console.log("p1", charPhrasesPinyin);
   const {
     characters,
     knownSounds,
@@ -68,7 +69,7 @@ export default function App() {
     loading: loadingCharacters,
     error: errorCharacters,
     reload: reloadCharacters,
-  } = useAnkiCharacters();
+  } = useAnkiCharacters(charPhrasesPinyin);
 
   // Handle loading state
   const loading = loadingProps || loadingPhrases || loadingCharacters;

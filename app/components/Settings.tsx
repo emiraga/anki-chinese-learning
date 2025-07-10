@@ -20,7 +20,7 @@ export default function SettingsPage() {
   };
 
   const debouncedSave = useDebouncedCallback((data: AppSettings) => {
-    console.log("Saving data");
+    console.info("Saving data");
     updateSettings(data);
   }, 1000); // Debounce for 1 second
 

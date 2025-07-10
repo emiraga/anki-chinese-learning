@@ -4,6 +4,7 @@ import type React from "react";
 import anki from "~/apis/anki";
 import { Link } from "react-router";
 import { TagList } from "./TagList";
+import { useSettings } from "~/settings/SettingsContext";
 
 export const CharLink: React.FC<{
   traditional: string;
@@ -40,6 +41,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
   char,
 }) => {
   var isDefined = char.meaning.length > 0 || char.meaning2.length > 0;
+  const { settings } = useSettings();
 
   const sources = [
     {
@@ -119,21 +121,23 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           >
             links
           </button>
-          <button
-            className="rounded-2xl bg-blue-300 p-1 m-1 w-12"
-            onClick={async () => {
-              // await anki.graphical.guiDeckOverview({ name: "CharsProps" });
-              // await anki.graphical.guiDeckBrowser();
-              await anki.graphical.guiBrowse({
-                query: "note:Hanzi Traditional:" + char.traditional,
-              });
-            }}
-          >
-            anki
-          </button>
+          {settings.characterNote?.noteType ? (
+            <button
+              className="rounded-2xl bg-blue-300 p-1 m-1 w-12"
+              onClick={async () => {
+                // await anki.graphical.guiDeckOverview({ name: "CharsProps" });
+                // await anki.graphical.guiDeckBrowser();
+                await anki.graphical.guiBrowse({
+                  query: "note:Hanzi Traditional:" + char.traditional,
+                });
+              }}
+            >
+              anki
+            </button>
+          ) : undefined}
         </div>
         <div className="flex-1 text-sm">
-          {!char.ankiId ? (
+          {!char.ankiId && settings.characterNote?.noteType ? (
             <button
               className="rounded-2xl bg-red-300 p-2 m-1"
               onClick={async () => {

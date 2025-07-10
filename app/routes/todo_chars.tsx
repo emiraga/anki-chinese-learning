@@ -10,6 +10,8 @@ import { TodoCharsList } from "~/components/TodoChars";
 import { removeDuplicateChars } from "~/data/utils";
 import { PinyinText } from "~/components/PinyinText";
 import { CharLink } from "~/components/CharCard";
+import Section from "~/toolbar/section";
+import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -19,9 +21,19 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function TodoChars() {
-  const { phrases, characters, charPhrasesPinyin } =
+  const { phrases, characters, charPhrasesPinyin, props } =
     useOutletContext<OutletContext>();
   let [sentence, setSentence] = useState("");
+  const { settings } = useSettings();
+
+  const multiple = Object.values(characters)
+    .map((char) => ({
+      ...char,
+      phrasesPinyin: charPhrasesPinyin[char.traditional] || {},
+    }))
+    .filter(
+      (char) => Object.keys(char.phrasesPinyin).length !== 1 && char.withSound
+    );
 
   return (
     <main>
@@ -33,12 +45,14 @@ export default function TodoChars() {
         >
           See all chars.
         </Link>
-        <Link
-          to="/props"
-          className="ml-2 mt-1 text-blue-900 font-extrabold hover:text-blue-700 underline"
-        >
-          See all props.
-        </Link>
+        {props.length > 0 ? (
+          <Link
+            to="/props"
+            className="ml-2 mt-1 text-blue-900 font-extrabold hover:text-blue-700 underline"
+          >
+            See all props.
+          </Link>
+        ) : undefined}
         <h3 className="font-serif text-2xl m-4">
           Sentence:{" "}
           <textarea
@@ -52,34 +66,27 @@ export default function TodoChars() {
         <div className="text-2xl m-2">
           <HanziText value={sentence} />
         </div>
+      </section>
+      <Section display={!!settings.characterNote?.noteType}>
         <TodoCharsList
           phrases={phrases}
           sentence={removeDuplicateChars(sentence, IGNORE_PHRASE_CHARS)}
           characters={characters}
         />
-        <div className="m-3">
-          <h3 className="font-serif text-2xl">Multiple pronounciations:</h3>
-          {Object.values(characters)
-            .map((char) => ({
-              ...char,
-              phrasesPinyin: charPhrasesPinyin[char.traditional] || {},
-            }))
-            .filter(
-              (char) =>
-                Object.keys(char.phrasesPinyin).length !== 1 && char.withSound
-            )
-            .map((char) => (
-              <div key={char.ankiId}>
-                <CharLink traditional={char.traditional} className="text-2xl" />
-                {Object.values(char.phrasesPinyin).map((pinyin) => (
-                  <span className="mx-3" key={pinyin.pinyin}>
-                    <PinyinText v={pinyin} />:{pinyin.count}
-                  </span>
-                ))}
-              </div>
+      </Section>
+      <Section className="m-3" display={multiple.length > 0}>
+        <h3 className="font-serif text-2xl">Multiple pronounciations:</h3>
+        {multiple.map((char) => (
+          <div key={char.ankiId}>
+            <CharLink traditional={char.traditional} className="text-2xl" />
+            {Object.values(char.phrasesPinyin).map((pinyin) => (
+              <span className="mx-3" key={pinyin.pinyin}>
+                <PinyinText v={pinyin} />:{pinyin.count}
+              </span>
             ))}
-        </div>
-      </section>
+          </div>
+        ))}
+      </Section>
     </main>
   );
 }

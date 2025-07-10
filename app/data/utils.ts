@@ -13,10 +13,8 @@ export function pickRandomElements<T>(arr: T[], numElements: number): T[] {
   const len = arr.length;
   const taken = new Array(len);
 
-  if (numElements > len) {
-    throw new RangeError(
-      "pickRandomElements: more elements taken than available"
-    );
+  if (numElements >= len) {
+    return arr;
   }
 
   while (result.length < numElements) {

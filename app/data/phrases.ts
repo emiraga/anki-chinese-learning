@@ -120,7 +120,7 @@ export function useAnkiPhrases() {
             }
           } else {
             // TODO: show this somewhere more prominent
-            console.log(
+            console.error(
               "Warning invalid Pinyin: " +
                 sPinyin +
                 " Traditional: " +
