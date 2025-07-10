@@ -5,11 +5,13 @@ import { diacriticToNumber, removeTone } from "pinyin-tools";
 import { useSettings } from "~/settings/SettingsContext";
 
 export type PhraseType = {
+  noteId: number;
   source: string;
   traditional: string;
   meaning: string;
   pinyin: string;
   tags: string[];
+  audio: string;
 };
 
 export type CharsToPhrasesPinyin = {
@@ -89,11 +91,13 @@ export function useAnkiPhrases() {
         const pinyin = note.fields["Pinyin"].value;
         const traditional = note.fields["Traditional"].value;
         const info: PhraseType = {
+          noteId: note.noteId,
           source: note.modelName,
           traditional,
           meaning: note.fields["Meaning"].value,
           pinyin,
           tags: note.tags,
+          audio: note.fields["Audio"].value,
         };
 
         const processPinyin = (sPinyin: string, sTraditional: string) => {
@@ -163,7 +167,7 @@ export function useAnkiPhrases() {
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array means this function won't change
+  }, [settings.phraseNotes]);
 
   // Initial load on component mount
   useEffect(() => {

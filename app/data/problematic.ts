@@ -8,6 +8,7 @@ export interface ProblematicCardAnalysis {
   isOverdue: boolean;
   problemScore: number;
   primaryField: string; // first field value for display
+  audio?: string;
 }
 
 export async function getProblematicCardsComprehensive(
@@ -56,6 +57,7 @@ export async function getProblematicCardsComprehensive(
       isOverdue,
       problemScore,
       primaryField,
+      audio: card.fields["Audio"]?.value,
     });
   }
 

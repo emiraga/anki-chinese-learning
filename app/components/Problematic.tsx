@@ -3,6 +3,7 @@ import { LearnLink } from "./Claude";
 import anki from "~/apis/anki";
 import { HanziText } from "./HanziText";
 import { CARDS_INFO } from "~/data/cards";
+import AnkiAudioPlayer from "./AnkiAudioPlayer";
 
 export default function ProblematicTable({
   result,
@@ -39,6 +40,7 @@ export default function ProblematicTable({
                   {p.cardInfo.deckName}:{p.cardInfo.modelName}:{p.primaryField}{" "}
                 </button>{" "}
                 {CARDS_INFO[p.cardInfo.modelName][p.cardInfo.ord].name}
+                <AnkiAudioPlayer audioField={p.audio} />
               </td>
             </tr>
           );

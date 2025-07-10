@@ -8,6 +8,7 @@ import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "./index.module.css";
 import { PhraseLink } from "./Phrase";
 import { DANGDAI_NEXT_LEVEL, TOCFL_NEXT_LEVEL } from "~/data/status";
+import AnkiAudioPlayer from "./AnkiAudioPlayer";
 
 function TodoPhrases() {
   const [notes, setNotes] = useState<NoteInfo[] | undefined>(undefined);
@@ -146,7 +147,9 @@ export function SearchMorePhrases({
           <div key={i}>
             New word:
             <PhraseLink value={note.fields["Traditional"]?.value} />(
-            {note.fields["Pinyin"]?.value})
+            {note.fields["Pinyin"]?.value}
+            <AnkiAudioPlayer audioField={note.fields["Audio"]?.value} />
+            )
             <TagList tags={note.tags} />
             <button
               className="rounded-2xl bg-green-100 p-1 ml-2 inline text-xs text-green-500"

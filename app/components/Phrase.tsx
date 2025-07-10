@@ -2,6 +2,7 @@ import anki from "~/apis/anki";
 import type { PhraseType } from "~/data/phrases";
 import { TagList } from "./TagList";
 import { Link } from "react-router";
+import AnkiAudioPlayer from "./AnkiAudioPlayer";
 
 export const PhraseLink: React.FC<{ value?: string }> = ({ value }) => {
   return <Link to={`/phrase/${value}`}>{value}</Link>;
@@ -50,6 +51,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                 <span
                   dangerouslySetInnerHTML={{ __html: phrase.pinyin }}
                 ></span>
+                <AnkiAudioPlayer audioField={phrase.audio} />
               </td>
               <td className="truncate max-w-150">
                 <span
