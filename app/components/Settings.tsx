@@ -20,7 +20,6 @@ export default function SettingsPage() {
   };
 
   const debouncedSave = useDebouncedCallback((data: AppSettings) => {
-    // This is where you would make your API call to save the data
     console.log("Saving data");
     updateSettings(data);
   }, 1000); // Debounce for 1 second

@@ -73,17 +73,23 @@ export const CharListConflicts: React.FC<{
               <div className="ml-10">
                 <PinyinText v={v} />
               </div>
-              Anki1:
-              <div
-                className="ml-10"
-                dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
-              ></div>
-              Anki2:
+              {v.pinyin_anki_1.length ? (
+                <>
+                  Anki1:
+                  <div
+                    className="ml-10"
+                    dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
+                  ></div>
+                </>
+              ) : undefined}
               {v.pinyin_anki_2.length ? (
-                <div
-                  className="ml-10"
-                  dangerouslySetInnerHTML={{ __html: v.pinyin_anki_2 }}
-                ></div>
+                <>
+                  Anki2:
+                  <div
+                    className="ml-10"
+                    dangerouslySetInnerHTML={{ __html: v.pinyin_anki_2 }}
+                  ></div>
+                </>
               ) : undefined}
               {missingProps.length ? (
                 <div>
@@ -91,16 +97,18 @@ export const CharListConflicts: React.FC<{
                   <TagList tags={missingProps} />
                 </div>
               ) : undefined}
-              From phrases:
-              {charPhrasesPinyin[v.traditional]
-                ? Object.values(charPhrasesPinyin[v.traditional]).map(
+              {charPhrasesPinyin[v.traditional] ? (
+                <>
+                  From phrases:
+                  {Object.values(charPhrasesPinyin[v.traditional]).map(
                     (pinyin) => (
                       <div key={pinyin.pinyin} className="ml-10">
                         <PinyinText v={pinyin} /> - {pinyin.count}
                       </div>
                     )
-                  )
-                : undefined}
+                  )}
+                </>
+              ) : undefined}
             </div>
           </div>
         );

@@ -3,7 +3,7 @@ import * as React from "react";
 import { useLocation, NavLink, useOutletContext, Link } from "react-router";
 import { getConflictingChars } from "~/components/CharList";
 import type { CharactersType } from "~/data/characters";
-import type { CharsToPhrasesPinyin } from "~/data/phrases";
+import type { CharsToPhrasesPinyin, PhraseType } from "~/data/phrases";
 import type { KnownPropsType } from "~/data/props";
 import type { OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
@@ -11,10 +11,18 @@ import { useSettings } from "~/settings/SettingsContext";
 export const MainToolbarNoOutlet: React.FC<{
   knownProps: KnownPropsType;
   characters: CharactersType;
+  phrases: PhraseType[];
   charPhrasesPinyin: CharsToPhrasesPinyin;
   reload: () => void;
   loading: boolean;
-}> = ({ knownProps, characters, reload, loading, charPhrasesPinyin }) => {
+}> = ({
+  knownProps,
+  characters,
+  phrases,
+  reload,
+  loading,
+  charPhrasesPinyin,
+}) => {
   let styleSelected =
     "block mx-1 py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500";
   let styleInactive =
@@ -22,7 +30,6 @@ export const MainToolbarNoOutlet: React.FC<{
   let location = useLocation();
   let { settings } = useSettings();
 
-  console.log(settings.toolbar?.showPropsLink);
   var list = [
     { pathname: "/", name: "Pinyin", show: true },
     {
@@ -35,8 +42,8 @@ export const MainToolbarNoOutlet: React.FC<{
       name: "Characters",
       show: Object.keys(characters).length > 0,
     },
-    { pathname: "/phrases", name: "Phrases", show: true },
-    { pathname: "/study", name: "Study", show: true },
+    { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
+    { pathname: "/study", name: "Study", show: phrases.length > 0 },
     { pathname: "/practice", name: "Practice", show: true },
     { pathname: "/stats", name: "Stats", show: true },
     {
@@ -88,12 +95,19 @@ export const MainToolbarNoOutlet: React.FC<{
 };
 
 const MainToolbar: React.FC<{}> = ({}) => {
-  const { knownProps, characters, charPhrasesPinyin, reload, loading } =
-    useOutletContext<OutletContext>();
+  const {
+    knownProps,
+    characters,
+    phrases,
+    charPhrasesPinyin,
+    reload,
+    loading,
+  } = useOutletContext<OutletContext>();
   return (
     <MainToolbarNoOutlet
       knownProps={knownProps}
       characters={characters}
+      phrases={phrases}
       charPhrasesPinyin={charPhrasesPinyin}
       reload={reload}
       loading={loading}

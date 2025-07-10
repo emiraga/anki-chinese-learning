@@ -197,18 +197,10 @@ const AnkiHanziProgress = () => {
           }
         });
 
-        console.log("allCardIds", allCardIds.length);
-
         // 3. Get all reviews for the cards associated with these Hanzi notes
         const reviewsOfCards = await anki.statistic.getReviewsOfCards({
           cards: allCardIds,
         });
-
-        console.log(
-          "reviewsOfCards",
-          Object.keys(reviewsOfCards).length,
-          reviewsOfCards
-        );
 
         // 4. Process reviews to build the daily character graph
         const dailyLearnedCharacters: { [key: string]: number } = {};
@@ -225,8 +217,6 @@ const AnkiHanziProgress = () => {
         });
 
         allReviews.sort((a, b) => a.id - b.id);
-
-        console.log("allReviews", allReviews.length, allReviews);
 
         allReviews.forEach((review) => {
           const cardId = review.cardId; // Anki-Connect getReviewsOfCards sample doesn't include cardId in review object.

@@ -111,9 +111,7 @@ export function SearchMorePhrases({
       if (withTags) {
         query += ` (${withTags.map((t) => `tag:${t}`).join(" OR ")})`;
       }
-      console.log("query", query);
       const notesId = await anki.note.findNotes({ query });
-      console.log("found:", notesId.length);
       const notes = await anki.note.notesInfo({ notes: notesId });
 
       setPhrases(
