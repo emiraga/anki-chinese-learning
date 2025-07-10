@@ -35,7 +35,6 @@ const Practice: React.FC<{
   const [isGrading, setIsGrading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showCorrect, setShowCorrect] = useState<boolean>(false);
-  const [tempApiKey, setTempApiKey] = useState<string>("");
   const {
     settings: { googleCloudApiKey },
   } = useSettings();

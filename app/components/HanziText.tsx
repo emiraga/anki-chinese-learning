@@ -1,4 +1,3 @@
-import { Link } from "react-router";
 import { useOutletContext } from "react-router";
 import { getNewCharacter, type CharactersType } from "~/data/characters";
 import type { OutletContext } from "~/data/types";

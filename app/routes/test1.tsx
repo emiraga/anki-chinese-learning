@@ -1,7 +1,5 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
-import { useOutletContext } from "react-router";
-import type { OutletContext } from "~/data/types";
 import GenerateAudio from "../components/GenerateAudio";
 
 export function meta({}: Route.MetaArgs) {
@@ -9,8 +7,6 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Test1() {
-  const { phrases, characterList } = useOutletContext<OutletContext>();
-
   return (
     <main>
       <MainToolbar />

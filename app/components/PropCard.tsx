@@ -1,8 +1,6 @@
 import { Link } from "react-router";
 import anki from "~/apis/anki";
 import { PinyinText } from "./PinyinText";
-import pinyin from "pinyin";
-import { get_pinyin } from "~/data/pinyin_function";
 import { getNewCharacter } from "~/data/characters";
 
 export const PropCard: React.FC<{

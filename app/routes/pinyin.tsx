@@ -13,7 +13,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Index() {
-  const { knownSounds, characters } = useOutletContext<OutletContext>();
+  const { knownSounds } = useOutletContext<OutletContext>();
 
   return (
     <Tooltip.Provider delay={0} closeDelay={0}>

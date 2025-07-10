@@ -13,8 +13,8 @@ export const TodoCharsList: React.FC<{
   if (sentence.length > 0) {
     return (
       <>
-        {[...sentence].map((c) => (
-          <HanziCardDetails c={c} characters={characters} />
+        {[...sentence].map((c, i) => (
+          <HanziCardDetails key={i} c={c} characters={characters} />
         ))}
       </>
     );

@@ -259,8 +259,8 @@ function LowerCasePinyin() {
           {phrase.pinyin}
         </div>
       ))}
-      {filtered2.map((char) => (
-        <div>Not lowercase pinyin for char: {char.traditional}</div>
+      {filtered2.map((char, i) => (
+        <div key={i}>Not lowercase pinyin for char: {char.traditional}</div>
       ))}
     </>
   );
@@ -290,7 +290,7 @@ function MissingActorNotes() {
     return <div>Loading...</div>;
   }
   const filtered = Object.entries(ACTOR_TAGS_MAP).filter(
-    ([prefix, _actor]) => !actorNotes.has(prefix)
+    ([prefix]) => !actorNotes.has(prefix)
   );
   if (filtered.length === 0) {
     return undefined;

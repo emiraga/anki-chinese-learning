@@ -1,10 +1,9 @@
 import { type CharactersType, type CharacterType } from "~/data/characters";
-import { CharCard, CharCardDetails, CharLink } from "./CharCard";
+import { CharCard, CharCardDetails } from "./CharCard";
 import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import type { CharsToPhrasesPinyin } from "~/data/phrases";
-import CharDetail from "~/routes/char/$charHanzi";
 import { get_all_pinyin_from_lib } from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
 
@@ -119,9 +118,11 @@ export const CharListConflicts: React.FC<{
               ) : undefined}
               <p>
                 From library:
-                {get_all_pinyin_from_lib(v.traditional, STYLE_TONE).map((p) => (
-                  <p>{p}</p>
-                ))}
+                {get_all_pinyin_from_lib(v.traditional, STYLE_TONE).map(
+                  (p, i) => (
+                    <p key={i}>{p}</p>
+                  )
+                )}
               </p>
             </div>
             <hr />

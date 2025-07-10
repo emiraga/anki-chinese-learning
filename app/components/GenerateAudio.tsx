@@ -93,9 +93,13 @@ const App: React.FC = () => {
       } else {
         throw new Error("No audio content received from the API.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error synthesizing speech:", err);
-      setError(err.message || "An unknown error occurred.");
+      if (err instanceof Error) {
+        setError(err.message || "An unknown error occurred.");
+      } else {
+        setError("An unknown error occurred.");
+      }
     } finally {
       setLoading(false);
     }

@@ -4,7 +4,7 @@ import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { useState } from "react";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
-import { HanziCardDetails, HanziText } from "~/components/HanziText";
+import { HanziText } from "~/components/HanziText";
 import { Link } from "react-router";
 import { TodoCharsList } from "~/components/TodoChars";
 import { removeDuplicateChars } from "~/data/utils";

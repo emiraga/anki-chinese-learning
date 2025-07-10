@@ -129,14 +129,14 @@ export const useAnkiCards = () => {
     } finally {
       setLoading(false);
     }
-  }, [anki]);
+  }, []);
 
   // Auto-load on mount
   useEffect(() => {
     if (anki) {
       loadCards();
     }
-  }, [anki, loadCards]);
+  }, [loadCards]);
 
   // Calculate progress percentage
   const progressPercentage =

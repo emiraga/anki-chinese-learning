@@ -133,7 +133,7 @@ export function SearchMorePhrases({
       );
     };
     load();
-  }, []);
+  }, [characters, filterKnownChars, noteTypes, search, withTags]);
 
   if (!phrases) {
     return <div>Loading...</div>;

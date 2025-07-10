@@ -25,14 +25,6 @@ const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
       });
     };
 
-    const loadCSS = (href: string) => {
-      if (document.querySelector(`link[href="${href}"]`)) return;
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
-      document.head.appendChild(link);
-    };
-
     const initializeAnkiStats = async () => {
       if (!containerRef.current) {
         throw new Error("containerRef.current is null");
@@ -80,7 +72,7 @@ const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
         scriptContents.forEach((scriptContent) => {
           try {
             const executeScript = new Function("$", "jQuery", scriptContent);
-            // @ts-ignore next-line
+            // @ts-expect-error next-line
             executeScript(window.jQuery, window.jQuery);
           } catch (scriptError) {
             console.error("Error executing script:", scriptError);
@@ -137,6 +129,7 @@ const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const HtmlStats: React.FC<{}> = ({}) => {
   const { loading, error, result } = useAsync(
     async () =>
@@ -161,6 +154,7 @@ const HtmlStats: React.FC<{}> = ({}) => {
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AnkiHanziProgress = () => {
   const [characterProgress, setCharacterProgress] = useState<{
     [key: string]: number;

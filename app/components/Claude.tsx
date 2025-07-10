@@ -12,6 +12,7 @@ export const LearnLink: React.FC<{ char?: string }> = ({ char }) => {
         encodeURIComponent(sentencesPrompt(characters, { learn: char }))
       }
       target="_blank"
+      rel="noreferrer"
     >
       AI {char ?? "all chars"}
     </a>

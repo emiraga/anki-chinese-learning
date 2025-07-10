@@ -1,6 +1,6 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
-import { Link, useOutletContext } from "react-router";
+import { Link } from "react-router";
 import { LOCATION_TAGS_MAP } from "~/data/pinyin_table";
 
 export function meta({}: Route.MetaArgs) {
@@ -18,9 +18,13 @@ export default function Tones() {
         List of tones: ({Object.values(LOCATION_TAGS_MAP).length})
       </h3>
       <section className="block m-4">
-        {Object.values(LOCATION_TAGS_MAP).map((toneName) => {
+        {Object.values(LOCATION_TAGS_MAP).map((toneName, i) => {
           return (
-            <Link className="block" to={`/tone/${toneName.substring(6)}`}>
+            <Link
+              key={i}
+              className="block"
+              to={`/tone/${toneName.substring(6)}`}
+            >
               {toneName}
             </Link>
           );

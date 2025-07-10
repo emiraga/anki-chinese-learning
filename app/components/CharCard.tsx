@@ -112,7 +112,13 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
         </div>
         <div className="w-32 text-sm">
           {sources.map(({ name, link }) => (
-            <a key={name} href={link} target="_blank" className="inline-block">
+            <a
+              key={name}
+              href={link}
+              rel="noreferrer"
+              target="_blank"
+              className="inline-block"
+            >
               {char.traditional} {name} 🔗
             </a>
           ))}

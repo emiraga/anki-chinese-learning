@@ -64,7 +64,7 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
               prop.tagnames.includes(propName) && prop.main_tagname !== propName
           )
           .map((prop) => (
-            <PropRender propName={prop.main_tagname} />
+            <PropRender key={prop.prop} propName={prop.main_tagname} />
           ))}
       </div>
     </div>

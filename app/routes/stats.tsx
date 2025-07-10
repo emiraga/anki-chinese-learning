@@ -2,7 +2,6 @@ import type { Route } from "./+types/index";
 import { Link, useOutletContext } from "react-router";
 import { MigrationEverything } from "~/components/Migration";
 import type { OutletContext } from "~/data/types";
-import { useSettings } from "~/settings/SettingsContext";
 import MainFrame from "~/toolbar/frame";
 
 export function meta({}: Route.MetaArgs) {
@@ -14,7 +13,6 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Stats() {
   const { props, phrases, characters } = useOutletContext<OutletContext>();
-  const { settings } = useSettings();
 
   let charsComplete = Object.values(characters).filter(
     (c) => c.withSound && c.withMeaning
@@ -26,8 +24,6 @@ export default function Stats() {
   const uniquePhrases = new Set(phrases.map((phrase) => phrase.traditional));
   return (
     <MainFrame>
-      <h1>Welcome, {settings.username}!</h1>
-
       <h3 className="font-serif text-4xl my-2">
         <Link to="/migration" className="text-2xl underline text-blue-700">
           Migration

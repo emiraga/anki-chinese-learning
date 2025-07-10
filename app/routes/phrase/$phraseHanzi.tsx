@@ -1,5 +1,5 @@
 import MainToolbar from "~/toolbar/toolbar";
-import type { Route } from "./+types/index";
+import type { Route } from "../+types/index";
 import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { PhraseList } from "~/components/Phrase";
