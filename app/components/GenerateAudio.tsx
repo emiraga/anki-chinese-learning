@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSettings } from "~/settings/SettingsContext";
 
 // Define the main App component
@@ -10,6 +10,8 @@ const App: React.FC = () => {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false); // New state for playback
+  const audioRef = useRef<HTMLAudioElement>(null); // Ref for the audio element
 
   // State variables for voice and audio configuration
   const [selectedVoiceName, setSelectedVoiceName] =
@@ -41,6 +43,7 @@ const App: React.FC = () => {
     setLoading(true);
     setError(null);
     setAudioUrl(null); // Clear previous audio
+    setIsPlaying(false); // Reset playing state
 
     // Revoke previous object URL to prevent memory leaks
     if (audioUrl) {
@@ -90,6 +93,22 @@ const App: React.FC = () => {
         const audioBlob = base64ToBlob(data.audioContent, "audio/mp3");
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
+
+        // Automatically play audio after successful generation
+        if (audioRef.current) {
+          audioRef.current.src = url;
+          audioRef.current.load();
+          audioRef.current.onloadeddata = () => {
+            audioRef.current?.play();
+            setIsPlaying(true);
+            setLoading(false);
+          };
+          audioRef.current.onerror = () => {
+            setError("Failed to load audio for playback.");
+            setIsPlaying(false);
+            setLoading(false);
+          };
+        }
       } else {
         throw new Error("No audio content received from the API.");
       }
@@ -100,8 +119,7 @@ const App: React.FC = () => {
       } else {
         setError("An unknown error occurred.");
       }
-    } finally {
-      setLoading(false);
+      setLoading(false); // Ensure loading is set to false on error
     }
   }, [
     textInput,
@@ -125,7 +143,19 @@ const App: React.FC = () => {
     return new Blob([byteArray], { type: mimeType });
   };
 
-  // Cleanup object URL when component unmounts
+  // Handler for when audio playback ends
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
+
+  // Handler for audio playback errors
+  const handleAudioError = () => {
+    setError("Audio playback failed.");
+    setIsPlaying(false);
+    setLoading(false);
+  };
+
+  // Cleanup object URL when component unmounts or audioUrl changes
   useEffect(() => {
     return () => {
       if (audioUrl) {
@@ -314,19 +344,23 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Audio Player */}
-        {audioUrl && (
+        {/* Audio Player (hidden and controlled by ref) */}
+        <audio
+          ref={audioRef}
+          onEnded={handleAudioEnded}
+          onError={handleAudioError}
+          className="hidden" // Keep the audio element hidden
+        />
+
+        {/* Optional: Display a visual indicator for playing state if needed */}
+        {audioUrl && !loading && !error && (
           <div className="mt-6 text-center">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              Play Audio:
+              Audio Playback:
             </h3>
-            <audio
-              controls
-              src={audioUrl}
-              className="w-full max-w-md mx-auto rounded-lg shadow-md"
-            >
-              Your browser does not support the audio element.
-            </audio>
+            <p className="text-gray-600">
+              {isPlaying ? "Playing..." : "Ready to play (or ended)."}
+            </p>
           </div>
         )}
       </div>
