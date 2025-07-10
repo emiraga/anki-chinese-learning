@@ -272,11 +272,11 @@ but mix elements from various phrases to make a new sentence.
             >
               {isGenerating ? (
                 <>
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 m-4 border-b-2 border-gray-900 mb-4"></div>
                   Generating...
                 </>
               ) : (
-                "✍️ Start Writting Practice"
+                "English to Chinese Practice"
               )}
             </button>
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -326,7 +326,6 @@ but mix elements from various phrases to make a new sentence.
                   id="userInput"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSubmitAnswer()}
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
                                  focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                   placeholder="Please enter your translation here"
