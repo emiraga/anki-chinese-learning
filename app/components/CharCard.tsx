@@ -45,6 +45,13 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
 
   const sources = [
     {
+      name: "MoE revised",
+      link:
+        "https://dict.revised.moe.edu.tw/search.jsp?md=1&word=" +
+        encodeURIComponent(char.traditional) +
+        "&qMd=0&qCol=1",
+    },
+    {
       name: "dong-ch",
       link:
         "https://www.dong-chinese.com/dictionary/search/" +

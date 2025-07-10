@@ -78,7 +78,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
         // Load character info from phrases.
         for (const hanzi of Object.keys(charPhrasesPinyin)) {
           const primaryPinyin = Object.values(charPhrasesPinyin[hanzi]).sort(
-            (a, b) => a.count - b.count
+            (a, b) => b.count - a.count
           )[0];
           let info: CharacterType = {
             ankiId: 0,

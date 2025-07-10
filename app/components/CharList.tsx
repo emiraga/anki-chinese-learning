@@ -1,9 +1,12 @@
 import { type CharactersType, type CharacterType } from "~/data/characters";
-import { CharCard, CharLink } from "./CharCard";
+import { CharCard, CharCardDetails, CharLink } from "./CharCard";
 import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import type { CharsToPhrasesPinyin } from "~/data/phrases";
+import CharDetail from "~/routes/char/$charHanzi";
+import { get_all_pinyin_from_lib } from "~/data/pinyin_function";
+import { STYLE_TONE } from "pinyin";
 
 export const CharList: React.FC<{ characters: CharacterType[] }> = ({
   characters,
@@ -38,11 +41,22 @@ export function getConflictingChars(
     ) {
       return true;
     }
-    if (v.withSound && !charPhrasesPinyin[v.traditional]) {
-      return true;
+    if (v.withSound) {
+      if (!charPhrasesPinyin[v.traditional]) {
+        return true;
+      }
+      if (!charPhrasesPinyin[v.traditional][v.pinyin]) {
+        return true;
+      }
     }
-    if (v.withSound && !charPhrasesPinyin[v.traditional][v.pinyin]) {
-      return true;
+
+    if (charPhrasesPinyin[v.traditional]) {
+      const best = Object.values(charPhrasesPinyin[v.traditional]).sort(
+        (a, b) => b.count - a.count
+      )[0];
+      if (best.pinyin !== v.pinyin) {
+        return true;
+      }
     }
   });
 }
@@ -64,15 +78,9 @@ export const CharListConflicts: React.FC<{
           (t) => t.startsWith("prop::") && knownProps[t] === undefined
         );
         return (
-          <div className="flex w-full mx-2" key={i}>
-            <div className="w-12 text-4xl">
-              <CharLink traditional={v.traditional} />
-            </div>
-            <div className="flex-1">
-              JS library:
-              <div className="ml-10">
-                <PinyinText v={v} />
-              </div>
+          <div className="w-full" key={i}>
+            <CharCardDetails char={v} />
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 m-2">
               {v.pinyin_anki_1.length ? (
                 <>
                   Anki1:
@@ -98,7 +106,7 @@ export const CharListConflicts: React.FC<{
                 </div>
               ) : undefined}
               {charPhrasesPinyin[v.traditional] ? (
-                <>
+                <p>
                   From phrases:
                   {Object.values(charPhrasesPinyin[v.traditional]).map(
                     (pinyin) => (
@@ -107,9 +115,16 @@ export const CharListConflicts: React.FC<{
                       </div>
                     )
                   )}
-                </>
+                </p>
               ) : undefined}
+              <p>
+                From library:
+                {get_all_pinyin_from_lib(v.traditional, STYLE_TONE).map((p) => (
+                  <p>{p}</p>
+                ))}
+              </p>
             </div>
+            <hr />
           </div>
         );
       })}
