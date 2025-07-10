@@ -189,7 +189,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
     } finally {
       setLoading(false);
     }
-  }, [charPhrasesPinyin]); // Empty dependency array means this function won't change
+  }, [charPhrasesPinyin, settings.characterNote?.noteType]); // Empty dependency array means this function won't change
 
   // Initial load on component mount
   useEffect(() => {
