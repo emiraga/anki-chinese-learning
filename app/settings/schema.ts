@@ -8,6 +8,7 @@ export interface AppSettings {
   }[];
   toolbar?: {
     showPropsLink?: boolean;
+    showStatsLink?: boolean;
   };
 }
 
@@ -82,6 +83,10 @@ export const settingsJsonSchema: JSONSchema7 = {
         showPropsLink: {
           type: "boolean",
           title: "Show 'Props' link in the toolbar.",
+        },
+        showStatsLink: {
+          type: "boolean",
+          title: "Show 'Stats' link in the toolbar.",
         },
       },
     },

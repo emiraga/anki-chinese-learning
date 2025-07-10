@@ -97,49 +97,62 @@ export function useAnkiPhrases() {
           tags: note.tags,
         };
 
-        const sTraditional = traditional
-          .replace("？", "")
-          .replace("?", "")
-          .replace("，", "")
-          .replace(",", "")
-          .replace(" ", "");
-        const sPinyin = pinyin
-          .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
-          .replace(/\<\/span\>/g, "")
-          .replace("<div>", "")
-          .replace("</div>", "")
-          .replace("?", "")
-          .replace(",", "")
-          .replace("&nbsp;", "");
-        const split = pinyinSplit(sPinyin);
-        if (split.length === sTraditional.length) {
-          for (var i = 0; i < split.length; i++) {
-            const t = sTraditional[i];
-            const p = split[i];
-            if (chars[t] === undefined) {
-              chars[t] = {};
-            }
-            if (chars[t][p] === undefined) {
-              const sylable = removeTone(p);
-              const toneMatch = diacriticToNumber(p).match(/([a-z]+)([1-5])*$/);
-              if (!toneMatch) {
-                throw new Error("invalid pinyin: " + p);
+        const processPinyin = (sPinyin: string, sTraditional: string) => {
+          const split = pinyinSplit(sPinyin);
+          if (split.length === sTraditional.length) {
+            for (var i = 0; i < split.length; i++) {
+              const t = sTraditional[i];
+              const p = split[i];
+              if (chars[t] === undefined) {
+                chars[t] = {};
               }
-              let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
-              chars[t][p] = { pinyin: p, sylable, tone, count: 0 };
+              if (chars[t][p] === undefined) {
+                const sylable = removeTone(p);
+                const toneMatch =
+                  diacriticToNumber(p).match(/([a-z]+)([1-5])*$/);
+                if (!toneMatch) {
+                  throw new Error("invalid pinyin: " + p);
+                }
+                let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
+                chars[t][p] = { pinyin: p, sylable, tone, count: 0 };
+              }
+              chars[t][p].count++;
             }
-            chars[t][p].count++;
+          } else {
+            // TODO: show this somewhere more prominent
+            console.log(
+              "Warning invalid Pinyin: " +
+                sPinyin +
+                " Traditional: " +
+                sTraditional
+            );
+          }
+        };
+
+        const variants = note.fields["Variants"]?.value || "";
+
+        if (variants.length > 0) {
+          for (const variant of JSON.parse(variants)) {
+            processPinyin(variant["Pinyin"], variant["Traditional"]);
           }
         } else {
-          // TODO: show this somewhere more prominent
-          console.log(
-            "Warning invalid Pinyin: " +
-              sPinyin +
-              " Traditional: " +
-              sTraditional
+          processPinyin(
+            pinyin
+              .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
+              .replace(/\<\/span\>/g, "")
+              .replace("<div>", "")
+              .replace("</div>", "")
+              .replace("?", "")
+              .replace(",", "")
+              .replace("&nbsp;", ""),
+            traditional
+              .replace("？", "")
+              .replace("?", "")
+              .replace("，", "")
+              .replace(",", "")
+              .replace(" ", "")
           );
         }
-
         loaded.push(info);
       }
 

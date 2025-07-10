@@ -45,7 +45,11 @@ export const MainToolbarNoOutlet: React.FC<{
     { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
     { pathname: "/study", name: "Study", show: phrases.length > 0 },
     { pathname: "/practice", name: "Practice", show: true },
-    { pathname: "/stats", name: "Stats", show: true },
+    {
+      pathname: "/stats",
+      name: "Stats",
+      show: settings.toolbar?.showStatsLink,
+    },
     {
       pathname: "/conflicts",
       name: "Conflicts",
