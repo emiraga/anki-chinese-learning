@@ -2,29 +2,35 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSettings } from "~/settings/SettingsContext";
 
 // Define the main App component
-const App: React.FC = () => {
-  // State variables for text input, audio URL, loading status, and error messages
-  const [textInput, setTextInput] = useState<string>(
-    "你好，這是一個台灣華語語音合成的範例。"
-  );
+const GenerateAudio: React.FC<{ textInput: string }> = ({ textInput }) => {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false); // New state for playback
-  const audioRef = useRef<HTMLAudioElement>(null); // Ref for the audio element
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // State variables for voice and audio configuration
   const [selectedVoiceName, setSelectedVoiceName] =
     useState<string>("cmn-TW-Standard-A");
-  const [selectedGender, setSelectedGender] = useState<
-    "FEMALE" | "MALE" | "NEUTRAL"
-  >("FEMALE");
+  // const [selectedGender, setSelectedGender] = useState<
+  //   "FEMALE" | "MALE" | "NEUTRAL"
+  // >("FEMALE");
   const [speakingRate, setSpeakingRate] = useState<number>(0.6);
   const [pitch, setPitch] = useState<number>(0.0);
   const [volumeGainDb, setVolumeGainDb] = useState<number>(0.0);
   const {
     settings: { googleCloudApiKey },
   } = useSettings();
+
+  // State to store the parameters of the last generated audio
+  const [lastGeneratedParams, setLastGeneratedParams] = useState<{
+    textInput: string;
+    selectedVoiceName: string;
+    // selectedGender: "FEMALE" | "MALE" | "NEUTRAL";
+    speakingRate: number;
+    pitch: number;
+    volumeGainDb: number;
+  } | null>(null);
 
   // List of available Taiwanese Mandarin voices (examples, you can expand this)
   const taiwaneseVoices = [
@@ -38,14 +44,51 @@ const App: React.FC = () => {
     { name: "cmn-TW-Wavenet-D", gender: "FEMALE" },
   ];
 
+  // Function to play audio from the current audioUrl
+  const playExistingAudio = useCallback(() => {
+    if (audioRef.current && audioUrl) {
+      audioRef.current.src = audioUrl; // Ensure src is set
+      audioRef.current.load(); // Load the audio
+      audioRef.current.play();
+      setIsPlaying(true);
+      setError(null); // Clear any previous errors on playback attempt
+    } else if (!audioUrl) {
+      setError("No audio available to play. Generate speech first.");
+    }
+  }, [audioUrl]);
+
   // Function to synthesize speech using Google Cloud Text-to-Speech API
   const synthesizeSpeech = useCallback(async () => {
+    const currentParams = {
+      textInput,
+      selectedVoiceName,
+      // selectedGender,
+      speakingRate,
+      pitch,
+      volumeGainDb,
+    };
+
+    // Check if parameters have changed or if audio hasn't been generated yet
+    const paramsChanged =
+      !lastGeneratedParams ||
+      Object.keys(currentParams).some(
+        (key) =>
+          currentParams[key as keyof typeof currentParams] !==
+          lastGeneratedParams[key as keyof typeof lastGeneratedParams]
+      );
+
+    if (!paramsChanged && audioUrl && audioRef.current) {
+      // Parameters haven't changed and audio already exists, just play it
+      playExistingAudio();
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    setAudioUrl(null); // Clear previous audio
+    setAudioUrl(null); // Clear previous audio URL if generating new audio
     setIsPlaying(false); // Reset playing state
 
-    // Revoke previous object URL to prevent memory leaks
+    // Revoke previous object URL to prevent memory leaks if a new one will be created
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
     }
@@ -67,7 +110,7 @@ const App: React.FC = () => {
             voice: {
               languageCode: "cmn-TW", // Taiwanese Mandarin
               name: selectedVoiceName,
-              ssmlGender: selectedGender,
+              // ssmlGender: selectedGender,
             },
             audioConfig: {
               audioEncoding: "MP3",
@@ -93,6 +136,7 @@ const App: React.FC = () => {
         const audioBlob = base64ToBlob(data.audioContent, "audio/mp3");
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
+        setLastGeneratedParams(currentParams); // Store current parameters
 
         // Automatically play audio after successful generation
         if (audioRef.current) {
@@ -124,12 +168,14 @@ const App: React.FC = () => {
   }, [
     textInput,
     selectedVoiceName,
-    selectedGender,
+    // selectedGender,
     speakingRate,
     pitch,
     volumeGainDb,
     audioUrl,
     googleCloudApiKey,
+    lastGeneratedParams, // Include in dependency array
+    playExistingAudio, // Include in dependency array
   ]);
 
   // Utility function to convert base64 string to Blob
@@ -167,28 +213,6 @@ const App: React.FC = () => {
   return (
     <div className="flex items-center justify-center">
       <div className="w-full max-w-2xl">
-        <h1 className="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-6">
-          Taiwanese Text-to-Speech
-        </h1>
-
-        {/* Text Input Section */}
-        <div className="mb-6">
-          <label
-            htmlFor="textInput"
-            className="block text-gray-700 text-sm font-medium mb-2"
-          >
-            Enter Text (Traditional Chinese):
-          </label>
-          <textarea
-            id="textInput"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-base resize-y min-h-[120px] shadow-sm"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            placeholder="輸入您想轉換成語音的文字..."
-            rows={5}
-          />
-        </div>
-
         {/* Voice and Audio Configuration Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {/* Voice Name Selection */}
@@ -214,7 +238,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Gender Selection */}
-          <div>
+          {/* <div>
             <label
               htmlFor="gender"
               className="block text-gray-700 text-sm font-medium mb-2"
@@ -235,6 +259,26 @@ const App: React.FC = () => {
               <option value="MALE">Male</option>
               <option value="NEUTRAL">Neutral</option>
             </select>
+          </div> */}
+
+          {/* Volume Gain */}
+          <div>
+            <label
+              htmlFor="volumeGainDb"
+              className="block text-gray-700 text-sm font-medium mb-2"
+            >
+              Volume Gain (-96.0 - 16.0 dB): {volumeGainDb.toFixed(1)}
+            </label>
+            <input
+              id="volumeGainDb"
+              type="range"
+              min="-96.0"
+              max="16.0"
+              step="0.5"
+              value={volumeGainDb}
+              onChange={(e) => setVolumeGainDb(parseFloat(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
+            />
           </div>
 
           {/* Speaking Rate */}
@@ -276,33 +320,12 @@ const App: React.FC = () => {
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
             />
           </div>
-
-          {/* Volume Gain */}
-          <div>
-            <label
-              htmlFor="volumeGainDb"
-              className="block text-gray-700 text-sm font-medium mb-2"
-            >
-              Volume Gain (-96.0 - 16.0 dB): {volumeGainDb.toFixed(1)}
-            </label>
-            <input
-              id="volumeGainDb"
-              type="range"
-              min="-96.0"
-              max="16.0"
-              step="0.5"
-              value={volumeGainDb}
-              onChange={(e) => setVolumeGainDb(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
-            />
-          </div>
         </div>
 
-        {/* Generate Speech Button */}
         <button
           onClick={synthesizeSpeech}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-md flex items-center justify-center"
-          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 shadow-md flex items-center justify-center disabled:bg-blue-400"
+          disabled={loading || isPlaying}
         >
           {loading ? (
             <svg
@@ -325,15 +348,13 @@ const App: React.FC = () => {
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               ></path>
             </svg>
+          ) : isPlaying ? (
+            "Playing..."
           ) : (
-            "Generate Speech"
+            "Listen"
           )}
         </button>
 
-        {/* Loading and Error Messages */}
-        {loading && (
-          <p className="text-center text-blue-600 mt-4">Generating audio...</p>
-        )}
         {error && (
           <div
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mt-4"
@@ -351,21 +372,9 @@ const App: React.FC = () => {
           onError={handleAudioError}
           className="hidden" // Keep the audio element hidden
         />
-
-        {/* Optional: Display a visual indicator for playing state if needed */}
-        {audioUrl && !loading && !error && (
-          <div className="mt-6 text-center">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              Audio Playback:
-            </h3>
-            <p className="text-gray-600">
-              {isPlaying ? "Playing..." : "Ready to play (or ended)."}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-export default App;
+export default GenerateAudio;

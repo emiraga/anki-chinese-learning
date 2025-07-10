@@ -11,7 +11,7 @@ export default function Test1() {
     <main>
       <MainToolbar />
       <section className="block m-4">
-        <GenerateAudio />
+        <GenerateAudio textInput="你好，這是一個台灣華。" />
       </section>
     </main>
   );
