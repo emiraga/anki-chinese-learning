@@ -42,6 +42,13 @@ export const MainToolbarNoOutlet: React.FC<{
       name: "Characters",
       show: Object.keys(characters).length > 0,
     },
+    {
+      pathname: "/conflicts",
+      name: "Conflicts",
+      show:
+        getConflictingChars(knownProps, characters, charPhrasesPinyin).length >
+        0,
+    },
     { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
     { pathname: "/study", name: "Study", show: phrases.length > 0 },
     { pathname: "/practice", name: "Practice", show: true },
@@ -49,13 +56,6 @@ export const MainToolbarNoOutlet: React.FC<{
       pathname: "/stats",
       name: "Stats",
       show: settings.toolbar?.showStatsLink,
-    },
-    {
-      pathname: "/conflicts",
-      name: "Conflicts",
-      show:
-        getConflictingChars(knownProps, characters, charPhrasesPinyin).length >
-        0,
     },
     { pathname: "/settings", name: "Settings", show: true },
   ].filter((element) => !!element.show);

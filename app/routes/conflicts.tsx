@@ -19,7 +19,6 @@ export default function Conflicts() {
     <main>
       <MainToolbar />
       <section className="block">
-        <h3 className="font-serif text-3xl m-4">Character conflicts:</h3>
         <CharListConflicts
           knownProps={knownProps}
           characters={characters}

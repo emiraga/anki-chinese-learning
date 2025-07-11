@@ -71,64 +71,69 @@ export const CharListConflicts: React.FC<{
   }
 
   return (
-    <div className="block">
-      {chars.map((v, i) => {
-        const missingProps = v.tags.filter(
-          (t) => t.startsWith("prop::") && knownProps[t] === undefined
-        );
-        return (
-          <div className="w-full" key={i}>
-            <CharCardDetails char={v} />
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 m-2">
-              {v.pinyin_anki_1.length ? (
-                <>
-                  Anki1:
-                  <div
-                    className="ml-10"
-                    dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
-                  ></div>
-                </>
-              ) : undefined}
-              {v.pinyin_anki_2.length ? (
-                <>
-                  Anki2:
-                  <div
-                    className="ml-10"
-                    dangerouslySetInnerHTML={{ __html: v.pinyin_anki_2 }}
-                  ></div>
-                </>
-              ) : undefined}
-              {missingProps.length ? (
-                <div>
-                  Missing props list:
-                  <TagList tags={missingProps} />
-                </div>
-              ) : undefined}
-              {charPhrasesPinyin[v.traditional] ? (
+    <>
+      <h3 className="font-serif text-3xl m-4">
+        Character conflicts ({chars.length}):
+      </h3>
+      <div className="block">
+        {chars.map((v, i) => {
+          const missingProps = v.tags.filter(
+            (t) => t.startsWith("prop::") && knownProps[t] === undefined
+          );
+          return (
+            <div className="w-full" key={i}>
+              <CharCardDetails char={v} />
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 m-2">
+                {v.pinyin_anki_1.length ? (
+                  <>
+                    Anki1:
+                    <div
+                      className="ml-10"
+                      dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
+                    ></div>
+                  </>
+                ) : undefined}
+                {v.pinyin_anki_2.length ? (
+                  <>
+                    Anki2:
+                    <div
+                      className="ml-10"
+                      dangerouslySetInnerHTML={{ __html: v.pinyin_anki_2 }}
+                    ></div>
+                  </>
+                ) : undefined}
+                {missingProps.length ? (
+                  <div>
+                    Missing props list:
+                    <TagList tags={missingProps} />
+                  </div>
+                ) : undefined}
+                {charPhrasesPinyin[v.traditional] ? (
+                  <p>
+                    From phrases:
+                    {Object.values(charPhrasesPinyin[v.traditional]).map(
+                      (pinyin) => (
+                        <div key={pinyin.pinyin} className="ml-10">
+                          <PinyinText v={pinyin} /> - {pinyin.count}
+                        </div>
+                      )
+                    )}
+                  </p>
+                ) : undefined}
                 <p>
-                  From phrases:
-                  {Object.values(charPhrasesPinyin[v.traditional]).map(
-                    (pinyin) => (
-                      <div key={pinyin.pinyin} className="ml-10">
-                        <PinyinText v={pinyin} /> - {pinyin.count}
-                      </div>
+                  From library:
+                  {get_all_pinyin_from_lib(v.traditional, STYLE_TONE).map(
+                    (p, i) => (
+                      <p key={i}>{p}</p>
                     )
                   )}
                 </p>
-              ) : undefined}
-              <p>
-                From library:
-                {get_all_pinyin_from_lib(v.traditional, STYLE_TONE).map(
-                  (p, i) => (
-                    <p key={i}>{p}</p>
-                  )
-                )}
-              </p>
+              </div>
+              <hr />
             </div>
-            <hr />
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 };
