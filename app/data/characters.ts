@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import type { CharsToPhrasesPinyin } from "./phrases";
 import { useSettings } from "~/settings/SettingsContext";
+import { comparePinyin } from "./utils";
 
 export type CharacterType = {
   ankiId: number | null;
@@ -77,7 +78,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
         // Load character info from phrases.
         for (const hanzi of Object.keys(charPhrasesPinyin)) {
           const primaryPinyin = Object.values(charPhrasesPinyin[hanzi]).sort(
-            (a, b) => b.count - a.count
+            comparePinyin
           )[0];
           let info: CharacterType = {
             ankiId: 0,

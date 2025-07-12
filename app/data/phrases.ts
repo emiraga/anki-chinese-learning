@@ -3,6 +3,7 @@ import anki from "~/apis/anki";
 import pinyinSplit from "pinyin-split";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 import { useSettings } from "~/settings/SettingsContext";
+import type { PinyinType } from "./pinyin_function";
 
 export type PhraseType = {
   noteId: number;
@@ -16,12 +17,7 @@ export type PhraseType = {
 
 export type CharsToPhrasesPinyin = {
   [key: string]: {
-    [key: string]: {
-      pinyin: string;
-      tone: number;
-      sylable: string;
-      count: number;
-    };
+    [key: string]: PinyinType;
   };
 };
 

@@ -6,6 +6,7 @@ import { TagList } from "./TagList";
 import type { CharsToPhrasesPinyin } from "~/data/phrases";
 import { get_all_pinyin_from_lib } from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
+import { comparePinyin } from "~/data/utils";
 
 export const CharList: React.FC<{ characters: CharacterType[] }> = ({
   characters,
@@ -34,12 +35,18 @@ export function getConflictingChars(
         }
       }
     }
+    if (v.tags.includes("multiple-pronounciation-character")) {
+      // TODO: handle this better
+      return false;
+    }
+
     if (
       !v.pinyin_anki_1.includes(">" + v.pinyin + "<") &&
       v.pinyin_anki_1 !== v.pinyin
     ) {
       return true;
     }
+
     if (v.withSound) {
       if (!charPhrasesPinyin[v.traditional]) {
         return true;
@@ -48,10 +55,9 @@ export function getConflictingChars(
         return true;
       }
     }
-
     if (charPhrasesPinyin[v.traditional]) {
       const best = Object.values(charPhrasesPinyin[v.traditional]).sort(
-        (a, b) => b.count - a.count
+        comparePinyin
       )[0];
       if (best.pinyin !== v.pinyin) {
         return true;
@@ -111,13 +117,13 @@ export const CharListConflicts: React.FC<{
                 {charPhrasesPinyin[v.traditional] ? (
                   <p>
                     From phrases:
-                    {Object.values(charPhrasesPinyin[v.traditional]).map(
-                      (pinyin) => (
+                    {Object.values(charPhrasesPinyin[v.traditional])
+                      .sort(comparePinyin)
+                      .map((pinyin) => (
                         <div key={pinyin.pinyin} className="ml-10">
                           <PinyinText v={pinyin} /> - {pinyin.count}
                         </div>
-                      )
-                    )}
+                      ))}
                   </p>
                 ) : undefined}
                 <p>

@@ -11,6 +11,7 @@ import { getNewCharacter } from "~/data/characters";
 import { SearchMorePhrases } from "~/components/StudyMore";
 import { PinyinText } from "~/components/PinyinText";
 import { useSettings } from "~/settings/SettingsContext";
+import { comparePinyin } from "~/data/utils";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -87,11 +88,13 @@ export default function CharDetail() {
         {charPhrasesPinyin[charHanzi] &&
         Object.keys(charPhrasesPinyin[charHanzi]).length > 1 ? (
           <>
-            {Object.values(charPhrasesPinyin[charHanzi]).map((pinyin) => (
-              <div key={pinyin.pinyin}>
-                <PinyinText v={pinyin} /> - {pinyin.count}
-              </div>
-            ))}
+            {Object.values(charPhrasesPinyin[charHanzi])
+              .sort(comparePinyin)
+              .map((pinyin) => (
+                <div key={pinyin.pinyin}>
+                  <PinyinText v={pinyin} /> - {pinyin.count}
+                </div>
+              ))}
             <hr className="my-4" />
           </>
         ) : undefined}

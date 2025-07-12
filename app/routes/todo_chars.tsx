@@ -27,12 +27,30 @@ export default function TodoChars() {
   const { settings } = useSettings();
 
   const multiple = Object.values(characters)
-    .map((char) => ({
-      ...char,
-      phrasesPinyin: charPhrasesPinyin[char.traditional] || {},
-    }))
+    .map((char) => {
+      var phrasesPinyin = charPhrasesPinyin[char.traditional] || {};
+      const keys = Object.keys(phrasesPinyin);
+      if (
+        keys.length === 2 &&
+        phrasesPinyin[keys[0]].sylable === phrasesPinyin[keys[1]].sylable
+      ) {
+        if (phrasesPinyin[keys[0]].tone === 5) {
+          delete phrasesPinyin[keys[0]];
+        }
+        if (phrasesPinyin[keys[1]].tone === 5) {
+          delete phrasesPinyin[keys[1]];
+        }
+      }
+      return {
+        ...char,
+        phrasesPinyin,
+      };
+    })
     .filter(
-      (char) => Object.keys(char.phrasesPinyin).length !== 1 && char.withSound
+      (char) =>
+        Object.keys(char.phrasesPinyin).length !== 1 &&
+        char.withSound &&
+        !char.tags.includes("multiple-pronounciation-character")
     );
 
   return (

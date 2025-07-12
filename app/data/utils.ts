@@ -1,3 +1,5 @@
+import type { PinyinType } from "./pinyin_function";
+
 export function removeDuplicateChars(
   str: string,
   ignore: Set<string> | null = null
@@ -25,4 +27,16 @@ export function pickRandomElements<T>(arr: T[], numElements: number): T[] {
     }
   }
   return result;
+}
+
+export function comparePinyin(a: PinyinType, b: PinyinType) {
+  if (a.sylable === b.sylable) {
+    if (a.tone === 5) {
+      return +1;
+    }
+    if (b.tone === 5) {
+      return -1;
+    }
+  }
+  return b.count - a.count;
 }

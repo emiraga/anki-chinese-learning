@@ -1,5 +1,12 @@
 import pinyin from "pinyin";
 
+export type PinyinType = {
+  pinyin: string;
+  tone: number;
+  sylable: string;
+  count: number;
+};
+
 interface ToneMapping {
   STYLE_TONE: string;
   STYLE_TONE2: string;
@@ -20,6 +27,9 @@ const MAP_ANSWER: { [key1: string]: ToneMapping } = {
   許: { STYLE_TONE: "xǔ", STYLE_TONE2: "xu3" },
   胖: { STYLE_TONE: "pàng", STYLE_TONE2: "pang4" },
   微: { STYLE_TONE: "wéi", STYLE_TONE2: "wei2" },
+  期: { STYLE_TONE: "qí", STYLE_TONE2: "qi2" },
+  息: { STYLE_TONE: "xí", STYLE_TONE2: "xi2" },
+  識: { STYLE_TONE: "shì", STYLE_TONE2: "shi4" },
 };
 
 export function get_pinyin(traditional: string, style: number) {
