@@ -26,6 +26,8 @@ export interface PracticeHistory {
   chinese: string;
   userInput?: string;
   type: PracticeHistoryType;
+  aiAdvice?: string;
+  aiGrammarPoint?: string;
 }
 
 enum PracticeType {
@@ -201,6 +203,11 @@ but mix elements from various phrases to make a new sentence.
               ? "⛔️"
               : "🟡"}{" "}
             {s.chinese} || {s.userInput} || {s.english}
+            {s.aiAdvice || s.aiGrammarPoint ? (
+              <p className="text-xs">
+                {s.aiAdvice} || {s.aiGrammarPoint}
+              </p>
+            ) : undefined}
           </p>
         ))}
       </>

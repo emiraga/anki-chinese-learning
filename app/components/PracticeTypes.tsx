@@ -13,9 +13,9 @@ import {
 
 // Defines the structure for the feedback from the AI
 interface AIFeedback {
-  isCorrect: boolean;
   advice: string;
   grammarPoint: string;
+  isCorrect: boolean;
 }
 
 export const PracticeEnglishToChinese: React.FC<{
@@ -89,11 +89,11 @@ export const PracticeEnglishToChinese: React.FC<{
       responseSchema: {
         type: SchemaType.OBJECT,
         properties: {
-          isCorrect: { type: SchemaType.BOOLEAN },
           advice: { type: SchemaType.STRING },
           grammarPoint: { type: SchemaType.STRING },
+          isCorrect: { type: SchemaType.BOOLEAN },
         },
-        required: ["isCorrect", "advice", "grammarPoint"],
+        required: ["advice", "grammarPoint", "isCorrect"],
       },
     };
 
@@ -105,9 +105,9 @@ export const PracticeEnglishToChinese: React.FC<{
       - User's Chinese Answer: "${userInput}"
 
       Based on this, please provide the following:
-      1. isCorrect: A boolean indicating if the user's answer is semantically correct, even with minor typos or alternative phrasing.
-      2. advice: A friendly and concise explanation of the user's mistakes if any.
-      3. grammarPoint: A brief explanation of a relevant grammar points or vocabulary usages from the correct sentence that would help the user learn.
+      1. advice: A friendly and concise explanation of the user's mistakes if any.
+      2. grammarPoint: A brief explanation of a relevant grammar points or vocabulary usages from the correct sentence that would help the user learn.
+      3. isCorrect: A boolean indicating if the user's answer is semantically correct, even with minor typos or alternative phrasing.
 
       Speak using English language, and avoid using simplified characters in explanations use traditional characters instead.
     `;
@@ -128,12 +128,14 @@ export const PracticeEnglishToChinese: React.FC<{
         type: parsedFeedback.isCorrect
           ? PracticeHistoryType.CORRECT
           : PracticeHistoryType.WRONG,
+        aiAdvice: parsedFeedback.advice,
+        aiGrammarPoint: parsedFeedback.grammarPoint,
       });
 
       // The AI is now the source of truth for correctness
       if (parsedFeedback.isCorrect) {
         // If the AI says it's correct, show a success message and move on
-        setFeedback(null); // Clear any previous incorrect feedback
+        setFeedback(parsedFeedback);
         setShowCorrect(true);
         setTimeout(() => {
           handleNextSentence();
