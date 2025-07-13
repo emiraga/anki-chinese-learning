@@ -10,6 +10,8 @@ import {
   type PracticeHistory,
   type PracticeSentencePair,
 } from "./Practice";
+import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
+import { HanziText } from "./HanziText";
 
 // Defines the structure for the feedback from the AI
 interface AIFeedback {
@@ -18,13 +20,43 @@ interface AIFeedback {
   isCorrect: boolean;
 }
 
+export const PracticeWarnUknownChars: React.FC<{
+  characterList: string[];
+  sentence: string;
+}> = ({ characterList, sentence }) => {
+  const unknown = [...sentence].filter((c) => {
+    if (IGNORE_PHRASE_CHARS.has(c)) {
+      return false;
+    }
+    return !characterList.includes(c);
+  });
+  if (unknown.length === 0) {
+    return undefined;
+  }
+  return (
+    <div className="mb-6 p-4 bg-red-100 rounded-lg border border-red-300">
+      <p className="text-sm text-slate-600 mb-1">Warning uknown chars:</p>
+      <p className="text-5xl font-semibold text-slate-900">
+        <HanziText value={unknown.join("")} />
+      </p>
+      <p className="text-sm text-slate-600 my-1">
+        Given that AI used some characters that are uknown to you, consider
+        skipping this sentence, unless you can figure it out with your current
+        vocabulary.
+      </p>
+    </div>
+  );
+};
+
 export const PracticeEnglishToChinese: React.FC<{
+  characterList: string[];
   genAImodel: GenerativeModel;
   sentences: PracticeSentencePair[];
   setError: (_: string | null) => void;
   finishedPracticeCallback: () => void;
   addHistoryCallback: (add: PracticeHistory) => void;
 }> = ({
+  characterList,
   sentences,
   genAImodel,
   setError,
@@ -135,7 +167,7 @@ export const PracticeEnglishToChinese: React.FC<{
       // The AI is now the source of truth for correctness
       if (parsedFeedback.isCorrect) {
         // If the AI says it's correct, show a success message and move on
-        setFeedback(parsedFeedback);
+        setFeedback(null);
         setShowCorrect(true);
         setTimeout(() => {
           handleNextSentence();
@@ -190,6 +222,11 @@ export const PracticeEnglishToChinese: React.FC<{
             ></div>
           </div>
         </div>
+
+        <PracticeWarnUknownChars
+          characterList={characterList}
+          sentence={sentences[currentSentenceIndex].chinese}
+        />
 
         <div className="mb-6 p-4 bg-slate-100 rounded-lg">
           <p className="text-sm text-slate-600 mb-1">English Sentence:</p>
@@ -334,12 +371,18 @@ const PartialReveal: React.FC<{
 };
 
 export const PracticeListeningToChinese: React.FC<{
+  characterList: string[];
   genAImodel: GenerativeModel;
   sentences: PracticeSentencePair[];
   setError: (_: string | null) => void;
   finishedPracticeCallback: () => void;
   addHistoryCallback: (add: PracticeHistory) => void;
-}> = ({ sentences, finishedPracticeCallback, addHistoryCallback }) => {
+}> = ({
+  characterList,
+  sentences,
+  finishedPracticeCallback,
+  addHistoryCallback,
+}) => {
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState<number>(0);
   const [soundPlayed, setSoundPlayed] = useState(false);
   const [answerRevealed, setAnswerRevealed] = useState(false);
@@ -376,6 +419,11 @@ export const PracticeListeningToChinese: React.FC<{
             ></div>
           </div>
         </div>
+
+        <PracticeWarnUknownChars
+          characterList={characterList}
+          sentence={sentences[currentSentenceIndex].chinese}
+        />
 
         <div className="mb-6 p-4 bg-slate-100 rounded-lg">
           <p className="text-md text-slate-600 font-bold mb-1">

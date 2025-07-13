@@ -218,6 +218,7 @@ but mix elements from various phrases to make a new sentence.
       return (
         <>
           <PracticeEnglishToChinese
+            characterList={characterList}
             genAImodel={genAImodel}
             sentences={sentences}
             setError={setError}
@@ -231,6 +232,7 @@ but mix elements from various phrases to make a new sentence.
       return (
         <>
           <PracticeListeningToChinese
+            characterList={characterList}
             genAImodel={genAImodel}
             sentences={sentences}
             setError={setError}

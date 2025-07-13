@@ -54,6 +54,7 @@ const IGNORE_PHRASE_CHARS = new Set([
   "）",
   "＝",
   "’",
+  "！",
 ]);
 export { IGNORE_PHRASE_CHARS };
 
