@@ -254,24 +254,14 @@ def main():
     # Setup Google Cloud credentials
     setup_credentials()
 
-    # for trad in ["請"]:
-    #     update_audio_on_a_note("Hanzi", trad)
-
-    # for trad in ["冰"]:
-    #     update_audio_on_a_note("TOCFL", trad)
-
-    for note_id in find_note_by_empty_audio("TOCFL")[0:100]:
-        note_info = get_note_info(note_id)
-        traditional = note_info['fields']['Traditional']['value']
-        if len(traditional) > 0:
-            update_audio_on_a_note("TOCFL", traditional)
-
-
-    for note_id in find_note_by_empty_audio("MyWords")[0:100]:
-        note_info = get_note_info(note_id)
-        traditional = note_info['fields']['Traditional']['value']
-        if len(traditional) > 0:
-            update_audio_on_a_note("MyWords", traditional)
+    for noteType in ["TOCFL", "MyWords", "Hanzi"]:
+        for note_id in find_note_by_empty_audio(noteType)[0:100]:
+            note_info = get_note_info(note_id)
+            traditional = note_info['fields']['Traditional']['value']
+            if len(traditional) > 0:
+                update_audio_on_a_note(noteType, traditional)
+            else:
+                print("No traditional found", note_info)
 
 
 if __name__ == "__main__":

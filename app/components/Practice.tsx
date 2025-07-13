@@ -46,6 +46,7 @@ const Practice: React.FC<{
   );
   const { settings } = useSettings();
   const [history, setHistory] = useState<PracticeHistory[]>([]);
+  const [instructions, setInstructions] = useState<string>("");
 
   const [error, setError] = useState<string | null>(null);
 
@@ -79,6 +80,8 @@ ${
 
 Consider using these phrases or words in sentences that you genenerate,
 but mix elements from various phrases to make a new sentence.
+
+${instructions}
 `;
   /**
    * Generates 10 simple English sentences and their Traditional Chinese translations.
@@ -149,6 +152,25 @@ but mix elements from various phrases to make a new sentence.
           </>
         ) : (
           <>
+            <div>
+              <label
+                htmlFor="userInput"
+                className="block text-sm font-medium text-slate-700 mb-2"
+              >
+                (optional) Any instructions for the practice:
+              </label>
+              <input
+                type="text"
+                id="userInput"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                className="w-full px-3 mb-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
+                                 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                placeholder="For example: Focus on..."
+                disabled={isGenerating}
+              />
+            </div>
+
             <button
               onClick={async () => {
                 setPracticeType(PracticeType.ENGLISH_TO_CHINESE_TEXT);
