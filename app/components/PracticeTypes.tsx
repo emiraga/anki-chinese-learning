@@ -3,7 +3,7 @@ import {
   SchemaType,
   type GenerationConfig,
 } from "@google/generative-ai";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import GenerateAudio from "./GenerateAudio";
 import {
   PracticeHistoryType,

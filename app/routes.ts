@@ -22,7 +22,6 @@ export default [
   route("sylable/:sylable", "routes/sylable/$sylable.tsx"),
   route("tag/:tagName", "routes/tag/$tagName.tsx"),
   route("tags", "routes/tags.tsx"),
-  route("test1", "routes/test1.tsx"),
   route("todo_chars", "routes/todo_chars.tsx"),
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),

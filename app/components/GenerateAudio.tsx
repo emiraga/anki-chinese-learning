@@ -4,7 +4,7 @@ import { useSettings } from "~/settings/SettingsContext";
 // Define the main App component
 const GenerateAudio: React.FC<{
   textInput: string;
-  finishedPlayCallback: () => void;
+  finishedPlayCallback?: () => void;
 }> = ({ textInput, finishedPlayCallback }) => {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -195,7 +195,9 @@ const GenerateAudio: React.FC<{
   // Handler for when audio playback ends
   const handleAudioEnded = () => {
     setIsPlaying(false);
-    finishedPlayCallback();
+    if (finishedPlayCallback) {
+      finishedPlayCallback();
+    }
   };
 
   // Handler for audio playback errors

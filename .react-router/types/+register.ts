@@ -43,7 +43,6 @@ type Params = {
     "tagName": string;
   };
   "/tags": {};
-  "/test1": {};
   "/todo_chars": {};
   "/tone/:toneName": {
     "toneName": string;
