@@ -165,6 +165,11 @@ export const PracticeEnglishToChinese: React.FC<{
     }
   };
 
+  const handleTryAgainSentence = () => {
+    setFeedback(null);
+    setUserInput("");
+  };
+
   return (
     <div className="container mx-auto max-w-2xl">
       <div className="p-3">
@@ -228,7 +233,6 @@ export const PracticeEnglishToChinese: React.FC<{
                 )}
               </button>
 
-              {/* button taking 1/4 of the width */}
               <button
                 className="w-1/4 items-center px-4 py-3 text-white font-bold rounded-md shadow-sm transition-colors bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 disabled:bg-slate-400 disabled:cursor-not-allowed"
                 onClick={handleSkipAnswer}
@@ -286,12 +290,20 @@ export const PracticeEnglishToChinese: React.FC<{
                 <p className="text-sky-800">{feedback.grammarPoint}</p>
               </div>
             </div>
-            <button
-              onClick={handleNextSentence}
-              className="mt-6 w-full px-4 py-2 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 transition-colors"
-            >
-              Next Sentence
-            </button>
+            <div className="flex w-full gap-x-4">
+              <button
+                onClick={handleNextSentence}
+                className="w-3/4 mt-6 px-4 py-2 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 transition-colors"
+              >
+                Next Sentence
+              </button>
+              <button
+                className="w-1/4 mt-6 px-4 py-2 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 transition-colors"
+                onClick={handleTryAgainSentence}
+              >
+                Try again
+              </button>
+            </div>
           </div>
         )}
       </div>
