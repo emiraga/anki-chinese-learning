@@ -91,7 +91,7 @@ export default function CharDetail() {
             {Object.values(charPhrasesPinyin[charHanzi])
               .sort(comparePinyin)
               .map((pinyin) => (
-                <div key={pinyin.pinyin}>
+                <div key={pinyin.pinyin_1}>
                   <PinyinText v={pinyin} /> - {pinyin.count}
                 </div>
               ))}

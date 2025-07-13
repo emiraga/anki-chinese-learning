@@ -40,3 +40,9 @@ export function comparePinyin(a: PinyinType, b: PinyinType) {
   }
   return b.count - a.count;
 }
+
+export function cleanPinyinAnkiField(pinyin: string) {
+  return pinyin
+    .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
+    .replace(/\<\/span\>/g, "");
+}

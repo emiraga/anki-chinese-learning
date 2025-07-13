@@ -98,7 +98,7 @@ export default function TodoChars() {
           <div key={char.ankiId}>
             <CharLink traditional={char.traditional} className="text-2xl" />
             {Object.values(char.phrasesPinyin).map((pinyin) => (
-              <span className="mx-3" key={pinyin.pinyin}>
+              <span className="mx-3" key={pinyin.pinyin_1}>
                 <PinyinText v={pinyin} />:{pinyin.count}
               </span>
             ))}

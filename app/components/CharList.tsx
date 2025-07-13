@@ -41,8 +41,8 @@ export function getConflictingChars(
     }
 
     if (
-      !v.pinyin_anki_1.includes(">" + v.pinyin + "<") &&
-      v.pinyin_anki_1 !== v.pinyin
+      !v.pinyin_1.includes(">" + v.pinyin_1 + "<") &&
+      v.pinyin_1 !== v.pinyin_1
     ) {
       return true;
     }
@@ -51,7 +51,7 @@ export function getConflictingChars(
       if (!charPhrasesPinyin[v.traditional]) {
         return true;
       }
-      if (!charPhrasesPinyin[v.traditional][v.pinyin]) {
+      if (!charPhrasesPinyin[v.traditional][v.pinyin_1]) {
         return true;
       }
     }
@@ -59,7 +59,7 @@ export function getConflictingChars(
       const best = Object.values(charPhrasesPinyin[v.traditional]).sort(
         comparePinyin
       )[0];
-      if (best.pinyin !== v.pinyin) {
+      if (best.pinyin_1 !== v.pinyin_1) {
         return true;
       }
     }
@@ -90,21 +90,21 @@ export const CharListConflicts: React.FC<{
             <div className="w-full" key={i}>
               <CharCardDetails char={v} />
               <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 m-2">
-                {v.pinyin_anki_1.length ? (
+                {v.pinyin_1.length ? (
                   <>
                     Anki1:
                     <div
                       className="ml-10"
-                      dangerouslySetInnerHTML={{ __html: v.pinyin_anki_1 }}
+                      dangerouslySetInnerHTML={{ __html: v.pinyin_1 }}
                     ></div>
                   </>
                 ) : undefined}
-                {v.pinyin_anki_2.length ? (
+                {v.pinyin_2 && v.pinyin_2.length ? (
                   <>
                     Anki2:
                     <div
                       className="ml-10"
-                      dangerouslySetInnerHTML={{ __html: v.pinyin_anki_2 }}
+                      dangerouslySetInnerHTML={{ __html: v.pinyin_2 }}
                     ></div>
                   </>
                 ) : undefined}
@@ -120,7 +120,7 @@ export const CharListConflicts: React.FC<{
                     {Object.values(charPhrasesPinyin[v.traditional])
                       .sort(comparePinyin)
                       .map((pinyin) => (
-                        <div key={pinyin.pinyin} className="ml-10">
+                        <div key={pinyin.pinyin_1} className="ml-10">
                           <PinyinText v={pinyin} /> - {pinyin.count}
                         </div>
                       ))}

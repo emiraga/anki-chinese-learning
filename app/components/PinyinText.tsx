@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 
 export const PinyinText: React.FC<{
-  v: { pinyin: string; tone: number; sylable: string | null } | null;
+  v: { pinyin_1: string; tone: number; sylable: string | null } | null;
 }> = ({ v }) => {
   const toneColors = [
     "", // Unknown tone
@@ -15,11 +15,13 @@ export const PinyinText: React.FC<{
     return <></>;
   }
   if (v.sylable === null) {
-    return <div className={`font-bold ${toneColors[v.tone]}`}>{v.pinyin}</div>;
+    return (
+      <div className={`font-bold ${toneColors[v.tone]}`}>{v.pinyin_1}</div>
+    );
   }
   return (
     <span className={`font-bold ${toneColors[v.tone]}`}>
-      <Link to={"/sylable/" + v.sylable}>{v.pinyin}</Link>
+      <Link to={"/sylable/" + v.sylable}>{v.pinyin_1}</Link>
     </span>
   );
 };

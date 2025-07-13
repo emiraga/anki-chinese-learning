@@ -1,21 +1,22 @@
 import pinyin from "pinyin";
-import { get_pinyin } from "./pinyin_function";
+import { get_pinyin_unreliable } from "./pinyin_function";
 import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import type { CharsToPhrasesPinyin } from "./phrases";
 import { useSettings } from "~/settings/SettingsContext";
-import { comparePinyin } from "./utils";
+import { cleanPinyinAnkiField, comparePinyin } from "./utils";
+import { diacriticToNumber, removeTone } from "pinyin-tools";
 
 export type CharacterType = {
   ankiId: number | null;
   traditional: string;
   sylable: string;
   tone: number;
-  pinyin: string;
   meaning: string;
   meaning2: string;
-  pinyin_anki_1: string;
-  pinyin_anki_2: string;
+  pinyin_1: string;
+  pinyin_anki_1?: string;
+  pinyin_2?: string;
   mnemonic: string;
   tags: string[];
   withSound: boolean;
@@ -23,8 +24,8 @@ export type CharacterType = {
 };
 
 export function getNewCharacter(traditional: string): CharacterType | null {
-  let realPinyin = get_pinyin(traditional, pinyin.STYLE_TONE);
-  let numberedPinyin = get_pinyin(traditional, pinyin.STYLE_TONE2);
+  let realPinyin = get_pinyin_unreliable(traditional, pinyin.STYLE_TONE);
+  let numberedPinyin = get_pinyin_unreliable(traditional, pinyin.STYLE_TONE2);
 
   const toneMatch = numberedPinyin.match(/([a-z]+)([1-5])*$/);
   if (toneMatch === null) {
@@ -38,11 +39,10 @@ export function getNewCharacter(traditional: string): CharacterType | null {
     traditional: traditional,
     sylable,
     tone,
-    pinyin: realPinyin,
     meaning: "",
     meaning2: "",
-    pinyin_anki_1: "",
-    pinyin_anki_2: "",
+    pinyin_1: realPinyin,
+    pinyin_2: undefined,
     mnemonic: "",
     tags: [],
     withSound: true,
@@ -85,11 +85,9 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             traditional: hanzi,
             sylable: primaryPinyin.sylable,
             tone: primaryPinyin.tone,
-            pinyin: primaryPinyin.pinyin,
             meaning: "",
             meaning2: "",
-            pinyin_anki_1: primaryPinyin.pinyin,
-            pinyin_anki_2: primaryPinyin.pinyin,
+            pinyin_1: primaryPinyin.pinyin_1,
             mnemonic: "",
             tags: [],
             withSound: true,
@@ -126,13 +124,22 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             throw new Error("Not learning sound conflict: " + traditional);
           }
 
-          let realPinyin = get_pinyin(traditional, pinyin.STYLE_TONE);
-          let numberedPinyin = get_pinyin(traditional, pinyin.STYLE_TONE2);
-
-          const toneMatch = numberedPinyin.match(/([a-zü]+)([1-5])*$/);
+          const pinyin_anki_1 = note.fields["Pinyin"].value;
+          const pinyin_1 = cleanPinyinAnkiField(note.fields["Pinyin"].value);
+          const pinyin_2 = note.tags.includes(
+            "multiple-pronounciation-character"
+          )
+            ? cleanPinyinAnkiField(note.fields["Pinyin 2"].value)
+            : undefined;
+          const sylable = removeTone(pinyin_1);
+          const toneMatch =
+            diacriticToNumber(pinyin_1).match(/([a-z]+)([1-5])*$/);
           if (!toneMatch) {
-            throw new Error("Mistake in Hanzi char: " + traditional);
+            console.log(pinyin_1);
+            throw new Error("invalid pinyin: " + pinyin_1);
           }
+          let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
+
           if (
             note.tags.includes("not-learning-sound-yet") &&
             note.tags.includes("not-learning-meaning-yet")
@@ -142,19 +149,17 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
                 traditional
             );
           }
-          const sylable = toneMatch[1];
-          const tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
           let info: CharacterType = {
             ankiId: note.noteId,
             traditional,
             sylable,
             tone,
-            pinyin: realPinyin,
             meaning: note.fields["Meaning"].value,
             meaning2:
               note.fields["Meaning2"]?.value || note.fields["Meaning"].value,
-            pinyin_anki_1: note.fields["Pinyin"].value,
-            pinyin_anki_2: note.fields["Pinyin 2"].value,
+            pinyin_1,
+            pinyin_anki_1,
+            pinyin_2,
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,
             withSound: !note.tags.includes("not-learning-sound-yet"),

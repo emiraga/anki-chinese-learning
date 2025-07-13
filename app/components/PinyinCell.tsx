@@ -18,8 +18,8 @@ export const PinyinCell: React.FC<{
     return <></>;
   }
   let isSingle = Object.values(knownSounds[value]).length === 1;
-  let pinyin = isSingle
-    ? Object.values(knownSounds[value])[0][0].pinyin
+  let pinyin_1 = isSingle
+    ? Object.values(knownSounds[value])[0][0].pinyin_1
     : value;
   let tone = isSingle ? Object.values(knownSounds[value])[0][0].tone : 0;
   let sylable = Object.values(knownSounds[value])[0][0].sylable;
@@ -31,7 +31,7 @@ export const PinyinCell: React.FC<{
         className={styles.Button}
         style={isSingle ? {} : { fontWeight: "bolder" }}
       >
-        <PinyinText v={{ pinyin, tone, sylable }} />
+        <PinyinText v={{ pinyin_1, tone, sylable }} />
       </Tooltip.Trigger>
 
       <Tooltip.Portal>
