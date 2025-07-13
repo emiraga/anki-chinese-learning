@@ -5,7 +5,11 @@ import {
 } from "@google/generative-ai";
 import { useEffect, useState } from "react";
 import GenerateAudio from "./GenerateAudio";
-import type { PracticeHistory, PracticeSentencePair } from "./Practice";
+import {
+  PracticeHistoryType,
+  type PracticeHistory,
+  type PracticeSentencePair,
+} from "./Practice";
 
 // Defines the structure for the feedback from the AI
 interface AIFeedback {
@@ -44,7 +48,7 @@ export const PracticeEnglishToChinese: React.FC<{
       addHistoryCallback({
         ...sentences[currentSentenceIndex],
         userInput: userInput,
-        userIsCorrect: true,
+        type: PracticeHistoryType.CORRECT,
       });
       setTimeout(() => {
         handleNextSentence();
@@ -54,6 +58,16 @@ export const PracticeEnglishToChinese: React.FC<{
       // If it's not an exact match, ask the AI for a semantic evaluation.
       await handleGetFeedback();
     }
+  };
+
+  const handleSkipAnswer = async () => {
+    addHistoryCallback({
+      ...sentences[currentSentenceIndex],
+      userInput: userInput,
+      type: PracticeHistoryType.SKIPPED,
+    });
+    handleNextSentence();
+    setShowCorrect(false);
   };
 
   /**
@@ -111,7 +125,9 @@ export const PracticeEnglishToChinese: React.FC<{
       addHistoryCallback({
         ...sentences[currentSentenceIndex],
         userInput: userInput,
-        userIsCorrect: parsedFeedback.isCorrect,
+        type: parsedFeedback.isCorrect
+          ? PracticeHistoryType.CORRECT
+          : PracticeHistoryType.WRONG,
       });
 
       // The AI is now the source of truth for correctness
@@ -194,20 +210,33 @@ export const PracticeEnglishToChinese: React.FC<{
               disabled={!!feedback || showCorrect || isGrading}
             />
           </div>
-          <button
-            onClick={handleSubmitAnswer}
-            disabled={isGrading || !userInput || !!feedback || showCorrect}
-            className="w-full flex justify-center items-center px-4 py-3 bg-green-600 text-white font-bold rounded-md shadow-sm hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {isGrading ? (
-              <>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-                Grading...
-              </>
-            ) : (
-              "Submit Answer"
-            )}
-          </button>
+
+          {!showCorrect && !feedback ? (
+            <div className="flex w-full gap-x-4">
+              <button
+                onClick={handleSubmitAnswer}
+                disabled={isGrading || !userInput}
+                className="w-3/4 flex justify-center items-center px-4 py-3 bg-green-600 text-white font-bold rounded-md shadow-sm hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {isGrading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+                    Grading...
+                  </>
+                ) : (
+                  "Submit Answer"
+                )}
+              </button>
+
+              {/* button taking 1/4 of the width */}
+              <button
+                className="w-1/4 items-center px-4 py-3 text-white font-bold rounded-md shadow-sm transition-colors bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                onClick={handleSkipAnswer}
+              >
+                Skip
+              </button>
+            </div>
+          ) : undefined}
         </div>
 
         {showCorrect && (
@@ -408,7 +437,7 @@ export const PracticeListeningToChinese: React.FC<{
               onClick={() => {
                 addHistoryCallback({
                   ...sentences[currentSentenceIndex],
-                  userIsCorrect: true,
+                  type: PracticeHistoryType.CORRECT,
                 });
                 handleNextSentence();
               }}
@@ -420,7 +449,7 @@ export const PracticeListeningToChinese: React.FC<{
               onClick={() => {
                 addHistoryCallback({
                   ...sentences[currentSentenceIndex],
-                  userIsCorrect: false,
+                  type: PracticeHistoryType.WRONG,
                 });
                 handleNextSentence();
               }}

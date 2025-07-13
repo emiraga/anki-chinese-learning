@@ -15,11 +15,17 @@ export interface PracticeSentencePair {
   chinese: string;
 }
 
+export enum PracticeHistoryType {
+  CORRECT,
+  WRONG,
+  SKIPPED,
+}
+
 export interface PracticeHistory {
   english: string;
   chinese: string;
   userInput?: string;
-  userIsCorrect: boolean;
+  type: PracticeHistoryType;
 }
 
 enum PracticeType {
@@ -189,7 +195,11 @@ but mix elements from various phrases to make a new sentence.
         History:
         {history.map((s, i) => (
           <p key={i}>
-            {s.userIsCorrect ? "✅" : "⛔️"}
+            {s.type === PracticeHistoryType.CORRECT
+              ? "✅"
+              : s.type === PracticeHistoryType.WRONG
+              ? "⛔️"
+              : "🟡"}{" "}
             {s.chinese} || {s.userInput} || {s.english}
           </p>
         ))}
