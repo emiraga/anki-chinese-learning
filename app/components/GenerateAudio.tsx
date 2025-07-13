@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSettings } from "~/settings/SettingsContext";
 
 // Define the main App component
-const GenerateAudio: React.FC<{ textInput: string }> = ({ textInput }) => {
+const GenerateAudio: React.FC<{
+  textInput: string;
+  finishedPlayCallback: () => void;
+}> = ({ textInput, finishedPlayCallback }) => {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -192,6 +195,7 @@ const GenerateAudio: React.FC<{ textInput: string }> = ({ textInput }) => {
   // Handler for when audio playback ends
   const handleAudioEnded = () => {
     setIsPlaying(false);
+    finishedPlayCallback();
   };
 
   // Handler for audio playback errors

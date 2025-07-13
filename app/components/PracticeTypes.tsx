@@ -331,32 +331,6 @@ const PartialReveal: React.FC<{
   );
 };
 
-const RevealText: React.FC<{
-  textInput: string;
-}> = ({ textInput }) => {
-  const [shown, setShown] = useState(false);
-  if (shown) {
-    return textInput;
-  }
-  return <button onClick={() => setShown(true)}>Reveal correct answer.</button>;
-};
-
-const DelayShowing: React.FC<{
-  seconds: number;
-  children: React.ReactNode;
-}> = ({ seconds, children }) => {
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setShown(true);
-    }, seconds * 1000);
-    return () => clearTimeout(id);
-  });
-  if (shown) {
-    return children;
-  }
-};
-
 export const PracticeListeningToChinese: React.FC<{
   genAImodel: GenerativeModel;
   sentences: PracticeSentencePair[];
@@ -365,11 +339,15 @@ export const PracticeListeningToChinese: React.FC<{
   addHistoryCallback: (add: PracticeHistory) => void;
 }> = ({ sentences, finishedPracticeCallback, addHistoryCallback }) => {
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState<number>(0);
+  const [soundPlayed, setSoundPlayed] = useState(false);
+  const [answerRevealed, setAnswerRevealed] = useState(false);
 
   /**
    * Moves to the next sentence in the list.
    */
   const handleNextSentence = () => {
+    setSoundPlayed(false);
+    setAnswerRevealed(false);
     if (currentSentenceIndex < sentences.length - 1) {
       setCurrentSentenceIndex(currentSentenceIndex + 1);
     } else {
@@ -401,76 +379,88 @@ export const PracticeListeningToChinese: React.FC<{
           <p className="text-md text-slate-600 font-bold mb-1">
             Listen to the Sentence:
           </p>
-          <GenerateAudio textInput={sentences[currentSentenceIndex].chinese} />
+          <GenerateAudio
+            textInput={sentences[currentSentenceIndex].chinese}
+            finishedPlayCallback={() => setSoundPlayed(true)}
+          />
         </div>
 
-        <div className="space-y-4 mb-6 ">
-          <div>
-            <label
-              htmlFor="userInput"
-              className="block text-sm font-medium text-slate-700 mb-2"
-            >
-              Chinese text
-            </label>
-            <div
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
+        {soundPlayed ? (
+          <>
+            <div className="space-y-4 mb-6 ">
+              <div>
+                <label
+                  htmlFor="userInput"
+                  className="block text-sm font-medium text-slate-700 mb-2"
+                >
+                  Chinese text (you can reveal it partially if not sure)
+                </label>
+                <div
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
                                focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-            >
-              <PartialReveal
-                key={sentences[currentSentenceIndex].chinese}
-                textInput={sentences[currentSentenceIndex].chinese}
-              />
-            </div>
-          </div>
-        </div>
-        <DelayShowing seconds={3} key={currentSentenceIndex}>
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="userInput"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                English text (correct answer)
-              </label>
-              <div
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
-                                 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-              >
-                <RevealText
-                  key={sentences[currentSentenceIndex].english}
-                  textInput={sentences[currentSentenceIndex].english}
-                />
+                >
+                  <PartialReveal
+                    key={sentences[currentSentenceIndex].chinese}
+                    textInput={sentences[currentSentenceIndex].chinese}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="userInput"
+                  className="block text-sm font-medium text-slate-700 mb-2"
+                >
+                  English text (correct answer)
+                </label>
+                <div
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
+                                 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+                >
+                  {answerRevealed ? (
+                    sentences[currentSentenceIndex].english
+                  ) : (
+                    <button onClick={() => setAnswerRevealed(true)}>
+                      show correct answer
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : undefined}
 
-          <div className="flex">
-            <button
-              onClick={() => {
-                addHistoryCallback({
-                  ...sentences[currentSentenceIndex],
-                  type: PracticeHistoryType.CORRECT,
-                });
-                handleNextSentence();
-              }}
-              className="mt-6 mr-2 w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 transition-colors"
-            >
-              Correct
-            </button>
-            <button
-              onClick={() => {
-                addHistoryCallback({
-                  ...sentences[currentSentenceIndex],
-                  type: PracticeHistoryType.WRONG,
-                });
-                handleNextSentence();
-              }}
-              className="mt-6 ml-2 w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 transition-colors"
-            >
-              Incorrect
-            </button>
-          </div>
-        </DelayShowing>
+        {answerRevealed ? (
+          <>
+            <div className="flex">
+              <button
+                onClick={() => {
+                  addHistoryCallback({
+                    ...sentences[currentSentenceIndex],
+                    type: PracticeHistoryType.CORRECT,
+                  });
+                  handleNextSentence();
+                }}
+                className="mt-6 mr-2 w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 transition-colors"
+              >
+                Correct
+              </button>
+              <button
+                onClick={() => {
+                  addHistoryCallback({
+                    ...sentences[currentSentenceIndex],
+                    type: PracticeHistoryType.WRONG,
+                  });
+                  handleNextSentence();
+                }}
+                className="mt-6 ml-2 w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 transition-colors"
+              >
+                Incorrect
+              </button>
+            </div>
+          </>
+        ) : undefined}
       </div>
     </div>
   );
