@@ -58,6 +58,14 @@ export const PromptsLink: React.FC<{ char: string }> = ({ char }) => {
     final: "???",
   };
 
+  const ordinals: { [key: number]: string } = {
+    1: "first",
+    2: "second",
+    3: "third",
+    4: "fourth",
+    5: "fifth",
+  };
+
   return (
     <>
       <button
@@ -66,14 +74,16 @@ export const PromptsLink: React.FC<{ char: string }> = ({ char }) => {
           const prompt = `I am using mnemonic system to remember Chinese characters.
 I want to learn ${c.traditional}
 which has a meaning: "${c.meaning}"
-and it's pronounced: "${c.pinyin_1}"
+and it's pronounced: "${c.pinyin_1}" basically ${c.sylable} with a ${
+            ordinals[c.tone]
+          } tone.
 
 This character consists of following props:
 ${c.tags
   .filter((t) => t.startsWith("prop::"))
   .map((tag) => {
     const t = knownProps[tag];
-    return `${t.hanzi} ${t.prop.replace("-", " ")}`;
+    return `${t.hanzi} ${t.prop.replaceAll("-", " ")}`;
   })
   .join("\n")}
 
@@ -86,7 +96,11 @@ Then on those props actor should interact with at the specified location.
 
 Make stories interesting and succinct to make them easier to remember.
 Sometimes you can ignore some props if there are too many of them,
-and story would flow better without a particular prop.`;
+and story would flow better without a particular prop.
+
+For every story, add extra sections giving a succinct versions of the story,
+but also mention the actor and a location.
+`;
           await navigator.clipboard.writeText(prompt);
         }}
       >
