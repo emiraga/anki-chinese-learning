@@ -6,7 +6,7 @@ import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
 import { PROP_MISC_TAGS } from "~/data/props";
 import { PhraseList } from "~/components/Phrase";
-import { LearnLink } from "~/components/Claude";
+import { LearnLink, PromptsLink } from "~/components/Claude";
 import { getNewCharacter } from "~/data/characters";
 import { SearchMorePhrases } from "~/components/StudyMore";
 import { PinyinText } from "~/components/PinyinText";
@@ -72,6 +72,7 @@ export default function CharDetail() {
         </h3>
         <hr className="my-4" />
         <LearnLink char={char.traditional} />
+        <PromptsLink char={char.traditional} />
         <hr className="my-4" />
         <CharCardDetails char={char} />
         <div>

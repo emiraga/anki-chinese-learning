@@ -1,5 +1,6 @@
 import { useOutletContext } from "react-router";
 import { CLAUDE_NEW_QUERY, sentencesPrompt } from "~/apis/claude";
+import { ACTOR_NAMES_MAP, REVERSE_FULL_MAP } from "~/data/pinyin_table";
 import type { OutletContext } from "~/data/types";
 
 export const LearnAllCharsLink: React.FC<{}> = ({}) => {
@@ -19,10 +20,7 @@ export const LearnAllCharsLink: React.FC<{}> = ({}) => {
 };
 
 export const LearnLink: React.FC<{ char: string }> = ({ char }) => {
-  const { characters, knownProps } = useOutletContext<OutletContext>();
-  const c = characters[char];
-
-  console.log();
+  const { characters } = useOutletContext<OutletContext>();
 
   return (
     <>
@@ -37,6 +35,26 @@ export const LearnLink: React.FC<{ char: string }> = ({ char }) => {
       >
         AI char
       </a>
+    </>
+  );
+};
+
+export const PromptsLink: React.FC<{ char: string }> = ({ char }) => {
+  const { characters, knownProps } = useOutletContext<OutletContext>();
+  const c = characters[char];
+
+  if (REVERSE_FULL_MAP[c.sylable] === undefined) {
+    console.error(c.sylable);
+    console.error(Object.keys(REVERSE_FULL_MAP));
+    throw new Error("REVERSE_FULL_MAP[char.sylable] === undefined");
+  }
+  const { initial, final } = REVERSE_FULL_MAP[c.sylable] || {
+    initial: "???",
+    final: "???",
+  };
+
+  return (
+    <>
       <button
         className="rounded-2xl m-1 border-2 p-1 hover:bg-red-200"
         onClick={async () => {
@@ -54,7 +72,7 @@ ${c.tags
   })
   .join("\n")}
 
-Actor is Isabelle (my ex girlfriend)
+Actor is ${ACTOR_NAMES_MAP[initial]}.
 Location is Engineering (where I studied at university) in the bathroom.
 
 Come up with several stories, they should involve mentioned props,

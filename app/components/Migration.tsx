@@ -7,6 +7,7 @@ import {
   FULL_MAP,
   LOCATION_TAGS_MAP,
   PLACE_TAGS_MAP,
+  REVERSE_FULL_MAP,
 } from "~/data/pinyin_table";
 import { PropCard } from "./PropCard";
 import { useEffect, useState } from "react";
@@ -89,24 +90,14 @@ function MigrationColorsInAnki() {
 function MigrationActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
 
-  const reverseMap: { [key: string]: { initial: string; final: string } } = {};
-  Object.entries(FULL_MAP).forEach(([initial, rest]) => {
-    Object.entries(rest).forEach(([final, sylable]) => {
-      if (sylable.length === 0) {
-        return;
-      }
-      reverseMap[sylable] = { initial, final };
-    });
-  });
-
   const filtered = Object.values(characters)
     .map((char) => {
-      if (reverseMap[char.sylable] === undefined) {
+      if (REVERSE_FULL_MAP[char.sylable] === undefined) {
         console.error(char.sylable);
-        console.error(Object.keys(reverseMap));
-        throw new Error("reverseMap[char.sylable] === undefined");
+        console.error(Object.keys(REVERSE_FULL_MAP));
+        throw new Error("REVERSE_FULL_MAP[char.sylable] === undefined");
       }
-      const { initial, final } = reverseMap[char.sylable] || {
+      const { initial, final } = REVERSE_FULL_MAP[char.sylable] || {
         initial: "???",
         final: "???",
       };

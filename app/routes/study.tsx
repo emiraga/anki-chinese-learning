@@ -6,7 +6,7 @@ import { useAsync } from "react-async-hook";
 import { getProblematicCardsComprehensive } from "~/data/problematic";
 import MainFrame from "~/toolbar/frame";
 import ProblematicTable from "~/components/Problematic";
-import { LearnLink } from "~/components/Claude";
+import { LearnAllCharsLink, LearnLink } from "~/components/Claude";
 import Section from "~/toolbar/section";
 import { HanziText } from "~/components/HanziText";
 import { StudyMore } from "~/components/StudyMore";
@@ -48,14 +48,14 @@ export default function Study() {
   return (
     <MainFrame>
       <Section className="m-1">
-        <LearnLink />
+        <LearnAllCharsLink />
       </Section>
 
       <Section className="text-center" loading={!current} error={errorCurrent}>
         <h1 className="text-9xl mx-auto">
           <HanziText value={current} />
         </h1>
-        <LearnLink char={current} />
+        <LearnLink char={current || ""} />
       </Section>
 
       <Section

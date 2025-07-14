@@ -73,70 +73,88 @@ JSON_DATA.initials.forEach((initial, initialIndex) => {
   });
 });
 
-const ACTOR_TAGS_MAP: { [key: string]: string } = {
+const REVERSE_FULL_MAP: { [key: string]: { initial: string; final: string } } =
+  {};
+Object.entries(FULL_MAP).forEach(([initial, rest]) => {
+  Object.entries(rest).forEach(([final, sylable]) => {
+    if (sylable.length === 0) {
+      return;
+    }
+    REVERSE_FULL_MAP[sylable] = { initial, final };
+  });
+});
+
+export const ACTOR_NAMES_MAP: { [key: string]: string } = {
   // Male actors
-  "_-": "actor::er-einstein",
-  "d-": "actor::d-dracula",
-  "y-": "actor::yi-isabelle",
-  "sh-": "actor::sh-sheldon",
-  "l-": "actor::l-leonardo",
-  "p-": "actor::p-peter-parker",
-  "z-": "actor::z-zorro",
-  "r-": "actor::r-rock",
-  "w-": "actor::w-wu-woody",
-  "t-": "actor::t-terminator",
-  "zh-": "actor::zh-johnny-cash",
-  "g-": "actor::g-gandalf",
-  "m-": "actor::m-max",
-  "h-": "actor::h-hamza",
-  "k-": "actor::k-keanu",
-  "n-": "actor::n-neil-degrasse-tyson",
-  "f-": "actor::f-ferran",
-  "ch-": "actor::ch-charlie-chaplin",
-  "b-": "actor::b-bruce",
-  "c-": "actor::c-caesar",
-  "s-": "actor::s-sammy",
+  "_-": "Einstein",
+  "d-": "Dracula",
+  "y-": "Isabelle",
+  "sh-": "Sheldon",
+  "l-": "Leonardo",
+  "p-": "Peter Parker",
+  "z-": "Zorro",
+  "r-": "Rock",
+  "w-": "Woody",
+  "t-": "Terminator",
+  "zh-": "Johnny Cash",
+  "g-": "Gandalf",
+  "m-": "Max",
+  "h-": "Hamza",
+  "k-": "Keanu",
+  "n-": "Neil Degrasse Tyson",
+  "f-": "Ferran",
+  "ch-": "Charlie Chaplin",
+  "b-": "Bruce",
+  "c-": "Caesar",
+  "s-": "Sammy",
 
   // Female girls
-  "mi-": "actor::mi-sibei",
-  "ji-": "actor::ji-jing",
-  "qi-": "actor::qi-chiharu",
-  "xi-": "actor::xi-shirley",
-  "ni-": "actor::ni-nicole",
-  "li-": "actor::li-linh-k-vu",
-  "ti-": "actor::ti-rhea-tulod",
-  "pi-": "actor::pi-phatima",
-  "bi-": "actor::bi-bonnie",
-  "di-": "actor::di-diane",
+  "mi-": "Sibei",
+  "ji-": "Jing",
+  "qi-": "Chiharu",
+  "xi-": "Shirley",
+  "ni-": "Nicole",
+  "li-": "Linh K Vu",
+  "ti-": "Rhea Tulod",
+  "pi-": "Phatima",
+  "bi-": "Bonnie",
+  "di-": "Diane",
 
   // Fictional
-  "mu-": "actor::mu-mulan",
-  "zu-": "actor::zu-zoolander",
-  "gu-": "actor::gu-goofy",
-  "bu-": "actor::bu-bugs-bunny",
-  "shu-": "actor::shu-sherlock-holmes",
-  "hu-": "actor::hu-hugo",
-  "ru-": "actor::ru-rooster",
-  "du-": "actor::du-donald-duck",
-  "su-": "actor::su-superman",
-  "zhu-": "actor::zhu-juliet",
-  "lu-": "actor::lu-luigi",
-  "chu-": "actor::chu-chewbacca",
-  "fu-": "actor::fu-fury-nick-marvel",
-  "ku-": "actor::ku-cookie-monster",
-  "tu-": "actor::tu-turk",
-  "cu-": "actor::cu-cupid",
-  "nu-": "actor::nu-naruto",
-  "pu-": "actor::pu-popeye",
+  "mu-": "Mulan",
+  "zu-": "Zoolander",
+  "gu-": "Goofy",
+  "bu-": "Bugs-bunny",
+  "shu-": "Sherlock Holmes",
+  "hu-": "Hugo",
+  "ru-": "Rooster",
+  "du-": "Donald Duck",
+  "su-": "Superman",
+  "zhu-": "Juliet",
+  "lu-": "Luigi",
+  "chu-": "Chewbacca",
+  "fu-": "Fury Nick Marvel",
+  "ku-": "Cookie Monster",
+  "tu-": "Turk",
+  "cu-": "Cupid",
+  "nu-": "Naruto",
+  "pu-": "Popeye",
 
   // Scientists
-  "nv-": "actor::nu-newton-isaac",
-  "ju-": "actor::ju-joule",
-  "qu-": "actor::qu-curie-maria",
-  "xu-": "actor::xu-schrödinger",
-  "lv-": "actor::lv-lovelace-ada",
-  "yu-": "actor::yu-euler",
+  "nv-": "Newton Isaac",
+  "ju-": "James Prescott Joule",
+  "qu-": "Curie Maria",
+  "xu-": "Schrödinger",
+  "lv-": "Lovelace Ada",
+  "yu-": "Leonhard Euler",
 };
+
+const ACTOR_TAGS_MAP: { [key: string]: string } = Object.fromEntries(
+  Object.entries(ACTOR_NAMES_MAP).map(([k, v]) => [
+    k,
+    `actor::${k}${v.toLowerCase().replaceAll(" ", "-")}`,
+  ])
+);
 
 const PLACE_TAGS_MAP: { [key: string]: string } = {
   "-_": "place::null-apartment",
@@ -166,6 +184,7 @@ const LOCATION_TAGS_MAP: { [key: number]: string } = {
 export {
   JSON_DATA,
   FULL_MAP,
+  REVERSE_FULL_MAP,
   INITIAL_TYPE,
   ACTOR_TAGS_MAP,
   PLACE_TAGS_MAP,
