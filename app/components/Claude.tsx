@@ -1,6 +1,11 @@
 import { useOutletContext } from "react-router";
 import { CLAUDE_NEW_QUERY, sentencesPrompt } from "~/apis/claude";
-import { ACTOR_NAMES_MAP, REVERSE_FULL_MAP } from "~/data/pinyin_table";
+import {
+  ACTOR_NAMES_MAP,
+  LOCATION_NAMES_MAP,
+  PLACE_NAMES_MAP,
+  REVERSE_FULL_MAP,
+} from "~/data/pinyin_table";
 import type { OutletContext } from "~/data/types";
 
 export const LearnAllCharsLink: React.FC<{}> = ({}) => {
@@ -73,7 +78,7 @@ ${c.tags
   .join("\n")}
 
 Actor is ${ACTOR_NAMES_MAP[initial]}.
-Location is Engineering (where I studied at university) in the bathroom.
+Location is ${PLACE_NAMES_MAP[final]} ${LOCATION_NAMES_MAP[c.tone]}.
 
 Come up with several stories, they should involve mentioned props,
 and that story should associate towards the primary meaning of the character.

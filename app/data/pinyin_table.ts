@@ -156,6 +156,23 @@ const ACTOR_TAGS_MAP: { [key: string]: string } = Object.fromEntries(
   ])
 );
 
+const PLACE_NAMES_MAP: { [key: string]: string } = {
+  "-_": "My childhood Apartment where I grew up",
+  "-er": "My childhood Apartment where I grew up",
+  "-e": "Elementary school",
+  "-ai": "Highschool",
+  "-(e)n": "My brothers house in Sweden",
+  "-(o)u": "Bowling Place",
+  "-o": "Facebook Office",
+  "-a": "Amsterdam apartment",
+  "-ong": "Gym at the Menlo Park at the office",
+  "-ang": "Taiwan apartment",
+  "-(e)i": "Coffeeshop like Starbucks",
+  "-an": "Macchu Picchu in Andes",
+  "-ao": "Cousins House in San Jose",
+  "-(e)ng": "Engineering (where I studied at university)",
+};
+
 const PLACE_TAGS_MAP: { [key: string]: string } = {
   "-_": "place::null-apartment",
   "-er": "place::null-apartment",
@@ -173,6 +190,14 @@ const PLACE_TAGS_MAP: { [key: string]: string } = {
   "-(e)ng": "place::eng-ng-engineering",
 };
 
+const LOCATION_NAMES_MAP: { [key: number]: string } = {
+  1: "in front of the entrance to indicate high tone (first tone)",
+  2: "in the hallway to indicate rising tone (second tone)",
+  3: "in the bedroom or some resting place (with a seat, bed or bench) to indicate low tone (third tone)",
+  4: "in the bathroom or backyard to indicate falling tone (fourth tone)",
+  5: "on the roof to indicate neutral tone (fifth tone)",
+};
+
 const LOCATION_TAGS_MAP: { [key: number]: string } = {
   1: "tone::t1-front-high",
   2: "tone::t2-hallway-rising",
@@ -187,6 +212,8 @@ export {
   REVERSE_FULL_MAP,
   INITIAL_TYPE,
   ACTOR_TAGS_MAP,
+  PLACE_NAMES_MAP,
   PLACE_TAGS_MAP,
+  LOCATION_NAMES_MAP,
   LOCATION_TAGS_MAP,
 };
