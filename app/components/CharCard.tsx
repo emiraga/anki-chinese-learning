@@ -196,7 +196,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
 
           <TagList tags={char.tags} />
           <div
-            className="text-xs w-52 max-h-64 overflow-scroll m-4 bg-gray-200"
+            className="text-xs w-96 max-h-64 overflow-scroll m-4 bg-gray-200"
             dangerouslySetInnerHTML={{ __html: char.mnemonic }}
           ></div>
         </div>

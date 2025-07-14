@@ -1,11 +1,7 @@
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "./CharCard";
-import anki, {
-  useAnkiCards,
-  type NoteInfo,
-  type NoteWithCards,
-} from "~/apis/anki";
+import anki, { useAnkiCards, type NoteWithCards } from "~/apis/anki";
 import {
   ACTOR_TAGS_MAP,
   FULL_MAP,
@@ -41,7 +37,25 @@ function MigrationColorsInAnki() {
   }
   return (
     <>
-      <h3 className="font-serif text-3xl">Migration of colors:</h3>
+      <h3 className="font-serif text-3xl">
+        Migration of colors:{" "}
+        <button
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200"
+          onClick={async () => {
+            for (const char of filtered) {
+              await anki.note.updateNoteFields({
+                note: {
+                  id: char.ankiId || 0,
+                  fields: { Pinyin: char.expected_pinyin },
+                },
+              });
+            }
+            alert("Fixed all!");
+          }}
+        >
+          Auto-fix all!
+        </button>
+      </h3>
 
       <div className="mx-4">
         {filtered.map((char, i) => (
@@ -131,7 +145,23 @@ function MigrationActorPlaceAnki() {
   return (
     <>
       <h3 className="font-serif text-3xl">
-        Migration of actor, place and tone:
+        Migration of actor, place and tone:{" "}
+        <button
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200"
+          onClick={async () => {
+            for (const char of filtered) {
+              for (const needTag of char.needTags) {
+                await anki.note.addTags({
+                  notes: [char.ankiId || 0],
+                  tags: needTag,
+                });
+              }
+            }
+            alert("Fixed!");
+          }}
+        >
+          Auto-fix all!
+        </button>
       </h3>
       {filtered.map((char, i) => {
         return (
@@ -447,15 +477,18 @@ function MixedNew({
     .filter((note) => note.modelName === noteType)
     .map((note) => ({
       ...note,
-      learningCards: note.cardDetails.filter((c) => c.due !== 0 && c.due < 3000)
-        .length,
+      learningCards: note.cardDetails.filter(
+        (c) => c.due !== 0 && c.due < 3000
+      ),
       newCards: note.cardDetails.filter(
         (c) =>
           (c.due === 0 || c.due > 3000) &&
           !note.tags.includes(`card-${c.ord}-ignored-on-purpose`)
-      ).length,
+      ),
     }))
-    .filter((note) => note.learningCards > 0 && note.newCards > 0);
+    .filter(
+      (note) => note.learningCards.length > 0 && note.newCards.length > 0
+    );
   if (myNotes.length === 0) {
     return undefined;
   }
@@ -475,6 +508,17 @@ function MixedNew({
           >
             anki
           </button>
+          <button
+            className="rounded-2xl bg-green-100 p-1 ml-2 inline text-xs text-green-500"
+            onClick={async () => {
+              const newCardIds = note.newCards.map((card) => card.cardId);
+              await anki.card.unsuspend({ cards: newCardIds });
+              await anki.card.setDueDate({ cards: newCardIds, days: "0" });
+              alert("Enabled " + note.fields["Traditional"]?.value);
+            }}
+          >
+            enable
+          </button>
         </div>
       ))}
     </>
@@ -487,27 +531,6 @@ export const MigrationEverything: React.FC<{}> = ({}) => {
 
   return (
     <>
-      <button
-        className="rounded-2xl border p-1"
-        onClick={async () => {
-          const noteIds = await anki.note.findNotes({
-            query: "note:Dangdai -tag:Dangdai::Lesson",
-          });
-          const notes: NoteInfo[] = await anki.note.notesInfo({
-            notes: noteIds,
-          });
-          for (const note of notes) {
-            const id = note.fields["ID"].value;
-            const parts = id.split("-");
-            await anki.note.addTags({
-              notes: [note.noteId],
-              tags: `Dangdai::Lesson::${parts[0]}::${parts[1]}`,
-            });
-          }
-        }}
-      >
-        migration Dangdai add tags (obsolete)
-      </button>
       <section className="block m-4">
         <MigrationColorsInAnki />
       </section>
