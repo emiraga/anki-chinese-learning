@@ -5,6 +5,7 @@ import anki from "~/apis/anki";
 import { Link } from "react-router";
 import { TagList } from "./TagList";
 import { useSettings } from "~/settings/SettingsContext";
+import AnkiContentRenderer from "./AnkiContentRenderer";
 
 export const CharLink: React.FC<{
   traditional: string;
@@ -29,10 +30,10 @@ export const CharCard: React.FC<{ v: CharacterType }> = ({ v }) => {
           <div>{v.meaning2}</div>
         </div>
       </div>
-      <div
-        className="text-xs w-52 max-h-64 overflow-scroll"
-        dangerouslySetInnerHTML={{ __html: v.mnemonic }}
-      ></div>
+      <AnkiContentRenderer
+        htmlContent={v.mnemonic}
+        className="text-xs w-52 max-h-32 overflow-scroll bg-gray-200"
+      />
     </div>
   );
 };
@@ -138,8 +139,6 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
             <button
               className="rounded-2xl bg-blue-300 p-1 m-1 w-12"
               onClick={async () => {
-                // await anki.graphical.guiDeckOverview({ name: "CharsProps" });
-                // await anki.graphical.guiDeckBrowser();
                 await anki.graphical.guiBrowse({
                   query: "note:Hanzi Traditional:" + char.traditional,
                 });
@@ -195,10 +194,10 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           ) : undefined}
 
           <TagList tags={char.tags} />
-          <div
-            className="text-xs w-96 max-h-64 overflow-scroll m-4 bg-gray-200"
-            dangerouslySetInnerHTML={{ __html: char.mnemonic }}
-          ></div>
+          <AnkiContentRenderer
+            htmlContent={char.mnemonic}
+            className="text-xs w-80 max-h-96 overflow-scroll m-4 bg-gray-200"
+          />
         </div>
       </div>
     </div>

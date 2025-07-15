@@ -92,6 +92,9 @@ Location is ${PLACE_NAMES_MAP[final]} ${LOCATION_NAMES_MAP[c.tone]}.
 
 Come up with several stories, they should involve mentioned props,
 and that story should associate towards the primary meaning of the character.
+
+Props should should visually appear in the image as elements.
+
 Then on those props actor should interact with at the specified location.
 
 Make stories interesting and succinct to make them easier to remember.

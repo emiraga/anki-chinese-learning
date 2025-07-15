@@ -89,7 +89,7 @@ export const ACTOR_NAMES_MAP: { [key: string]: string } = {
   "_-": "Einstein",
   "d-": "Dracula",
   "y-": "Isabelle",
-  "sh-": "Sheldon",
+  "sh-": "Sheldon Cooper",
   "l-": "Leonardo",
   "p-": "Peter Parker",
   "z-": "Zorro",
@@ -104,7 +104,7 @@ export const ACTOR_NAMES_MAP: { [key: string]: string } = {
   "n-": "Neil Degrasse Tyson",
   "f-": "Ferran",
   "ch-": "Charlie Chaplin",
-  "b-": "Bruce",
+  "b-": "Bruce Lee",
   "c-": "Caesar",
   "s-": "Sammy",
 
