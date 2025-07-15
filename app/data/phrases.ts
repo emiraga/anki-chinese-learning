@@ -98,6 +98,14 @@ export function useAnkiPhrases() {
         };
 
         const processPinyin = (sPinyin: string, sTraditional: string) => {
+          if (
+            sPinyin.endsWith("r") &&
+            !sPinyin.endsWith("ér") &&
+            sTraditional.endsWith("兒")
+          ) {
+            sPinyin = sPinyin.slice(0, sPinyin.length - 1);
+            sTraditional = sTraditional.slice(0, sTraditional.length - 1);
+          }
           const split = pinyinSplit(sPinyin);
           if (split.length === sTraditional.length) {
             for (var i = 0; i < split.length; i++) {

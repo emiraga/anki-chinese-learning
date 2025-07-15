@@ -56,18 +56,20 @@ const Practice: React.FC<{
   // --- Core Functions ---
 
   const promptMain: string = `\
-Generate 10 simple English sentences for a beginner learning Mandarin
-Chinese in Taiwan. For each sentence, provide the corresponding
-translation in informal Traditional Chinese used in Taiwan.
+Generate 10 Mandarin Chinese sentences for a student learning Mandarin Chinese and living in Taiwan.
+For each sentence, provide the corresponding translation to English.
+
+Your sentences should be the normal way that chinese is used in Taiwan, not mainland China.
+
+Only use traditional characters, and never simplified characters.
 
 ${
   characterList.length > 0
-    ? "Student has a limited vocabulary, so only use these traditional characters: " +
-      characterList.join("")
+    ? "Student has a limited vocabulary, so only use these characters: " +
+      characterList.join("") +
+      "\n\nDo not use any other characters!"
     : ""
 }
-
-Do not use any other characters!!
 
 ${
   phrases.length > 0
@@ -105,10 +107,10 @@ ${instructions}
             items: {
               type: SchemaType.OBJECT,
               properties: {
-                english: { type: SchemaType.STRING },
                 chinese: { type: SchemaType.STRING },
+                english: { type: SchemaType.STRING },
               },
-              required: ["english", "chinese"],
+              required: ["chinese", "english"],
             },
           },
         },
@@ -141,65 +143,90 @@ ${instructions}
     }
   };
 
+  const historyUI =
+    history.length > 0 ? (
+      <>
+        History:
+        {[...history].reverse().map((s, i) => (
+          <p key={i}>
+            {s.type === PracticeHistoryType.CORRECT
+              ? "✅"
+              : s.type === PracticeHistoryType.WRONG
+              ? "⛔️"
+              : "🟡"}{" "}
+            {s.chinese} || {s.userInput} || {s.english}
+            {s.aiAdvice || s.aiGrammarPoint ? (
+              <span className="text-xs block">
+                {s.aiAdvice} || {s.aiGrammarPoint}
+              </span>
+            ) : undefined}
+          </p>
+        ))}
+      </>
+    ) : undefined;
+
   if (sentences.length === 0) {
     /* Choosing which type of practice we will do. */
     return (
-      <div className="container mx-auto max-w-2xl text-center p-3">
-        {isGenerating ? (
-          <>
-            <div className="animate-spin mx-auto rounded-full h-16 w-16 m-4 border-b-2 border-gray-900 mb-4"></div>
-            Generating...
-          </>
-        ) : (
-          <>
-            <div>
-              <label
-                htmlFor="userInput"
-                className="block text-sm font-medium text-slate-700 mb-2"
-              >
-                (optional) Any instructions for the practice:
-              </label>
-              <input
-                type="text"
-                id="userInput"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                className="w-full px-3 mb-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
+      <>
+        <div className="container mx-auto max-w-2xl text-center p-3">
+          {isGenerating ? (
+            <>
+              <div className="animate-spin mx-auto rounded-full h-16 w-16 m-4 border-b-2 border-gray-900 mb-4"></div>
+              Generating...
+            </>
+          ) : (
+            <>
+              <div>
+                <label
+                  htmlFor="userInput"
+                  className="block text-sm font-medium text-slate-700 mb-2"
+                >
+                  (optional) Any instructions for the practice:
+                </label>
+                <input
+                  type="text"
+                  id="userInput"
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  className="w-full px-3 mb-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
                                  focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                placeholder="For example: Focus on..."
-                disabled={isGenerating}
-              />
-            </div>
+                  placeholder="For example: Focus on..."
+                  disabled={isGenerating}
+                />
+              </div>
 
-            <button
-              onClick={async () => {
-                setPracticeType(PracticeType.ENGLISH_TO_CHINESE_TEXT);
-                await handleGenerateSentences();
-              }}
-              className="mr-2 justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
-            >
-              English to Chinese Practice
-            </button>
-            <button
-              onClick={async () => {
-                setPracticeType(PracticeType.LISTENING_TO_CHINESE);
-                await handleGenerateSentences();
-              }}
-              className="ml-2 justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
-            >
-              Chinese Listening Practice
-            </button>
-          </>
-        )}
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+              <button
+                onClick={async () => {
+                  setPracticeType(PracticeType.ENGLISH_TO_CHINESE_TEXT);
+                  await handleGenerateSentences();
+                }}
+                className="mr-2 justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+              >
+                English to Chinese Practice
+              </button>
+              <button
+                onClick={async () => {
+                  setPracticeType(PracticeType.LISTENING_TO_CHINESE);
+                  await handleGenerateSentences();
+                }}
+                className="ml-2 justify-center items-center px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+              >
+                Chinese Listening Practice
+              </button>
+            </>
+          )}
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
-        <div className="mt-20">
-          <span className="text-xs text-gray-500">Prompt preview:</span>
-          <pre className="text-sm text-gray-400 whitespace-pre-wrap break-all font-mono bg-gray-100 text-left">
-            {promptMain}
-          </pre>
+          <div className="mt-20">
+            <span className="text-xs text-gray-500">Prompt preview:</span>
+            <pre className="text-sm text-gray-400 whitespace-pre-wrap break-all font-mono bg-gray-100 text-left">
+              {promptMain}
+            </pre>
+          </div>
         </div>
-      </div>
+        {historyUI}
+      </>
     );
   }
 
@@ -212,28 +239,6 @@ ${instructions}
   };
 
   const finishedPractice = () => setSentences([]);
-
-  const historyUI =
-    history.length > 0 ? (
-      <>
-        History:
-        {history.map((s, i) => (
-          <p key={i}>
-            {s.type === PracticeHistoryType.CORRECT
-              ? "✅"
-              : s.type === PracticeHistoryType.WRONG
-              ? "⛔️"
-              : "🟡"}{" "}
-            {s.chinese} || {s.userInput} || {s.english}
-            {s.aiAdvice || s.aiGrammarPoint ? (
-              <p className="text-xs">
-                {s.aiAdvice} || {s.aiGrammarPoint}
-              </p>
-            ) : undefined}
-          </p>
-        ))}
-      </>
-    ) : undefined;
 
   switch (practiceType) {
     case PracticeType.ENGLISH_TO_CHINESE_TEXT:

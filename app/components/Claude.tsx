@@ -48,6 +48,10 @@ export const PromptsLink: React.FC<{ char: string }> = ({ char }) => {
   const { characters, knownProps } = useOutletContext<OutletContext>();
   const c = characters[char];
 
+  if (c === undefined) {
+    return undefined;
+  }
+
   if (REVERSE_FULL_MAP[c.sylable] === undefined) {
     console.error(c.sylable);
     console.error(Object.keys(REVERSE_FULL_MAP));
