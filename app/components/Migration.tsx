@@ -4,7 +4,6 @@ import { CharCardDetails } from "./CharCard";
 import anki, { useAnkiCards, type NoteWithCards } from "~/apis/anki";
 import {
   ACTOR_TAGS_MAP,
-  FULL_MAP,
   LOCATION_TAGS_MAP,
   PLACE_TAGS_MAP,
   REVERSE_FULL_MAP,

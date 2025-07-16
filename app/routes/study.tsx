@@ -6,7 +6,7 @@ import { useAsync } from "react-async-hook";
 import { getProblematicCardsComprehensive } from "~/data/problematic";
 import MainFrame from "~/toolbar/frame";
 import ProblematicTable from "~/components/Problematic";
-import { LearnAllCharsLink, LearnLink } from "~/components/Claude";
+import { LearnAllCharsLink, LearnLink } from "~/components/Learn";
 import Section from "~/toolbar/section";
 import { HanziText } from "~/components/HanziText";
 import { StudyMore } from "~/components/StudyMore";

@@ -6,7 +6,7 @@ import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
 import { PROP_MISC_TAGS } from "~/data/props";
 import { PhraseList } from "~/components/Phrase";
-import { LearnLink, PromptsLink } from "~/components/Claude";
+import { LearnLink, PromptsLink } from "~/components/Learn";
 import { getNewCharacter } from "~/data/characters";
 import { SearchMorePhrases } from "~/components/StudyMore";
 import { PinyinText } from "~/components/PinyinText";
