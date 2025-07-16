@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { YankiConnect } from "yanki-connect";
+import { sleep } from "~/data/utils";
 
 const anki: YankiConnect = new YankiConnect();
 export type CardInfo = Awaited<ReturnType<typeof anki.card.cardsInfo>>[number];
@@ -147,4 +148,15 @@ export const useAnkiCards = () => {
     error,
     reload: loadCards,
   };
+};
+
+export const anki_open_browse = async (query: string) => {
+  for (var i = 0; i < 200; i++) {
+    console.log(i);
+    if (!document.hasFocus()) {
+      break;
+    }
+    await anki.graphical.guiBrowse({ query });
+    await sleep(10);
+  }
 };

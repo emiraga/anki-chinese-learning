@@ -21,3 +21,21 @@ export function get_all_pinyin_from_lib(traditional: string, style: number) {
     heteronym: true,
   })[0];
 }
+
+export function comparePinyin(a: PinyinType, b: PinyinType) {
+  if (a.sylable === b.sylable) {
+    if (a.tone === 5) {
+      return +1;
+    }
+    if (b.tone === 5) {
+      return -1;
+    }
+  }
+  return b.count - a.count;
+}
+
+export function cleanPinyinAnkiField(pinyin: string) {
+  return pinyin
+    .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
+    .replace(/\<\/span\>/g, "");
+}

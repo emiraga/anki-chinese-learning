@@ -6,7 +6,7 @@ import { TagList } from "./TagList";
 import type { CharsToPhrasesPinyin } from "~/data/phrases";
 import { get_all_pinyin_from_lib } from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
-import { comparePinyin } from "~/data/utils";
+import { comparePinyin } from "~/data/pinyin_function";
 
 export const CharList: React.FC<{ characters: CharacterType[] }> = ({
   characters,

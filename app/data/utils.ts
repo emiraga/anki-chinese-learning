@@ -30,24 +30,6 @@ export function pickRandomElements<T>(arr: T[], numElements: number): T[] {
   return result;
 }
 
-export function comparePinyin(a: PinyinType, b: PinyinType) {
-  if (a.sylable === b.sylable) {
-    if (a.tone === 5) {
-      return +1;
-    }
-    if (b.tone === 5) {
-      return -1;
-    }
-  }
-  return b.count - a.count;
-}
-
-export function cleanPinyinAnkiField(pinyin: string) {
-  return pinyin
-    .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
-    .replace(/\<\/span\>/g, "");
-}
-
 // --- Custom Hook: useLocalStorageState ---
 // A drop-in replacement for useState that persists state to localStorage.
 
@@ -86,3 +68,7 @@ export function useLocalStorageState<T>(
   // 3. Return the state value and the setter function, just like useState.
   return [value, setValue];
 }
+
+export const sleep = (ms: number): Promise<void> => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};

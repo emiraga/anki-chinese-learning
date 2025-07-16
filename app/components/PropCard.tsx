@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import anki from "~/apis/anki";
+import anki, { anki_open_browse } from "~/apis/anki";
 import { PinyinText } from "./PinyinText";
 import { getNewCharacter } from "~/data/characters";
 
@@ -31,10 +31,10 @@ export const PropCard: React.FC<{
           </Link>
           <button
             className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
-            onClick={() => {
-              anki.graphical.guiBrowse({
-                query: "note:Props tag:prop::" + prop.prop + " " + prop.prop,
-              });
+            onClick={async () => {
+              await anki_open_browse(
+                "note:Props tag:prop::" + prop.prop + " " + prop.prop
+              );
             }}
           >
             anki

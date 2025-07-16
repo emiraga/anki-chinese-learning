@@ -1,7 +1,11 @@
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "./CharCard";
-import anki, { useAnkiCards, type NoteWithCards } from "~/apis/anki";
+import anki, {
+  anki_open_browse,
+  useAnkiCards,
+  type NoteWithCards,
+} from "~/apis/anki";
 import {
   ACTOR_TAGS_MAP,
   LOCATION_TAGS_MAP,
@@ -243,10 +247,8 @@ function DuplicatePhrase({
             Duplicate {source}: {phrase.traditional}
             <button
               className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
-              onClick={() => {
-                anki.graphical.guiBrowse({
-                  query: `Traditional:${phrase.traditional}`,
-                });
+              onClick={async () => {
+                await anki_open_browse(`Traditional:${phrase.traditional}`);
               }}
             >
               anki
@@ -361,10 +363,10 @@ function MixedSuspension({
           {note.suspendedCards} {note.fields["Traditional"].value}
           <button
             className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
-            onClick={() => {
-              anki.graphical.guiBrowse({
-                query: `note:${noteType} ID:${note.fields["ID"].value}`,
-              });
+            onClick={async () => {
+              await anki_open_browse(
+                `note:${noteType} ID:${note.fields["ID"].value}`
+              );
             }}
           >
             anki
@@ -438,10 +440,10 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
                   {card.deckName}
                   <button
                     className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
-                    onClick={() => {
-                      anki.graphical.guiBrowse({
-                        query: `note:${note.modelName} deck:${card.deckName} ${id}`,
-                      });
+                    onClick={async () => {
+                      await anki_open_browse(
+                        `note:${note.modelName} deck:${card.deckName} ${id}`
+                      );
                     }}
                   >
                     anki
@@ -490,10 +492,10 @@ function MixedNew({
           🚨 Some are new {noteType} |{note.fields["Traditional"].value}
           <button
             className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
-            onClick={() => {
-              anki.graphical.guiBrowse({
-                query: `note:${noteType} ID:${note.fields["ID"].value}`,
-              });
+            onClick={async () => {
+              await anki_open_browse(
+                `note:${noteType} ID:${note.fields["ID"].value}`
+              );
             }}
           >
             anki

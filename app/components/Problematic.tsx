@@ -1,6 +1,6 @@
 import type { ProblematicCardAnalysis } from "~/data/problematic";
 import { LearnLink } from "./Learn";
-import anki from "~/apis/anki";
+import anki, { anki_open_browse } from "~/apis/anki";
 import { HanziText } from "./HanziText";
 import { CARDS_INFO } from "~/data/cards";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
@@ -32,9 +32,9 @@ export default function ProblematicTable({
                 <button
                   className="cursor-pointer bg-blue-100"
                   onClick={async () => {
-                    await anki.graphical.guiBrowse({
-                      query: `deck:${p.cardInfo.deckName} note:${p.cardInfo.modelName} ${p.primaryField}`,
-                    });
+                    await anki_open_browse(
+                      `deck:${p.cardInfo.deckName} note:${p.cardInfo.modelName} ${p.primaryField}`
+                    );
                   }}
                 >
                   {p.cardInfo.deckName}:{p.cardInfo.modelName}:{p.primaryField}{" "}

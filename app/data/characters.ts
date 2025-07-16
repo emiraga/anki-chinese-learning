@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import type { CharsToPhrasesPinyin } from "./phrases";
 import { useSettings } from "~/settings/SettingsContext";
-import { cleanPinyinAnkiField, comparePinyin } from "./utils";
+import { cleanPinyinAnkiField, comparePinyin } from "./pinyin_function";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 
 export type CharacterType = {

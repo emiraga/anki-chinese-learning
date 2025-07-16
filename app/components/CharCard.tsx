@@ -1,7 +1,7 @@
 import type { CharacterType } from "~/data/characters";
 import { PinyinText } from "./PinyinText";
 import type React from "react";
-import anki from "~/apis/anki";
+import anki, { anki_open_browse } from "~/apis/anki";
 import { Link } from "react-router";
 import { TagList } from "./TagList";
 import { useSettings } from "~/settings/SettingsContext";
@@ -139,9 +139,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
             <button
               className="rounded-2xl bg-blue-300 p-1 m-1 w-12"
               onClick={async () => {
-                await anki.graphical.guiBrowse({
-                  query: "note:Hanzi Traditional:" + char.traditional,
-                });
+                anki_open_browse("note:Hanzi Traditional:" + char.traditional);
               }}
             >
               anki
