@@ -32,7 +32,7 @@ export const CharCard: React.FC<{ v: CharacterType }> = ({ v }) => {
       </div>
       <AnkiContentRenderer
         htmlContent={v.mnemonic}
-        className="text-xs w-52 max-h-32 overflow-scroll bg-gray-200"
+        className="text-xs w-52 max-h-32 overflow-scroll bg-gray-100"
       />
     </div>
   );

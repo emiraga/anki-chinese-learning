@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { SchemaType } from "@google/generative-ai";
 import type { GenerationConfig } from "@google/generative-ai";
 import type { PhraseType } from "~/data/phrases";
-import { pickRandomElements } from "~/data/utils";
+import { pickRandomElements, useLocalStorageState } from "~/data/utils";
 import { useSettings } from "~/settings/SettingsContext";
 import { useGenerativeModel } from "~/apis/google_genai";
 import {
   PracticeEnglishToChinese,
   PracticeListeningToChinese,
 } from "./PracticeTypes";
+import Textarea from "react-textarea-autosize";
 
 export interface PracticeSentencePair {
   english: string;
@@ -46,7 +47,10 @@ const Practice: React.FC<{
   );
   const { settings } = useSettings();
   const [history, setHistory] = useState<PracticeHistory[]>([]);
-  const [instructions, setInstructions] = useState<string>("");
+  const [instructions, setInstructions] = useLocalStorageState<string>(
+    "practicePromptCustomInstructions",
+    ""
+  );
 
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +78,7 @@ ${
 ${
   phrases.length > 0
     ? "To inspire your creativity, here are some phrases or words:\n" +
-      pickRandomElements(phrases, 30)
+      pickRandomElements(phrases, 60)
         .map((phrase) => phrase.traditional)
         .join("\n")
     : ""
@@ -184,12 +188,12 @@ ${instructions}
                 >
                   (optional) Any instructions for the practice:
                 </label>
-                <input
-                  type="text"
+                <Textarea
                   id="userInput"
+                  minRows={1}
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
-                  className="w-full px-3 mb-3 py-2 bg-white border border-slate-300 rounded-md text-lg shadow-sm placeholder-slate-400
+                  className="w-full px-3 mb-3 py-2 bg-white border border-slate-300 rounded-md text-md shadow-sm placeholder-slate-400
                                  focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                   placeholder="For example: Focus on..."
                   disabled={isGenerating}
