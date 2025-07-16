@@ -401,6 +401,14 @@ export const PracticeListeningToChinese: React.FC<{
     }
   };
 
+  const handleSkipAnswer = async () => {
+    addHistoryCallback({
+      ...sentences[currentSentenceIndex],
+      type: PracticeHistoryType.SKIPPED,
+    });
+    handleNextSentence();
+  };
+
   return (
     <div className="container mx-auto max-w-2xl">
       <div className="p-3">
@@ -433,6 +441,12 @@ export const PracticeListeningToChinese: React.FC<{
             textInput={sentences[currentSentenceIndex].chinese}
             finishedPlayCallback={() => setSoundPlayed(true)}
           />
+          <button
+            className="w-full mt-3 items-center px-4 py-3 text-white font-bold rounded-md shadow-sm transition-colors bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 disabled:bg-slate-400 disabled:cursor-not-allowed"
+            onClick={handleSkipAnswer}
+          >
+            Skip
+          </button>
         </div>
 
         {soundPlayed ? (
@@ -471,7 +485,10 @@ export const PracticeListeningToChinese: React.FC<{
                   {answerRevealed ? (
                     sentences[currentSentenceIndex].english
                   ) : (
-                    <button onClick={() => setAnswerRevealed(true)}>
+                    <button
+                      className="w-full text-left"
+                      onClick={() => setAnswerRevealed(true)}
+                    >
                       show correct answer
                     </button>
                   )}

@@ -152,7 +152,6 @@ export const useAnkiCards = () => {
 
 export const anki_open_browse = async (query: string) => {
   for (var i = 0; i < 200; i++) {
-    console.log(i);
     if (!document.hasFocus()) {
       break;
     }

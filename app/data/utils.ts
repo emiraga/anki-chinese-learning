@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import type { PinyinType } from "./pinyin_function";
 
 export function removeDuplicateChars(
   str: string,
