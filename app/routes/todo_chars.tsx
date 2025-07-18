@@ -7,11 +7,12 @@ import type { OutletContext } from "~/data/types";
 import { HanziText } from "~/components/HanziText";
 import { Link } from "react-router";
 import { TodoCharsList } from "~/components/TodoChars";
-import { removeDuplicateChars } from "~/data/utils";
+import { removeDuplicateChars, useLocalStorageState } from "~/data/utils";
 import { PinyinText } from "~/components/PinyinText";
 import { CharLink } from "~/components/CharCard";
 import Section from "~/toolbar/section";
 import { useSettings } from "~/settings/SettingsContext";
+import Textarea from "react-textarea-autosize";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -23,7 +24,10 @@ export function meta({}: Route.MetaArgs) {
 export default function TodoChars() {
   const { phrases, characters, charPhrasesPinyin, props } =
     useOutletContext<OutletContext>();
-  let [sentence, setSentence] = useState("");
+  let [sentence, setSentence] = useLocalStorageState(
+    "todoCharsSentenceInput",
+    ""
+  );
   const { settings } = useSettings();
 
   const multiple = Object.values(characters)
@@ -73,10 +77,10 @@ export default function TodoChars() {
         ) : undefined}
         <h3 className="font-serif text-2xl m-4">
           <p>Write some chinese text (or copy-paste it):</p>
-          <textarea
+          <Textarea
             className="border-2"
             value={sentence}
-            rows={2}
+            minRows={2}
             cols={60}
             onChange={(v) => setSentence(v.target.value)}
           />
