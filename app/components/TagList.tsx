@@ -3,13 +3,14 @@ import { Link } from "react-router";
 export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
   return (
     <>
-      {tags.map((t) => {
+      {tags.map((t2) => {
+        const t = t2.replaceAll("::", " ");
         if (t.startsWith("prop::")) {
           return (
             <Link
               key={t}
-              to={`/prop/${t.substring(6)}`}
-              className="rounded-sm bg-blue-100 dark:bg-blue-800 dark:text-blue-100 text-sm mx-2 whitespace-break-spaces inline"
+              to={`/prop/${t2.substring(6)}`}
+              className="rounded-sm bg-blue-100 dark:bg-blue-800 dark:text-blue-100 text-sm mx-2 whitespace-break-spaces inline-block"
             >
               {t}
             </Link>
@@ -19,8 +20,8 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
           return (
             <Link
               key={t}
-              to={`/tone/${t.substring(6)}`}
-              className="rounded-sm bg-purple-100 dark:bg-purple-800 dark:text-purple-100 text-sm mx-2 whitespace-break-spaces inline"
+              to={`/tone/${t2.substring(6)}`}
+              className="rounded-sm bg-purple-100 dark:bg-purple-800 dark:text-purple-100 text-sm mx-2 whitespace-break-spaces inline-block"
             >
               {t}
             </Link>
@@ -30,8 +31,8 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
           return (
             <Link
               key={t}
-              to={`/actor/${t.substring(7)}`}
-              className="rounded-sm bg-green-100 dark:bg-green-800 dark:text-green-100 text-sm mx-2 whitespace-break-spaces inline"
+              to={`/actor/${t2.substring(7)}`}
+              className="rounded-sm bg-green-100 dark:bg-green-800 dark:text-green-100 text-sm mx-2 whitespace-break-spaces inline-block"
             >
               {t}
             </Link>
@@ -41,8 +42,8 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
           return (
             <Link
               key={t}
-              to={`/place/${t.substring(7)}`}
-              className="rounded-sm bg-yellow-100 dark:bg-yellow-800 dark:text-yellow-100 text-sm mx-2 whitespace-break-spaces inline"
+              to={`/place/${t2.substring(7)}`}
+              className="rounded-sm bg-yellow-100 dark:bg-yellow-800 dark:text-yellow-100 text-sm mx-2 whitespace-break-spaces inline-block"
             >
               {t}
             </Link>
@@ -51,12 +52,12 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
         return (
           <span
             key={t}
-            className="rounded-sm bg-red-100 dark:bg-red-800 dark:text-red-100 text-sm mx-2 whitespace-break-spaces inline"
+            className="rounded-sm bg-red-100 dark:bg-red-900 dark:text-red-100 text-sm mx-2 whitespace-break-spaces inline-block"
           >
             <Link
               key={t}
               to={`/tag/${t}`}
-              className="rounded-sm text-sm mx-2 whitespace-break-spaces inline"
+              className="rounded-sm text-sm mx-2 whitespace-break-spaces inline-block"
             >
               {t}
             </Link>
