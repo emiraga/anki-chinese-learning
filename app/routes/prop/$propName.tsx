@@ -33,6 +33,10 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
     .filter((name) => name !== prop.main_tagname && name.startsWith("prop::"))
     .map((name) => knownProps[name]);
 
+  const superprops = props.filter(
+    (prop) => prop.tagnames.includes(propName) && prop.main_tagname !== propName
+  );
+
   return (
     <div>
       <hr className="my-4" />
@@ -53,19 +57,22 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
         </div>
       ) : undefined}
       <hr className="my-4" />
+      {superprops.length > 0 ? (
+        <div className="bg-gray-200">
+          <h4 className="font-semibold text-lg">Super-props:</h4>
+          <PropList props={superprops} />
+        </div>
+      ) : undefined}
+      <hr className="my-4" />
+
       <CharList characters={chars} />
       {chars.map((char, i) => {
         return <CharCardDetails key={i} char={char} />;
       })}
       <div className="ml-10">
-        {props
-          .filter(
-            (prop) =>
-              prop.tagnames.includes(propName) && prop.main_tagname !== propName
-          )
-          .map((prop) => (
-            <PropRender key={prop.prop} propName={prop.main_tagname} />
-          ))}
+        {superprops.map((prop) => (
+          <PropRender key={prop.prop} propName={prop.main_tagname} />
+        ))}
       </div>
     </div>
   );
