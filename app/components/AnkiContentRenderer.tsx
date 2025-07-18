@@ -93,7 +93,7 @@ const AnkiContentRenderer: React.FC<{
 
   // While loading, you can show a simple message or a spinner component.
   const content = isLoading
-    ? `<div class="p-4 text-center text-gray-500">Loading content...</div>`
+    ? `<div class="p-4 text-center text-gray-500 dark:text-gray-400">Loading content...</div>`
     : processedHtml;
 
   return (

@@ -29,11 +29,11 @@ export default function Phrases() {
   return (
     <main>
       <MainToolbar />
-      <h3 className="font-serif text-4xl m-4">
+      <h3 className="font-serif text-4xl m-4 text-gray-900 dark:text-gray-100">
         List of phrases: ({phrases.length})
         <input
           value={search}
-          className="font-sans text-lg border ml-4"
+          className="font-sans text-lg border ml-4 px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Search..."
           onChange={(x) => {
             setSearch(x.currentTarget.value);

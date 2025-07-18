@@ -62,14 +62,14 @@ export default function TodoChars() {
       <section className="block">
         <Link
           to="/chars"
-          className="ml-2 mt-1 text-blue-900 font-extrabold hover:text-blue-700 underline"
+          className="ml-2 mt-1 text-blue-900 dark:text-blue-400 font-extrabold hover:text-blue-700 dark:hover:text-blue-300 underline"
         >
           See all chars.
         </Link>
         {props.length > 0 ? (
           <Link
             to="/props"
-            className="ml-2 mt-1 text-blue-900 font-extrabold hover:text-blue-700 underline"
+            className="ml-2 mt-1 text-blue-900 dark:text-blue-400 font-extrabold hover:text-blue-700 dark:hover:text-blue-300 underline"
           >
             See all props.
           </Link>

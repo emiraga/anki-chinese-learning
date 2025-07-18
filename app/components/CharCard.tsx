@@ -32,7 +32,7 @@ export const CharCard: React.FC<{ v: CharacterType }> = ({ v }) => {
       </div>
       <AnkiContentRenderer
         htmlContent={v.mnemonic}
-        className="text-xs w-52 max-h-32 overflow-scroll bg-gray-100"
+        className="text-xs w-52 max-h-32 overflow-scroll bg-gray-100 dark:bg-gray-800 dark:text-gray-100"
       />
     </div>
   );
@@ -103,7 +103,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
 
   return (
     <div key={char.traditional} className="mx-6 mb-2">
-      <div className={isDefined ? "flex w-full" : "flex w-full bg-blue-100"}>
+      <div className={isDefined ? "flex w-full" : "flex w-full bg-blue-100 dark:bg-blue-900"}>
         <div className="w-26 text-8xl">
           <CharLink traditional={char.traditional} />
         </div>
@@ -126,7 +126,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
         </div>
         <div className="w-14">
           <button
-            className="rounded-2xl bg-gray-300 p-1 m-1 w-12"
+            className="rounded-2xl bg-gray-300 dark:bg-gray-600 dark:text-gray-100 p-1 m-1 w-12"
             onClick={() => {
               sources.forEach((source) => {
                 window.open(source.link, "_blank");
@@ -137,7 +137,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           </button>
           {settings.characterNote?.noteType ? (
             <button
-              className="rounded-2xl bg-blue-300 p-1 m-1 w-12"
+              className="rounded-2xl bg-blue-300 dark:bg-blue-600 dark:text-blue-100 p-1 m-1 w-12"
               onClick={async () => {
                 anki_open_browse("note:Hanzi Traditional:" + char.traditional);
               }}
@@ -149,7 +149,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
         <div className="flex-1 text-sm">
           {!char.ankiId && settings.characterNote?.noteType ? (
             <button
-              className="rounded-2xl bg-red-300 p-2 m-1"
+              className="rounded-2xl bg-red-300 dark:bg-red-600 dark:text-red-100 p-2 m-1"
               onClick={async () => {
                 const notesId = await anki.note.findNotes({
                   query: "note:Hanzi Traditional:" + char.traditional,
@@ -194,7 +194,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           <TagList tags={char.tags} />
           <AnkiContentRenderer
             htmlContent={char.mnemonic}
-            className="text-xs w-80 max-h-96 overflow-scroll m-4 bg-gray-200"
+            className="text-xs w-80 max-h-96 overflow-scroll m-4 bg-gray-200 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
       </div>
