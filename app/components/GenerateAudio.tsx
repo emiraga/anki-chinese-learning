@@ -225,13 +225,13 @@ const GenerateAudio: React.FC<{
           <div>
             <label
               htmlFor="voiceName"
-              className="block text-gray-700 text-sm font-medium mb-2"
+              className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
             >
               Voice Name:
             </label>
             <select
               id="voiceName"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 shadow-sm"
+              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 shadow-sm"
               value={selectedVoiceName}
               onChange={(e) => setSelectedVoiceName(e.target.value)}
             >
@@ -271,7 +271,7 @@ const GenerateAudio: React.FC<{
           <div>
             <label
               htmlFor="volumeGainDb"
-              className="block text-gray-700 text-sm font-medium mb-2"
+              className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
             >
               Volume Gain (-96.0 - 16.0 dB): {volumeGainDb.toFixed(1)}
             </label>
@@ -283,7 +283,7 @@ const GenerateAudio: React.FC<{
               step="0.5"
               value={volumeGainDb}
               onChange={(e) => setVolumeGainDb(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
+              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
             />
           </div>
 
@@ -291,7 +291,7 @@ const GenerateAudio: React.FC<{
           <div>
             <label
               htmlFor="speakingRate"
-              className="block text-gray-700 text-sm font-medium mb-2"
+              className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
             >
               Speaking Rate (0.25 - 4.0): {speakingRate.toFixed(2)}
             </label>
@@ -303,7 +303,7 @@ const GenerateAudio: React.FC<{
               step="0.05"
               value={speakingRate}
               onChange={(e) => setSpeakingRate(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
+              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
             />
           </div>
 
@@ -311,7 +311,7 @@ const GenerateAudio: React.FC<{
           <div>
             <label
               htmlFor="pitch"
-              className="block text-gray-700 text-sm font-medium mb-2"
+              className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
             >
               Pitch (-20.0 - 20.0): {pitch.toFixed(1)}
             </label>
@@ -323,7 +323,7 @@ const GenerateAudio: React.FC<{
               step="0.5"
               value={pitch}
               onChange={(e) => setPitch(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
+              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-blue-500"
             />
           </div>
         </div>
@@ -363,7 +363,7 @@ const GenerateAudio: React.FC<{
 
         {error && (
           <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mt-4"
+            className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg relative mt-4"
             role="alert"
           >
             <strong className="font-bold">Error:</strong>

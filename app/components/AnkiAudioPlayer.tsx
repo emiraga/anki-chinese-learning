@@ -130,8 +130,8 @@ const AnkiAudioPlayer: React.FC<AnkiAudioPlayerProps> = ({
           flex items-center justify-center w-4 h-4 rounded-full transition-colors
           ${
             isLoading || !filename
-              ? "bg-gray-300 cursor-not-allowed"
-              : "bg-blue-200 hover:bg-blue-300 text-white"
+              ? "bg-gray-300 dark:bg-gray-600 cursor-not-allowed"
+              : "bg-blue-200 dark:bg-blue-700 hover:bg-blue-300 dark:hover:bg-blue-600 text-white"
           }
         `}
       >
@@ -140,7 +140,7 @@ const AnkiAudioPlayer: React.FC<AnkiAudioPlayerProps> = ({
 
       <div className="flex-1">
         {error && (
-          <div className="flex items-center space-x-1 text-red-600 text-xs mt-1">
+          <div className="flex items-center space-x-1 text-red-600 dark:text-red-400 text-xs mt-1">
             🛑 <span>{error}</span>
           </div>
         )}
