@@ -31,16 +31,16 @@ export const links: Route.LinksFunction = () => [
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isDarkMode } = useDarkMode();
-  
+
   return (
-    <html lang="en" className={isDarkMode ? 'dark' : ''}>
+    <html lang="en" className={isDarkMode ? "dark" : ""}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body className={isDarkMode ? 'dark' : ''}>
+      <body className={isDarkMode ? "dark" : ""}>
         <SettingsProvider>{children}</SettingsProvider>
         <ScrollRestoration />
         <Scripts />
@@ -68,6 +68,7 @@ export default function App() {
   const {
     phrases,
     charPhrasesPinyin,
+    invalidData: invalidDataPhrases,
     loading: loadingPhrases,
     error: errorPhrases,
     reload: reloadPhrases,
@@ -91,6 +92,7 @@ export default function App() {
           characters={{}}
           phrases={[]}
           charPhrasesPinyin={{}}
+          invalidData={[]}
           reload={() => {}}
           loading={loading}
         />
@@ -136,6 +138,7 @@ export default function App() {
     characters,
     knownSounds,
     characterList,
+    invalidData: invalidDataPhrases,
     reload,
     loading,
   };

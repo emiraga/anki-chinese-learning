@@ -5,7 +5,7 @@ import { getConflictingChars } from "~/components/CharList";
 import type { CharactersType } from "~/data/characters";
 import type { CharsToPhrasesPinyin, PhraseType } from "~/data/phrases";
 import type { KnownPropsType } from "~/data/props";
-import type { OutletContext } from "~/data/types";
+import type { InvalidDataRecord, OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
 import { DarkModeToggle } from "~/components/DarkModeToggle";
 
@@ -14,6 +14,7 @@ export const MainToolbarNoOutlet: React.FC<{
   characters: CharactersType;
   phrases: PhraseType[];
   charPhrasesPinyin: CharsToPhrasesPinyin;
+  invalidData: InvalidDataRecord[];
   reload: () => void;
   loading: boolean;
 }> = ({
@@ -23,6 +24,7 @@ export const MainToolbarNoOutlet: React.FC<{
   reload,
   loading,
   charPhrasesPinyin,
+  invalidData,
 }) => {
   let styleSelected =
     "block mx-1 py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500";
@@ -76,6 +78,14 @@ export const MainToolbarNoOutlet: React.FC<{
         </span>
         <div className="flex items-center gap-2">
           <DarkModeToggle />
+          {invalidData.length > 0 && (
+            <NavLink
+              to="/invalid_data"
+              className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-600 font-bold"
+            >
+              ({invalidData.length})
+            </NavLink>
+          )}
         </div>
         <div className="w-full md:block md:w-auto">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0  dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
@@ -108,6 +118,7 @@ const MainToolbar: React.FC<{}> = ({}) => {
     characters,
     phrases,
     charPhrasesPinyin,
+    invalidData,
     reload,
     loading,
   } = useOutletContext<OutletContext>();
@@ -117,6 +128,7 @@ const MainToolbar: React.FC<{}> = ({}) => {
       characters={characters}
       phrases={phrases}
       charPhrasesPinyin={charPhrasesPinyin}
+      invalidData={invalidData}
       reload={reload}
       loading={loading}
     />

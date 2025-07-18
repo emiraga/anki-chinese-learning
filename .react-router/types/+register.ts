@@ -17,6 +17,7 @@ type Params = {
   };
   "/chars": {};
   "/conflicts": {};
+  "/invalid_data": {};
   "/migration": {};
   "/phrase/:phraseHanzi": {
     "phraseHanzi": string;

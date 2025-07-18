@@ -4,6 +4,7 @@ import pinyinSplit from "pinyin-split";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 import { useSettings } from "~/settings/SettingsContext";
 import type { PinyinType } from "./pinyin_function";
+import type { InvalidDataRecord } from "./types";
 
 export type PhraseType = {
   noteId: number;
@@ -65,12 +66,17 @@ export function useAnkiPhrases() {
     useState<CharsToPhrasesPinyin>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [invalidData, setInvalidData] = useState<InvalidDataRecord[]>([]);
   const { settings } = useSettings();
+
+  const addInvalidData = (n: InvalidDataRecord) =>
+    setInvalidData((data) => [...data, n]);
 
   // Define the load function with useCallback so it doesn't recreate on every render
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      setInvalidData([]);
 
       // Load from Anki
       const notesId = await anki.note.findNotes({
@@ -119,8 +125,15 @@ export function useAnkiPhrases() {
                 const toneMatch =
                   diacriticToNumber(p).match(/([a-z]+)([1-5])*$/);
                 if (!toneMatch) {
-                  console.log(p);
-                  throw new Error("invalid pinyin: " + p);
+                  addInvalidData({
+                    message: "Invalid pinyin, could not determine the tone",
+                    details: {
+                      pinyinPart: p,
+                      pinyin: sPinyin,
+                      traditional: sTraditional,
+                    },
+                  });
+                  return;
                 }
                 let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
                 chars[t][p] = { pinyin_1: p, sylable, tone, count: 0 };
@@ -128,13 +141,11 @@ export function useAnkiPhrases() {
               chars[t][p].count++;
             }
           } else {
-            // TODO: show this somewhere more prominent
-            console.error(
-              "Warning invalid Pinyin: " +
-                sPinyin +
-                " Traditional: " +
-                sTraditional
-            );
+            addInvalidData({
+              message:
+                "Invalid Pinyin, could not match all characters to pinyin",
+              details: { pinyin: sPinyin, traditional: sTraditional },
+            });
           }
         };
 
@@ -184,6 +195,7 @@ export function useAnkiPhrases() {
   return {
     phrases,
     charPhrasesPinyin,
+    invalidData,
     loading,
     error,
     reload: loadData, // Expose the reload function
