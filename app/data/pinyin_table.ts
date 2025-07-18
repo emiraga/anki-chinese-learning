@@ -1,4 +1,4 @@
-import raw_json from "./pinyin_table.json";
+import rawJson from "./pinyin_table.json";
 interface RawJSON {
   data: string[][];
   finals: string[];
@@ -43,7 +43,7 @@ var typeFictional = [
 
 var typeExtra = ["yu-", "lv-", "nv-", "qu-", "xu-", "ju-"];
 
-let JSON_DATA = raw_json as RawJSON;
+let JSON_DATA = rawJson as RawJSON;
 let INITIAL_TYPE: { [key1: string]: string } = {};
 JSON_DATA.initials.forEach((initial) => {
   if (typeFemale.includes(initial)) {

@@ -4,7 +4,7 @@ import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import type { CharsToPhrasesPinyin } from "~/data/phrases";
-import { get_all_pinyin_from_lib } from "~/data/pinyin_function";
+import { getAllPinyinUnreliable } from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
 import { comparePinyin } from "~/data/pinyin_function";
 
@@ -128,7 +128,7 @@ export const CharListConflicts: React.FC<{
                 ) : undefined}
                 <p>
                   From library:
-                  {get_all_pinyin_from_lib(v.traditional, STYLE_TONE).map(
+                  {getAllPinyinUnreliable(v.traditional, STYLE_TONE).map(
                     (p, i) => (
                       <p key={i}>{p}</p>
                     )

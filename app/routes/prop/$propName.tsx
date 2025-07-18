@@ -21,7 +21,7 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
     throw new Error("Prop not found: " + propName);
   }
 
-  const currentIndex = props.findIndex((p) => p.main_tagname === propName);
+  const currentIndex = props.findIndex((p) => p.mainTagname === propName);
   const nextProp =
     currentIndex < props.length - 1 ? props[currentIndex + 1].prop : null;
 
@@ -30,11 +30,11 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
     .sort((a, b) => a.sylable.localeCompare(b.sylable));
 
   const subprops = prop.tagnames
-    .filter((name) => name !== prop.main_tagname && name.startsWith("prop::"))
+    .filter((name) => name !== prop.mainTagname && name.startsWith("prop::"))
     .map((name) => knownProps[name]);
 
   const superprops = props.filter(
-    (prop) => prop.tagnames.includes(propName) && prop.main_tagname !== propName
+    (prop) => prop.tagnames.includes(propName) && prop.mainTagname !== propName
   );
 
   return (
@@ -71,7 +71,7 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
       })}
       <div className="ml-10">
         {superprops.map((prop) => (
-          <PropRender key={prop.prop} propName={prop.main_tagname} />
+          <PropRender key={prop.prop} propName={prop.mainTagname} />
         ))}
       </div>
     </div>

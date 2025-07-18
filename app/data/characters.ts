@@ -1,5 +1,5 @@
 import pinyin from "pinyin";
-import { get_pinyin_unreliable } from "./pinyin_function";
+import { getPinyinUnreliable } from "./pinyin_function";
 import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import type { CharsToPhrasesPinyin } from "./phrases";
@@ -24,8 +24,8 @@ export type CharacterType = {
 };
 
 export function getNewCharacter(traditional: string): CharacterType | null {
-  let realPinyin = get_pinyin_unreliable(traditional, pinyin.STYLE_TONE);
-  let numberedPinyin = get_pinyin_unreliable(traditional, pinyin.STYLE_TONE2);
+  let realPinyin = getPinyinUnreliable(traditional, pinyin.STYLE_TONE);
+  let numberedPinyin = getPinyinUnreliable(traditional, pinyin.STYLE_TONE2);
 
   const toneMatch = numberedPinyin.match(/([a-z]+)([1-5])*$/);
   if (toneMatch === null) {
@@ -124,19 +124,19 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             throw new Error("Not learning sound conflict: " + traditional);
           }
 
-          const pinyin_anki_1 = note.fields["Pinyin"].value;
-          const pinyin_1 = cleanPinyinAnkiField(note.fields["Pinyin"].value);
-          const pinyin_2 = note.tags.includes(
+          const pinyinAnki1 = note.fields["Pinyin"].value;
+          const pinyin1 = cleanPinyinAnkiField(note.fields["Pinyin"].value);
+          const pinyin2 = note.tags.includes(
             "multiple-pronounciation-character"
           )
             ? cleanPinyinAnkiField(note.fields["Pinyin 2"].value)
             : undefined;
-          const sylable = removeTone(pinyin_1);
+          const sylable = removeTone(pinyin1);
           const toneMatch =
-            diacriticToNumber(pinyin_1).match(/([a-z]+)([1-5])*$/);
+            diacriticToNumber(pinyin1).match(/([a-z]+)([1-5])*$/);
           if (!toneMatch) {
-            console.log(pinyin_1);
-            throw new Error("invalid pinyin: " + pinyin_1);
+            console.log(pinyin1);
+            throw new Error("invalid pinyin: " + pinyin1);
           }
           let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
 
@@ -157,9 +157,9 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             meaning: note.fields["Meaning"].value,
             meaning2:
               note.fields["Meaning2"]?.value || note.fields["Meaning"].value,
-            pinyin_1,
-            pinyin_anki_1,
-            pinyin_2,
+            pinyin_1: pinyin1,
+            pinyin_anki_1: pinyinAnki1,
+            pinyin_2: pinyin2,
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,
             withSound: !note.tags.includes("not-learning-sound-yet"),

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   TOCFL: [
     { name: "Recognize Traditional", deck: "Phrases" },

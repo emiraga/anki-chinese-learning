@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "./CharCard";
 import anki, {
-  anki_open_browse,
+  ankiOpenBrowse,
   useAnkiCards,
   type NoteWithCards,
 } from "~/apis/anki";
@@ -31,10 +31,10 @@ function MigrationColorsInAnki() {
         e =
           '<span style="color: rgb(170, 0, 255);">' + char.pinyin_1 + "</span>";
       }
-      return { ...char, expected_pinyin: e };
+      return { ...char, expectedPinyin: e };
     })
     .filter(
-      (char) => char.withSound && char.expected_pinyin !== char.pinyin_anki_1
+      (char) => char.withSound && char.expectedPinyin !== char.pinyin_anki_1
     );
   if (filtered.length === 0) {
     return undefined;
@@ -50,7 +50,7 @@ function MigrationColorsInAnki() {
               await anki.note.updateNoteFields({
                 note: {
                   id: char.ankiId || 0,
-                  fields: { Pinyin: char.expected_pinyin },
+                  fields: { Pinyin: char.expectedPinyin },
                 },
               });
             }
@@ -66,7 +66,7 @@ function MigrationColorsInAnki() {
           <div key={i}>
             <hr />
             <CharCardDetails char={char} />
-            {char.expected_pinyin} ||| {char.pinyin_1}
+            {char.expectedPinyin} ||| {char.pinyin_1}
             {char.ankiId ? (
               <button
                 className="rounded-2xl px-2 py-1 m-1 bg-red-200"
@@ -74,7 +74,7 @@ function MigrationColorsInAnki() {
                   await anki.note.updateNoteFields({
                     note: {
                       id: char.ankiId || 0,
-                      fields: { Pinyin: char.expected_pinyin },
+                      fields: { Pinyin: char.expectedPinyin },
                     },
                   });
                   alert("Fixed!");
@@ -192,7 +192,7 @@ function MigrationPropNames() {
   const { props } = useOutletContext<OutletContext>();
 
   const filtered = Object.values(props).filter(
-    (prop) => prop.main_tagname !== "prop::" + prop.prop
+    (prop) => prop.mainTagname !== "prop::" + prop.prop
   );
 
   if (!filtered.length) {
@@ -205,7 +205,7 @@ function MigrationPropNames() {
       {filtered.map((prop, i) => (
         <div key={i}>
           <PropCard prop={prop} />
-          {prop.main_tagname} === {"prop::" + prop.prop}
+          {prop.mainTagname} === {"prop::" + prop.prop}
           <hr />
         </div>
       ))}
@@ -248,7 +248,7 @@ function DuplicatePhrase({
             <button
               className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
               onClick={async () => {
-                await anki_open_browse(`Traditional:${phrase.traditional}`);
+                await ankiOpenBrowse(`Traditional:${phrase.traditional}`);
               }}
             >
               anki
@@ -364,7 +364,7 @@ function MixedSuspension({
           <button
             className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
             onClick={async () => {
-              await anki_open_browse(
+              await ankiOpenBrowse(
                 `note:${noteType} ID:${note.fields["ID"].value}`
               );
             }}
@@ -393,8 +393,12 @@ function ListeningDuplicatePinyin({
       ) {
         continue;
       }
-      const pinyin = note.fields["Pinyin"].value;
-      const traditional = note.fields["Traditional"].value;
+      const pinyin = note.fields["Pinyin"]?.value;
+      const traditional = note.fields["Traditional"]?.value;
+      if (!pinyin || !traditional) {
+        console.error("Note with missing pinyin or traditional", note);
+        continue;
+      }
       if (seen[pinyin] !== undefined && seen[pinyin] !== traditional) {
         duplicate.push(`${pinyin} - ${traditional} != ${seen[pinyin]}`);
       }
@@ -441,7 +445,7 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
                   <button
                     className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
                     onClick={async () => {
-                      await anki_open_browse(
+                      await ankiOpenBrowse(
                         `note:${note.modelName} deck:${card.deckName} ${id}`
                       );
                     }}
@@ -493,7 +497,7 @@ function MixedNew({
           <button
             className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
             onClick={async () => {
-              await anki_open_browse(
+              await ankiOpenBrowse(
                 `note:${noteType} ID:${note.fields["ID"].value}`
               );
             }}

@@ -1,4 +1,4 @@
-import { anki_open_browse } from "~/apis/anki";
+import { ankiOpenBrowse } from "~/apis/anki";
 import type { PhraseType } from "~/data/phrases";
 import { TagList } from "./TagList";
 import { Link } from "react-router";
@@ -42,7 +42,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                   <button
                     className="rounded-2xl bg-blue-100 dark:bg-blue-800 dark:text-blue-100 p-1 ml-2 inline text-xs text-blue-500"
                     onClick={async () => {
-                      await anki_open_browse(
+                      await ankiOpenBrowse(
                         `note:${phrase.source} Traditional:${phrase.traditional}`
                       );
                     }}

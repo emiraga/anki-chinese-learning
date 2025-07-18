@@ -8,6 +8,9 @@ import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
 
 export default [
   {
+    ignores: [".react-router/**/"],
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parser: typescriptParser,
@@ -47,6 +50,61 @@ export default [
       "react/prop-types": "off", // Not needed with TypeScript
       "@typescript-eslint/no-empty-object-type": "off",
       "jsx-a11y/media-has-caption": "off",
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "default",
+          format: ["camelCase"],
+        },
+        {
+          selector: "variable",
+          format: ["camelCase", "UPPER_CASE", "PascalCase"],
+        },
+        {
+          selector: "parameter",
+          format: ["camelCase"],
+          leadingUnderscore: "allow",
+        },
+        {
+          selector: "memberLike",
+          modifiers: ["private"],
+          format: ["camelCase"],
+          leadingUnderscore: "require",
+        },
+        {
+          selector: "typeLike",
+          format: ["PascalCase"],
+        },
+        {
+          selector: "function",
+          format: ["camelCase", "PascalCase"],
+        },
+        {
+          selector: "import",
+          format: ["camelCase", "PascalCase"],
+        },
+        {
+          selector: "enumMember",
+          format: ["UPPER_CASE"],
+        },
+        {
+          selector: "objectLiteralProperty",
+          format: null, // allow
+          filter: {
+            regex:
+              "^(pinyin_1|pinyin_2|pinyin_anki_1|__html|ui:[a-zA-Z]+|Meaning 2|Content-Type|Pinyin|[0-9]|-(ao|an|ang|e|er|a|o|_|ong|ai|.e.[nui]|.o.u|.e.ng)|([a-z][ui]?|nv|lv|[scz]h?u?|_)-)$",
+            match: true,
+          },
+        },
+        {
+          selector: "property",
+          format: null, // allow
+          filter: {
+            regex: "^(pinyin_1|pinyin_2|pinyin_anki_1)$",
+            match: true,
+          },
+        },
+      ],
     },
     settings: {
       react: {

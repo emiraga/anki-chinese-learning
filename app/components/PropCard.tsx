@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { anki_open_browse } from "~/apis/anki";
+import { ankiOpenBrowse } from "~/apis/anki";
 import { PinyinText } from "./PinyinText";
 import { getNewCharacter } from "~/data/characters";
 
@@ -8,7 +8,7 @@ export const PropCard: React.FC<{
     hanzi: string;
     prop: string;
     description: string;
-    main_tagname: string;
+    mainTagname: string;
   };
 }> = ({ prop }) => {
   var hanzi = prop.hanzi;
@@ -27,12 +27,12 @@ export const PropCard: React.FC<{
             to={`/prop/${prop.prop}`}
             className="hover:text-blue-600 dark:hover:text-blue-300 mr-2 hover:underline"
           >
-            {prop.main_tagname.substring(6)}
+            {prop.mainTagname.substring(6)}
           </Link>
           <button
             className="rounded-2xl bg-blue-100 dark:bg-blue-800 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-100"
             onClick={async () => {
-              await anki_open_browse(
+              await ankiOpenBrowse(
                 "note:Props tag:prop::" + prop.prop + " " + prop.prop
               );
             }}

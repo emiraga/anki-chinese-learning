@@ -38,14 +38,14 @@ export const TodoCharsList: React.FC<{
   let somePropsIgnored = Object.values(characters).filter((c) =>
     c.tags.includes("some-props-ignored")
   );
-  let tocfl_chars = removeDuplicateChars(
+  let tocflChars = removeDuplicateChars(
     phrases.map((c) => c.traditional).join(""),
     IGNORE_PHRASE_CHARS
   );
 
   return (
     <>
-      {[...tocfl_chars].map((c, i) => {
+      {[...tocflChars].map((c, i) => {
         if (characters[c] === undefined || characters[c].withSound === false) {
           let char = characters[c] ? characters[c] : getNewCharacter(c);
           if (char !== null) {

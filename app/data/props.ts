@@ -4,7 +4,7 @@ export type PropType = {
   hanzi: string;
   prop: string;
   description: string;
-  main_tagname: string;
+  mainTagname: string;
   tagnames: string[];
 };
 export type KnownPropsType = { [key: string]: PropType };
@@ -49,12 +49,12 @@ export function useAnkiProps() {
           hanzi: note.fields["Hanzi"].value,
           prop: note.fields["Prop"].value,
           description: note.fields["Description"].value,
-          main_tagname: tagname,
+          mainTagname: tagname,
           tagnames: note.tags,
         };
 
         loadedProps.push(info);
-        loadedKnownProps[info.main_tagname] = info;
+        loadedKnownProps[info.mainTagname] = info;
       }
 
       setProps(loadedProps);

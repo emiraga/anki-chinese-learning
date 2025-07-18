@@ -150,7 +150,7 @@ export const useAnkiCards = () => {
   };
 };
 
-export const anki_open_browse = async (query: string) => {
+export const ankiOpenBrowse = async (query: string) => {
   for (var i = 0; i < 200; i++) {
     if (!document.hasFocus()) {
       break;

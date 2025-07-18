@@ -7,7 +7,7 @@ export type PinyinType = {
   count: number;
 };
 
-export function get_pinyin_unreliable(traditional: string, style: number) {
+export function getPinyinUnreliable(traditional: string, style: number) {
   let out = pinyin(traditional, {
     style,
     heteronym: true,
@@ -15,7 +15,7 @@ export function get_pinyin_unreliable(traditional: string, style: number) {
   return out[0][0];
 }
 
-export function get_all_pinyin_from_lib(traditional: string, style: number) {
+export function getAllPinyinUnreliable(traditional: string, style: number) {
   return pinyin(traditional, {
     style,
     heteronym: true,

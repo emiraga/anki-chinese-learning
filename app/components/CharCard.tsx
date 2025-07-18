@@ -1,7 +1,7 @@
 import type { CharacterType } from "~/data/characters";
 import { PinyinText } from "./PinyinText";
 import type React from "react";
-import anki, { anki_open_browse } from "~/apis/anki";
+import anki, { ankiOpenBrowse } from "~/apis/anki";
 import { Link } from "react-router";
 import { TagList } from "./TagList";
 import { useSettings } from "~/settings/SettingsContext";
@@ -103,7 +103,11 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
 
   return (
     <div key={char.traditional} className="mx-6 mb-2">
-      <div className={isDefined ? "flex w-full" : "flex w-full bg-blue-100 dark:bg-blue-900"}>
+      <div
+        className={
+          isDefined ? "flex w-full" : "flex w-full bg-blue-100 dark:bg-blue-900"
+        }
+      >
         <div className="w-26 text-8xl">
           <CharLink traditional={char.traditional} />
         </div>
@@ -139,7 +143,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
             <button
               className="rounded-2xl bg-blue-300 dark:bg-blue-600 dark:text-blue-100 p-1 m-1 w-12"
               onClick={async () => {
-                anki_open_browse("note:Hanzi Traditional:" + char.traditional);
+                ankiOpenBrowse("note:Hanzi Traditional:" + char.traditional);
               }}
             >
               anki
