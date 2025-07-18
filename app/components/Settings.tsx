@@ -31,7 +31,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <>
+    <div className="settings-form">
       <Form
         schema={settingsJsonSchema}
         uiSchema={settingsUiSchema}
@@ -42,17 +42,17 @@ export default function SettingsPage() {
       >
         <button
           type="submit"
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition-colors cursor-pointer"
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition-colors cursor-pointer dark:bg-blue-600 dark:hover:bg-blue-500"
         >
           Save Settings
         </button>
         <button
           onClick={resetSettings}
-          className="mt-4 float-right px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition-colors cursor-pointer"
+          className="mt-4 float-right px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition-colors cursor-pointer dark:bg-red-600 dark:hover:bg-red-500"
         >
           Reset to Defaults
         </button>
       </Form>
-    </>
+    </div>
   );
 }
