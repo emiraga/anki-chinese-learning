@@ -119,7 +119,7 @@ export const DarkModeToggle = () => {
       onClick={toggleDarkMode}
       onContextMenu={handleRightClick}
       className={`p-2 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
-        isSystemMode
+        !isSystemMode
           ? "bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-200 dark:ring-blue-800"
           : "bg-gray-100 dark:bg-gray-700"
       }`}
@@ -142,7 +142,7 @@ export const DarkModeToggle = () => {
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
           </svg>
         )}
-        {isSystemMode && (
+        {!isSystemMode && (
           <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
         )}
       </div>
