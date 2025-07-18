@@ -8,13 +8,14 @@
 /* Enable class-based dark mode */
 @variant dark (.dark &);
 
-html,
+/* Ensure the root element also gets dark background */
+html {
+  @apply bg-white dark:bg-gray-950;
+}
+
 body {
   @apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  min-height: 100vh;
 }
 
 table {
