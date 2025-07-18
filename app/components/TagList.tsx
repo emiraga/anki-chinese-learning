@@ -56,7 +56,7 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
           >
             <Link
               key={t}
-              to={`/tag/${t}`}
+              to={`/tag/${t2}`}
               className="rounded-sm text-sm mx-2 whitespace-break-spaces inline-block"
             >
               {t}

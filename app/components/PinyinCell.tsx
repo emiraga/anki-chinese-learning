@@ -40,7 +40,7 @@ export const PinyinCell: React.FC<{
             {Object.entries(knownSounds[value]).map(([tone, values]) => {
               return (
                 <div key={tone}>
-                  <div style={{ fontSize: 8, color: "gray" }}>Tone {tone}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Tone {tone}</div>
                   {values.map((v, i) => {
                     return <CharCard key={i} v={v} />;
                   })}

@@ -61,7 +61,9 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    outline: 1px solid var(--color-gray-300);
+    background-color: var(--color-gray-800);
+    color: var(--color-gray-100);
+    outline: 1px solid var(--color-gray-700);
     outline-offset: -1px;
   }
 }
