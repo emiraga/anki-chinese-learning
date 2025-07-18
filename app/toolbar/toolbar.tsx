@@ -67,7 +67,7 @@ export const MainToolbarNoOutlet: React.FC<{
         <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
           <Link to="/">Learning Chinese</Link>
           <button
-            className="text-blue-500 bg-blue-900 px-3 py-1 rounded-lg mx-3 text-sm w-22"
+            className="text-blue-700 bg-blue-100 hover:bg-blue-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed px-3 py-1 rounded-lg mx-3 text-sm w-22 transition-colors dark:text-blue-500 dark:bg-blue-900"
             onClick={reload}
             disabled={loading}
           >
