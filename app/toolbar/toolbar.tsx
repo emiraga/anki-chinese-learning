@@ -7,6 +7,7 @@ import type { CharsToPhrasesPinyin, PhraseType } from "~/data/phrases";
 import type { KnownPropsType } from "~/data/props";
 import type { OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
+import { DarkModeToggle } from "~/components/DarkModeToggle";
 
 export const MainToolbarNoOutlet: React.FC<{
   knownProps: KnownPropsType;
@@ -73,6 +74,9 @@ export const MainToolbarNoOutlet: React.FC<{
             {loading ? "loading..." : "🗘 reload"}
           </button>
         </span>
+        <div className="flex items-center gap-2">
+          <DarkModeToggle />
+        </div>
         <div className="w-full md:block md:w-auto">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
             {list.map((item, i) => {
