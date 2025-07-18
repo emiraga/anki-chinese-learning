@@ -34,7 +34,7 @@ export const MainToolbarNoOutlet: React.FC<{
   let { settings } = useSettings();
 
   var list = [
-    { pathname: "/pinyin", name: "Pinyin", show: true },
+    { pathname: "/pinyin", name: "Pinyin", show: phrases.length > 0 },
     {
       pathname: "/props",
       name: "Props",
@@ -54,11 +54,11 @@ export const MainToolbarNoOutlet: React.FC<{
     },
     { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
     { pathname: "/study", name: "Study", show: phrases.length > 0 },
-    { pathname: "/practice", name: "Practice", show: true },
+    { pathname: "/practice", name: "Practice", show: phrases.length > 0 },
     {
       pathname: "/stats",
       name: "Stats",
-      show: settings.toolbar?.showStatsLink,
+      show: settings.toolbar?.showStatsLink && phrases.length > 0,
     },
     { pathname: "/settings", name: "Settings", show: true },
   ].filter((element) => !!element.show);
@@ -76,7 +76,7 @@ export const MainToolbarNoOutlet: React.FC<{
             {loading ? "loading..." : "🗘 reload"}
           </button>
         </span>
-        <div className="flex items-center gap-2">
+        <span className="self-center whitespace-nowrap mr-auto">
           <DarkModeToggle />
           {invalidData.length > 0 && (
             <NavLink
@@ -86,7 +86,7 @@ export const MainToolbarNoOutlet: React.FC<{
               ({invalidData.length})
             </NavLink>
           )}
-        </div>
+        </span>
         <div className="w-full md:block md:w-auto">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0  dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
             {list.map((item, i) => {
