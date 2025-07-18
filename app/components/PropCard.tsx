@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import anki, { anki_open_browse } from "~/apis/anki";
+import { anki_open_browse } from "~/apis/anki";
 import { PinyinText } from "./PinyinText";
 import { getNewCharacter } from "~/data/characters";
 

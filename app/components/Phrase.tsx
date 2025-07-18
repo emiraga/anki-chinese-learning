@@ -1,4 +1,4 @@
-import anki, { anki_open_browse } from "~/apis/anki";
+import { anki_open_browse } from "~/apis/anki";
 import type { PhraseType } from "~/data/phrases";
 import { TagList } from "./TagList";
 import { Link } from "react-router";

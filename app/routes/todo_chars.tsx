@@ -1,7 +1,6 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
-import { useState } from "react";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { HanziText } from "~/components/HanziText";

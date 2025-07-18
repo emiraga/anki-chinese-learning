@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 // Dark mode context
 interface DarkModeContextType {
@@ -8,7 +14,9 @@ interface DarkModeContextType {
   resetToSystem: () => void;
 }
 
-const DarkModeContext = createContext<DarkModeContextType | undefined>(undefined);
+const DarkModeContext = createContext<DarkModeContextType | undefined>(
+  undefined
+);
 
 // Dark mode provider component
 export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
@@ -17,15 +25,17 @@ export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
-    const savedOverride = localStorage.getItem('darkModeOverride');
-    
+    const savedOverride = localStorage.getItem("darkModeOverride");
+
     if (savedOverride !== null) {
       // User has overridden the system preference
       setIsDarkMode(JSON.parse(savedOverride));
       setIsSystemMode(false);
     } else {
       // Use system preference
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const systemPrefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
       setIsDarkMode(systemPrefersDark);
       setIsSystemMode(true);
     }
@@ -35,34 +45,38 @@ export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!isSystemMode) return;
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
       setIsDarkMode(e.matches);
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [isSystemMode]);
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     setIsSystemMode(false);
-    
+
     // Save the user's override preference
-    localStorage.setItem('darkModeOverride', JSON.stringify(newMode));
+    localStorage.setItem("darkModeOverride", JSON.stringify(newMode));
   };
 
   const resetToSystem = () => {
     // Remove the override and return to system preference
-    localStorage.removeItem('darkModeOverride');
+    localStorage.removeItem("darkModeOverride");
     setIsSystemMode(true);
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const systemPrefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
     setIsDarkMode(systemPrefersDark);
   };
 
   return (
-    <DarkModeContext.Provider value={{ isDarkMode, toggleDarkMode, isSystemMode, resetToSystem }}>
+    <DarkModeContext.Provider
+      value={{ isDarkMode, toggleDarkMode, isSystemMode, resetToSystem }}
+    >
       {children}
     </DarkModeContext.Provider>
   );
@@ -72,20 +86,25 @@ export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
 export const useDarkMode = () => {
   const context = useContext(DarkModeContext);
   if (context === undefined) {
-    throw new Error('useDarkMode must be used within a DarkModeProvider');
+    throw new Error("useDarkMode must be used within a DarkModeProvider");
   }
   return context;
 };
 
 // Dark mode toggle button component
 export const DarkModeToggle = () => {
-  const { isDarkMode, toggleDarkMode, isSystemMode, resetToSystem } = useDarkMode();
+  const { isDarkMode, toggleDarkMode, isSystemMode, resetToSystem } =
+    useDarkMode();
 
   const getTitle = () => {
     if (isSystemMode) {
-      return `Following system preference (${isDarkMode ? 'dark' : 'light'} mode). Click to override.`;
+      return `Following system preference (${
+        isDarkMode ? "dark" : "light"
+      } mode). Click to override.`;
     }
-    return `${isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}. Right-click to reset to system preference.`;
+    return `${
+      isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+    }. Right-click to reset to system preference.`;
   };
 
   const handleRightClick = (e: React.MouseEvent) => {
@@ -100,9 +119,9 @@ export const DarkModeToggle = () => {
       onClick={toggleDarkMode}
       onContextMenu={handleRightClick}
       className={`p-2 rounded-lg text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${
-        isSystemMode 
-          ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-200 dark:ring-blue-800' 
-          : 'bg-gray-100 dark:bg-gray-700'
+        isSystemMode
+          ? "bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-200 dark:ring-blue-800"
+          : "bg-gray-100 dark:bg-gray-700"
       }`}
       title={getTitle()}
       aria-label={getTitle()}

@@ -1,6 +1,6 @@
 import type { ProblematicCardAnalysis } from "~/data/problematic";
 import { LearnLink } from "./Learn";
-import anki, { anki_open_browse } from "~/apis/anki";
+import { anki_open_browse } from "~/apis/anki";
 import { HanziText } from "./HanziText";
 import { CARDS_INFO } from "~/data/cards";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
