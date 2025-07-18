@@ -27,7 +27,7 @@ export default function Index() {
         </main>
       ) : (
         <main>
-          <section className="block m-4">
+          <section className="block mx-4">
             <SettingsPage />
           </section>
         </main>

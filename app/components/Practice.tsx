@@ -184,7 +184,7 @@ ${instructions}
               <div>
                 <label
                   htmlFor="userInput"
-                  className="block text-sm font-medium text-slate-700 mb-2"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
                 >
                   (optional) Any instructions for the practice:
                 </label>
@@ -193,7 +193,7 @@ ${instructions}
                   minRows={1}
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
-                  className="w-full px-3 mb-3 py-2 bg-white border border-slate-300 rounded-md text-md shadow-sm placeholder-slate-400
+                  className="w-full px-3 mb-3 py-2 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md text-md shadow-sm placeholder-slate-400 dark:placeholder-gray-500 text-gray-900 dark:text-gray-100
                                  focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
                   placeholder="For example: Focus on..."
                   disabled={isGenerating}
@@ -223,8 +223,8 @@ ${instructions}
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
           <div className="mt-20">
-            <span className="text-xs text-gray-500">Prompt preview:</span>
-            <pre className="text-sm text-gray-400 whitespace-pre-wrap break-all font-mono bg-gray-100 text-left">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Prompt preview:</span>
+            <pre className="text-sm text-gray-400 dark:text-gray-300 whitespace-pre-wrap break-all font-mono bg-gray-100 dark:bg-gray-800 text-left p-3 rounded">
               {promptMain}
             </pre>
           </div>

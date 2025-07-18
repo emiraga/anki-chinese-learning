@@ -46,7 +46,7 @@ export default function PhraseHanzi() {
         List of <HanziText value={phraseHanzi} /> phrases: (
         {filteredPhrases.length})
       </h3>
-      <section className="block m-4">
+      <section className="block mx-4">
         <PhraseList phrases={filteredPhrases} />
       </section>
 

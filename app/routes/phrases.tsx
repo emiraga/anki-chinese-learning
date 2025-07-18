@@ -40,7 +40,7 @@ export default function Phrases() {
           }}
         />
       </h3>
-      <section className="block m-4">
+      <section className="block mx-4">
         <PhraseList phrases={filteredPhrases} />
       </section>
     </main>

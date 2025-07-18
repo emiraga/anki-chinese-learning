@@ -152,7 +152,7 @@ export function SearchMorePhrases({
             )
             <TagList tags={note.tags} />
             <button
-              className="rounded-2xl bg-green-100 p-1 ml-2 inline text-xs text-green-500"
+              className="mx-1 rounded-2xl bg-green-100 dark:bg-green-800 dark:text-green-100 p-1 inline text-xs text-green-500"
               onClick={async () => {
                 await anki.card.unsuspend({ cards: note.cards });
                 await anki.card.setDueDate({ cards: note.cards, days: "0" });

@@ -17,7 +17,7 @@ export default function Practice() {
   return (
     <main>
       <MainToolbar />
-      <section className="block m-4">
+      <section className="block mx-4">
         <PracticeComponent phrases={phrases} characterList={characterList} />
       </section>
     </main>

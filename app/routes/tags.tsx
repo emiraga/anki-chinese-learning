@@ -19,7 +19,7 @@ export default function Tags() {
     <main>
       <MainToolbar />
       <Section
-        className="block m-4"
+        className="block mx-4"
         error={error}
         loading={loading}
         display={result && result.length > 0}

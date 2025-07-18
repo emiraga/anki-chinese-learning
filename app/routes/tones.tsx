@@ -17,7 +17,7 @@ export default function Tones() {
       <h3 className="font-serif text-4xl m-4">
         List of tones: ({Object.values(LOCATION_TAGS_MAP).length})
       </h3>
-      <section className="block m-4">
+      <section className="block mx-4">
         {Object.values(LOCATION_TAGS_MAP).map((toneName, i) => {
           return (
             <Link

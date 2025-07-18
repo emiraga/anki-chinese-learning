@@ -17,7 +17,7 @@ export default function Places() {
       <h3 className="font-serif text-4xl m-4">
         List of places: ({Object.values(PLACE_TAGS_MAP).length})
       </h3>
-      <section className="block m-4">
+      <section className="block mx-4">
         {Object.values(PLACE_TAGS_MAP).map((placeName, i) => {
           return (
             <Link

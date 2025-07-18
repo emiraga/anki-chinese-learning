@@ -17,7 +17,7 @@ export default function Actors() {
       <h3 className="font-serif text-4xl m-4">
         List of actors: ({Object.values(ACTOR_TAGS_MAP).length})
       </h3>
-      <section className="block m-4">
+      <section className="block mx-4">
         {Object.values(ACTOR_TAGS_MAP).map((actorName, i) => {
           return (
             <Link
