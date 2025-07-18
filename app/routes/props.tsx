@@ -23,7 +23,7 @@ export default function Props() {
         List of props: ({props.length})
         <input
           value={search}
-          className="font-sans text-lg border ml-4"
+          className="font-sans text-lg border dark:border-gray-600 ml-4 px-3 py-1 rounded dark:bg-gray-800"
           placeholder="Search..."
           onChange={(x) => {
             setSearch(x.currentTarget.value);

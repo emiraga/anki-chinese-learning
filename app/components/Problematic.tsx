@@ -30,7 +30,7 @@ export default function ProblematicTable({
               </td>
               <td>
                 <button
-                  className="cursor-pointer bg-blue-100"
+                  className="cursor-pointer bg-blue-100 dark:bg-blue-800 dark:text-blue-100"
                   onClick={async () => {
                     await anki_open_browse(
                       `deck:${p.cardInfo.deckName} note:${p.cardInfo.modelName} ${p.primaryField}`

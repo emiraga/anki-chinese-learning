@@ -22,15 +22,15 @@ export const PropCard: React.FC<{
         <Link to={`/prop/${prop.prop}`}>{hanzi}</Link>
       </div>
       <div className="flex-1">
-        <div className="font-mono text-blue-800 font-bold">
+        <div className="font-mono text-blue-800 dark:text-blue-400 font-bold">
           <Link
             to={`/prop/${prop.prop}`}
-            className="hover:text-blue-600 mr-2 hover:underline"
+            className="hover:text-blue-600 dark:hover:text-blue-300 mr-2 hover:underline"
           >
             {prop.main_tagname.substring(6)}
           </Link>
           <button
-            className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
+            className="rounded-2xl bg-blue-100 dark:bg-blue-800 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-100"
             onClick={async () => {
               await anki_open_browse(
                 "note:Props tag:prop::" + prop.prop + " " + prop.prop
@@ -44,7 +44,7 @@ export const PropCard: React.FC<{
           </div>
         </div>
         <div
-          className="text-gray-500"
+          className="text-gray-500 dark:text-gray-400"
           dangerouslySetInnerHTML={{ __html: prop.description }}
         ></div>
       </div>
