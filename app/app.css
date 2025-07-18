@@ -37,8 +37,18 @@ table {
   border: 0.5px solid #ddd; /* Extra thin border */
 }
 
+/* Dark mode table borders */
+.dark .pinyin-table td {
+  border-color: #6b7280; /* gray-500 */
+}
+
 tr:hover {
   background-color: #e3e3e3ff;
+}
+
+/* Dark mode row hover */
+.dark tr:hover {
+  background-color: #374151; /* gray-700 */
 }
 
 tr.row-female > th {
@@ -55,6 +65,27 @@ tr.row-fictional > th {
 
 tr.row-male > th {
   background-color: lightgreen;
+}
+
+/* Dark mode first cell styling with darker backgrounds and variety of colors */
+.dark tr.row-female > th {
+  background-color: #881337; /* rose-900 */
+  color: #fecaca; /* rose-200 */
+}
+
+.dark tr.row-extra > th {
+  background-color: #78350f; /* amber-900 */
+  color: #fef3c7; /* amber-100 */
+}
+
+.dark tr.row-fictional > th {
+  background-color: #0c4a6e; /* sky-900 */
+  color: #bae6fd; /* sky-200 */
+}
+
+.dark tr.row-male > th {
+  background-color: #14532d; /* green-900 */
+  color: #bbf7d0; /* green-200 */
 }
 
 .rjsf a {
