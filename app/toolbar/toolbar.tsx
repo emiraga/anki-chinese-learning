@@ -86,8 +86,47 @@ export const MainToolbarNoOutlet: React.FC<{
     { pathname: "/settings", name: "Settings", show: true },
   ].filter((element) => !!element.show);
 
+  // Get the character-related submenu items for the subtoolbar
+  const charDropdownItem = list.find((item) => item.isDropdown);
+  const charSubmenus =
+    charDropdownItem?.submenu?.filter((item) => item.show) || [];
+
+  // Check if current page is character-related
+  const isCharPage = charSubmenus.some(
+    (item) =>
+      location.pathname === item.pathname ||
+      location.pathname.startsWith(item.pathname + "/")
+  );
+
+  const SubToolbar = () => {
+    if (!isCharPage || !charSubmenus.length) return null;
+
+    return (
+      <div className="bg-gray-100 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+        <div className="max-w-screen-xl mx-auto px-4">
+          <ul className="flex space-x-4 py-2">
+            {charSubmenus.map((item, i) => (
+              <li key={i}>
+                <NavLink
+                  to={item.pathname}
+                  className={({ isActive }) =>
+                    isActive
+                      ? "text-blue-600 bg-blue-50 px-3 py-1 rounded text-sm font-medium dark:text-blue-400 dark:bg-blue-900"
+                      : "text-gray-600 hover:text-blue-600 px-3 py-1 rounded text-sm hover:bg-gray-100 dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-700"
+                  }
+                >
+                  {item.name}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <nav className="bg-gray-100 border-gray-200 dark:bg-gray-900">
+    <nav className="bg-gray-200 border-gray-200 dark:bg-gray-900">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
           <Link to="/">Learning Chinese</Link>
@@ -122,7 +161,7 @@ export const MainToolbarNoOutlet: React.FC<{
                     onMouseLeave={() => setIsDropdownOpen(false)}
                   >
                     <Link
-                      to="/chars"
+                      to={item.pathname}
                       id="dropdownNavbarLink"
                       data-dropdown-toggle="dropdownNavbar"
                       className={`flex items-center justify-between w-full py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white md:dark:hover:text-blue-500 dark:focus:text-white dark:hover:bg-gray-700 md:dark:hover:bg-transparent ${
@@ -194,6 +233,7 @@ export const MainToolbarNoOutlet: React.FC<{
           </ul>
         </div>
       </div>
+      <SubToolbar />
     </nav>
   );
 };
