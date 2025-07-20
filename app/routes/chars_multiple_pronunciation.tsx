@@ -10,6 +10,58 @@ import type { PinyinType } from "~/data/pinyin_function";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "../components/index.module.css";
 
+type CharWithPronunciations = CharacterType & {
+  phrasesPinyin: {
+    [k: string]: PinyinType;
+  };
+  phrasesIgnoredPinyin: {
+    [k: string]: PinyinType;
+  };
+};
+
+function CharacterTable({
+  characters,
+}: {
+  characters: CharWithPronunciations[];
+}) {
+  return (
+    <table className="border-collapse">
+      <thead>
+        <tr className="border-b">
+          <th className="text-left p-2 min-w-10">Character</th>
+          <th className="text-left p-2 min-w-60">Pronunciations</th>
+          <th className="text-left p-2 min-w-60">Ignored</th>
+        </tr>
+      </thead>
+      <tbody>
+        {characters.map((char) => (
+          <tr key={char.ankiId} className="border-b hover:bg-gray-50">
+            <td className="p-2">
+              <CharLink traditional={char.traditional} className="text-4xl" />
+            </td>
+            <td className="p-2">
+              {Object.values(char.phrasesPinyin).map((pinyin) => (
+                <span className="mx-3 inline-block" key={pinyin.pinyin_1}>
+                  <PinyinText v={pinyin} />{" "}
+                  <span className="text-gray-500">({pinyin.count} times)</span>
+                </span>
+              ))}
+            </td>
+            <td className="p-2">
+              {Object.values(char.phrasesIgnoredPinyin).map((pinyin) => (
+                <span className="mx-3 inline-block" key={pinyin.pinyin_1}>
+                  <PinyinText v={pinyin} />{" "}
+                  <span className="text-gray-500">({pinyin.count} times)</span>
+                </span>
+              ))}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Chars" },
@@ -20,18 +72,20 @@ export function meta({}: Route.MetaArgs) {
 export default function TodoCharsMultiplePronunciation() {
   const { characters, charPhrasesPinyin } = useOutletContext<OutletContext>();
 
-  const characters2 = Object.values(characters).map((char) => {
-    var phrasesPinyin = charPhrasesPinyin[char.traditional] || {};
-    return {
-      ...char,
-      phrasesPinyin: Object.fromEntries(
-        Object.entries(phrasesPinyin).filter((kv) => !kv[1].ignoredFifthTone)
-      ),
-      phrasesIgnoredPinyin: Object.fromEntries(
-        Object.entries(phrasesPinyin).filter((kv) => kv[1].ignoredFifthTone)
-      ),
-    };
-  });
+  const characters2: CharWithPronunciations[] = Object.values(characters).map(
+    (char) => {
+      var phrasesPinyin = charPhrasesPinyin[char.traditional] || {};
+      return {
+        ...char,
+        phrasesPinyin: Object.fromEntries(
+          Object.entries(phrasesPinyin).filter((kv) => !kv[1].ignoredFifthTone)
+        ),
+        phrasesIgnoredPinyin: Object.fromEntries(
+          Object.entries(phrasesPinyin).filter((kv) => kv[1].ignoredFifthTone)
+        ),
+      };
+    }
+  );
   const multiple = characters2.filter(
     (char) => Object.keys(char.phrasesPinyin).length !== 1 && char.withSound
   );
@@ -42,45 +96,12 @@ export default function TodoCharsMultiplePronunciation() {
       Object.keys(char.phrasesIgnoredPinyin).length > 0
   );
 
-  const Row = ({
-    char,
-  }: {
-    char: CharacterType & {
-      phrasesPinyin: {
-        [k: string]: PinyinType;
-      };
-      phrasesIgnoredPinyin: {
-        [k: string]: PinyinType;
-      };
-    };
-  }) => (
-    <div key={char.ankiId} className="flex">
-      <CharLink traditional={char.traditional} className="text-2xl flex-1" />
-      <div className="flex-1">
-        {Object.values(char.phrasesPinyin).map((pinyin) => (
-          <span className="mx-3" key={pinyin.pinyin_1}>
-            <PinyinText v={pinyin} />:{pinyin.count}
-          </span>
-        ))}
-      </div>
-      <div className="flex-1">
-        {Object.values(char.phrasesIgnoredPinyin).map((pinyin) => (
-          <span className="mx-3" key={pinyin.pinyin_1}>
-            <PinyinText v={pinyin} />:{pinyin.count}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <main>
       <MainToolbar />
       <Section className="m-3" display={multiple.length > 0}>
-        <h3 className="font-serif text-2xl">Multiple pronounciations:</h3>
-        {multiple.map((char) => (
-          <Row key={char.ankiId} char={char} />
-        ))}
+        <h3 className="font-serif text-2xl mb-4">Multiple pronounciations:</h3>
+        <CharacterTable characters={multiple} />
       </Section>
 
       <Section className="m-3" display={ignored.length > 0}>
@@ -91,9 +112,7 @@ export default function TodoCharsMultiplePronunciation() {
             </h3>
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
-            {ignored.map((char) => (
-              <Row key={char.ankiId} char={char} />
-            ))}
+            <CharacterTable characters={ignored} />
           </Collapsible.Panel>
         </Collapsible.Root>
       </Section>
