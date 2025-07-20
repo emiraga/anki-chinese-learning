@@ -57,6 +57,11 @@ export default function TodoCharsMultiplePronunciation() {
                 <PinyinText v={pinyin} />:{pinyin.count}
               </span>
             ))}
+            {char.showWarning ? (
+              <span className="p-1 m-1 rounded-4xl bg-red-400 dark:bg-red-600">
+                Warning!
+              </span>
+            ) : undefined}
           </div>
         ))}
       </Section>
