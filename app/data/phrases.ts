@@ -49,6 +49,7 @@ const IGNORE_PHRASE_CHARS = new Set([
   "ò",
   "ù",
   "ǜ",
+  "、",
   "，",
   "。",
   "（",

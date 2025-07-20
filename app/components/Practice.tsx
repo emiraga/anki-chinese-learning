@@ -51,6 +51,12 @@ const Practice: React.FC<{
     "practicePromptCustomInstructions",
     ""
   );
+  const [includeCharacterRestrictions, setIncludeCharacterRestrictions] =
+    useLocalStorageState<boolean>("practiceIncludeCharacterRestrictions", true);
+  const [creativity, setCreativity] = useLocalStorageState<number>(
+    "practiceCreativity",
+    1.0
+  );
 
   const [error, setError] = useState<string | null>(null);
 
@@ -68,26 +74,38 @@ Your sentences should be the normal way that chinese is used in Taiwan, not main
 Only use traditional characters, and never simplified characters.
 
 ${
-  characterList.length > 0
-    ? "Student has a limited vocabulary, so only use these characters: " +
+  includeCharacterRestrictions && characterList.length > 0
+    ? "IMPORTANT: Student has a limited vocabulary, so only use these Chinese characters: " +
       characterList.join("") +
-      "\n\nDo not use any other characters!"
+      "\n\nDo not use any other Chinese characters! You may use basic English letters, numbers, and punctuation marks.\n\n"
     : ""
-}
-
-${
-  phrases.length > 0
-    ? "To inspire your creativity, here are some phrases or words:\n" +
-      pickRandomElements(phrases, 60)
-        .map((phrase) => phrase.traditional)
-        .join("\n")
-    : ""
-}
+}${
+    phrases.length > 0
+      ? "To inspire your creativity, here are some phrases or words:\n" +
+        pickRandomElements(phrases, 60)
+          .map((phrase) => phrase.traditional)
+          .join("\n")
+      : ""
+  }
 
 Consider using these phrases or words in sentences that you genenerate,
 but mix elements from various phrases to make a new sentence.
 
-${instructions}
+OUTPUT FORMAT: Return your response as JSON in this exact format:
+{
+  "sentences": [
+    {
+      "chinese": "Traditional Chinese sentence here",
+      "english": "English translation here"
+    }
+  ]
+}
+
+${
+  instructions
+    ? `SPECIAL INSTRUCTIONS: Pay special attention to these user requirements: ${instructions}`
+    : ""
+}
 `;
   /**
    * Generates 10 simple English sentences and their Traditional Chinese translations.
@@ -102,6 +120,7 @@ ${instructions}
     setSentences([]);
 
     const generationConfig: GenerationConfig = {
+      temperature: creativity,
       responseMimeType: "application/json",
       responseSchema: {
         type: SchemaType.OBJECT,
@@ -200,6 +219,55 @@ ${instructions}
                 />
               </div>
 
+              {characterList.length > 0 && (
+                <div className="mb-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={includeCharacterRestrictions}
+                      onChange={(e) =>
+                        setIncludeCharacterRestrictions(e.target.checked)
+                      }
+                      disabled={isGenerating}
+                      className="mr-2 h-4 w-4 text-sky-600 focus:ring-sky-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">
+                      Restrict to learned characters only (
+                      {characterList.length} characters)
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Creativity: {creativity.toFixed(1)}
+                  <span className="text-xs text-gray-500 ml-2">
+                    (
+                    {creativity < 0.5
+                      ? "Conservative"
+                      : creativity > 1.5
+                      ? "Very Creative"
+                      : "Balanced"}
+                    )
+                  </span>
+                </label>
+                <div className="flex items-center space-x-3">
+                  <span className="text-xs text-gray-500">Conservative</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={creativity}
+                    onChange={(e) => setCreativity(parseFloat(e.target.value))}
+                    disabled={isGenerating}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <span className="text-xs text-gray-500">Creative</span>
+                </div>
+              </div>
+
               <button
                 onClick={async () => {
                   setPracticeType(PracticeType.ENGLISH_TO_CHINESE_TEXT);
@@ -223,7 +291,9 @@ ${instructions}
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
           <div className="mt-20">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Prompt preview:</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Prompt preview:
+            </span>
             <pre className="text-sm text-gray-400 dark:text-gray-300 whitespace-pre-wrap break-all font-mono bg-gray-100 dark:bg-gray-800 text-left p-3 rounded">
               {promptMain}
             </pre>
