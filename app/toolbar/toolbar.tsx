@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 
 import { useLocation, NavLink, useOutletContext, Link } from "react-router";
 import { getConflictingChars } from "~/components/CharList";
@@ -44,10 +44,29 @@ export const MainToolbarNoOutlet: React.FC<{
       show: settings.toolbar?.showPropsLink,
     },
     {
-      pathname: "/todo_chars",
+      pathname: "/chars_sentence_input",
       name: "Characters",
       show: Object.keys(characters).length > 0,
       isDropdown: true,
+      submenu: [
+        {
+          pathname: "/chars_sentence_input",
+          name: "Sentence input",
+          show: true,
+        },
+        { pathname: "/todo_chars", name: "Todo chars", show: true },
+        {
+          pathname: "/props",
+          name: "All props",
+          show: Object.keys(knownProps).length > 0,
+        },
+        { pathname: "/chars", name: "All chars", show: true },
+        {
+          pathname: "/chars_multiple_pronunciation",
+          name: "Multiple pronounciation",
+          show: true,
+        },
+      ],
     },
     {
       pathname: "/conflicts",
@@ -138,46 +157,18 @@ export const MainToolbarNoOutlet: React.FC<{
                           className="p-2 text-sm text-gray-700 dark:text-gray-400"
                           aria-labelledby="dropdownLargeButton"
                         >
-                          <li>
-                            <NavLink
-                              to="/chars_sentence_input"
-                              className={`${styleInactive} block px-4 py-2`}
-                            >
-                              Sentence input
-                            </NavLink>
-                          </li>
-                          <li>
-                            <NavLink
-                              to="/todo_chars"
-                              className={`${styleInactive} block px-4 py-2`}
-                            >
-                              Todo chars
-                            </NavLink>
-                          </li>
-                          <li>
-                            <NavLink
-                              to="/props"
-                              className={`${styleInactive} block px-4 py-2`}
-                            >
-                              All props
-                            </NavLink>
-                          </li>
-                          <li>
-                            <NavLink
-                              to="/chars"
-                              className={`${styleInactive} block px-4 py-2`}
-                            >
-                              All chars
-                            </NavLink>
-                          </li>
-                          <li>
-                            <NavLink
-                              to="/chars_multiple_pronunciation"
-                              className={`${styleInactive} block px-4 py-2`}
-                            >
-                              Multiple pronounciation
-                            </NavLink>
-                          </li>
+                          {item.submenu
+                            ?.filter((submenuItem) => submenuItem.show)
+                            .map((submenuItem, j) => (
+                              <li key={j}>
+                                <NavLink
+                                  to={submenuItem.pathname}
+                                  className={`${styleInactive} block px-4 py-2`}
+                                >
+                                  {submenuItem.name}
+                                </NavLink>
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     )}
