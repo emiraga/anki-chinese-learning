@@ -24,6 +24,11 @@ export default [
   route("tag/:tagName", "routes/tag/$tagName.tsx"),
   route("tags", "routes/tags.tsx"),
   route("todo_chars", "routes/todo_chars.tsx"),
+  route("chars_sentence_input", "routes/chars_sentence_input.tsx"),
+  route(
+    "chars_multiple_pronunciation",
+    "routes/chars_multiple_pronunciation.tsx"
+  ),
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),
   index("routes/index.tsx"),

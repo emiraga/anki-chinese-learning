@@ -1,25 +1,13 @@
 import { getNewCharacter, type CharactersType } from "~/data/characters";
 import { IGNORE_PHRASE_CHARS, type PhraseType } from "~/data/phrases";
-import { HanziCardDetails } from "./HanziText";
 import { CharCardDetails } from "./CharCard";
 import React from "react";
 import { removeDuplicateChars } from "~/data/utils";
 
 export const TodoCharsList: React.FC<{
-  sentence: string;
   phrases: PhraseType[];
   characters: CharactersType;
-}> = ({ sentence, phrases, characters }) => {
-  if (sentence.length > 0) {
-    return (
-      <>
-        {[...sentence].map((c, i) => (
-          <HanziCardDetails key={i} c={c} characters={characters} />
-        ))}
-      </>
-    );
-  }
-
+}> = ({ phrases, characters }) => {
   let todo = Object.values(characters).filter((c) => {
     if (c.tags.includes("TODO")) {
       return true;

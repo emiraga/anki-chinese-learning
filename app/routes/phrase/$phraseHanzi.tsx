@@ -4,10 +4,9 @@ import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { PhraseList } from "~/components/Phrase";
 import { SearchMorePhrases } from "~/components/StudyMore";
-import { TodoCharsList } from "~/components/TodoChars";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { removeDuplicateChars } from "~/data/utils";
-import { HanziText } from "~/components/HanziText";
+import { HanziCardDetails, HanziText } from "~/components/HanziText";
 import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -36,12 +35,14 @@ export default function PhraseHanzi() {
   return (
     <main>
       <MainToolbar />
-      <TodoCharsList
-        phrases={phrases}
-        sentence={removeDuplicateChars(phraseHanzi, IGNORE_PHRASE_CHARS)}
-        characters={characters}
-      />
-
+      {[
+        ...removeDuplicateChars(
+          removeDuplicateChars(phraseHanzi, IGNORE_PHRASE_CHARS),
+          IGNORE_PHRASE_CHARS
+        ),
+      ].map((c, i) => (
+        <HanziCardDetails key={i} c={c} characters={characters} />
+      ))}
       <h3 className="font-serif text-4xl m-4">
         List of <HanziText value={phraseHanzi} /> phrases: (
         {filteredPhrases.length})

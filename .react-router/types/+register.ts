@@ -45,6 +45,8 @@ type Params = {
   };
   "/tags": {};
   "/todo_chars": {};
+  "/chars_sentence_input": {};
+  "/chars_multiple_pronunciation": {};
   "/tone/:toneName": {
     "toneName": string;
   };
