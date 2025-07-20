@@ -29,7 +29,8 @@ function isConflictingPinyin(
   charPhrasesPinyin: { [key: string]: PinyinType },
   withSound: boolean,
   pinyin: string | undefined,
-  pinyinAnki: string | undefined
+  pinyinAnki: string | undefined,
+  index: number
 ) {
   if (!pinyinAnki?.includes(">" + pinyin + "<") && pinyin !== pinyinAnki) {
     return true;
@@ -44,7 +45,7 @@ function isConflictingPinyin(
     }
   }
   if (charPhrasesPinyin) {
-    const best = Object.values(charPhrasesPinyin).sort(comparePinyin)[0];
+    const best = Object.values(charPhrasesPinyin).sort(comparePinyin)[index];
     if (best.pinyin_1 !== pinyin) {
       return true;
     }
@@ -69,9 +70,17 @@ export function getConflictingChars(
         charPhrasesPinyin[v.traditional],
         v.withSound,
         v.pinyin_1,
-        v?.pinyin_anki_1
+        v?.pinyin_anki_1,
+        0
       )
     ) {
+      console.log(
+        "1",
+        charPhrasesPinyin[v.traditional],
+        v.withSound,
+        v.pinyin_1,
+        v?.pinyin_anki_1
+      );
       return true;
     }
     if (v.tags.includes("multiple-pronounciation-character")) {
@@ -80,9 +89,17 @@ export function getConflictingChars(
           charPhrasesPinyin[v.traditional],
           v.withSound,
           v.pinyin_2,
-          v?.pinyin_anki_2
+          v?.pinyin_anki_2,
+          1
         )
       ) {
+        console.log(
+          "2",
+          charPhrasesPinyin[v.traditional],
+          v.withSound,
+          v.pinyin_2,
+          v?.pinyin_anki_2
+        );
         return true;
       }
     }
@@ -112,7 +129,7 @@ export const CharListConflicts: React.FC<{
           return (
             <div className="w-full" key={i}>
               <CharCardDetails char={v} />
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 m-2">
+              <div className="">
                 {v.pinyin_1.length ? (
                   <>
                     Anki1:
@@ -138,7 +155,7 @@ export const CharListConflicts: React.FC<{
                   </div>
                 ) : undefined}
                 {charPhrasesPinyin[v.traditional] ? (
-                  <p>
+                  <>
                     From phrases:
                     {Object.values(charPhrasesPinyin[v.traditional])
                       .sort(comparePinyin)
@@ -147,7 +164,7 @@ export const CharListConflicts: React.FC<{
                           <PinyinText v={pinyin} /> - {pinyin.count}
                         </div>
                       ))}
-                  </p>
+                  </>
                 ) : undefined}
                 <p>
                   From library:
