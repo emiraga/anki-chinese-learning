@@ -8,21 +8,7 @@ export const TodoCharsList: React.FC<{
   phrases: PhraseType[];
   characters: CharactersType;
 }> = ({ phrases, characters }) => {
-  let todo = Object.values(characters).filter((c) => {
-    if (c.tags.includes("TODO")) {
-      return true;
-    }
-    if (c.tags.length < 2) {
-      return true;
-    }
-    if (c.tags.filter((t) => t.startsWith("prop::")).length === 0) {
-      return true;
-    }
-    return false;
-  });
-  let somePropsMissing = Object.values(characters).filter((c) =>
-    c.tags.includes("some-props-missing")
-  );
+  let todo = Object.values(characters).filter((c) => c.todoMoreWork);
   let somePropsIgnored = Object.values(characters).filter((c) =>
     c.tags.includes("some-props-ignored")
   );
@@ -55,14 +41,6 @@ export const TodoCharsList: React.FC<{
         </h3>
       ) : undefined}
       {todo.map((char, i) => {
-        return <CharCardDetails key={i} char={char} />;
-      })}
-      {somePropsMissing.length > 0 ? (
-        <h3 className="font-serif text-4xl m-4">
-          Missing props: ({somePropsMissing.length})
-        </h3>
-      ) : undefined}
-      {somePropsMissing.map((char, i) => {
         return <CharCardDetails key={i} char={char} />;
       })}
       {somePropsIgnored.length > 0 ? (

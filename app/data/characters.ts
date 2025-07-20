@@ -21,6 +21,7 @@ export type CharacterType = {
   tags: string[];
   withSound: boolean;
   withMeaning: boolean;
+  todoMoreWork: boolean;
 };
 
 export function getNewCharacter(traditional: string): CharacterType | null {
@@ -47,6 +48,7 @@ export function getNewCharacter(traditional: string): CharacterType | null {
     tags: [],
     withSound: true,
     withMeaning: true,
+    todoMoreWork: false,
   };
 }
 
@@ -92,6 +94,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             tags: [],
             withSound: true,
             withMeaning: true,
+            todoMoreWork: false,
           };
           if (loadedKnownSounds[info.sylable] === undefined) {
             loadedKnownSounds[info.sylable] = {};
@@ -164,6 +167,11 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             tags: note.tags,
             withSound: !note.tags.includes("not-learning-sound-yet"),
             withMeaning: !note.tags.includes("not-learning-meaning-yet"),
+            todoMoreWork:
+              note.tags.includes("TODO") ||
+              note.tags.length < 2 ||
+              note.tags.includes("some-props-missing") ||
+              note.tags.filter((t) => t.startsWith("prop::")).length === 0,
           };
 
           if (info.withSound) {
