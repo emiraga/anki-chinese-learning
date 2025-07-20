@@ -4,7 +4,10 @@ import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import type { CharsToPhrasesPinyin } from "~/data/phrases";
-import { getAllPinyinUnreliable } from "~/data/pinyin_function";
+import {
+  getAllPinyinUnreliable,
+  type PinyinType,
+} from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
 import { comparePinyin } from "~/data/pinyin_function";
 
@@ -22,6 +25,32 @@ export const CharList: React.FC<{ characters: CharacterType[] }> = ({
   );
 };
 
+function isConflictingPinyin(
+  charPhrasesPinyin: { [key: string]: PinyinType },
+  withSound: boolean,
+  pinyin: string | undefined,
+  pinyinAnki: string | undefined
+) {
+  if (!pinyinAnki?.includes(">" + pinyin + "<") && pinyin !== pinyinAnki) {
+    return true;
+  }
+
+  if (withSound) {
+    if (!charPhrasesPinyin) {
+      return true;
+    }
+    if (pinyin && !charPhrasesPinyin[pinyin]) {
+      return true;
+    }
+  }
+  if (charPhrasesPinyin) {
+    const best = Object.values(charPhrasesPinyin).sort(comparePinyin)[0];
+    if (best.pinyin_1 !== pinyin) {
+      return true;
+    }
+  }
+}
+
 export function getConflictingChars(
   knownProps: KnownPropsType,
   characters: CharactersType,
@@ -35,31 +64,25 @@ export function getConflictingChars(
         }
       }
     }
-    if (v.tags.includes("multiple-pronounciation-character")) {
-      // TODO: handle this better
-      return false;
-    }
-
     if (
-      !v.pinyin_1.includes(">" + v.pinyin_1 + "<") &&
-      v.pinyin_1 !== v.pinyin_1
+      isConflictingPinyin(
+        charPhrasesPinyin[v.traditional],
+        v.withSound,
+        v.pinyin_1,
+        v?.pinyin_anki_1
+      )
     ) {
       return true;
     }
-
-    if (v.withSound) {
-      if (!charPhrasesPinyin[v.traditional]) {
-        return true;
-      }
-      if (!charPhrasesPinyin[v.traditional][v.pinyin_1]) {
-        return true;
-      }
-    }
-    if (charPhrasesPinyin[v.traditional]) {
-      const best = Object.values(charPhrasesPinyin[v.traditional]).sort(
-        comparePinyin
-      )[0];
-      if (best.pinyin_1 !== v.pinyin_1) {
+    if (v.tags.includes("multiple-pronounciation-character")) {
+      if (
+        isConflictingPinyin(
+          charPhrasesPinyin[v.traditional],
+          v.withSound,
+          v.pinyin_2,
+          v?.pinyin_anki_2
+        )
+      ) {
         return true;
       }
     }

@@ -92,7 +92,7 @@ export default [
           format: null, // allow
           filter: {
             regex:
-              "^(pinyin_1|pinyin_2|pinyin_anki_1|__html|ui:[a-zA-Z]+|Meaning 2|Content-Type|Pinyin|[0-9]|-(ao|an|ang|e|er|a|o|_|ong|ai|.e.[nui]|.o.u|.e.ng)|([a-z][ui]?|nv|lv|[scz]h?u?|_)-)$",
+              "^(pinyin_1|pinyin_2|pinyin_anki_1|pinyin_anki_2|__html|ui:[a-zA-Z]+|Meaning 2|Content-Type|Pinyin|[0-9]|-(ao|an|ang|e|er|a|o|_|ong|ai|.e.[nui]|.o.u|.e.ng)|([a-z][ui]?|nv|lv|[scz]h?u?|_)-)$",
             match: true,
           },
         },
@@ -100,7 +100,7 @@ export default [
           selector: "property",
           format: null, // allow
           filter: {
-            regex: "^(pinyin_1|pinyin_2|pinyin_anki_1)$",
+            regex: "^(pinyin_1|pinyin_2|pinyin_anki_1|pinyin_anki_2)$",
             match: true,
           },
         },

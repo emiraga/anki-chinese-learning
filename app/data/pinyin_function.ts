@@ -5,6 +5,7 @@ export type PinyinType = {
   tone: number;
   sylable: string;
   count: number;
+  ignoredFifthTone?: boolean;
 };
 
 export function getPinyinUnreliable(traditional: string, style: number) {

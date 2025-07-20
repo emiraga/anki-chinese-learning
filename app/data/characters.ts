@@ -17,6 +17,7 @@ export type CharacterType = {
   pinyin_1: string;
   pinyin_anki_1?: string;
   pinyin_2?: string;
+  pinyin_anki_2?: string;
   mnemonic: string;
   tags: string[];
   withSound: boolean;
@@ -79,9 +80,11 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
       if (!characterNoteType || characterNoteType.length === 0) {
         // Load character info from phrases.
         for (const hanzi of Object.keys(charPhrasesPinyin)) {
-          const primaryPinyin = Object.values(charPhrasesPinyin[hanzi]).sort(
+          const pinyinSorted = Object.values(charPhrasesPinyin[hanzi]).sort(
             comparePinyin
-          )[0];
+          );
+          const primaryPinyin = pinyinSorted[0];
+          const secondaryPinyin = pinyinSorted[1];
           let info: CharacterType = {
             ankiId: 0,
             traditional: hanzi,
@@ -90,6 +93,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             meaning: "",
             meaning2: "",
             pinyin_1: primaryPinyin.pinyin_1,
+            pinyin_2: secondaryPinyin.pinyin_1,
             mnemonic: "",
             tags: [],
             withSound: true,
@@ -128,6 +132,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
           }
 
           const pinyinAnki1 = note.fields["Pinyin"].value;
+          const pinyinAnki2 = note.fields["Pinyin 2"].value;
           const pinyin1 = cleanPinyinAnkiField(note.fields["Pinyin"].value);
           const pinyin2 = note.tags.includes(
             "multiple-pronounciation-character"
@@ -162,6 +167,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
               note.fields["Meaning2"]?.value || note.fields["Meaning"].value,
             pinyin_1: pinyin1,
             pinyin_anki_1: pinyinAnki1,
+            pinyin_anki_2: pinyinAnki2,
             pinyin_2: pinyin2,
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,

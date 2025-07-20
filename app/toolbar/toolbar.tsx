@@ -57,6 +57,12 @@ export const MainToolbarNoOutlet: React.FC<{
   let location = useLocation();
   let { settings } = useSettings();
 
+  const conflictingChars = getConflictingChars(
+    knownProps,
+    characters,
+    charPhrasesPinyin
+  ).length;
+
   var list: MenuItem[] = [
     { pathname: "/pinyin", name: "Pinyin", show: phrases.length > 0 },
     {
@@ -84,6 +90,12 @@ export const MainToolbarNoOutlet: React.FC<{
             .length,
         },
         {
+          pathname: "/conflicts",
+          name: "Conflicts",
+          show: conflictingChars > 0,
+          counter: conflictingChars,
+        },
+        {
           pathname: "/props",
           name: "All props",
           show: Object.keys(knownProps).length > 0,
@@ -95,13 +107,6 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
       ],
-    },
-    {
-      pathname: "/conflicts",
-      name: "Conflicts",
-      show:
-        getConflictingChars(knownProps, characters, charPhrasesPinyin).length >
-        0,
     },
     { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
     { pathname: "/study", name: "Study", show: phrases.length > 0 },
@@ -117,21 +122,24 @@ export const MainToolbarNoOutlet: React.FC<{
   // Helper function to check if any menu item is active
   const isMenuItemActive = (item: MenuItem): boolean => {
     // Check if main item is active
-    if (location.pathname === item.pathname || 
-        location.pathname.startsWith(item.pathname + "/")) {
+    if (
+      location.pathname === item.pathname ||
+      location.pathname.startsWith(item.pathname + "/")
+    ) {
       return true;
     }
-    
+
     // Check if any submenu item is active (for dropdown items)
     if (item.isDropdown && item.submenu) {
       return item.submenu
-        .filter(submenuItem => submenuItem.show)
-        .some(submenuItem => 
-          location.pathname === submenuItem.pathname ||
-          location.pathname.startsWith(submenuItem.pathname + "/")
+        .filter((submenuItem) => submenuItem.show)
+        .some(
+          (submenuItem) =>
+            location.pathname === submenuItem.pathname ||
+            location.pathname.startsWith(submenuItem.pathname + "/")
         );
     }
-    
+
     return false;
   };
 
@@ -229,9 +237,7 @@ export const MainToolbarNoOutlet: React.FC<{
                       id="dropdownNavbarLink"
                       data-dropdown-toggle="dropdownNavbar"
                       className={`flex items-center justify-between w-full py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white md:dark:hover:text-blue-500 dark:focus:text-white dark:hover:bg-gray-700 md:dark:hover:bg-transparent ${
-                        isMenuItemActive(item)
-                          ? styleSelected
-                          : styleInactive
+                        isMenuItemActive(item) ? styleSelected : styleInactive
                       }`}
                     >
                       {item.name}
@@ -285,9 +291,7 @@ export const MainToolbarNoOutlet: React.FC<{
                     <NavLink
                       to={item.pathname}
                       className={
-                        isMenuItemActive(item)
-                          ? styleSelected
-                          : styleInactive
+                        isMenuItemActive(item) ? styleSelected : styleInactive
                       }
                     >
                       {item.name}

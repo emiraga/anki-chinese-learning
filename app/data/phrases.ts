@@ -177,6 +177,22 @@ export function useAnkiPhrases() {
         loaded.push(info);
       }
 
+      for (const c of Object.keys(chars)) {
+        const keys = Object.keys(chars[c]);
+        for (var i = 0; i < keys.length; i++) {
+          for (var j = i + 1; j < keys.length; j++) {
+            if (chars[c][keys[i]].sylable === chars[c][keys[j]].sylable) {
+              if (chars[c][keys[i]].tone === 5) {
+                chars[c][keys[i]].ignoredFifthTone = true;
+              }
+              if (chars[c][keys[j]].tone === 5) {
+                chars[c][keys[j]].ignoredFifthTone = true;
+              }
+            }
+          }
+        }
+      }
+
       setPhrases(loaded);
       setCharPhrasesPinyin(chars);
       setError(null);
