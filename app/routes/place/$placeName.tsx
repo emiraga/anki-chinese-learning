@@ -23,7 +23,7 @@ export default function PlaceDetail() {
   return (
     <main>
       <MainToolbar />
-      <div className="m-4">
+      <div className="mx-4">
         <h3 className="font-serif text-4xl">
           <Link to="/places" className="text-blue-800">
             Place

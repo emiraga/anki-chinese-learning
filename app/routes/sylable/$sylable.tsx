@@ -24,7 +24,7 @@ export default function SylableDetail() {
   return (
     <main>
       <MainToolbar />
-      <div className="m-4">
+      <div className="mx-4">
         <h3 className="font-serif text-4xl">
           <Link to="/" className="text-blue-800">
             Sylable

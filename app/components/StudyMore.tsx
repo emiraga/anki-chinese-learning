@@ -92,11 +92,13 @@ export function SearchMorePhrases({
   withTags,
   search,
   filterKnownChars,
+  filterUnknownChars,
 }: {
   noteTypes: string[];
   withTags?: string[];
   search?: string;
-  filterKnownChars: boolean;
+  filterKnownChars?: boolean;
+  filterUnknownChars?: boolean;
 }) {
   const { characters } = useOutletContext<OutletContext>();
   const [phrases, setPhrases] = useState<NoteInfo[] | undefined>(undefined);
@@ -113,28 +115,47 @@ export function SearchMorePhrases({
         query += ` (${withTags.map((t) => `tag:${t}`).join(" OR ")})`;
       }
       const notesId = await anki.note.findNotes({ query });
-      const notes = await anki.note.notesInfo({ notes: notesId });
+      var notes = await anki.note.notesInfo({ notes: notesId });
 
-      setPhrases(
-        notes.filter((n) => {
+      if (filterKnownChars) {
+        notes = notes.filter((n) => {
           const traditional = n.fields["Traditional"].value;
           for (const c of [...traditional]) {
             if (c === "/" || c === "(" || c === ")" || search?.includes(c)) {
               continue;
             }
-            if (filterKnownChars && characters[c] === undefined) {
-              return false;
-            }
-            if (filterKnownChars && !characters[c].withSound) {
+            if (characters[c] === undefined || !characters[c].withSound) {
               return false;
             }
           }
           return true;
-        })
-      );
+        });
+      }
+      if (filterUnknownChars) {
+        notes = notes.filter((n) => {
+          const traditional = n.fields["Traditional"].value;
+          for (const c of [...traditional]) {
+            if (c === "/" || c === "(" || c === ")" || search?.includes(c)) {
+              continue;
+            }
+            if (characters[c] === undefined || !characters[c].withSound) {
+              return true;
+            }
+          }
+          return false;
+        });
+      }
+      setPhrases(notes);
     };
     load();
-  }, [characters, filterKnownChars, noteTypes, search, withTags]);
+  }, [
+    characters,
+    filterKnownChars,
+    filterUnknownChars,
+    noteTypes,
+    search,
+    withTags,
+  ]);
 
   if (!phrases) {
     return <div>Loading...</div>;

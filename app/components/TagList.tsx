@@ -5,7 +5,7 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
     <>
       {tags.map((t2) => {
         const t = t2.replaceAll("::", " ");
-        if (t.startsWith("prop::")) {
+        if (t2.startsWith("prop::")) {
           return (
             <Link
               key={t}
@@ -16,7 +16,7 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
             </Link>
           );
         }
-        if (t.startsWith("tone::")) {
+        if (t2.startsWith("tone::")) {
           return (
             <Link
               key={t}
@@ -27,7 +27,7 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
             </Link>
           );
         }
-        if (t.startsWith("actor::")) {
+        if (t2.startsWith("actor::")) {
           return (
             <Link
               key={t}
@@ -38,7 +38,7 @@ export const TagList: React.FC<{ tags: string[] }> = ({ tags }) => {
             </Link>
           );
         }
-        if (t.startsWith("place::")) {
+        if (t2.startsWith("place::")) {
           return (
             <Link
               key={t}

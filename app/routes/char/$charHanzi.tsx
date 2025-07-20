@@ -55,7 +55,7 @@ export default function CharDetail() {
   return (
     <main>
       <MainToolbar />
-      <div className="m-4">
+      <div className="mx-4">
         <h3 className="font-serif text-4xl">
           <Link to="/chars" className="text-blue-800">
             Char
@@ -108,11 +108,11 @@ export default function CharDetail() {
           filterKnownChars={true}
         />
         <hr className="my-4" />
-        <h2 className="text-2xl">All other phrases:</h2>
+        <h2 className="text-2xl">Phrases with unknown characters:</h2>
         <SearchMorePhrases
           noteTypes={noteTypes}
           search={char.traditional}
-          filterKnownChars={false}
+          filterUnknownChars={true}
         />
       </div>
     </main>

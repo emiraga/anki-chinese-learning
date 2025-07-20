@@ -58,11 +58,11 @@ export default function PhraseHanzi() {
         filterKnownChars={true}
       />
       <hr className="my-4" />
-      <h2 className="text-2xl">All other phrases:</h2>
+      <h2 className="text-2xl">Phrases with unknown characters:</h2>
       <SearchMorePhrases
         noteTypes={noteTypes}
         search={phraseHanzi}
-        filterKnownChars={false}
+        filterUnknownChars={true}
       />
     </main>
   );
