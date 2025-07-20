@@ -10,6 +10,27 @@ import type { InvalidDataRecord, OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
 import { DarkModeToggle } from "~/components/DarkModeToggle";
 
+type MenuItem = {
+  pathname: string;
+  name: string;
+  show: boolean;
+  isDropdown?: boolean;
+  submenu?: MenuItem[];
+  counter?: number;
+};
+
+const Counter: React.FC<{ count: number; show?: boolean }> = ({
+  count,
+  show = true,
+}) => {
+  if (!show || count === 0) return null;
+  return (
+    <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
+      {count}
+    </span>
+  );
+};
+
 export const MainToolbarNoOutlet: React.FC<{
   knownProps: KnownPropsType;
   characters: CharactersType;
@@ -36,12 +57,12 @@ export const MainToolbarNoOutlet: React.FC<{
   let location = useLocation();
   let { settings } = useSettings();
 
-  var list = [
+  var list: MenuItem[] = [
     { pathname: "/pinyin", name: "Pinyin", show: phrases.length > 0 },
     {
       pathname: "/props",
       name: "Props",
-      show: settings.toolbar?.showPropsLink,
+      show: !!settings.toolbar?.showPropsLink,
     },
     {
       pathname: "/chars_sentence_input",
@@ -54,7 +75,14 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Sentence input",
           show: true,
         },
-        { pathname: "/todo_chars", name: "Todo chars", show: true },
+        {
+          pathname: "/todo_chars",
+          name: "Todo chars",
+          show:
+            Object.values(characters).filter((c) => c.todoMoreWork).length > 0,
+          counter: Object.values(characters).filter((c) => c.todoMoreWork)
+            .length,
+        },
         {
           pathname: "/props",
           name: "All props",
@@ -81,13 +109,27 @@ export const MainToolbarNoOutlet: React.FC<{
     {
       pathname: "/stats",
       name: "Stats",
-      show: settings.toolbar?.showStatsLink && phrases.length > 0,
+      show: !!settings.toolbar?.showStatsLink && phrases.length > 0,
     },
     { pathname: "/settings", name: "Settings", show: true },
   ].filter((element) => !!element.show);
 
+  // Add aggregated counters to dropdown items
+  const listWithCounters = list.map((item) => {
+    if (item.isDropdown && item.submenu) {
+      const totalCount = item.submenu
+        .filter((submenuItem) => submenuItem.show)
+        .reduce((sum, submenuItem) => sum + (submenuItem.counter || 0), 0);
+      return {
+        ...item,
+        counter: totalCount > 0 ? totalCount : undefined,
+      };
+    }
+    return item;
+  });
+
   // Get the character-related submenu items for the subtoolbar
-  const charDropdownItem = list.find((item) => item.isDropdown);
+  const charDropdownItem = listWithCounters.find((item) => item.isDropdown);
   const charSubmenus =
     charDropdownItem?.submenu?.filter((item) => item.show) || [];
 
@@ -116,6 +158,7 @@ export const MainToolbarNoOutlet: React.FC<{
                   }
                 >
                   {item.name}
+                  <Counter count={item.counter || 0} />
                 </NavLink>
               </li>
             ))}
@@ -151,7 +194,7 @@ export const MainToolbarNoOutlet: React.FC<{
         </span>
         <div className="w-full md:block md:w-auto">
           <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0  dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
-            {list.map((item, i) => {
+            {listWithCounters.map((item, i) => {
               if (item.isDropdown) {
                 return (
                   <li
@@ -171,6 +214,7 @@ export const MainToolbarNoOutlet: React.FC<{
                       }`}
                     >
                       {item.name}
+                      <Counter count={item.counter || 0} />
                       <svg
                         className="w-2.5 h-2.5 ms-2.5"
                         aria-hidden="true"
@@ -205,6 +249,7 @@ export const MainToolbarNoOutlet: React.FC<{
                                   className={`${styleInactive} block px-4 py-2`}
                                 >
                                   {submenuItem.name}
+                                  <Counter count={submenuItem.counter || 0} />
                                 </NavLink>
                               </li>
                             ))}
