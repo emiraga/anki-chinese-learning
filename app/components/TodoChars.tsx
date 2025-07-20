@@ -36,7 +36,7 @@ export const TodoCharsList: React.FC<{
         }
       })}
       {todo.length > 0 ? (
-        <h3 className="font-serif text-4xl m-4">
+        <h3 className="font-serif text-3xl m-4">
           List of TODO: ({todo.length}){" "}
         </h3>
       ) : undefined}
@@ -44,7 +44,7 @@ export const TodoCharsList: React.FC<{
         return <CharCardDetails key={i} char={char} />;
       })}
       {somePropsIgnored.length > 0 ? (
-        <h3 className="font-serif text-4xl m-4">
+        <h3 className="font-serif text-3xl m-4">
           Ignored props: ({somePropsIgnored.length})
         </h3>
       ) : undefined}

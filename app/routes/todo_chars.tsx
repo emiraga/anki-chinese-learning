@@ -21,9 +21,6 @@ export default function TodoChars() {
     <main>
       <MainToolbar />
       <Section display={!!settings.characterNote?.noteType}>
-        <h3 className="font-serif text-2xl m-4">
-          <p>Todo chars:</p>
-        </h3>
         <TodoCharsList phrases={phrases} characters={characters} />
       </Section>
     </main>
