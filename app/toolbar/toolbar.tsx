@@ -91,7 +91,7 @@ export const MainToolbarNoOutlet: React.FC<{
         { pathname: "/chars", name: "All chars", show: true },
         {
           pathname: "/chars_multiple_pronunciation",
-          name: "Multiple pronounciation",
+          name: "Heteronyms",
           show: true,
         },
       ],
@@ -113,6 +113,27 @@ export const MainToolbarNoOutlet: React.FC<{
     },
     { pathname: "/settings", name: "Settings", show: true },
   ].filter((element) => !!element.show);
+
+  // Helper function to check if any menu item is active
+  const isMenuItemActive = (item: MenuItem): boolean => {
+    // Check if main item is active
+    if (location.pathname === item.pathname || 
+        location.pathname.startsWith(item.pathname + "/")) {
+      return true;
+    }
+    
+    // Check if any submenu item is active (for dropdown items)
+    if (item.isDropdown && item.submenu) {
+      return item.submenu
+        .filter(submenuItem => submenuItem.show)
+        .some(submenuItem => 
+          location.pathname === submenuItem.pathname ||
+          location.pathname.startsWith(submenuItem.pathname + "/")
+        );
+    }
+    
+    return false;
+  };
 
   // Add aggregated counters to dropdown items
   const listWithCounters = list.map((item) => {
@@ -208,7 +229,7 @@ export const MainToolbarNoOutlet: React.FC<{
                       id="dropdownNavbarLink"
                       data-dropdown-toggle="dropdownNavbar"
                       className={`flex items-center justify-between w-full py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white md:dark:hover:text-blue-500 dark:focus:text-white dark:hover:bg-gray-700 md:dark:hover:bg-transparent ${
-                        location.pathname.startsWith(item.pathname)
+                        isMenuItemActive(item)
                           ? styleSelected
                           : styleInactive
                       }`}
@@ -264,7 +285,7 @@ export const MainToolbarNoOutlet: React.FC<{
                     <NavLink
                       to={item.pathname}
                       className={
-                        item.pathname === location.pathname
+                        isMenuItemActive(item)
                           ? styleSelected
                           : styleInactive
                       }
