@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { YankiConnect } from "yanki-connect";
+import { CARDS_INFO } from "~/data/cards";
 import { sleep } from "~/data/utils";
 
 const anki: YankiConnect = new YankiConnect();
@@ -46,7 +47,14 @@ export const useAnkiCards = () => {
       setNotesByCards([]);
       setStage("Finding notes...");
 
-      const noteIds = await anki.note.findNotes({ query: "-is:suspended" });
+      const noteIds = await anki.note.findNotes({
+        query:
+          "(" +
+          Object.keys(CARDS_INFO)
+            .map((k) => "note:" + k)
+            .join(" OR ") +
+          ") -is:suspended",
+      });
       if (!isMountedRef.current || noteIds.length === 0) {
         setLoading(false);
         return;

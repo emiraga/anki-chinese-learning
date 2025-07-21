@@ -104,7 +104,7 @@ export default function TodoCharsMultiplePronunciation() {
         <CharacterTable characters={multiple} />
       </Section>
 
-      <Section className="m-3" display={ignored.length > 0}>
+      <Section className="mx-3 mt-3" display={ignored.length > 0}>
         <Collapsible.Root className={styles.Collapsible}>
           <Collapsible.Trigger className={styles.Trigger}>
             <h3 className="font-serif text-2xl">
