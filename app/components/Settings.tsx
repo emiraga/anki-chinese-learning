@@ -50,10 +50,27 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="relative">
-      {/* Fixed Save Button Bar */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4 mb-6">
-        <div className="flex items-center justify-between">
+    <div className="relative pb-20">
+      {/* Settings Form */}
+      <div className="settings-form px-4">
+        <Form
+          schema={settingsJsonSchema}
+          uiSchema={settingsUiSchema}
+          validator={validator}
+          formData={formData}
+          onSubmit={handleSubmit}
+          onChange={handleOnChange}
+        >
+          {/* Hidden submit button for form functionality */}
+          <button type="submit" style={{ display: 'none' }}>
+            Save
+          </button>
+        </Form>
+      </div>
+
+      {/* Fixed Save Button Bar at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-10 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <button
               onClick={handleSave}
@@ -79,23 +96,6 @@ export default function SettingsPage() {
             Reset to Defaults
           </button>
         </div>
-      </div>
-
-      {/* Settings Form */}
-      <div className="settings-form px-4">
-        <Form
-          schema={settingsJsonSchema}
-          uiSchema={settingsUiSchema}
-          validator={validator}
-          formData={formData}
-          onSubmit={handleSubmit}
-          onChange={handleOnChange}
-        >
-          {/* Hidden submit button for form functionality */}
-          <button type="submit" style={{ display: 'none' }}>
-            Save
-          </button>
-        </Form>
       </div>
     </div>
   );
