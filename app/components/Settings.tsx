@@ -7,7 +7,8 @@ import {
   type AppSettings,
 } from "../settings/schema";
 import type { IChangeEvent } from "@rjsf/core";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useBeforeUnload, useBlocker } from "react-router";
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -49,6 +50,34 @@ export default function SettingsPage() {
     // Settings will be updated via useEffect
   };
 
+  // Warn before navigating away if there are unsaved changes
+  useBeforeUnload(
+    useCallback(
+      (event) => {
+        if (hasUnsavedChanges) {
+          event.preventDefault();
+          return (event.returnValue =
+            "You have unsaved changes. Are you sure you want to leave?");
+        }
+      },
+      [hasUnsavedChanges]
+    ),
+    { capture: true }
+  );
+
+  // Block navigation within the app if there are unsaved changes
+  useBlocker(({ currentLocation, nextLocation }) => {
+    if (
+      hasUnsavedChanges &&
+      currentLocation.pathname !== nextLocation.pathname
+    ) {
+      return !confirm(
+        "You have unsaved changes. Are you sure you want to leave?"
+      );
+    }
+    return false;
+  });
+
   return (
     <div className="relative pb-20">
       {/* Settings Form */}
@@ -62,7 +91,7 @@ export default function SettingsPage() {
           onChange={handleOnChange}
         >
           {/* Hidden submit button for form functionality */}
-          <button type="submit" style={{ display: 'none' }}>
+          <button type="submit" style={{ display: "none" }}>
             Save
           </button>
         </Form>
