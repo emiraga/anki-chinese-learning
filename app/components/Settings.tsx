@@ -6,59 +6,106 @@ import {
   settingsUiSchema,
   type AppSettings,
 } from "../settings/schema";
-import type { IChangeEvent } from "@rjsf/core";
+import type { IChangeEvent, WidgetProps } from "@rjsf/core";
 import { useState, useEffect, useCallback } from "react";
 import { useBeforeUnload, useBlocker } from "react-router";
-import { get, set, cloneDeep } from "lodash";
 import { useDarkMode } from "./DarkModeToggle";
+import type { FieldTemplateProps } from "@rjsf/utils";
 
 // Helper function to find differing paths
-const findDifferingPaths = (
-  obj1: Record<string, unknown>,
-  obj2: Record<string, unknown>
-): string[] => {
+const findDifferingPaths = (obj1: unknown, obj2: unknown): string[] => {
   const diffs = new Set<string>();
-  const check = (
-    o1: Record<string, unknown>,
-    o2: Record<string, unknown> | undefined,
-    path: string
-  ) => {
-    for (const key in o1) {
-      if (o1.hasOwnProperty(key)) {
-        const newPath = path ? `${path}.${key}` : key;
-        const o1Value = o1[key];
-        const o2Value = o2 ? o2[key] : undefined;
-        if (
-          typeof o1Value === "object" &&
-          o1Value !== null &&
-          !Array.isArray(o1Value)
-        ) {
-          if (
-            typeof o2Value === "object" &&
-            o2Value !== null &&
-            !Array.isArray(o2Value)
-          ) {
-            check(
-              o1Value as Record<string, unknown>,
-              o2Value as Record<string, unknown>,
-              newPath
-            );
-          } else {
-            diffs.add(newPath);
-          }
-        } else if (JSON.stringify(o1Value) !== JSON.stringify(o2Value)) {
-          diffs.add(newPath);
-        }
-      }
+
+  const deepCompare = (val1: unknown, val2: unknown, path: string) => {
+    // If values are strictly equal (primitives, same object reference), no difference
+    if (val1 === val2) {
+      return;
     }
+
+    // If one is null/undefined and the other is not, or types are different (e.g., object vs. string)
+    if (
+      typeof val1 !== typeof val2 ||
+      val1 === null ||
+      val2 === null ||
+      Array.isArray(val1) !== Array.isArray(val2)
+    ) {
+      diffs.add(path);
+      return;
+    }
+
+    // If both are arrays
+    if (Array.isArray(val1) && Array.isArray(val2)) {
+      const arr1 = val1 as unknown[];
+      const arr2 = val2 as unknown[];
+      const maxLength = Math.max(arr1.length, arr2.length);
+      for (let i = 0; i < maxLength; i++) {
+        deepCompare(arr1[i], arr2[i], path ? `${path}.${i}` : `${i}`);
+      }
+      return;
+    }
+
+    // If both are objects (and not arrays)
+    if (typeof val1 === "object" && typeof val2 === "object") {
+      const o1 = val1 as Record<string, unknown>;
+      const o2 = val2 as Record<string, unknown>;
+
+      const keys1 = Object.keys(o1);
+      const keys2 = Object.keys(o2);
+
+      // Check for keys present in o1 but not o2, or vice-versa
+      const allKeys = new Set([...keys1, ...keys2]);
+
+      for (const key of allKeys) {
+        const newPath = path ? `${path}.${key}` : key;
+        deepCompare(o1[key], o2[key], newPath);
+      }
+      return;
+    }
+
+    // If we reach here, it means they are primitive types that are not strictly equal
+    // (e.g., 1 !== 2, "a" !== "b")
+    diffs.add(path);
   };
-  check(obj1, obj2, "");
+
+  deepCompare(obj1, obj2, "");
   return Array.from(diffs);
+};
+
+// Custom FieldTemplate to apply styling
+const CustomFieldTemplate = (props: FieldTemplateProps) => {
+  const { id, children, errors, help, classNames, hidden, formContext } = props;
+  const { isDarkMode } = useDarkMode();
+  const modifiedFields = formContext?.modifiedFields || [];
+  const hasUnsavedChanges = formContext?.hasUnsavedChanges || false;
+
+  const isModified = modifiedFields.some((path: string) => {
+    return "root_" + path.replaceAll(".", "_") === id;
+  });
+
+  const highlightStyle: React.CSSProperties =
+    isModified && hasUnsavedChanges
+      ? {
+          boxShadow: isDarkMode
+            ? "-5px 0px 0px 0px black, -10px 0px 0px 0px red"
+            : "-5px 0px 0px 0px white, -10px 0px 0px 0px red",
+        }
+      : {};
+
+  if (hidden) {
+    return <div className="hidden">{children}</div>;
+  }
+
+  return (
+    <div className={`${classNames} w-full`} style={highlightStyle}>
+      {children}
+      {errors}
+      {help}
+    </div>
+  );
 };
 
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
-  const { isDarkMode } = useDarkMode();
   const [formData, setFormData] = useState<AppSettings>(settings);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [modifiedFields, setModifiedFields] = useState<string[]>([]);
@@ -75,12 +122,9 @@ export default function SettingsPage() {
     const hasChanges = JSON.stringify(formData) !== JSON.stringify(settings);
     setHasUnsavedChanges(hasChanges);
     if (hasChanges) {
-      setModifiedFields(
-        findDifferingPaths(
-          formData as unknown as Record<string, unknown>,
-          settings as unknown as Record<string, unknown>
-        )
-      );
+      const newModifiedFields = findDifferingPaths(formData, settings);
+      setModifiedFields(newModifiedFields);
+      console.log("Modified Fields:", newModifiedFields);
     } else {
       setModifiedFields([]);
     }
@@ -119,28 +163,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Generate dynamic UI schema to highlight modified fields
-  const getDynamicUiSchema = () => {
-    const dynamicUiSchema = cloneDeep(settingsUiSchema);
-    modifiedFields.forEach((path) => {
-      const existingUiOptions: { style?: React.CSSProperties } = get(
-        dynamicUiSchema,
-        `${path}.ui:options`,
-        {}
-      );
-      set(dynamicUiSchema, `${path}.ui:options`, {
-        ...existingUiOptions,
-        style: {
-          ...existingUiOptions.style,
-          boxShadow: isDarkMode
-            ? "-5px 0px 0px 0px black,-10px 0px 0px 0px red"
-            : "-5px 0px 0px 0px white,-10px 0px 0px 0px red",
-        },
-      });
-    });
-    return dynamicUiSchema;
-  };
-
   // Warn before navigating away if there are unsaved changes
   useBeforeUnload(
     useCallback(
@@ -173,11 +195,15 @@ export default function SettingsPage() {
       <div className="settings-form px-4">
         <Form
           schema={settingsJsonSchema}
-          uiSchema={getDynamicUiSchema()}
+          uiSchema={settingsUiSchema}
           validator={validator}
           formData={formData}
           onSubmit={handleSubmit}
           onChange={handleOnChange}
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          templates={{ FieldTemplate: CustomFieldTemplate }}
+          formContext={{ modifiedFields, hasUnsavedChanges }}
+          className="w-full"
         >
           {/* Hidden submit button for form functionality */}
           <button type="submit" style={{ display: "none" }}>

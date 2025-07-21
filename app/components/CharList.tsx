@@ -74,13 +74,6 @@ export function getConflictingChars(
         0
       )
     ) {
-      console.log(
-        "1",
-        charPhrasesPinyin[v.traditional],
-        v.withSound,
-        v.pinyin_1,
-        v?.pinyin_anki_1
-      );
       return true;
     }
     if (v.tags.includes("multiple-pronounciation-character")) {
@@ -93,13 +86,6 @@ export function getConflictingChars(
           1
         )
       ) {
-        console.log(
-          "2",
-          charPhrasesPinyin[v.traditional],
-          v.withSound,
-          v.pinyin_2,
-          v?.pinyin_anki_2
-        );
         return true;
       }
     }

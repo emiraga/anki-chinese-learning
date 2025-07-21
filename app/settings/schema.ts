@@ -135,6 +135,12 @@ export const settingsUiSchema = {
     "ui:options": {
       orderable: false,
     },
+    items: {
+      noteType: {},
+      cards: {
+        items: {},
+      },
+    },
   },
   generativeAi: {
     llmModelName: {
