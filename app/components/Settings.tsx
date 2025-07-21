@@ -56,8 +56,6 @@ export default function SettingsPage() {
       (event) => {
         if (hasUnsavedChanges) {
           event.preventDefault();
-          return (event.returnValue =
-            "You have unsaved changes. Are you sure you want to leave?");
         }
       },
       [hasUnsavedChanges]
