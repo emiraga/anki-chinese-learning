@@ -6,11 +6,14 @@ import "../data/characters";
 import { CharCard } from "./CharCard";
 import { PinyinText } from "./PinyinText";
 import type { KnownSoundsType } from "../data/characters";
+import { useDarkMode } from "./DarkModeToggle";
 
 export const PinyinCell: React.FC<{
   value: string;
   knownSounds: KnownSoundsType;
 }> = ({ value, knownSounds }) => {
+  const { isDarkMode } = useDarkMode();
+
   if (knownSounds[value] === undefined || !knownSounds[value]) {
     return <></>;
   }
@@ -36,7 +39,7 @@ export const PinyinCell: React.FC<{
 
       <Tooltip.Portal>
         <Tooltip.Positioner sideOffset={10}>
-          <Tooltip.Popup className={styles.Popup}>
+          <Tooltip.Popup className={styles.Popup} data-dark-mode={isDarkMode}>
             {Object.entries(knownSounds[value]).map(([tone, values]) => {
               return (
                 <div key={tone}>

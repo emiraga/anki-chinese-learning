@@ -51,14 +51,14 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
       <PropCard prop={prop} />
       {/* <hr className="my-4" /> */}
       {subprops.length > 0 ? (
-        <div className="bg-gray-200">
+        <div className="bg-gray-200 dark:bg-gray-800">
           <h4 className="font-semibold text-lg">Sub-props:</h4>
           <PropList props={subprops} />
         </div>
       ) : undefined}
       <hr className="my-4" />
       {superprops.length > 0 ? (
-        <div className="bg-gray-200">
+        <div className="bg-gray-200 dark:bg-gray-800">
           <h4 className="font-semibold text-lg">Super-props:</h4>
           <PropList props={superprops} />
         </div>
