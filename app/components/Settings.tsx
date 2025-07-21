@@ -6,7 +6,7 @@ import {
   settingsUiSchema,
   type AppSettings,
 } from "../settings/schema";
-import type { IChangeEvent, WidgetProps } from "@rjsf/core";
+import type { IChangeEvent } from "@rjsf/core";
 import { useState, useEffect, useCallback } from "react";
 import { useBeforeUnload, useBlocker } from "react-router";
 import { useDarkMode } from "./DarkModeToggle";
