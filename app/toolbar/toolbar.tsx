@@ -48,7 +48,7 @@ export const MainToolbarNoOutlet: React.FC<{
   charPhrasesPinyin,
   invalidData,
 }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [openDropdownPath, setOpenDropdownPath] = useState<string | null>(null);
 
   let styleSelected =
     "block mx-1 py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0 dark:text-white md:dark:text-blue-500";
@@ -83,7 +83,7 @@ export const MainToolbarNoOutlet: React.FC<{
         },
         {
           pathname: "/todo_chars",
-          name: "Todo chars",
+          name: "Todo Chars",
           show:
             Object.values(characters).filter((c) => c.todoMoreWork).length > 0,
           counter: Object.values(characters).filter((c) => c.todoMoreWork)
@@ -97,10 +97,10 @@ export const MainToolbarNoOutlet: React.FC<{
         },
         {
           pathname: "/props",
-          name: "All props",
+          name: "All Props",
           show: Object.keys(knownProps).length > 0,
         },
-        { pathname: "/chars", name: "All chars", show: true },
+        { pathname: "/chars", name: "All Chars", show: true },
         {
           pathname: "/chars_multiple_pronunciation",
           name: "Heteronyms",
@@ -179,26 +179,21 @@ export const MainToolbarNoOutlet: React.FC<{
     return item;
   });
 
-  // Get the character-related submenu items for the subtoolbar
-  const charDropdownItem = listWithCounters.find((item) => item.isDropdown);
-  const charSubmenus =
-    charDropdownItem?.submenu?.filter((item) => item.show) || [];
-
-  // Check if current page is character-related
-  const isCharPage = charSubmenus.some(
-    (item) =>
-      location.pathname === item.pathname ||
-      location.pathname.startsWith(item.pathname + "/")
+  // Determine the active submenu for the subtoolbar
+  const activeDropdownItem = listWithCounters.find((item) =>
+    isMenuItemActive(item)
   );
+  const activeSubmenu =
+    activeDropdownItem?.submenu?.filter((item) => item.show) || [];
 
-  const SubToolbar = () => {
-    if (!isCharPage || !charSubmenus.length) return null;
+  const SubToolbar = ({ submenu }: { submenu: MenuItem[] }) => {
+    if (!submenu.length) return null;
 
     return (
       <div className="bg-gray-100 border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <div className="max-w-screen-xl mx-auto px-4">
           <ul className="flex space-x-4 py-2">
-            {charSubmenus.map((item, i) => (
+            {submenu.map((item, i) => (
               <li key={i}>
                 <NavLink
                   to={item.pathname}
@@ -251,8 +246,8 @@ export const MainToolbarNoOutlet: React.FC<{
                   <li
                     key={i}
                     className="relative"
-                    onMouseEnter={() => setIsDropdownOpen(true)}
-                    onMouseLeave={() => setIsDropdownOpen(false)}
+                    onMouseEnter={() => setOpenDropdownPath(item.pathname)}
+                    onMouseLeave={() => setOpenDropdownPath(null)}
                   >
                     <Link
                       to={item.pathname}
@@ -280,7 +275,7 @@ export const MainToolbarNoOutlet: React.FC<{
                         />
                       </svg>
                     </Link>
-                    {isDropdownOpen && (
+                    {openDropdownPath === item.pathname && (
                       <div
                         id="dropdownNavbar"
                         className="z-10 font-normal bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600 absolute"
@@ -325,7 +320,7 @@ export const MainToolbarNoOutlet: React.FC<{
           </ul>
         </div>
       </div>
-      <SubToolbar />
+      <SubToolbar submenu={activeSubmenu} />
     </nav>
   );
 };

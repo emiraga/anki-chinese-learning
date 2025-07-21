@@ -1,6 +1,5 @@
 import type { Route } from "./+types/index";
-import { Link, useOutletContext } from "react-router";
-import { MigrationEverything } from "~/components/Migration";
+import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import MainFrame from "~/toolbar/frame";
 
@@ -24,14 +23,6 @@ export default function Stats() {
   const uniquePhrases = new Set(phrases.map((phrase) => phrase.traditional));
   return (
     <MainFrame>
-      <h3 className="font-serif text-4xl my-2">
-        <Link to="/migration" className="text-2xl underline text-blue-700">
-          Migration
-        </Link>
-        :
-      </h3>
-      <MigrationEverything />
-
       <h3 className="font-serif text-4xl my-2">
         List of props: ({props.length})
       </h3>
