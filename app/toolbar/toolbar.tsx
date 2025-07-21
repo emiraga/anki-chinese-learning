@@ -116,7 +116,29 @@ export const MainToolbarNoOutlet: React.FC<{
       name: "Stats",
       show: !!settings.toolbar?.showStatsLink && phrases.length > 0,
     },
-    { pathname: "/settings", name: "Settings", show: true },
+    {
+      pathname: "/settings",
+      name: "Settings",
+      show: true,
+      isDropdown: true,
+      submenu: [
+        {
+          pathname: "/settings",
+          name: "Settings",
+          show: true,
+        },
+        {
+          pathname: "/stats",
+          name: "Stats",
+          show: phrases.length > 0,
+        },
+        {
+          pathname: "/migration",
+          name: "Migration",
+          show: phrases.length > 0,
+        },
+      ],
+    },
   ].filter((element) => !!element.show);
 
   // Helper function to check if any menu item is active
