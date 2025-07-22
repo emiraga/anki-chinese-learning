@@ -29,10 +29,10 @@ function isConflictingPinyin(
   charPhrasesPinyin: { [key: string]: PinyinType },
   withSound: boolean,
   pinyin: string | undefined,
-  pinyinAnki: string | undefined,
+  pinyinAnki: string,
   index: number
 ) {
-  if (!pinyinAnki?.includes(">" + pinyin + "<") && pinyin !== pinyinAnki) {
+  if (!pinyinAnki.includes(">" + pinyin + "<") && pinyin !== pinyinAnki) {
     return true;
   }
 
@@ -65,7 +65,9 @@ export function getConflictingChars(
         }
       }
     }
+
     if (
+      v?.pinyin_anki_1 &&
       isConflictingPinyin(
         charPhrasesPinyin[v.traditional],
         v.withSound,
@@ -78,6 +80,7 @@ export function getConflictingChars(
     }
     if (v.tags.includes("multiple-pronounciation-character")) {
       if (
+        v?.pinyin_anki_2 &&
         isConflictingPinyin(
           charPhrasesPinyin[v.traditional],
           v.withSound,

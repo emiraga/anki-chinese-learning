@@ -93,7 +93,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             meaning: "",
             meaning2: "",
             pinyin_1: primaryPinyin.pinyin_1,
-            pinyin_2: secondaryPinyin.pinyin_1,
+            pinyin_2: secondaryPinyin?.pinyin_1,
             mnemonic: "",
             tags: [],
             withSound: true,

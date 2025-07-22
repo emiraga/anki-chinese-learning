@@ -19,6 +19,7 @@ import { CARDS_INFO } from "~/data/cards";
 function MigrationColorsInAnki() {
   const { characters } = useOutletContext<OutletContext>();
   const filtered = Object.values(characters)
+    .filter((char) => char.pinyin_anki_1 !== undefined)
     .map((char) => {
       var e = char.pinyin_1;
       if (char.tone === 1) {
@@ -94,6 +95,7 @@ function MigrationActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
 
   const filtered = Object.values(characters)
+    .filter((char) => char.pinyin_anki_1 !== undefined)
     .map((char) => {
       if (REVERSE_FULL_MAP[char.sylable] === undefined) {
         console.error(char.sylable);
