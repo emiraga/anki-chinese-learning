@@ -2,6 +2,7 @@ import type { Route } from "./+types/index";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import MainFrame from "~/toolbar/frame";
+import Section from "~/toolbar/section";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -23,58 +24,50 @@ export default function Stats() {
   const uniquePhrases = new Set(phrases.map((phrase) => phrase.traditional));
   return (
     <MainFrame>
-      <h3 className="font-serif text-4xl my-2">
-        List of props: ({props.length})
-      </h3>
-      <section className="block">
+      <Section className="block" display={props.length > 0}>
+        <h3 className="font-serif text-4xl my-2">
+          List of props: ({props.length})
+        </h3>
         {props.map((p, i) => (
           <span key={i}>{p.hanzi.startsWith("<img") ? "?" : p.hanzi}</span>
         ))}
-      </section>
+      </Section>
 
-      <h3 className="font-serif text-4xl my-2">
-        List of characters without sound: ({charsWithoutSound.length})
-      </h3>
-      <section className="block">
+      <Section className="block" display={charsWithoutSound.length > 0}>
+        <h3 className="font-serif text-4xl my-2">
+          List of characters without sound: ({charsWithoutSound.length})
+        </h3>
         {charsWithoutSound.map((p, i) => (
           <span key={i}>{p.traditional}</span>
         ))}
-      </section>
+      </Section>
 
-      <h3 className="font-serif text-4xl my-2">
-        List of characters without meaning: ({charsWithoutMeaning.length})
-      </h3>
-      <section className="block">
+      <Section className="block" display={charsWithoutMeaning.length > 0}>
+        <h3 className="font-serif text-4xl my-2">
+          List of characters without meaning: ({charsWithoutMeaning.length})
+        </h3>
         {charsWithoutMeaning.map((p, i) => (
           <span key={i}>{p.traditional}</span>
         ))}
-      </section>
+      </Section>
 
-      <h3 className="font-serif text-4xl my-2">
-        List of characters: ({charsComplete.length})
-      </h3>
-      <section className="block">
+      <Section className="block" display={charsComplete.length > 0}>
+        <h3 className="font-serif text-4xl my-2">
+          List of characters: ({charsComplete.length})
+        </h3>
         {charsComplete.map((p, i) => (
           <span key={i}>{p.traditional}</span>
         ))}
-      </section>
+      </Section>
 
-      <h3 className="font-serif text-4xl my-2">
-        List of phrases: ({uniquePhrases.size})
-      </h3>
-      <section className="block">
+      <Section className="block" display={uniquePhrases.size > 0}>
+        <h3 className="font-serif text-4xl my-2">
+          List of phrases: ({uniquePhrases.size})
+        </h3>
         {[...uniquePhrases].map((p, i) => (
           <span key={i}>{p}。</span>
         ))}
-      </section>
-
-      {/* <section className="block">
-        <AnkiHanziProgress />
-      </section>
-
-      <section className="block">
-        <HtmlStats />
-      </section> */}
+      </Section>
     </MainFrame>
   );
 }
