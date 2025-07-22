@@ -3,6 +3,24 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const external = [
+  "open",
+  "default-browser-id",
+  "default-browser",
+  "is-wsl",
+  "is-inside-container",
+  "is-docker",
+  "run-applescript",
+];
+
 export default defineConfig({
   plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  build: {
+    rollupOptions: {
+      external,
+    },
+  },
+  optimizeDeps: {
+    exclude: external,
+  },
 });
