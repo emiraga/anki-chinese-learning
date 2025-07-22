@@ -124,7 +124,6 @@ export default function SettingsPage() {
     if (hasChanges) {
       const newModifiedFields = findDifferingPaths(formData, settings);
       setModifiedFields(newModifiedFields);
-      console.log("Modified Fields:", newModifiedFields);
     } else {
       setModifiedFields([]);
     }

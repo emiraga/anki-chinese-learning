@@ -51,8 +51,7 @@ export const settingsJsonSchema: JSONSchema7 = {
         properties: {
           noteType: {
             type: "string",
-            title:
-              "Name of the 'Note type' in Anki, sometimes called Model Name",
+            title: "'Note type' in Anki",
           },
           cards: {
             type: "array",
