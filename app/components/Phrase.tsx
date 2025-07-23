@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 
 export const PhraseLink: React.FC<{ value?: string }> = ({ value }) => {
-  return <Link to={`/phrase/${value}`}>{value}</Link>;
+  return <Link to={`/phrase/${encodeURIComponent(value || '')}`}>{value}</Link>;
 };
 
 export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({

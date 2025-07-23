@@ -10,23 +10,26 @@ import { HanziCardDetails, HanziText } from "~/components/HanziText";
 import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({ params }: Route.MetaArgs) {
+  const phraseHanzi = decodeURIComponent(params.phraseHanzi || '');
   return [
-    { title: `Phrase: ${params.phraseHanzi}` },
+    { title: `Phrase: ${phraseHanzi}` },
     {
       name: "description",
-      content: `Details for phrase ${params.phraseHanzi}`,
+      content: `Details for phrase ${phraseHanzi}`,
     },
   ];
 }
 
 export default function PhraseHanzi() {
-  const { phraseHanzi } = useParams();
+  const { phraseHanzi: encodedPhraseHanzi } = useParams();
   const { phrases, characters } = useOutletContext<OutletContext>();
   const { settings } = useSettings();
 
-  if (!phraseHanzi) {
+  if (!encodedPhraseHanzi) {
     throw new Error("Expected hanzi");
   }
+
+  const phraseHanzi = decodeURIComponent(encodedPhraseHanzi);
 
   const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   const filteredPhrases = phrases.filter((phrase) =>
