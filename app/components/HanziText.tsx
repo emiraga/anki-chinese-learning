@@ -27,24 +27,6 @@ export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
         }
 
         return <CharLink key={i} traditional={c} className={className} />;
-
-        // return (
-        //   <Tooltip.Root delay={0} closeDelay={0}>
-        //     <Tooltip.Trigger>
-        //       <Link key={i} to={"/char/" + c} className={className}>
-        //         {c}
-        //       </Link>
-        //     </Tooltip.Trigger>
-
-        //     <Tooltip.Portal>
-        //       <Tooltip.Positioner sideOffset={0}>
-        //         <Tooltip.Popup className={styles.Popup}>
-        //           <HanziCardDetails characters={characters} c={c} />
-        //         </Tooltip.Popup>
-        //       </Tooltip.Positioner>
-        //     </Tooltip.Portal>
-        //   </Tooltip.Root>
-        // );
       })}
     </>
   );

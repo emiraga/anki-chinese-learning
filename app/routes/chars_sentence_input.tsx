@@ -34,6 +34,7 @@ export default function TodoCharsSentenceInput() {
             className="border-2"
             value={sentence}
             minRows={2}
+            maxRows={6}
             cols={60}
             onChange={(v) => setSentence(v.target.value)}
           />

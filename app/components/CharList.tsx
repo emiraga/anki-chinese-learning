@@ -3,13 +3,18 @@ import { CharCard, CharCardDetails } from "./CharCard";
 import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
-import type { CharsToPhrasesPinyin } from "~/data/phrases";
+import {
+  IGNORE_PHRASE_CHARS,
+  type CharsToPhrasesPinyin,
+  type PhraseType,
+} from "~/data/phrases";
 import {
   getAllPinyinUnreliable,
   type PinyinType,
 } from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
 import { comparePinyin } from "~/data/pinyin_function";
+import { removeDuplicateChars } from "~/data/utils";
 
 export const CharList: React.FC<{ characters: CharacterType[] }> = ({
   characters,
@@ -93,6 +98,20 @@ export function getConflictingChars(
       }
     }
   });
+}
+
+export function getMissingPhraseChars(
+  phrases: PhraseType[],
+  characters: CharactersType
+) {
+  return [
+    ...removeDuplicateChars(
+      phrases.map((p) => p.traditional).join(""),
+      IGNORE_PHRASE_CHARS
+    ),
+  ].filter(
+    (c) => characters[c] === undefined || characters[c].withSound === false
+  );
 }
 
 export const CharListConflicts: React.FC<{

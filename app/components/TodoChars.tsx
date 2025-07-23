@@ -1,8 +1,8 @@
 import { getNewCharacter, type CharactersType } from "~/data/characters";
-import { IGNORE_PHRASE_CHARS, type PhraseType } from "~/data/phrases";
+import { type PhraseType } from "~/data/phrases";
 import { CharCardDetails } from "./CharCard";
 import React from "react";
-import { removeDuplicateChars } from "~/data/utils";
+import { getMissingPhraseChars } from "./CharList";
 
 export const TodoCharsList: React.FC<{
   phrases: PhraseType[];
@@ -12,14 +12,11 @@ export const TodoCharsList: React.FC<{
   let somePropsIgnored = Object.values(characters).filter((c) =>
     c.tags.includes("some-props-ignored")
   );
-  let tocflChars = removeDuplicateChars(
-    phrases.map((c) => c.traditional).join(""),
-    IGNORE_PHRASE_CHARS
-  );
+  let missingChars = getMissingPhraseChars(phrases, characters);
 
   return (
     <>
-      {[...tocflChars].map((c, i) => {
+      {[...missingChars].map((c, i) => {
         if (characters[c] === undefined || characters[c].withSound === false) {
           let char = characters[c] ? characters[c] : getNewCharacter(c);
           if (char !== null) {

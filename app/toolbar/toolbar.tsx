@@ -2,7 +2,10 @@ import * as React from "react";
 import { useState } from "react";
 
 import { useLocation, NavLink, useOutletContext, Link } from "react-router";
-import { getConflictingChars } from "~/components/CharList";
+import {
+  getConflictingChars,
+  getMissingPhraseChars,
+} from "~/components/CharList";
 import type { CharactersType } from "~/data/characters";
 import type { CharsToPhrasesPinyin, PhraseType } from "~/data/phrases";
 import type { KnownPropsType } from "~/data/props";
@@ -62,6 +65,7 @@ export const MainToolbarNoOutlet: React.FC<{
     characters,
     charPhrasesPinyin
   ).length;
+  const missingChars = getMissingPhraseChars(phrases, characters);
 
   var list: MenuItem[] = [
     { pathname: "/pinyin", name: "Pinyin", show: phrases.length > 0 },
@@ -85,9 +89,12 @@ export const MainToolbarNoOutlet: React.FC<{
           pathname: "/todo_chars",
           name: "Todo Chars",
           show:
-            Object.values(characters).filter((c) => c.todoMoreWork).length > 0,
-          counter: Object.values(characters).filter((c) => c.todoMoreWork)
-            .length,
+            Object.values(characters).filter((c) => c.todoMoreWork).length +
+              missingChars.length >
+            0,
+          counter:
+            Object.values(characters).filter((c) => c.todoMoreWork).length +
+            missingChars.length,
         },
         {
           pathname: "/conflicts",
