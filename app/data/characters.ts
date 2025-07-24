@@ -132,13 +132,13 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
           }
 
           const pinyinAnki1 = note.fields["Pinyin"].value;
-          const pinyinAnki2 = note.fields["Pinyin 2"].value;
+          const pinyinAnki2 = note.fields["Pinyin 2"]?.value;
           const pinyin1 = cleanPinyinAnkiField(note.fields["Pinyin"].value);
-          const pinyin2 = note.tags.includes(
-            "multiple-pronounciation-character"
-          )
-            ? cleanPinyinAnkiField(note.fields["Pinyin 2"].value)
-            : undefined;
+          const pinyin2 =
+            note.tags.includes("multiple-pronounciation-character") &&
+            note.fields["Pinyin 2"]
+              ? cleanPinyinAnkiField(note.fields["Pinyin 2"]?.value)
+              : undefined;
           const sylable = removeTone(pinyin1);
           const toneMatch =
             diacriticToNumber(pinyin1).match(/([a-z]+)([1-5])*$/);
