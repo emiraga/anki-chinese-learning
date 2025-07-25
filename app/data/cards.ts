@@ -1,35 +1,37 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   TOCFL: [
-    { name: "Recognize Traditional", deck: "Phrases" },
-    { name: "Meaning to Traditional", deck: "Phrases" },
-    { name: "Sound to meaning", deck: "Listening" },
+    { name: "Recognize Traditional", deck: "Chinese::Phrases" },
+    { name: "Meaning to Traditional", deck: "Chinese::Phrases" },
+    { name: "Sound to meaning", deck: "Chinese::Listening" },
   ],
   Hanzi: [
-    { name: "Recognize Hanzi", deck: "CharsProps" },
-    { name: "Write Hanzi", deck: "Writting" },
+    { name: "Recognize Hanzi", deck: "Chinese::CharsProps" },
+    { name: "Write Hanzi", deck: "Chinese::Writting" },
   ],
-  Refold1k: [{ name: "Recognize traditional", deck: "Refold1k" }],
+  Refold1k: [{ name: "Recognize traditional", deck: "Chinese::Refold1k" }],
   Props: [
-    { name: "Recognize prop", deck: "CharsProps" },
-    { name: "Name of prop", deck: "CharsProps" },
+    { name: "Recognize prop", deck: "Chinese::CharsProps" },
+    { name: "Name of prop", deck: "Chinese::CharsProps" },
   ],
   MyWords: [
-    { name: "Recognize Traditional", deck: "Phrases" },
-    { name: "Meaning to Traditional", deck: "Phrases" },
-    { name: "Sound to meaning", deck: "Listening" },
+    { name: "Recognize Traditional", deck: "Chinese::Phrases" },
+    { name: "Meaning to Traditional", deck: "Chinese::Phrases" },
+    { name: "Sound to meaning", deck: "Chinese::Listening" },
   ],
   Actors: [
-    { name: "Actor", deck: "CharsProps" },
-    { name: "Actor", deck: "CharsProps" },
+    { name: "Actor", deck: "Chinese::CharsProps" },
+    { name: "Actor", deck: "Chinese::CharsProps" },
   ],
   Places: [
-    { name: "Place", deck: "CharsProps" },
-    { name: "Place", deck: "CharsProps" },
+    { name: "Place", deck: "Chinese::CharsProps" },
+    { name: "Place", deck: "Chinese::CharsProps" },
   ],
   Location: [
-    { name: "Location", deck: "CharsProps" },
-    { name: "Location", deck: "CharsProps" },
+    { name: "Location", deck: "Chinese::CharsProps" },
+    { name: "Location", deck: "Chinese::CharsProps" },
   ],
-  Dangdai: [{ name: "Dangdai", deck: "A Course in Contemporary Chinese" }],
+  Dangdai: [
+    { name: "Dangdai", deck: "Chinese::A Course in Contemporary Chinese" },
+  ],
 };
