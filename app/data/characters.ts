@@ -21,6 +21,17 @@ export type CharacterType = {
   todoMoreWork: boolean;
 };
 
+function fromAccentedPinyin(pinyin: string): PinyinType {
+  const sylable = removeTone(pinyin);
+  const toneMatch = diacriticToNumber(pinyin).match(/([a-z]+)([1-5])*$/);
+  if (!toneMatch) {
+    console.log(pinyin);
+    throw new Error("invalid pinyin: " + pinyin);
+  }
+  let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
+  return { pinyinAccented: pinyin, sylable, tone };
+}
+
 export function getNewCharacter(traditional: string): CharacterType | null {
   let realPinyin = getPinyinUnreliable(traditional, pinyin.STYLE_TONE);
   let numberedPinyin = getPinyinUnreliable(traditional, pinyin.STYLE_TONE2);
@@ -51,6 +62,7 @@ export type KnownSoundsType = {
     [key2: number]: CharacterType[];
   };
 };
+
 export type CharactersType = { [key1: string]: CharacterType };
 
 // Create a custom hook to load and manage Anki data with reload capability
@@ -121,21 +133,20 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
           }
 
           const pinyinAnki1 = note.fields["Pinyin"].value;
-          const pinyinAnki2 = note.fields["Pinyin 2"]?.value;
-          const pinyin1 = cleanPinyinAnkiField(note.fields["Pinyin"].value);
-          // const pinyin2 = note.tags.includes(
-          //   "multiple-pronounciation-character"
-          // ) && note.fields["Pinyin 2"]:
-          //   ? cleanPinyinAnkiField(note.fields["Pinyin 2"]?.value)
-          //   : undefined;
-          const sylable = removeTone(pinyin1);
-          const toneMatch =
-            diacriticToNumber(pinyin1).match(/([a-z]+)([1-5])*$/);
-          if (!toneMatch) {
-            console.log(pinyin1);
-            throw new Error("invalid pinyin: " + pinyin1);
-          }
-          let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
+          const pinyinAnki2 = note.fields["Pinyin others"]?.value
+            ?.split(",")
+            .map((p) => cleanPinyinAnkiField(p));
+          const pinyin1 = fromAccentedPinyin(
+            cleanPinyinAnkiField(note.fields["Pinyin"].value)
+          );
+
+          const pinyin2 =
+            note.tags.includes("multiple-pronounciation-character") &&
+            note.fields["Pinyin others"]?.value?.length > 0
+              ? note.fields["Pinyin others"]?.value
+                  .split(",")
+                  .map((p) => fromAccentedPinyin(cleanPinyinAnkiField(p)))
+              : undefined;
 
           if (
             note.tags.includes("not-learning-sound-yet") &&
@@ -152,8 +163,8 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             meaning: note.fields["Meaning"].value,
             meaning2:
               note.fields["Meaning2"]?.value || note.fields["Meaning"].value,
-            pinyin: [{ pinyinAccented: pinyin1, sylable, tone }], // TODO (pinyin2 ? [pinyin2] : [])],
-            pinyinAnki: [pinyinAnki1, pinyinAnki2],
+            pinyin: [pinyin1].concat(pinyin2 || []),
+            pinyinAnki: [pinyinAnki1].concat(pinyinAnki2 || []),
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,
             withSound: !note.tags.includes("not-learning-sound-yet"),
@@ -166,13 +177,15 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
           };
 
           if (info.withSound) {
-            if (loadedKnownSounds[sylable] === undefined) {
-              loadedKnownSounds[sylable] = {};
+            for (const p of info.pinyin) {
+              if (loadedKnownSounds[p.sylable] === undefined) {
+                loadedKnownSounds[p.sylable] = {};
+              }
+              if (loadedKnownSounds[p.sylable][p.tone] === undefined) {
+                loadedKnownSounds[p.sylable][p.tone] = [];
+              }
+              loadedKnownSounds[p.sylable][p.tone].push(info);
             }
-            if (loadedKnownSounds[sylable][tone] === undefined) {
-              loadedKnownSounds[sylable][tone] = [];
-            }
-            loadedKnownSounds[sylable][tone].push(info);
           }
           if (loadedChars[info.traditional] !== undefined) {
             throw new Error("Duplicate char: " + info.traditional);

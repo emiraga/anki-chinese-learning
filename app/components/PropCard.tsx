@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { ankiOpenBrowse } from "~/apis/anki";
-import { PinyinText } from "./PinyinText";
+import { PinyinList } from "./PinyinText";
 import { getNewCharacter } from "~/data/characters";
 
 export const PropCard: React.FC<{
@@ -40,8 +40,8 @@ export const PropCard: React.FC<{
             anki
           </button>
           <div>
-            <PinyinText
-              v={getNewCharacter(prop.hanzi.substring(0, 1))?.pinyin[0] ?? null}
+            <PinyinList
+              pinyin={getNewCharacter(prop.hanzi.substring(0, 1))?.pinyin ?? []}
             />
           </div>
         </div>

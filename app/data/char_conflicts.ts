@@ -5,36 +5,7 @@ import {
   type CharsToPhrasesPinyin,
   type PhraseType,
 } from "~/data/phrases";
-import { type PinyinType } from "~/data/pinyin_function";
-import { comparePinyin } from "~/data/pinyin_function";
 import { removeDuplicateChars } from "~/data/utils";
-
-function isConflictingPinyin(
-  charPhrasesPinyin: { [key: string]: PinyinType },
-  withSound: boolean,
-  pinyin: string | undefined,
-  pinyinAnki: string,
-  index: number
-) {
-  if (!pinyinAnki.includes(">" + pinyin + "<") && pinyin !== pinyinAnki) {
-    return true;
-  }
-
-  if (withSound) {
-    if (!charPhrasesPinyin) {
-      return true;
-    }
-    if (pinyin && !charPhrasesPinyin[pinyin]) {
-      return true;
-    }
-  }
-  if (charPhrasesPinyin) {
-    const best = Object.values(charPhrasesPinyin).sort(comparePinyin)[index];
-    if (best.pinyinAccented !== pinyin) {
-      return true;
-    }
-  }
-}
 
 export function getConflictingChars(
   knownProps: KnownPropsType,
@@ -50,34 +21,21 @@ export function getConflictingChars(
       }
     }
 
-    if (
-      v?.pinyinAnki &&
-      isConflictingPinyin(
-        charPhrasesPinyin[v.traditional],
-        v.withSound,
-        v.pinyin[0].pinyinAccented,
-        v?.pinyinAnki[0],
-        0
-      )
-    ) {
-      return true;
-    }
-    if (v.tags.includes("multiple-pronounciation-character")) {
-      if (
-        v?.pinyinAnki &&
-        v.pinyinAnki.length > 1 &&
-        v.pinyin.length > 1 &&
-        isConflictingPinyin(
-          charPhrasesPinyin[v.traditional],
-          v.withSound,
-          v.pinyin[1].pinyinAccented,
-          v.pinyinAnki[1],
-          1
-        )
-      ) {
+    const fromAnki = new Set(v.pinyin.map((x) => x.pinyinAccented));
+    const fromPhrases = new Set(
+      charPhrasesPinyin[v.traditional]
+        ? Object.values(charPhrasesPinyin[v.traditional])
+            .filter((x) => !x.ignoredFifthTone)
+            .map((x) => x.pinyinAccented)
+        : []
+    );
+    for (const p of fromPhrases) {
+      if (!fromAnki.has(p)) {
+        console.log("Missing", p, "in", fromAnki);
         return true;
       }
     }
+    return false;
   });
 }
 

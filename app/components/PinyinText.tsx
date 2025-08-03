@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Fragment } from "react/jsx-runtime";
 import type { PinyinType } from "~/data/pinyin_function";
 
 export const PinyinText: React.FC<{
@@ -26,5 +27,20 @@ export const PinyinText: React.FC<{
     <span className={`font-bold ${toneColors[v.tone]}`}>
       <Link to={"/sylable/" + v.sylable}>{v.pinyinAccented}</Link>
     </span>
+  );
+};
+
+export const PinyinList: React.FC<{
+  pinyin: PinyinType[];
+}> = ({ pinyin }) => {
+  return (
+    <>
+      {pinyin.map((p, i) => (
+        <Fragment key={i}>
+          <PinyinText v={p} />
+          {i < pinyin.length - 1 ? ", " : undefined}
+        </Fragment>
+      ))}
+    </>
   );
 };

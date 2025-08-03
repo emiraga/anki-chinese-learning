@@ -37,6 +37,7 @@ export function comparePinyin(a: PinyinType, b: PinyinType) {
 
 export function cleanPinyinAnkiField(pinyin: string) {
   return pinyin
+    .trim()
     .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
     .replace(/\<\/span\>/g, "");
 }
