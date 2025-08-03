@@ -2,7 +2,7 @@ import { getNewCharacter, type CharactersType } from "~/data/characters";
 import { type PhraseType } from "~/data/phrases";
 import { CharCardDetails } from "./CharCard";
 import React from "react";
-import { getMissingPhraseChars } from "./CharList";
+import { getMissingPhraseChars } from "~/data/char_conflicts";
 
 export const TodoCharsList: React.FC<{
   phrases: PhraseType[];

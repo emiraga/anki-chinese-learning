@@ -1,17 +1,16 @@
 import * as React from "react";
 import { useState } from "react";
-
 import { useLocation, NavLink, useOutletContext, Link } from "react-router";
-import {
-  getConflictingChars,
-  getMissingPhraseChars,
-} from "~/components/CharList";
 import type { CharactersType } from "~/data/characters";
 import type { CharsToPhrasesPinyin, PhraseType } from "~/data/phrases";
 import type { KnownPropsType } from "~/data/props";
 import type { InvalidDataRecord, OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
 import { DarkModeToggle } from "~/components/DarkModeToggle";
+import {
+  getConflictingChars,
+  getMissingPhraseChars,
+} from "~/data/char_conflicts";
 
 type MenuItem = {
   pathname: string;

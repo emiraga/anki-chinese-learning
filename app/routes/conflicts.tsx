@@ -1,8 +1,9 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
-import { CharListConflicts, getConflictingChars } from "~/components/CharList";
+import { CharListConflicts } from "~/components/CharList";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
+import { getConflictingChars } from "~/data/char_conflicts";
 
 export function meta({}: Route.MetaArgs) {
   return [
