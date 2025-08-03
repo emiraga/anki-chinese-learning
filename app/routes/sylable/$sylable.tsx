@@ -18,8 +18,8 @@ export default function SylableDetail() {
   const sylables = sylable?.split(",") ?? [];
 
   const chars = Object.values(characters)
-    .filter((c) => sylables.includes(c.sylable))
-    .sort((a, b) => a.sylable.localeCompare(b.sylable));
+    .filter((c) => sylables.includes(c.pinyin[0].sylable))
+    .sort((a, b) => a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable));
 
   return (
     <main>

@@ -41,7 +41,7 @@ function CharacterTable({
             </td>
             <td className="p-2">
               {Object.values(char.phrasesPinyin).map((pinyin) => (
-                <span className="mx-3 inline-block" key={pinyin.pinyin_1}>
+                <span className="mx-3 inline-block" key={pinyin.pinyinAccented}>
                   <PinyinText v={pinyin} />{" "}
                   <span className="text-gray-500">({pinyin.count} times)</span>
                 </span>
@@ -49,7 +49,7 @@ function CharacterTable({
             </td>
             <td className="p-2">
               {Object.values(char.phrasesIgnoredPinyin).map((pinyin) => (
-                <span className="mx-3 inline-block" key={pinyin.pinyin_1}>
+                <span className="mx-3 inline-block" key={pinyin.pinyinAccented}>
                   <PinyinText v={pinyin} />{" "}
                   <span className="text-gray-500">({pinyin.count} times)</span>
                 </span>

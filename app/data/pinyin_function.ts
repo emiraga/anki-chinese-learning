@@ -1,10 +1,10 @@
 import pinyin from "pinyin";
 
 export type PinyinType = {
-  pinyin_1: string;
+  pinyinAccented: string;
   tone: number;
   sylable: string;
-  count: number;
+  count?: number;
   ignoredFifthTone?: boolean;
 };
 
@@ -32,7 +32,7 @@ export function comparePinyin(a: PinyinType, b: PinyinType) {
       return -1;
     }
   }
-  return b.count - a.count;
+  return (b.count ?? 0) - (a.count ?? 0);
 }
 
 export function cleanPinyinAnkiField(pinyin: string) {

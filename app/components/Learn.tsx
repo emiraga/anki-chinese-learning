@@ -52,12 +52,12 @@ export const PromptsLink: React.FC<{ char: string }> = ({ char }) => {
     return undefined;
   }
 
-  if (REVERSE_FULL_MAP[c.sylable] === undefined) {
-    console.error(c.sylable);
+  if (REVERSE_FULL_MAP[c.pinyin[0].sylable] === undefined) {
+    console.error(c.pinyin[0].sylable);
     console.error(Object.keys(REVERSE_FULL_MAP));
     throw new Error("REVERSE_FULL_MAP[char.sylable] === undefined");
   }
-  const { initial, final } = REVERSE_FULL_MAP[c.sylable] || {
+  const { initial, final } = REVERSE_FULL_MAP[c.pinyin[0].sylable] || {
     initial: "???",
     final: "???",
   };
@@ -78,9 +78,9 @@ export const PromptsLink: React.FC<{ char: string }> = ({ char }) => {
           const prompt = `I am using mnemonic system to remember Chinese characters.
 I want to learn ${c.traditional}
 which has a meaning: "${c.meaning}"
-and it's pronounced: "${c.pinyin_1}" basically ${c.sylable} with a ${
-            ordinals[c.tone]
-          } tone.
+and it's pronounced: "${c.pinyin[0].pinyinAccented}" basically ${
+            c.pinyin[0].sylable
+          } with a ${ordinals[c.pinyin[0].tone]} tone.
 
 This character consists of following props:
 ${c.tags
@@ -92,7 +92,7 @@ ${c.tags
   .join("\n")}
 
 Actor is ${ACTOR_NAMES_MAP[initial]}.
-Location is ${PLACE_NAMES_MAP[final]} ${LOCATION_NAMES_MAP[c.tone]}.
+Location is ${PLACE_NAMES_MAP[final]} ${LOCATION_NAMES_MAP[c.pinyin[0].tone]}.
 
 Come up with several stories, they should involve mentioned props,
 and that story should associate towards the primary meaning of the character.

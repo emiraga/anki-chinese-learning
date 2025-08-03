@@ -18,7 +18,7 @@ export default function ActorDetail() {
 
   const chars = Object.values(characters)
     .filter((c) => c.tags.includes("actor::" + actorName))
-    .sort((a, b) => a.sylable.localeCompare(b.sylable));
+    .sort((a, b) => a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable));
 
   return (
     <main>

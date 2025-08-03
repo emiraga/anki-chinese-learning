@@ -26,7 +26,7 @@ export const CharCard: React.FC<{ v: CharacterType }> = ({ v }) => {
           <CharLink traditional={v.traditional} />
         </div>
         <div className="flex-1">
-          {v.withSound ? <PinyinText v={v} /> : <></>}
+          {v.withSound ? <PinyinText v={v.pinyin[0]} /> : <></>}
           <div>{v.meaning2}</div>
         </div>
       </div>
@@ -112,7 +112,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           <CharLink traditional={char.traditional} />
         </div>
         <div className="w-48">
-          {char.withSound ? <PinyinText v={char} /> : <></>}
+          {char.withSound ? <PinyinText v={char.pinyin[0]} /> : <></>}
           <div>{char.meaning2}</div>
         </div>
         <div className="w-32 text-sm">

@@ -19,23 +19,35 @@ import { CARDS_INFO } from "~/data/cards";
 function MigrationColorsInAnki() {
   const { characters } = useOutletContext<OutletContext>();
   const filtered = Object.values(characters)
-    .filter((char) => char.pinyin_anki_1 !== undefined)
+    .filter((char) => char.pinyinAnki !== undefined)
     .map((char) => {
-      var e = char.pinyin_1;
-      if (char.tone === 1) {
-        e = '<span style="color: rgb(255, 0, 0);">' + char.pinyin_1 + "</span>";
-      } else if (char.tone === 2) {
-        e = '<span style="color: rgb(0, 170, 0);">' + char.pinyin_1 + "</span>";
-      } else if (char.tone === 3) {
-        e = '<span style="color: rgb(0, 0, 255);">' + char.pinyin_1 + "</span>";
-      } else if (char.tone === 4) {
+      var e = char.pinyin[0].pinyinAccented;
+      if (char.pinyin[0].tone === 1) {
         e =
-          '<span style="color: rgb(170, 0, 255);">' + char.pinyin_1 + "</span>";
+          '<span style="color: rgb(255, 0, 0);">' +
+          char.pinyin[0].pinyinAccented +
+          "</span>";
+      } else if (char.pinyin[0].tone === 2) {
+        e =
+          '<span style="color: rgb(0, 170, 0);">' +
+          char.pinyin[0].pinyinAccented +
+          "</span>";
+      } else if (char.pinyin[0].tone === 3) {
+        e =
+          '<span style="color: rgb(0, 0, 255);">' +
+          char.pinyin[0].pinyinAccented +
+          "</span>";
+      } else if (char.pinyin[0].tone === 4) {
+        e =
+          '<span style="color: rgb(170, 0, 255);">' +
+          char.pinyin[0].pinyinAccented +
+          "</span>";
       }
       return { ...char, expectedPinyin: e };
     })
     .filter(
-      (char) => char.withSound && char.expectedPinyin !== char.pinyin_anki_1
+      (char) =>
+        char.withSound && char.expectedPinyin !== (char.pinyinAnki || [""])[0]
     );
   if (filtered.length === 0) {
     return undefined;
@@ -67,7 +79,7 @@ function MigrationColorsInAnki() {
           <div key={i}>
             <hr />
             <CharCardDetails char={char} />
-            {char.expectedPinyin} ||| {char.pinyin_1}
+            {char.expectedPinyin} ||| {char.pinyin[0].pinyinAccented}
             {char.ankiId ? (
               <button
                 className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
@@ -95,14 +107,14 @@ function MigrationActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
 
   const filtered = Object.values(characters)
-    .filter((char) => char.pinyin_anki_1 !== undefined)
+    .filter((char) => char.pinyinAnki !== undefined)
     .map((char) => {
-      if (REVERSE_FULL_MAP[char.sylable] === undefined) {
-        console.error(char.sylable);
+      if (REVERSE_FULL_MAP[char.pinyin[0].sylable] === undefined) {
+        console.error(char.pinyin[0].sylable);
         console.error(Object.keys(REVERSE_FULL_MAP));
         throw new Error("REVERSE_FULL_MAP[char.sylable] === undefined");
       }
-      const { initial, final } = REVERSE_FULL_MAP[char.sylable] || {
+      const { initial, final } = REVERSE_FULL_MAP[char.pinyin[0].sylable] || {
         initial: "???",
         final: "???",
       };
@@ -113,8 +125,8 @@ function MigrationActorPlaceAnki() {
       if (!char.tags.includes(PLACE_TAGS_MAP[final])) {
         needTags.push(PLACE_TAGS_MAP[final]);
       }
-      if (!char.tags.includes(LOCATION_TAGS_MAP[char.tone])) {
-        needTags.push(LOCATION_TAGS_MAP[char.tone]);
+      if (!char.tags.includes(LOCATION_TAGS_MAP[char.pinyin[0].tone])) {
+        needTags.push(LOCATION_TAGS_MAP[char.pinyin[0].tone]);
       }
 
       return { ...char, needTags, initial, final };
@@ -163,8 +175,8 @@ function MigrationActorPlaceAnki() {
         return (
           <div key={i}>
             <CharCardDetails char={char} />
-            {char.initial} {char.final} {char.tone} | {char.tags.join(",")} |
-            need tags:
+            {char.initial} {char.final} {char.pinyin[0].tone} |{" "}
+            {char.tags.join(",")} | need tags:
             {char.needTags.join(",")}
             {char.ankiId ? (
               <button
@@ -269,8 +281,10 @@ function LowerCasePinyin() {
   );
   const filtered2 = Object.values(characters).filter(
     (char) =>
-      char.pinyin_1 !== char.pinyin_1.toLowerCase() ||
-      char.pinyin_2 !== char.pinyin_2?.toLowerCase()
+      char.pinyin[0].pinyinAccented !==
+        char.pinyin[0].pinyinAccented.toLowerCase() ||
+      char.pinyin[1]?.pinyinAccented !==
+        char.pinyin[1]?.pinyinAccented?.toLowerCase()
   );
   if (filtered1.length === 0 && filtered2.length === 0) {
     return undefined;

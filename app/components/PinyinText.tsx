@@ -1,7 +1,8 @@
 import { Link } from "react-router";
+import type { PinyinType } from "~/data/pinyin_function";
 
 export const PinyinText: React.FC<{
-  v: { pinyin_1: string; tone: number; sylable: string | null } | null;
+  v: PinyinType | null;
 }> = ({ v }) => {
   const toneColors = [
     "", // Unknown tone
@@ -16,12 +17,14 @@ export const PinyinText: React.FC<{
   }
   if (v.sylable === null) {
     return (
-      <div className={`font-bold ${toneColors[v.tone]}`}>{v.pinyin_1}</div>
+      <div className={`font-bold ${toneColors[v.tone]}`}>
+        {v.pinyinAccented}
+      </div>
     );
   }
   return (
     <span className={`font-bold ${toneColors[v.tone]}`}>
-      <Link to={"/sylable/" + v.sylable}>{v.pinyin_1}</Link>
+      <Link to={"/sylable/" + v.sylable}>{v.pinyinAccented}</Link>
     </span>
   );
 };

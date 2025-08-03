@@ -27,7 +27,7 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
 
   const chars = Object.values(characters)
     .filter((c) => c.tags.includes(propName))
-    .sort((a, b) => a.sylable.localeCompare(b.sylable));
+    .sort((a, b) => a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable));
 
   const subprops = prop.tagnames
     .filter((name) => name !== prop.mainTagname && name.startsWith("prop::"))

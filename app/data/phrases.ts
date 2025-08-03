@@ -105,9 +105,9 @@ export function useAnkiPhrases() {
                   return;
                 }
                 let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
-                chars[t][p] = { pinyin_1: p, sylable, tone, count: 0 };
+                chars[t][p] = { pinyinAccented: p, sylable, tone, count: 0 };
               }
-              chars[t][p].count++;
+              chars[t][p].count!++;
             }
           } else {
             addInvalidData({

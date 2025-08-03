@@ -51,7 +51,7 @@ function isConflictingPinyin(
   }
   if (charPhrasesPinyin) {
     const best = Object.values(charPhrasesPinyin).sort(comparePinyin)[index];
-    if (best.pinyin_1 !== pinyin) {
+    if (best.pinyinAccented !== pinyin) {
       return true;
     }
   }
@@ -72,12 +72,12 @@ export function getConflictingChars(
     }
 
     if (
-      v?.pinyin_anki_1 &&
+      v?.pinyinAnki &&
       isConflictingPinyin(
         charPhrasesPinyin[v.traditional],
         v.withSound,
-        v.pinyin_1,
-        v?.pinyin_anki_1,
+        v.pinyin[0].pinyinAccented,
+        v?.pinyinAnki[0],
         0
       )
     ) {
@@ -85,12 +85,14 @@ export function getConflictingChars(
     }
     if (v.tags.includes("multiple-pronounciation-character")) {
       if (
-        v?.pinyin_anki_2 &&
+        v?.pinyinAnki &&
+        v.pinyinAnki.length > 1 &&
+        v.pinyin.length > 1 &&
         isConflictingPinyin(
           charPhrasesPinyin[v.traditional],
           v.withSound,
-          v.pinyin_2,
-          v?.pinyin_anki_2,
+          v.pinyin[1].pinyinAccented,
+          v.pinyinAnki[1],
           1
         )
       ) {
@@ -138,24 +140,15 @@ export const CharListConflicts: React.FC<{
             <div className="w-full" key={i}>
               <CharCardDetails char={v} />
               <div className="">
-                {v.pinyin_1.length ? (
+                {v.pinyin.map((p) => (
                   <>
                     Anki1:
                     <div
                       className="ml-10"
-                      dangerouslySetInnerHTML={{ __html: v.pinyin_1 }}
+                      dangerouslySetInnerHTML={{ __html: p.pinyinAccented }}
                     ></div>
                   </>
-                ) : undefined}
-                {v.pinyin_2 && v.pinyin_2.length ? (
-                  <>
-                    Anki2:
-                    <div
-                      className="ml-10"
-                      dangerouslySetInnerHTML={{ __html: v.pinyin_2 }}
-                    ></div>
-                  </>
-                ) : undefined}
+                ))}
                 {missingProps.length ? (
                   <div>
                     Missing props list:
@@ -168,7 +161,7 @@ export const CharListConflicts: React.FC<{
                     {Object.values(charPhrasesPinyin[v.traditional])
                       .sort(comparePinyin)
                       .map((pinyin) => (
-                        <div key={pinyin.pinyin_1} className="ml-10">
+                        <div key={pinyin.pinyinAccented} className="ml-10">
                           <PinyinText v={pinyin} /> - {pinyin.count}
                         </div>
                       ))}

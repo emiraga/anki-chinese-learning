@@ -40,7 +40,9 @@ export const PropCard: React.FC<{
             anki
           </button>
           <div>
-            <PinyinText v={getNewCharacter(prop.hanzi.substring(0, 1))} />
+            <PinyinText
+              v={getNewCharacter(prop.hanzi.substring(0, 1))?.pinyin[0] ?? null}
+            />
           </div>
         </div>
         <div

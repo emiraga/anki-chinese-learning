@@ -22,10 +22,12 @@ export const PinyinCell: React.FC<{
   }
   let isSingle = Object.values(knownSounds[value]).length === 1;
   let pinyin1 = isSingle
-    ? Object.values(knownSounds[value])[0][0].pinyin_1
+    ? Object.values(knownSounds[value])[0][0].pinyin[0].pinyinAccented
     : value;
-  let tone = isSingle ? Object.values(knownSounds[value])[0][0].tone : 0;
-  let sylable = Object.values(knownSounds[value])[0][0].sylable;
+  let tone = isSingle
+    ? Object.values(knownSounds[value])[0][0].pinyin[0].tone
+    : 0;
+  let sylable = Object.values(knownSounds[value])[0][0].pinyin[0].sylable;
 
   return (
     <Tooltip.Root>
@@ -34,7 +36,7 @@ export const PinyinCell: React.FC<{
         className={styles.Button}
         style={isSingle ? {} : { fontWeight: "bolder" }}
       >
-        <PinyinText v={{ pinyin_1: pinyin1, tone, sylable }} />
+        <PinyinText v={{ pinyinAccented: pinyin1, tone, sylable }} />
       </Tooltip.Trigger>
 
       <Tooltip.Portal>
