@@ -107,7 +107,7 @@ export function SearchMorePhrases({
     const load = async () => {
       var query = `(${noteTypes
         .map((name) => "note:" + name)
-        .join(" OR ")}) card:0 is:new`;
+        .join(" OR ")}) card:0 (is:new OR is:suspended)`;
       if (search) {
         query += ` Traditional:*${search}*`;
       }
