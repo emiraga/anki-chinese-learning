@@ -11,6 +11,7 @@ import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "../components/index.module.css";
 
 type CharWithPronunciations = CharacterType & {
+  countSylables: number;
   phrasesPinyin: {
     [k: string]: PinyinType;
   };
@@ -77,6 +78,9 @@ export default function TodoCharsMultiplePronunciation() {
       var phrasesPinyin = charPhrasesPinyin[char.traditional] || {};
       return {
         ...char,
+        countSylables: new Set(
+          Object.entries(phrasesPinyin).map((kv) => kv[1].sylable)
+        ).size,
         phrasesPinyin: Object.fromEntries(
           Object.entries(phrasesPinyin).filter((kv) => !kv[1].ignoredFifthTone)
         ),
@@ -87,7 +91,16 @@ export default function TodoCharsMultiplePronunciation() {
     }
   );
   const multiple = characters2.filter(
-    (char) => Object.keys(char.phrasesPinyin).length !== 1 && char.withSound
+    (char) =>
+      Object.keys(char.phrasesPinyin).length !== 1 &&
+      char.withSound &&
+      char.countSylables > 1
+  );
+  const sameSylable = characters2.filter(
+    (char) =>
+      Object.keys(char.phrasesPinyin).length !== 1 &&
+      char.withSound &&
+      char.countSylables <= 1
   );
   const ignored = characters2.filter(
     (char) =>
@@ -100,15 +113,25 @@ export default function TodoCharsMultiplePronunciation() {
     <main>
       <MainToolbar />
       <Section className="m-3" display={multiple.length > 0}>
-        <h3 className="font-serif text-2xl mb-4">Multiple pronounciations:</h3>
+        <h3 className="font-serif text-2xl mb-4">
+          Multiple pronounciations ({multiple.length}):
+        </h3>
         <CharacterTable characters={multiple} />
+      </Section>
+
+      <Section className="m-3" display={sameSylable.length > 0}>
+        <h3 className="font-serif text-2xl mb-4">
+          Same sylable but different tones ({sameSylable.length}):
+        </h3>
+        <CharacterTable characters={sameSylable} />
       </Section>
 
       <Section className="mx-3 mt-3" display={ignored.length > 0}>
         <Collapsible.Root className={styles.Collapsible}>
           <Collapsible.Trigger className={styles.Trigger}>
             <h3 className="font-serif text-2xl">
-              With ignored pronounciations... (expandable)
+              With ignored fifth tone pronounciations... ({ignored.length} -
+              expandable):
             </h3>
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
