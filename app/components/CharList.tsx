@@ -118,21 +118,20 @@ export function getMissingPhraseChars(
 
 export const CharListConflicts: React.FC<{
   knownProps: KnownPropsType;
-  characters: CharactersType;
+  conflicting: CharacterType[];
   charPhrasesPinyin: CharsToPhrasesPinyin;
-}> = ({ knownProps, characters, charPhrasesPinyin }) => {
-  let chars = getConflictingChars(knownProps, characters, charPhrasesPinyin);
-  if (chars.length === 0) {
+}> = ({ knownProps, conflicting, charPhrasesPinyin }) => {
+  if (conflicting.length === 0) {
     return <div className="m-5">No Character Conflicts</div>;
   }
 
   return (
     <>
       <h3 className="font-serif text-3xl m-4">
-        Character conflicts ({chars.length}):
+        Character conflicts ({conflicting.length}):
       </h3>
       <div className="block">
-        {chars.map((v, i) => {
+        {conflicting.map((v, i) => {
           const missingProps = v.tags.filter(
             (t) => t.startsWith("prop::") && knownProps[t] === undefined
           );
@@ -140,38 +139,42 @@ export const CharListConflicts: React.FC<{
             <div className="w-full" key={i}>
               <CharCardDetails char={v} />
               <div className="">
-                {v.pinyin.map((p) => (
-                  <>
-                    Anki1:
-                    <div
-                      className="ml-10"
-                      dangerouslySetInnerHTML={{ __html: p.pinyinAccented }}
-                    ></div>
-                  </>
-                ))}
                 {missingProps.length ? (
                   <div>
                     Missing props list:
                     <TagList tags={missingProps} />
                   </div>
                 ) : undefined}
-                {charPhrasesPinyin[v.traditional] ? (
-                  <>
-                    From phrases:
-                    {Object.values(charPhrasesPinyin[v.traditional])
-                      .sort(comparePinyin)
-                      .map((pinyin) => (
-                        <div key={pinyin.pinyinAccented} className="ml-10">
-                          <PinyinText v={pinyin} /> - {pinyin.count}
-                        </div>
-                      ))}
-                  </>
-                ) : undefined}
+
+                <div>
+                  Anki:
+                  {v.pinyin.map((p) => (
+                    <span
+                      key={p.pinyinAccented}
+                      className="ml-10"
+                      dangerouslySetInnerHTML={{ __html: p.pinyinAccented }}
+                    ></span>
+                  ))}
+                </div>
+                <div>
+                  From phrases:
+                  {charPhrasesPinyin[v.traditional]
+                    ? Object.values(charPhrasesPinyin[v.traditional])
+                        .sort(comparePinyin)
+                        .map((pinyin) => (
+                          <span key={pinyin.pinyinAccented} className="ml-10">
+                            <PinyinText v={pinyin} /> - {pinyin.count}
+                          </span>
+                        ))
+                    : undefined}
+                </div>
                 <p>
                   From library:
                   {getAllPinyinUnreliable(v.traditional, STYLE_TONE).map(
                     (p, i) => (
-                      <p key={i}>{p}</p>
+                      <span className="ml-10" key={i}>
+                        {p}
+                      </span>
                     )
                   )}
                 </p>

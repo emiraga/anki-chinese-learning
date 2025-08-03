@@ -1,6 +1,6 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
-import { CharListConflicts } from "~/components/CharList";
+import { CharListConflicts, getConflictingChars } from "~/components/CharList";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 
@@ -15,13 +15,19 @@ export default function Conflicts() {
   const { knownProps, characters, charPhrasesPinyin } =
     useOutletContext<OutletContext>();
 
+  let conflicting = getConflictingChars(
+    knownProps,
+    characters,
+    charPhrasesPinyin
+  );
+
   return (
     <main>
       <MainToolbar />
       <section className="block">
         <CharListConflicts
           knownProps={knownProps}
-          characters={characters}
+          conflicting={conflicting}
           charPhrasesPinyin={charPhrasesPinyin}
         />
       </section>
