@@ -45,7 +45,7 @@ function MigrationColorsInAnki() {
       <h3 className="font-serif text-3xl">
         Migration of colors:{" "}
         <button
-          className="rounded-2xl px-2 py-1 m-1 bg-red-200"
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
           onClick={async () => {
             for (const char of filtered) {
               await anki.note.updateNoteFields({
@@ -70,7 +70,7 @@ function MigrationColorsInAnki() {
             {char.expectedPinyin} ||| {char.pinyin_1}
             {char.ankiId ? (
               <button
-                className="rounded-2xl px-2 py-1 m-1 bg-red-200"
+                className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
                 onClick={async () => {
                   await anki.note.updateNoteFields({
                     note: {
@@ -143,7 +143,7 @@ function MigrationActorPlaceAnki() {
       <h3 className="font-serif text-3xl">
         Migration of actor, place and tone:{" "}
         <button
-          className="rounded-2xl px-2 py-1 m-1 bg-red-200"
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
           onClick={async () => {
             for (const char of filtered) {
               for (const needTag of char.needTags) {
@@ -168,7 +168,7 @@ function MigrationActorPlaceAnki() {
             {char.needTags.join(",")}
             {char.ankiId ? (
               <button
-                className="rounded-2xl px-2 py-1 m-1 bg-red-200"
+                className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
                 onClick={async () => {
                   for (const needTag of char.needTags) {
                     await anki.note.addTags({
@@ -248,7 +248,7 @@ function DuplicatePhrase({
           <div key={i}>
             Duplicate {source}: {phrase.traditional}
             <button
-              className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
+              className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
               onClick={async () => {
                 await ankiOpenBrowse(`Traditional:${phrase.traditional}`);
               }}
@@ -364,7 +364,7 @@ function MixedSuspension({
           🚨 Mixed suspension {note.noteId} |{note.regularCards}|
           {note.suspendedCards} {note.fields["Traditional"].value}
           <button
-            className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
+            className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             onClick={async () => {
               await ankiOpenBrowse(
                 `note:${noteType} ID:${note.fields["ID"].value}`
@@ -445,7 +445,7 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
                   Incorrect deck: {note.modelName} {card.ord} {id} !=={" "}
                   {card.deckName}
                   <button
-                    className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
+                    className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                     onClick={async () => {
                       await ankiOpenBrowse(
                         `note:${note.modelName} deck:${card.deckName} ${id}`
@@ -497,7 +497,7 @@ function MixedNew({
         <div key={i}>
           🚨 Some are new {noteType} |{note.fields["Traditional"].value}
           <button
-            className="rounded-2xl bg-blue-100 p-1 ml-2 inline text-xs text-blue-500"
+            className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             onClick={async () => {
               await ankiOpenBrowse(
                 `note:${noteType} ID:${note.fields["ID"].value}`
@@ -507,7 +507,7 @@ function MixedNew({
             anki
           </button>
           <button
-            className="rounded-2xl bg-green-100 p-1 ml-2 inline text-xs text-green-500"
+            className="rounded-2xl bg-green-100 dark:bg-green-900 p-1 ml-2 inline text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
             onClick={async () => {
               const newCardIds = note.newCards.map((card) => card.cardId);
               await anki.card.unsuspend({ cards: newCardIds });
