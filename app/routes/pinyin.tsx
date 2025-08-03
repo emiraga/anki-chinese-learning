@@ -4,6 +4,7 @@ import { Tooltip } from "@base-ui-components/react/tooltip";
 import MainToolbar from "~/toolbar/toolbar";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
+import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -14,13 +15,17 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Index() {
   const { knownSounds } = useOutletContext<OutletContext>();
+  const { settings } = useSettings();
 
   return (
     <Tooltip.Provider delay={0} closeDelay={0}>
       <MainToolbar />
       <main className="pt-4 pb-4">
         <section className="block">
-          <PinyinTable knownSounds={knownSounds} />
+          <PinyinTable
+            knownSounds={knownSounds}
+            showZhuyin={settings.features?.showZhuyin}
+          />
         </section>
       </main>
     </Tooltip.Provider>

@@ -43,8 +43,8 @@ var typeFictional = [
 
 var typeExtra = ["yu-", "lv-", "nv-", "qu-", "xu-", "ju-"];
 
-let JSON_DATA = rawJson as RawJSON;
-let INITIAL_TYPE: { [key1: string]: string } = {};
+export let JSON_DATA = rawJson as RawJSON;
+export let INITIAL_TYPE: { [key1: string]: string } = {};
 JSON_DATA.initials.forEach((initial) => {
   if (typeFemale.includes(initial)) {
     INITIAL_TYPE[initial] = "female";
@@ -61,7 +61,7 @@ JSON_DATA.initials.forEach((initial) => {
 //   return INITIAL_TYPE[x] > INITIAL_TYPE[y] ? 0 : 1;
 // });
 
-let FULL_MAP: {
+export let FULL_MAP: {
   [key1: string]: {
     [key2: string]: string;
   };
@@ -73,8 +73,9 @@ JSON_DATA.initials.forEach((initial, initialIndex) => {
   });
 });
 
-const REVERSE_FULL_MAP: { [key: string]: { initial: string; final: string } } =
-  {};
+export const REVERSE_FULL_MAP: {
+  [key: string]: { initial: string; final: string };
+} = {};
 Object.entries(FULL_MAP).forEach(([initial, rest]) => {
   Object.entries(rest).forEach(([final, sylable]) => {
     if (sylable.length === 0) {
@@ -149,14 +150,84 @@ export const ACTOR_NAMES_MAP: { [key: string]: string } = {
   "yu-": "Leonhard Euler",
 };
 
-const ACTOR_TAGS_MAP: { [key: string]: string } = Object.fromEntries(
+export const ACTOR_NAMES_ZHUYIN: { [key: string]: string } = {
+  // Male actors
+  "_-": "",
+  "y-": "ㄧ",
+  "w-": "ㄨ",
+
+  "b-": "ㄅ",
+  "d-": "ㄉ",
+  "l-": "ㄌ",
+  "p-": "ㄆ",
+  "t-": "ㄊ",
+  "g-": "ㄍ",
+  "m-": "ㄇ",
+  "h-": "ㄏ",
+  "k-": "ㄎ",
+  "n-": "ㄋ",
+  "f-": "ㄈ",
+  "z-": "ㄗ",
+  "c-": "ㄘ",
+  "s-": "ㄙ",
+  "r-": "ㄖ",
+  "sh-": "ㄕ",
+  "ch-": "ㄔ",
+  "zh-": "ㄓ",
+
+  // Female girls
+  "ji-": "ㄐ",
+  "qi-": "ㄑ",
+  "xi-": "ㄒ",
+
+  //
+  "mi-": "ㄇㄧ",
+  "ni-": "ㄋㄧ",
+  "li-": "ㄌㄧ",
+  "ti-": "ㄊㄧ",
+  "pi-": "ㄆㄧ",
+  "bi-": "ㄅㄧ",
+  "di-": "ㄉㄧ",
+
+  // Fictional
+  "mu-": "ㄇㄨ",
+  "gu-": "ㄍㄨ",
+  "bu-": "ㄅㄨ",
+  "hu-": "ㄏㄨ",
+  "du-": "ㄉㄨ",
+  "lu-": "ㄌㄨ",
+  "fu-": "ㄈㄨ",
+  "ku-": "ㄎㄨ",
+  "tu-": "ㄊㄨ",
+  "nu-": "ㄋㄨ",
+  "pu-": "ㄆㄨ",
+  "zhu-": "ㄓㄨ",
+  "chu-": "ㄔㄨ",
+  "shu-": "ㄕㄨ",
+  "ru-": "ㄖㄨ",
+  "cu-": "ㄘㄨ",
+  "zu-": "ㄗㄨ",
+  "su-": "ㄙㄨ",
+
+  // Scientists
+  "yu-": "ㄩ",
+  "nv-": "ㄋㄩ",
+  "lv-": "ㄌㄩ",
+
+  //
+  "ju-": "ㄐㄩ",
+  "qu-": "ㄑㄩ",
+  "xu-": "ㄒㄩ",
+};
+
+export const ACTOR_TAGS_MAP: { [key: string]: string } = Object.fromEntries(
   Object.entries(ACTOR_NAMES_MAP).map(([k, v]) => [
     k,
     `actor::${k}${v.toLowerCase().replaceAll(" ", "-")}`,
   ])
 );
 
-const PLACE_NAMES_MAP: { [key: string]: string } = {
+export const PLACE_NAMES_MAP: { [key: string]: string } = {
   "-_": "My childhood Apartment where I grew up",
   "-er": "My childhood Apartment where I grew up",
   "-e": "Elementary school",
@@ -173,7 +244,7 @@ const PLACE_NAMES_MAP: { [key: string]: string } = {
   "-(e)ng": "Engineering (where I studied at university)",
 };
 
-const PLACE_TAGS_MAP: { [key: string]: string } = {
+export const PLACE_TAGS_MAP: { [key: string]: string } = {
   "-_": "place::null-apartment",
   "-er": "place::null-apartment",
   "-e": "place::e-elementary",
@@ -190,7 +261,24 @@ const PLACE_TAGS_MAP: { [key: string]: string } = {
   "-(e)ng": "place::eng-ng-engineering",
 };
 
-const LOCATION_NAMES_MAP: { [key: number]: string } = {
+export const PLACE_TAGS_ZHUYIN: { [key: string]: string } = {
+  "-_": "",
+  "-er": "ㄦ",
+  "-e": "ㄜ",
+  "-ai": "ㄞ",
+  "-(e)n": "ㄣ",
+  "-(o)u": "ㄡ",
+  "-o": "ㄛ",
+  "-a": "ㄚ",
+  "-ong": "ㄨㄥ,ㄩㄥ", // missing from zhuyin
+  "-ang": "ㄤ",
+  "-(e)i": "ㄟ",
+  "-an": "ㄢ",
+  "-ao": "ㄠ",
+  "-(e)ng": "ㄥ",
+};
+
+export const LOCATION_NAMES_MAP: { [key: number]: string } = {
   1: "in front of the entrance to indicate high tone (first tone)",
   2: "in the hallway to indicate rising tone (second tone)",
   3: "in the bedroom or some resting place (with a seat, bed or bench) to indicate low tone (third tone)",
@@ -198,22 +286,10 @@ const LOCATION_NAMES_MAP: { [key: number]: string } = {
   5: "on the roof to indicate neutral tone (fifth tone)",
 };
 
-const LOCATION_TAGS_MAP: { [key: number]: string } = {
+export const LOCATION_TAGS_MAP: { [key: number]: string } = {
   1: "tone::t1-front-high",
   2: "tone::t2-hallway-rising",
   3: "tone::t3-bedroom-resting-low",
   4: "tone::t4-bathroom-backyard-falling",
   5: "tone::t5-roof-short",
-};
-
-export {
-  JSON_DATA,
-  FULL_MAP,
-  REVERSE_FULL_MAP,
-  INITIAL_TYPE,
-  ACTOR_TAGS_MAP,
-  PLACE_NAMES_MAP,
-  PLACE_TAGS_MAP,
-  LOCATION_NAMES_MAP,
-  LOCATION_TAGS_MAP,
 };

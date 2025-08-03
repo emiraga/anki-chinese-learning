@@ -16,6 +16,9 @@ export interface AppSettings {
   generativeAi?: {
     llmModelName?: string;
   };
+  features?: {
+    showZhuyin?: boolean;
+  };
 }
 
 export const defaultSettings: AppSettings = {
@@ -106,6 +109,16 @@ export const settingsJsonSchema: JSONSchema7 = {
         showStatsLink: {
           type: "boolean",
           title: "Show 'Stats' link in the toolbar.",
+        },
+      },
+    },
+    features: {
+      type: "object",
+      title: "Software features",
+      properties: {
+        showZhuyin: {
+          type: "boolean",
+          title: "Show zhuyin in places where it's possible",
         },
       },
     },

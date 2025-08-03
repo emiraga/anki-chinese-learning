@@ -4,14 +4,17 @@ import {
   INITIAL_TYPE,
   PLACE_TAGS_MAP,
   ACTOR_TAGS_MAP,
+  PLACE_TAGS_ZHUYIN,
+  ACTOR_NAMES_ZHUYIN,
 } from "~/data/pinyin_table";
 import { PinyinCell } from "./PinyinCell";
 import type { KnownSoundsType } from "~/data/characters";
 import { Link } from "react-router";
 
-export const PinyinTable: React.FC<{ knownSounds: KnownSoundsType }> = ({
-  knownSounds,
-}) => {
+export const PinyinTable: React.FC<{
+  knownSounds: KnownSoundsType;
+  showZhuyin?: boolean;
+}> = ({ knownSounds, showZhuyin }) => {
   return (
     <table className="pinyin-table">
       <thead>
@@ -24,10 +27,14 @@ export const PinyinTable: React.FC<{ knownSounds: KnownSoundsType }> = ({
                   to={"/place/" + PLACE_TAGS_MAP[final].replace("place::", "")}
                 >
                   {final}
+                  {showZhuyin ? (
+                    <div className="text-sm">{PLACE_TAGS_ZHUYIN[final]}</div>
+                  ) : undefined}
                 </Link>
               </th>
             );
           })}
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -54,7 +61,22 @@ export const PinyinTable: React.FC<{ knownSounds: KnownSoundsType }> = ({
                   </td>
                 );
               })}
-              <th scope="row">{initial}</th>
+              <th scope="row" className="text-nowrap">
+                <Link
+                  to={
+                    "/actor/" +
+                    (ACTOR_TAGS_MAP[initial] || "").replace("actor::", "")
+                  }
+                >
+                  {showZhuyin ? (
+                    <span className="text-sm">
+                      {ACTOR_NAMES_ZHUYIN[initial]}
+                    </span>
+                  ) : (
+                    initial
+                  )}
+                </Link>
+              </th>
             </tr>
           );
         })}
