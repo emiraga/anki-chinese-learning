@@ -3,8 +3,16 @@ import type { Route } from "./+types/index";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
-import { HanziCardDetails, HanziText } from "~/components/HanziText";
-import { removeDuplicateChars, useLocalStorageState } from "~/data/utils";
+import {
+  HanziCardDetails,
+  // HanziText,
+  HanziSegmentedText,
+} from "~/components/HanziText";
+import {
+  removeDuplicateChars,
+  useLocalStorageState,
+  type SegmentationAlgorithm,
+} from "~/data/utils";
 import Section from "~/toolbar/section";
 import { useSettings } from "~/settings/SettingsContext";
 import Textarea from "react-textarea-autosize";
@@ -21,6 +29,10 @@ export default function TodoCharsSentenceInput() {
   let [sentence, setSentence] = useLocalStorageState(
     "todoCharsSentenceInput",
     ""
+  );
+  let [algorithm, setAlgorithm] = useLocalStorageState<SegmentationAlgorithm>(
+    "segmentationAlgorithm",
+    "intl-tw"
   );
   const { settings } = useSettings();
 
@@ -39,8 +51,43 @@ export default function TodoCharsSentenceInput() {
             onChange={(v) => setSentence(v.target.value)}
           />
         </h3>
-        <div className="text-2xl m-2">
-          <HanziText value={sentence} />
+
+        <div className="m-4">
+          <label
+            htmlFor="segmentationAlgorithm"
+            className="block text-sm font-medium mb-2"
+          >
+            Segmentation Algorithm:
+          </label>
+          <select
+            id="segmentationAlgorithm"
+            value={algorithm}
+            onChange={(e) =>
+              setAlgorithm(e.target.value as SegmentationAlgorithm)
+            }
+            className="border border-gray-300 rounded px-3 py-1"
+          >
+            <option value="intl-tw">Intl.Segmenter Taiwan (Browser)</option>
+            <option value="intl-cn">Intl.Segmenter China (Browser)</option>
+            <option value="character">Character by Character</option>
+          </select>
+        </div>
+
+        {/*<div className="m-4">
+          <h4 className="text-lg font-semibold mb-2">Original Text:</h4>
+          <div className="text-2xl">
+            <HanziText value={sentence} />
+          </div>
+        </div>*/}
+
+        <div className="m-4">
+          <h4 className="text-lg font-semibold mb-2">Segmented Text:</h4>
+          <div className="text-2xl">
+            <HanziSegmentedText value={sentence} algorithm={algorithm} />
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Words are underlined to show segmentation boundaries
+          </p>
         </div>
       </section>
       <Section display={!!settings.characterNote?.noteType}>
