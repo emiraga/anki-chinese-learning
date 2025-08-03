@@ -48,12 +48,7 @@ export const useAnkiCards = () => {
       setStage("Finding notes...");
 
       const noteIds = await anki.note.findNotes({
-        query:
-          "(" +
-          Object.keys(CARDS_INFO)
-            .map((k) => "note:" + k)
-            .join(" OR ") +
-          ") -is:suspended",
+        query: getAnkiNoteFilter() + " -is:suspended",
       });
       if (!isMountedRef.current || noteIds.length === 0) {
         setLoading(false);
@@ -167,3 +162,13 @@ export const ankiOpenBrowse = async (query: string) => {
     await sleep(10);
   }
 };
+
+export function getAnkiNoteFilter() {
+  return (
+    "(" +
+    Object.keys(CARDS_INFO)
+      .map((k) => "note:" + k)
+      .join(" OR ") +
+    ")"
+  );
+}

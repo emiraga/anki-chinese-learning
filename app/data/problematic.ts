@@ -1,4 +1,4 @@
-import anki, { type CardInfo } from "~/apis/anki";
+import anki, { getAnkiNoteFilter, type CardInfo } from "~/apis/anki";
 
 export interface ProblematicCardAnalysis {
   cardInfo: CardInfo;
@@ -15,10 +15,10 @@ export async function getProblematicCardsComprehensive(
   limit = 50
 ): Promise<ProblematicCardAnalysis[]> {
   const cardIds1 = await anki.card.findCards({
-    query: "deck:* prop:ease<2.2 -is:suspended -is:new",
+    query: getAnkiNoteFilter() + " prop:ease<2.2 -is:suspended -is:new",
   });
   const cardIds2 = await anki.card.findCards({
-    query: "deck:* rated:15:1 -is:suspended -is:new",
+    query: getAnkiNoteFilter() + " rated:15:1 -is:suspended -is:new",
   });
 
   const cardsInfo: CardInfo[] = await anki.card.cardsInfo({

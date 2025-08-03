@@ -39,7 +39,7 @@ export default function ProblematicTable({
                 >
                   {p.cardInfo.deckName}:{p.cardInfo.modelName}:{p.primaryField}{" "}
                 </button>{" "}
-                {CARDS_INFO[p.cardInfo.modelName][p.cardInfo.ord].name}
+                {CARDS_INFO[p.cardInfo.modelName]?.[p.cardInfo.ord]?.name || 'Unknown'}
                 <AnkiAudioPlayer audioField={p.audio} />
               </td>
             </tr>
