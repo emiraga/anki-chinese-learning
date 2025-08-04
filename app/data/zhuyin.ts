@@ -420,3 +420,5 @@ export const PINYIN_TO_ZHUYIN: { [key: string]: string } = {
   zun: "ㄗㄨㄣ",
   zuo: "ㄗㄨㄛ",
 };
+
+export const ZHUYIN_TONE = [undefined, "", "ˊ", "ˇ", "`", "˙"];
