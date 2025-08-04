@@ -1,10 +1,12 @@
 import { Link } from "react-router";
 import { Fragment } from "react/jsx-runtime";
 import type { PinyinType } from "~/data/pinyin_function";
+import { PINYIN_TO_ZHUYIN } from "~/data/zhuyin";
 
 export const PinyinText: React.FC<{
   v: PinyinType | null;
-}> = ({ v }) => {
+  showZhuyin?: boolean;
+}> = ({ v, showZhuyin }) => {
   const toneColors = [
     "", // Unknown tone
     "text-red-500", // Tone 1
@@ -19,13 +21,21 @@ export const PinyinText: React.FC<{
   if (v.sylable === null) {
     return (
       <div className={`font-bold ${toneColors[v.tone]}`}>
-        {v.pinyinAccented}
+        {v.pinyinAccented}x
       </div>
     );
   }
   return (
     <span className={`font-bold ${toneColors[v.tone]}`}>
-      <Link to={"/sylable/" + v.sylable}>{v.pinyinAccented}</Link>
+      <Link to={"/sylable/" + v.sylable}>
+        {v.pinyinAccented}
+        {showZhuyin ? (
+          <span className="text-xs inline-block">
+            &nbsp;
+            {PINYIN_TO_ZHUYIN[v.sylable]}
+          </span>
+        ) : undefined}
+      </Link>
     </span>
   );
 };

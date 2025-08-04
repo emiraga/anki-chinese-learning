@@ -11,7 +11,8 @@ import { useDarkMode } from "./DarkModeToggle";
 export const PinyinCell: React.FC<{
   value: string;
   knownSounds: KnownSoundsType;
-}> = ({ value, knownSounds }) => {
+  showZhuyin?: boolean;
+}> = ({ value, knownSounds, showZhuyin }) => {
   const { isDarkMode } = useDarkMode();
 
   if (knownSounds[value] === undefined || !knownSounds[value]) {
@@ -36,7 +37,10 @@ export const PinyinCell: React.FC<{
         className={styles.Button}
         style={isSingle ? {} : { fontWeight: "bolder" }}
       >
-        <PinyinText v={{ pinyinAccented: pinyin1, tone, sylable }} />
+        <PinyinText
+          v={{ pinyinAccented: pinyin1, tone, sylable }}
+          showZhuyin={showZhuyin}
+        />
       </Tooltip.Trigger>
 
       <Tooltip.Portal>
