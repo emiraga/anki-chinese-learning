@@ -18,6 +18,8 @@ import { CARDS_INFO } from "~/data/cards";
 
 function MigrationColorsInAnki() {
   const { characters } = useOutletContext<OutletContext>();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const filtered = Object.values(characters)
     .filter((char) => char.pinyinAnki !== undefined)
     .map((char) => {
@@ -57,9 +59,16 @@ function MigrationColorsInAnki() {
       <h3 className="font-serif text-3xl">
         Migration of colors:{" "}
         <button
-          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors disabled:opacity-50"
+          disabled={isProcessing}
           onClick={async () => {
-            for (const char of filtered) {
+            setIsProcessing(true);
+            setProgress({ current: 0, total: filtered.length });
+            
+            for (let i = 0; i < filtered.length; i++) {
+              const char = filtered[i];
+              setProgress({ current: i + 1, total: filtered.length });
+              
               await anki.note.updateNoteFields({
                 note: {
                   id: char.ankiId || 0,
@@ -67,11 +76,25 @@ function MigrationColorsInAnki() {
                 },
               });
             }
+            
+            setIsProcessing(false);
             alert("Fixed all!");
           }}
         >
-          Auto-fix all!
+          {isProcessing ? "Processing..." : "Auto-fix all!"}
         </button>
+        {isProcessing && (
+          <div className="mt-2">
+            <progress 
+              className="w-full h-2" 
+              value={progress.current} 
+              max={progress.total}
+            />
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {progress.current} / {progress.total} characters
+            </div>
+          </div>
+        )}
       </h3>
 
       <div className="mx-4">
