@@ -42,13 +42,14 @@ export const PinyinText: React.FC<{
 
 export const PinyinList: React.FC<{
   pinyin: PinyinType[];
-}> = ({ pinyin }) => {
+  showZhuyin?: boolean;
+}> = ({ pinyin, showZhuyin }) => {
   const filtered = pinyin.filter((p) => !p.ignoredFifthTone);
   return (
     <>
       {filtered.map((p, i) => (
         <Fragment key={i}>
-          <PinyinText v={p} />
+          <PinyinText v={p} showZhuyin={showZhuyin} />
           {i < filtered.length - 1 ? ", " : undefined}
         </Fragment>
       ))}

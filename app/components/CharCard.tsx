@@ -112,7 +112,12 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           <CharLink traditional={char.traditional} />
         </div>
         <div className="w-48">
-          {char.withSound ? <PinyinList pinyin={char.pinyin} /> : undefined}
+          {char.withSound ? (
+            <PinyinList
+              pinyin={char.pinyin}
+              showZhuyin={settings.features?.showZhuyin}
+            />
+          ) : undefined}
           <div>{char.meaning2}</div>
         </div>
         <div className="w-32 text-sm">
