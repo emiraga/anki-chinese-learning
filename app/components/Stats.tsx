@@ -8,9 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  ReferenceLine,
   BarChart,
   Bar,
 } from "recharts";
@@ -204,6 +202,7 @@ const useAnkiHanziProgress = () => {
           );
 
           const batchReviews = await anki.statistic.getReviewsOfCards({
+            // @ts-expect-error next-line
             cards: batch,
           });
 
@@ -462,7 +461,7 @@ const MonthlyLearningRateChart: React.FC<{
               position: "insideLeft",
             }}
           />
-          <Tooltip content={<CustomBarTooltip />} />
+          <Tooltip content={<CustomBarTooltip active={false} payload={[]} />} />
           <Bar
             dataKey="rate"
             fill="#10b981"
@@ -547,7 +546,9 @@ const ProgressChart: React.FC<{
             interval="preserveStartEnd"
           />
           <YAxis domain={[0, yAxisMax]} tick={{ fontSize: 12 }} tickCount={8} />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip
+            content={<CustomTooltip active={false} label="" payload={[]} />}
+          />
           {/*<Legend />*/}
 
           {/* Actual progress line */}
