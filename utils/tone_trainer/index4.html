@@ -1201,13 +1201,24 @@
       function drawYinPitchChart() {
         if (yinData.length === 0) return;
 
-        // Set canvas size to match the spectrogram canvas
-        yinPitchCanvas.width = canvas.width;
-        yinPitchCanvas.height = canvas.height;
+        // Set high resolution canvas dimensions to match spectrogram
+        const displayWidth = yinPitchCanvas.offsetWidth;
+        const displayHeight = yinPitchCanvas.offsetHeight;
+        const pixelRatio = window.devicePixelRatio || 1;
+        
+        yinPitchCanvas.width = displayWidth * pixelRatio;
+        yinPitchCanvas.height = displayHeight * pixelRatio;
+        
+        // Scale context to ensure correct drawing operations
+        yinPitchCanvasCtx.scale(pixelRatio, pixelRatio);
+        
+        // Set CSS size to maintain display size
+        yinPitchCanvas.style.width = displayWidth + 'px';
+        yinPitchCanvas.style.height = displayHeight + 'px';
 
         const ctx = yinPitchCanvasCtx;
-        const width = yinPitchCanvas.width;
-        const height = yinPitchCanvas.height;
+        const width = displayWidth;
+        const height = displayHeight;
 
         // Clear canvas with transparent background
         ctx.clearRect(0, 0, width, height);
