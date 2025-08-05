@@ -85,16 +85,20 @@
         </p>
       </div>
 
-      <!-- Spectrogram Canvas -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2">
-        <canvas id="spectrogramCanvas"></canvas>
-      </div>
-
       <!-- UI Controls -->
       <div
         id="controls"
-        class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-700/50 p-6 rounded-lg"
+        class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6 bg-gray-700/50 p-6 rounded-lg"
       >
+        <div class="flex-1/2">
+          <button
+            id="playAgainBtn"
+            class="mt-3 px-4 py-2 bg-blue-800 hover:bg-blue-700 text-gray-300 font-medium rounded-lg transition-colors duration-200 hidden"
+            onclick="playLastRecording()"
+          >
+            🔊 Play Again
+          </button>
+        </div>
         <div>
           <label
             for="colorScheme"
@@ -103,7 +107,7 @@
           >
           <select
             id="colorScheme"
-            class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+            class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
           >
             <option value="viridis">Viridis</option>
             <option value="plasma">Plasma</option>
@@ -143,14 +147,51 @@
           />
         </div>
       </div>
+
+      <!-- Spectrogram Canvas -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">Spectrogram</h3>
+        <canvas id="spectrogramCanvas"></canvas>
+      </div>
+
+      <!-- Pitch × Strength Product Chart -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          Pitch × Strength Product
+        </h3>
+        <canvas id="productCanvas"></canvas>
+      </div>
+
+      <!-- Pitch Chart -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          Average Pitch Over Time
+        </h3>
+        <canvas id="pitchCanvas"></canvas>
+      </div>
+
+      <!-- Audio Strength Chart -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          Audio Strength Over Time
+        </h3>
+        <canvas id="strengthCanvas"></canvas>
+      </div>
     </div>
 
     <script>
       // DOM Elements
       const instructions = document.getElementById("instructions");
       const statusDiv = document.getElementById("status");
+      const playAgainBtn = document.getElementById("playAgainBtn");
       const canvas = document.getElementById("spectrogramCanvas");
       const canvasCtx = canvas.getContext("2d");
+      const pitchCanvas = document.getElementById("pitchCanvas");
+      const pitchCanvasCtx = pitchCanvas.getContext("2d");
+      const strengthCanvas = document.getElementById("strengthCanvas");
+      const strengthCanvasCtx = strengthCanvas.getContext("2d");
+      const productCanvas = document.getElementById("productCanvas");
+      const productCanvasCtx = productCanvas.getContext("2d");
       const controls = document.getElementById("controls");
       const colorSchemeSelect = document.getElementById("colorScheme");
       const brightnessSlider = document.getElementById("brightness");
@@ -162,6 +203,9 @@
       let isRecording = false;
       let audioChunks = [];
       let spectrogramData = [];
+      let pitchData = [];
+      let strengthData = [];
+      let lastAudioBuffer = null;
 
       // Visualization Settings
       let settings = {
@@ -235,36 +279,140 @@
         return interpolateColor(map[colorIndex], map[colorIndex + 1], factor);
       }
 
+      // --- PITCH DETECTION FROM SPECTROGRAM DATA ---
+      function computeWeightedAverageFreq(freqData, sampleRate) {
+        // Focus on vocal fundamental frequency range (80-400 Hz)
+        const minFreq = 80;
+        const maxFreq = MAX_FREQ_HZ;
+        const fftSize = FFT_SIZE;
+
+        const minBin = Math.floor((minFreq * fftSize) / sampleRate);
+        const maxBin = Math.floor((maxFreq * fftSize) / sampleRate);
+
+        let weightedSum = 0;
+        let totalWeight = 0;
+        let maxMagnitude = 0;
+
+        // Find maximum in range for thresholding
+        for (let i = minBin; i < maxBin && i < freqData.length; i++) {
+          if (freqData[i] > maxMagnitude) {
+            maxMagnitude = freqData[i];
+          }
+        }
+
+        // Only consider frequencies above threshold
+        const threshold = maxMagnitude * 0.3;
+
+        for (let i = minBin; i < maxBin && i < freqData.length; i++) {
+          if (freqData[i] > threshold) {
+            const freq = (i * sampleRate) / fftSize;
+            const magnitude = freqData[i];
+
+            weightedSum += freq * magnitude * magnitude; // Square for emphasis
+            totalWeight += magnitude * magnitude;
+          }
+        }
+
+        if (totalWeight > 0 && maxMagnitude > 20) {
+          // Minimum energy threshold
+          return weightedSum / totalWeight;
+        }
+
+        return 0; // No clear pitch
+      }
+
+      function analyzePitchTrends(pitches) {
+        const validPitches = pitches.filter((p) => p > 0);
+        if (validPitches.length < 5)
+          return { overallTrend: "stable", avgPitch: 0, range: 0 };
+
+        const avgPitch =
+          validPitches.reduce((a, b) => a + b, 0) / validPitches.length;
+        const minPitch = Math.min(...validPitches);
+        const maxPitch = Math.max(...validPitches);
+        const range = maxPitch - minPitch;
+
+        // Calculate overall trend using linear regression
+        let sumX = 0,
+          sumY = 0,
+          sumXY = 0,
+          sumXX = 0;
+        let n = 0;
+
+        for (let i = 0; i < pitches.length; i++) {
+          if (pitches[i] > 0) {
+            sumX += i;
+            sumY += pitches[i];
+            sumXY += i * pitches[i];
+            sumXX += i * i;
+            n++;
+          }
+        }
+
+        if (n < 2) return { overallTrend: "stable", avgPitch, range };
+
+        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+        const slopeThreshold = (avgPitch * 0.05) / pitches.length; // 5% change over duration
+
+        let overallTrend = "stable";
+        if (slope > slopeThreshold) {
+          overallTrend = "rising";
+        } else if (slope < -slopeThreshold) {
+          overallTrend = "falling";
+        }
+
+        return { overallTrend, avgPitch, range, slope };
+      }
+
       // --- EVENT LISTENERS ---
       window.addEventListener("load", () => {
         controls.style.display = "none";
       });
 
       document.addEventListener("keydown", (e) => {
-        if (e.code === "Space" && !isRecording) {
-          e.preventDefault();
-          startRecording();
+        if (e.code === "Space") {
+          e.preventDefault(); // Always prevent space bar scrolling
+          if (!isRecording) {
+            startRecording();
+          }
         }
       });
 
       document.addEventListener("keyup", (e) => {
-        if (e.code === "Space" && isRecording) {
-          e.preventDefault();
-          stopRecording();
+        if (e.code === "Space") {
+          e.preventDefault(); // Always prevent space bar scrolling
+          if (isRecording) {
+            stopRecording();
+          }
         }
       });
 
       colorSchemeSelect.addEventListener("change", (e) => {
         settings.colorScheme = e.target.value;
-        if (spectrogramData.length > 0) drawSpectrogram();
+        if (spectrogramData.length > 0) {
+          drawSpectrogram();
+          drawPitchChart();
+          drawStrengthChart();
+          drawProductChart();
+        }
       });
       brightnessSlider.addEventListener("input", (e) => {
         settings.brightness = parseInt(e.target.value, 10);
-        if (spectrogramData.length > 0) drawSpectrogram();
+        if (spectrogramData.length > 0) {
+          drawSpectrogram();
+          drawPitchChart();
+          drawStrengthChart();
+          drawProductChart();
+        }
       });
       contrastSlider.addEventListener("input", (e) => {
         settings.contrast = parseFloat(e.target.value);
-        if (spectrogramData.length > 0) drawSpectrogram();
+        if (spectrogramData.length > 0) {
+          drawSpectrogram();
+          drawPitchChart();
+          drawStrengthChart();
+          drawProductChart();
+        }
       });
 
       // --- CORE AUDIO FUNCTIONS ---
@@ -305,12 +453,12 @@
       function stopRecording() {
         if (!isRecording || !mediaRecorder) return;
         mediaRecorder.stop();
-        
+
         // Clean up media stream tracks
         if (mediaRecorder.stream) {
-          mediaRecorder.stream.getTracks().forEach(track => track.stop());
+          mediaRecorder.stream.getTracks().forEach((track) => track.stop());
         }
-        
+
         isRecording = false;
         statusDiv.classList.remove("bg-red-500");
         statusDiv.classList.add("bg-blue-500");
@@ -325,6 +473,10 @@
             const audioBuffer = await audioContext.decodeAudioData(
               e.target.result
             );
+            // Initialize data arrays (will be filled during spectrogram analysis)
+            pitchData = [];
+            strengthData = [];
+            lastAudioBuffer = audioBuffer; // Store for replay
             analyzeAndDraw(audioBuffer);
             playAudio(audioBuffer);
           } catch (err) {
@@ -341,6 +493,12 @@
         source.buffer = audioBuffer;
         source.connect(audioContext.destination);
         source.start(0);
+      }
+
+      function playLastRecording() {
+        if (lastAudioBuffer && audioContext) {
+          playAudio(lastAudioBuffer);
+        }
       }
 
       function analyzeAndDraw(audioBuffer) {
@@ -363,9 +521,24 @@
         const freqData = new Uint8Array(analyser.frequencyBinCount);
         spectrogramData = [];
 
-        processor.onaudioprocess = () => {
+        processor.onaudioprocess = (e) => {
           analyser.getByteFrequencyData(freqData);
           spectrogramData.push(new Uint8Array(freqData));
+
+          // Compute weighted average frequency for pitch
+          const pitch = computeWeightedAverageFreq(
+            freqData,
+            audioContext.sampleRate
+          );
+          pitchData.push(pitch);
+
+          // Compute RMS (audio strength) from time domain data
+          const inputData = e.inputBuffer.getChannelData(0);
+          const rms = Math.sqrt(
+            inputData.reduce((sum, val) => sum + val * val, 0) /
+              inputData.length
+          );
+          strengthData.push(rms);
         };
 
         source.connect(analyser);
@@ -386,6 +559,10 @@
               'Hold the <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> key to record';
             controls.style.display = "grid";
             drawSpectrogram();
+            drawPitchChart();
+            drawStrengthChart();
+            drawProductChart();
+            playAgainBtn.classList.remove("hidden"); // Show play again button
           })
           .catch((err) => {
             console.error("Offline rendering failed:", err);
@@ -437,6 +614,326 @@
           }
         }
         canvasCtx.putImageData(imageData, 0, 0);
+      }
+
+      function drawPitchChart() {
+        if (pitchData.length === 0) return;
+
+        // Set canvas size
+        pitchCanvas.width = pitchCanvas.offsetWidth;
+        pitchCanvas.height = 180; // Increased for indicators
+
+        const ctx = pitchCanvasCtx;
+        const width = pitchCanvas.width;
+        const chartHeight = 120; // Reserve space for indicators
+        const indicatorHeight = 60;
+
+        // Clear canvas
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(0, 0, width, pitchCanvas.height);
+
+        // Analyze pitch trends
+        const analysis = analyzePitchTrends(pitchData);
+
+        // Filter out zero values (no pitch detected)
+        const validPitches = pitchData.filter((p) => p > 0);
+        if (validPitches.length === 0) {
+          ctx.fillStyle = "#9CA3AF";
+          ctx.font = "16px Inter";
+          ctx.textAlign = "center";
+          ctx.fillText("No clear pitch detected", width / 2, chartHeight / 2);
+          return;
+        }
+
+        const minPitch = Math.min(...validPitches);
+        const maxPitch = Math.max(...validPitches);
+        const pitchRange = Math.max(maxPitch - minPitch, 50); // At least 50Hz range
+
+        // Draw reference line for average pitch
+        const avgY =
+          chartHeight -
+          ((analysis.avgPitch - minPitch) / pitchRange) * chartHeight;
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, avgY);
+        ctx.lineTo(width, avgY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw pitch line with color coding
+        ctx.lineWidth = 3;
+
+        let lastValidX = null,
+          lastValidY = null;
+        for (let i = 0; i < pitchData.length; i++) {
+          if (pitchData[i] > 0) {
+            const x = (i / (pitchData.length - 1)) * width;
+            const y =
+              chartHeight -
+              ((pitchData[i] - minPitch) / pitchRange) * chartHeight;
+
+            // Color based on relative pitch level
+            const relativeToAvg =
+              (pitchData[i] - analysis.avgPitch) / analysis.avgPitch;
+            if (relativeToAvg > 0.1) {
+              ctx.strokeStyle = "#EF4444"; // Red for high
+            } else if (relativeToAvg < -0.1) {
+              ctx.strokeStyle = "#10B981"; // Green for low
+            } else {
+              ctx.strokeStyle = "#3B82F6"; // Blue for medium
+            }
+
+            ctx.beginPath();
+            if (lastValidX !== null) {
+              ctx.moveTo(lastValidX, lastValidY);
+              ctx.lineTo(x, y);
+              ctx.stroke();
+            }
+            lastValidX = x;
+            lastValidY = y;
+          }
+        }
+
+        // Draw indicators at bottom
+        const indicatorY = chartHeight + 20;
+
+        // Stats
+        ctx.fillStyle = "#9CA3AF";
+        ctx.font = "12px Inter";
+        ctx.textAlign = "right";
+        ctx.fillText(
+          `Avg: ${Math.round(analysis.avgPitch)}Hz`,
+          width - 10,
+          indicatorY - 5
+        );
+        ctx.fillText(
+          `Range: ${Math.round(analysis.range)}Hz`,
+          width - 10,
+          indicatorY + 10
+        );
+
+        // Frequency labels on left
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "10px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText(`${Math.round(maxPitch)}Hz`, 5, 15);
+        ctx.fillText(`${Math.round(analysis.avgPitch)}Hz`, 5, avgY + 3);
+        ctx.fillText(`${Math.round(minPitch)}Hz`, 5, chartHeight - 5);
+      }
+
+      function drawStrengthChart() {
+        if (strengthData.length === 0) return;
+
+        // Set canvas size
+        strengthCanvas.width = strengthCanvas.offsetWidth;
+        strengthCanvas.height = 120;
+
+        const ctx = strengthCanvasCtx;
+        const width = strengthCanvas.width;
+        const height = strengthCanvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(0, 0, width, height);
+
+        // Analyze strength data
+        const maxStrength = Math.max(...strengthData);
+        const avgStrength =
+          strengthData.reduce((a, b) => a + b, 0) / strengthData.length;
+
+        if (maxStrength === 0) {
+          ctx.fillStyle = "#9CA3AF";
+          ctx.font = "16px Inter";
+          ctx.textAlign = "center";
+          ctx.fillText("No audio signal detected", width / 2, height / 2);
+          return;
+        }
+
+        // Draw grid lines
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 1; i < 4; i++) {
+          const y = (height / 4) * i;
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+        }
+        ctx.stroke();
+
+        // Draw average line
+        const avgY = height - (avgStrength / maxStrength) * height;
+        ctx.strokeStyle = "#374151";
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, avgY);
+        ctx.lineTo(width, avgY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw strength bars
+        const barWidth = width / strengthData.length;
+
+        for (let i = 0; i < strengthData.length; i++) {
+          const x = i * barWidth;
+          const barHeight = (strengthData[i] / maxStrength) * height;
+          const y = height - barHeight;
+
+          // Color based on strength level
+          const strengthRatio = strengthData[i] / maxStrength;
+          let color;
+          if (strengthRatio > 0.7) {
+            color = "#EF4444"; // Red for loud
+          } else if (strengthRatio > 0.3) {
+            color = "#F59E0B"; // Yellow for medium
+          } else {
+            color = "#10B981"; // Green for quiet
+          }
+
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, barWidth - 1, barHeight);
+        }
+
+        // Labels
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "10px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText("Max", 5, 15);
+        ctx.fillText("Avg", 5, avgY + 3);
+        ctx.fillText("Min", 5, height - 15);
+
+        // Stats
+        ctx.fillStyle = "#9CA3AF";
+        ctx.font = "10px Inter";
+        ctx.textAlign = "right";
+        ctx.fillText(`Peak: ${(maxStrength * 100).toFixed(1)}%`, width - 5, 15);
+        ctx.fillText(`Avg: ${(avgStrength * 100).toFixed(1)}%`, width - 5, 25);
+      }
+
+      function computePitchStrengthProduct() {
+        if (pitchData.length === 0 || strengthData.length === 0) return [];
+
+        const productData = [];
+        const minLength = Math.min(pitchData.length, strengthData.length);
+
+        for (let i = 0; i < minLength; i++) {
+          const pitch = pitchData[i] || 0;
+          const strength = strengthData[i] || 0;
+
+          // Normalize pitch to 0-1 range (using typical vocal range 80-400 Hz)
+          const normalizedPitch =
+            pitch > 0 ? Math.min(1, Math.max(0, (pitch - 80) / 320)) : 0;
+
+          // Product of normalized pitch and strength
+          const product = normalizedPitch * strength;
+          productData.push(product);
+        }
+
+        return productData;
+      }
+
+      function drawProductChart() {
+        const productData = computePitchStrengthProduct();
+        if (productData.length === 0) return;
+
+        // Set canvas size
+        productCanvas.width = productCanvas.offsetWidth;
+        productCanvas.height = 120;
+
+        const ctx = productCanvasCtx;
+        const width = productCanvas.width;
+        const height = productCanvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(0, 0, width, height);
+
+        // Analyze product data
+        const maxProduct = Math.max(...productData);
+        const avgProduct =
+          productData.reduce((a, b) => a + b, 0) / productData.length;
+
+        if (maxProduct === 0) {
+          ctx.fillStyle = "#9CA3AF";
+          ctx.font = "16px Inter";
+          ctx.textAlign = "center";
+          ctx.fillText("No vocal activity detected", width / 2, height / 2);
+          return;
+        }
+
+        // Draw grid lines
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 1; i < 4; i++) {
+          const y = (height / 4) * i;
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+        }
+        ctx.stroke();
+
+        // Draw average line
+        const avgY = height - (avgProduct / maxProduct) * height;
+        ctx.strokeStyle = "#374151";
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, avgY);
+        ctx.lineTo(width, avgY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw product curve
+        ctx.strokeStyle = "#8B5CF6"; // Purple color for the product
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        let lastValidX = null,
+          lastValidY = null;
+        for (let i = 0; i < productData.length; i++) {
+          const x = (i / (productData.length - 1)) * width;
+          const y = height - (productData[i] / maxProduct) * height;
+
+          if (productData[i] > 0) {
+            if (lastValidX === null) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+            lastValidX = x;
+            lastValidY = y;
+          }
+        }
+        ctx.stroke();
+
+        // Fill area under curve
+        ctx.fillStyle = "rgba(139, 92, 246, 0.2)"; // Semi-transparent purple
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+
+        for (let i = 0; i < productData.length; i++) {
+          const x = (i / (productData.length - 1)) * width;
+          const y = height - (productData[i] / maxProduct) * height;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Labels
+        ctx.fillStyle = "#6B7280";
+        ctx.font = "10px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText("Max", 5, 15);
+        ctx.fillText("Avg", 5, avgY + 3);
+        ctx.fillText("Min", 5, height - 15);
+
+        // Stats
+        ctx.fillStyle = "#9CA3AF";
+        ctx.font = "10px Inter";
+        ctx.textAlign = "right";
+        ctx.fillText(`Peak: ${(maxProduct * 1000).toFixed(0)}`, width - 5, 15);
+        ctx.fillText(`Avg: ${(avgProduct * 1000).toFixed(0)}`, width - 5, 25);
       }
     </script>
   </body>
