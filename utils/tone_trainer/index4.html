@@ -175,9 +175,9 @@
           </div>
         </div>
         <!-- Play Button -->
-        <div class="flex justify-center mt-3">
+        <div id="playButton" class="flex justify-center mt-3">
+          <div>&nbsp;</div>
           <button
-            id="playButton"
             onclick="playLastRecording()"
             class="flex items-center justify-center w-12 h-12 bg-blue-600 hover:bg-blue-500 rounded-full transition-colors duration-200 shadow-lg"
             title="Play audio"
@@ -190,6 +190,14 @@
               <path d="M8 5v14l11-7z" />
             </svg>
           </button>
+          <div class="p-3.5">
+            or press
+            <kbd
+              class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg"
+              >Enter</kbd
+            >
+            to play.
+          </div>
         </div>
         <!-- <div
           class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
@@ -249,8 +257,8 @@
               <option value="4">4</option>
               <option value="8">8</option>
               <option value="16">16</option>
-              <option value="32" selected>32</option>
-              <option value="64">64</option>
+              <option value="32">32</option>
+              <option value="64" selected>64</option>
               <option value="128">128</option>
               <option value="256">256</option>
               <option value="512">512</option>
@@ -421,7 +429,7 @@
       // YIN Algorithm Parameters
       let yinParams = {
         frameSize: 2048, // Window size for analysis
-        hopSize: 32, // Step size between frames
+        hopSize: 64, // Step size between frames
         threshold: 0.3, // Absolute threshold for period detection
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
@@ -1441,10 +1449,21 @@
                 ctx.stroke();
               }
 
-              // Draw confidence dots
+              // Draw confidence dots with shadow
+              ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+              ctx.shadowBlur = 4;
+              ctx.shadowOffsetX = 1;
+              ctx.shadowOffsetY = 1;
+
               ctx.beginPath();
               ctx.arc(x, y, 3, 0, 2 * Math.PI);
               ctx.fill();
+
+              // Reset shadow for next elements
+              ctx.shadowColor = "transparent";
+              ctx.shadowBlur = 0;
+              ctx.shadowOffsetX = 0;
+              ctx.shadowOffsetY = 0;
 
               lastValidX = x;
               lastValidY = y;
