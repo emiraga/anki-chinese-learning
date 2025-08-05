@@ -298,14 +298,34 @@
         </div>
       </div>
 
-      <!-- YIN Algorithm Chart -->
+      <!-- YIN Pitch Chart -->
       <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
         <h3 class="text-white text-lg font-medium mb-2 px-2">
-          YIN Pitch Detection Algorithm
+          YIN Pitch
+        </h3>
+        <canvas id="yinPitchCanvas"></canvas>
+        <div
+          class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
+        >
+          <div class="text-center">
+            <div class="text-yellow-400 font-medium">Threshold</div>
+            <div id="yinThreshold">0.1</div>
+          </div>
+          <div class="text-center">
+            <div class="text-purple-400 font-medium">YIN Pitch</div>
+            <div id="yinPitchValue">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YIN Analysis Chart -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          YIN Analysis (Difference, CMND)
         </h3>
         <canvas id="yinCanvas"></canvas>
         <div
-          class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-xs text-gray-400"
+          class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
         >
           <div class="text-center">
             <div class="text-blue-400 font-medium">Difference Function</div>
@@ -314,14 +334,6 @@
           <div class="text-center">
             <div class="text-green-400 font-medium">CMND Function</div>
             <div id="yinCmndValue">-</div>
-          </div>
-          <div class="text-center">
-            <div class="text-yellow-400 font-medium">Threshold</div>
-            <div id="yinThreshold">0.1</div>
-          </div>
-          <div class="text-center">
-            <div class="text-purple-400 font-medium">YIN Pitch</div>
-            <div id="yinPitchValue">-</div>
           </div>
         </div>
       </div>
@@ -342,6 +354,8 @@
       const productCanvasCtx = productCanvas.getContext("2d");
       const yinCanvas = document.getElementById("yinCanvas");
       const yinCanvasCtx = yinCanvas.getContext("2d");
+      const yinPitchCanvas = document.getElementById("yinPitchCanvas");
+      const yinPitchCanvasCtx = yinPitchCanvas.getContext("2d");
       const controls = document.getElementById("controls");
       const colorSchemeSelect = document.getElementById("colorScheme");
       const brightnessSlider = document.getElementById("brightness");
@@ -679,6 +693,7 @@
           drawStrengthChart();
           drawProductChart();
           drawYinChart();
+          drawYinPitchChart();
         }
       });
       brightnessSlider.addEventListener("input", (e) => {
@@ -689,6 +704,7 @@
           drawStrengthChart();
           drawProductChart();
           drawYinChart();
+          drawYinPitchChart();
         }
       });
       contrastSlider.addEventListener("input", (e) => {
@@ -699,6 +715,7 @@
           drawStrengthChart();
           drawProductChart();
           drawYinChart();
+          drawYinPitchChart();
         }
       });
 
@@ -707,6 +724,7 @@
         if (lastAudioBuffer && yinData.length > 0) {
           yinData = performYinAnalysis(lastAudioBuffer);
           drawYinChart();
+          drawYinPitchChart();
         }
       }
 
@@ -910,6 +928,7 @@
             drawStrengthChart();
             drawProductChart();
             drawYinChart();
+            drawYinPitchChart();
             playAgainBtn.classList.remove("hidden"); // Show play again button
           })
           .catch((err) => {
@@ -1289,7 +1308,7 @@
 
         // Set canvas size
         yinCanvas.width = yinCanvas.offsetWidth;
-        yinCanvas.height = 300;
+        yinCanvas.height = 200;
 
         const ctx = yinCanvasCtx;
         const width = yinCanvas.width;
@@ -1306,14 +1325,6 @@
         // Update UI indicators
         const yinDiffValue = document.getElementById("yinDiffValue");
         const yinCmndValue = document.getElementById("yinCmndValue");
-        const yinThreshold = document.getElementById("yinThreshold");
-        const yinPitchValue = document.getElementById("yinPitchValue");
-
-        const avgPitch =
-          yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
-        const avgConfidence =
-          yinData.reduce((sum, frame) => sum + frame.confidence, 0) /
-          yinData.length;
 
         yinDiffValue.textContent = `Min: ${Math.min(
           ...avgFrame.differenceFunction
@@ -1321,14 +1332,9 @@
         yinCmndValue.textContent = `Min: ${Math.min(...avgFrame.cmndf).toFixed(
           3
         )}`;
-        yinThreshold.textContent = avgFrame.threshold.toFixed(3);
-        yinPitchValue.textContent =
-          avgPitch > 0
-            ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
-            : "No pitch";
 
-        // Draw three sections: Difference Function, CMNDF, and Pitch over Time
-        const sectionHeight = height / 3;
+        // Draw two sections: Difference Function and CMNDF
+        const sectionHeight = height / 2;
 
         // Section 1: Difference Function
         ctx.fillStyle = "#1F2937";
@@ -1425,18 +1431,55 @@
           }
         }
 
-        // Section 3: YIN Pitch over Time
-        ctx.fillStyle = "#1F2937";
-        ctx.fillRect(0, 2 * sectionHeight, width, sectionHeight);
+        // Draw section divider
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, sectionHeight);
+        ctx.lineTo(width, sectionHeight);
+        ctx.stroke();
+      }
 
+      function drawYinPitchChart() {
+        if (yinData.length === 0) return;
+
+        // Set canvas size
+        yinPitchCanvas.width = yinPitchCanvas.offsetWidth;
+        yinPitchCanvas.height = 150;
+
+        const ctx = yinPitchCanvasCtx;
+        const width = yinPitchCanvas.width;
+        const height = yinPitchCanvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(0, 0, width, height);
+
+        // Calculate average YIN data for visualization
+        const avgFrame = yinData[Math.floor(yinData.length / 2)];
+        if (!avgFrame) return;
+
+        // Update UI indicators
+        const yinThreshold = document.getElementById("yinThreshold");
+        const yinPitchValue = document.getElementById("yinPitchValue");
+
+        const avgPitch =
+          yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
+        const avgConfidence =
+          yinData.reduce((sum, frame) => sum + frame.confidence, 0) /
+          yinData.length;
+
+        yinThreshold.textContent = avgFrame.threshold.toFixed(3);
+        yinPitchValue.textContent =
+          avgPitch > 0
+            ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
+            : "No pitch";
+
+        // Draw YIN Pitch over Time
         ctx.fillStyle = "#8B5CF6";
         ctx.font = "12px Inter";
         ctx.textAlign = "left";
-        ctx.fillText(
-          "YIN Pitch Detection Over Time",
-          10,
-          2 * sectionHeight + 20
-        );
+        ctx.fillText("YIN Pitch Detection Over Time", 10, 20);
 
         const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
@@ -1453,9 +1496,8 @@
             if (frame.pitch > 0) {
               const x = (i / (yinData.length - 1)) * width;
               const y =
-                2 * sectionHeight +
-                sectionHeight -
-                ((frame.pitch - minPitch) / pitchRange) * (sectionHeight - 30);
+                height -
+                ((frame.pitch - minPitch) / pitchRange) * (height - 30);
 
               // Color based on confidence
               const alpha = Math.max(0.3, frame.confidence);
@@ -1465,10 +1507,9 @@
               if (lastValidIndex >= 0 && i === lastValidIndex + 1) {
                 const lastX = (lastValidIndex / (yinData.length - 1)) * width;
                 const lastY =
-                  2 * sectionHeight +
-                  sectionHeight -
+                  height -
                   ((yinData[lastValidIndex].pitch - minPitch) / pitchRange) *
-                    (sectionHeight - 30);
+                    (height - 30);
 
                 ctx.beginPath();
                 ctx.moveTo(lastX, lastY);
@@ -1490,32 +1531,14 @@
           ctx.fillStyle = "#6B7280";
           ctx.font = "10px Inter";
           ctx.textAlign = "right";
-          ctx.fillText(
-            `${Math.round(maxPitch)}Hz`,
-            width - 5,
-            2 * sectionHeight + 25
-          );
+          ctx.fillText(`${Math.round(maxPitch)}Hz`, width - 5, 35);
           ctx.fillText(`${Math.round(minPitch)}Hz`, width - 5, height - 10);
         } else {
           ctx.fillStyle = "#9CA3AF";
           ctx.font = "14px Inter";
           ctx.textAlign = "center";
-          ctx.fillText(
-            "No pitch detected",
-            width / 2,
-            2 * sectionHeight + sectionHeight / 2
-          );
+          ctx.fillText("No pitch detected", width / 2, height / 2);
         }
-
-        // Draw section dividers
-        ctx.strokeStyle = "#374151";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, sectionHeight);
-        ctx.lineTo(width, sectionHeight);
-        ctx.moveTo(0, 2 * sectionHeight);
-        ctx.lineTo(width, 2 * sectionHeight);
-        ctx.stroke();
       }
     </script>
   </body>
