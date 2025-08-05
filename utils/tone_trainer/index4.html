@@ -257,7 +257,7 @@
             id="yinThresholdSlider"
             min="0.05"
             max="0.5"
-            value="0.15"
+            value="0.30"
             step="0.01"
             class="w-full"
           />
@@ -265,7 +265,7 @@
             class="text-xs text-gray-400 text-center mt-1"
             id="yinThresholdValue"
           >
-            0.15
+            0.30
           </div>
         </div>
         <div>
@@ -348,12 +348,12 @@
       </div> -->
 
       <!-- Audio Strength Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+      <!-- <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
         <h3 class="text-white text-lg font-medium mb-2 px-2">
           Audio Strength Over Time
         </h3>
         <canvas id="strengthCanvas"></canvas>
-      </div>
+      </div> -->
     </div>
 
     <script>
@@ -363,8 +363,8 @@
       const playAgainBtn = document.getElementById("playAgainBtn");
       const canvas = document.getElementById("spectrogramCanvas");
       const canvasCtx = canvas.getContext("2d");
-      const strengthCanvas = document.getElementById("strengthCanvas");
-      const strengthCanvasCtx = strengthCanvas.getContext("2d");
+      // const strengthCanvas = document.getElementById("strengthCanvas");
+      // const strengthCanvasCtx = strengthCanvas.getContext("2d");
       // const yinCanvas = document.getElementById("yinCanvas");
       // const yinCanvasCtx = yinCanvas.getContext("2d");
       const yinPitchCanvas = document.getElementById("yinPitchCanvas");
@@ -400,10 +400,10 @@
       let yinParams = {
         frameSize: 1024, // Window size for analysis
         hopSize: 32, // Step size between frames
-        threshold: 0.15, // Absolute threshold for period detection
+        threshold: 0.3, // Absolute threshold for period detection
         minFreq: 10, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
-        interpolation: false, // Enable parabolic interpolation
+        interpolation: true, // Enable parabolic interpolation
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -999,6 +999,7 @@
       }
 
       function drawStrengthChart() {
+        return;
         if (strengthData.length === 0) return;
 
         // Set canvas size
@@ -1233,7 +1234,10 @@
 
         const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
-          const minPitch = Math.min(50, ...validPitches.map((f) => f.pitch));
+          const minPitch = Math.min(
+            yinParams.minFreq,
+            ...validPitches.map((f) => f.pitch)
+          );
           const maxPitch = Math.max(...validPitches.map((f) => f.pitch));
           const pitchRange = Math.max(maxPitch - minPitch, 50);
 
@@ -1255,8 +1259,8 @@
               const y = height - pitchRatio * height;
 
               // Color based on confidence with bright, visible colors
-              const alpha = Math.max(0.4, frame.confidence);
-              const strokeAlpha = Math.max(0.9, frame.confidence);
+              const alpha = Math.max(0.1, frame.confidence);
+              const strokeAlpha = 0;
 
               // Use bright yellow/white for high visibility over spectrogram
               ctx.strokeStyle = `rgba(255, 255, 0, ${strokeAlpha})`;
