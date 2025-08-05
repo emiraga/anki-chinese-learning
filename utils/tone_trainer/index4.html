@@ -178,13 +178,135 @@
         <canvas id="strengthCanvas"></canvas>
       </div>
 
+      <!-- YIN Algorithm Controls -->
+      <div
+        id="yinControls"
+        class="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-gray-700/50 p-4 rounded-lg hidden"
+      >
+        <div>
+          <label
+            for="yinFrameSize"
+            class="block mb-2 text-xs font-medium text-gray-300"
+            >Frame Size</label
+          >
+          <select
+            id="yinFrameSize"
+            class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+          >
+            <option value="256">256</option>
+            <option value="512">512</option>
+            <option value="1024">1024</option>
+            <option value="2048" selected>2048</option>
+            <option value="4096">4096</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="yinHopSize"
+            class="block mb-2 text-xs font-medium text-gray-300"
+            >Hop Size</label
+          >
+          <select
+            id="yinHopSize"
+            class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+          >
+            <option value="128">128</option>
+            <option value="256">256</option>
+            <option value="512" selected>512</option>
+            <option value="1024">1024</option>
+            <option value="2048">2048</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="yinThreshold"
+            class="block mb-2 text-xs font-medium text-gray-300"
+            >Threshold</label
+          >
+          <input
+            type="range"
+            id="yinThresholdSlider"
+            min="0.05"
+            max="0.5"
+            value="0.1"
+            step="0.01"
+            class="w-full"
+          />
+          <div
+            class="text-xs text-gray-400 text-center mt-1"
+            id="yinThresholdValue"
+          >
+            0.10
+          </div>
+        </div>
+        <div>
+          <label
+            for="yinMinFreq"
+            class="block mb-2 text-xs font-medium text-gray-300"
+            >Min Freq (Hz)</label
+          >
+          <input
+            type="range"
+            id="yinMinFreqSlider"
+            min="30"
+            max="200"
+            value="50"
+            step="5"
+            class="w-full"
+          />
+          <div
+            class="text-xs text-gray-400 text-center mt-1"
+            id="yinMinFreqValue"
+          >
+            50
+          </div>
+        </div>
+        <div>
+          <label
+            for="yinMaxFreq"
+            class="block mb-2 text-xs font-medium text-gray-300"
+            >Max Freq (Hz)</label
+          >
+          <input
+            type="range"
+            id="yinMaxFreqSlider"
+            min="500"
+            max="4000"
+            value="2000"
+            step="100"
+            class="w-full"
+          />
+          <div
+            class="text-xs text-gray-400 text-center mt-1"
+            id="yinMaxFreqValue"
+          >
+            2000
+          </div>
+        </div>
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            id="yinInterpolation"
+            checked
+            class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+          />
+          <label
+            for="yinInterpolation"
+            class="ml-2 text-xs font-medium text-gray-300"
+            >Parabolic Interpolation</label
+          >
+        </div>
+      </div>
+
       <!-- YIN Algorithm Chart -->
       <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
         <h3 class="text-white text-lg font-medium mb-2 px-2">
           YIN Pitch Detection Algorithm
         </h3>
         <canvas id="yinCanvas"></canvas>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-xs text-gray-400">
+        <div
+          class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-xs text-gray-400"
+        >
           <div class="text-center">
             <div class="text-blue-400 font-medium">Difference Function</div>
             <div id="yinDiffValue">-</div>
@@ -241,6 +363,16 @@
         colorScheme: "viridis",
         brightness: 0,
         contrast: 1,
+      };
+
+      // YIN Algorithm Parameters
+      let yinParams = {
+        frameSize: 2048, // Window size for analysis
+        hopSize: 512, // Step size between frames
+        threshold: 0.1, // Absolute threshold for period detection
+        minFreq: 50, // Minimum frequency to consider (Hz)
+        maxFreq: 2000, // Maximum frequency to consider (Hz)
+        interpolation: true, // Enable parabolic interpolation
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -397,7 +529,7 @@
       function yinDifferenceFunction(buffer) {
         const bufferSize = buffer.length;
         const differenceFunction = new Array(bufferSize / 2);
-        
+
         // Step 1: Difference function d_t(τ) = Σ(x_j - x_{j+τ})²
         for (let tau = 0; tau < bufferSize / 2; tau++) {
           let sum = 0;
@@ -407,14 +539,14 @@
           }
           differenceFunction[tau] = sum;
         }
-        
+
         return differenceFunction;
       }
 
       function yinCumulativeMeanNormalizedDifference(differenceFunction) {
         const cmndf = new Array(differenceFunction.length);
         cmndf[0] = 1;
-        
+
         // Step 2: Cumulative mean normalized difference function
         // d'_t(τ) = { 1 if τ = 0
         //           { d_t(τ) / ((1/τ) * Σ_{j=1}^τ d_t(j)) if τ ≠ 0
@@ -423,11 +555,11 @@
           runningSum += differenceFunction[tau];
           cmndf[tau] = differenceFunction[tau] / (runningSum / tau);
         }
-        
+
         return cmndf;
       }
 
-      function yinAbsoluteThreshold(cmndf, threshold = 0.1) {
+      function yinAbsoluteThreshold(cmndf, threshold) {
         // Step 3: Absolute threshold
         // Find the first minimum below the threshold
         for (let tau = 2; tau < cmndf.length; tau++) {
@@ -447,66 +579,72 @@
         if (tauEstimate < 1 || tauEstimate >= cmndf.length - 1) {
           return tauEstimate;
         }
-        
+
         const s0 = cmndf[tauEstimate - 1];
         const s1 = cmndf[tauEstimate];
         const s2 = cmndf[tauEstimate + 1];
-        
+
         // Parabolic interpolation formula
         const betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
         return betterTau;
       }
 
-      function performYinAnalysis(audioBuffer, frameSize = 2048, hopSize = 512) {
+      function performYinAnalysis(audioBuffer, frameSize, hopSize) {
+        // Use parameters from yinParams if not provided
+        frameSize = frameSize || yinParams.frameSize;
+        hopSize = hopSize || yinParams.hopSize;
+
         const sampleRate = audioBuffer.sampleRate;
         const audioData = audioBuffer.getChannelData(0);
         const yinResults = [];
-        
+
         // Process audio in overlapping frames
         for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
           const frame = audioData.slice(i, i + frameSize);
-          
+
           // Step 1: Difference function
           const differenceFunction = yinDifferenceFunction(frame);
-          
+
           // Step 2: Cumulative mean normalized difference function
-          const cmndf = yinCumulativeMeanNormalizedDifference(differenceFunction);
-          
+          const cmndf =
+            yinCumulativeMeanNormalizedDifference(differenceFunction);
+
           // Step 3: Absolute threshold
-          const threshold = 0.1;
-          let tauEstimate = yinAbsoluteThreshold(cmndf, threshold);
-          
+          let tauEstimate = yinAbsoluteThreshold(cmndf, yinParams.threshold);
+
           let pitch = 0;
           let confidence = 0;
-          
+
           if (tauEstimate > 0) {
-            // Step 4: Parabolic interpolation
-            const betterTau = yinParabolicInterpolation(cmndf, tauEstimate);
-            
+            // Step 4: Parabolic interpolation (if enabled)
+            const betterTau = yinParams.interpolation
+              ? yinParabolicInterpolation(cmndf, tauEstimate)
+              : tauEstimate;
+
             // Convert tau to frequency
             pitch = sampleRate / betterTau;
-            
+
             // Confidence is inverse of CMNDF value at the estimated tau
             confidence = 1 - cmndf[Math.round(betterTau)];
-            
-            // Filter out unrealistic pitches
-            if (pitch < 50 || pitch > 2000) {
+
+            // Filter out unrealistic pitches using dynamic parameters
+            if (pitch < yinParams.minFreq || pitch > yinParams.maxFreq) {
               pitch = 0;
               confidence = 0;
             }
           }
-          
+
           yinResults.push({
             pitch: pitch,
             confidence: confidence,
             differenceFunction: differenceFunction.slice(0, 200), // Store first 200 points for visualization
             cmndf: cmndf.slice(0, 200),
             tau: tauEstimate,
-            threshold: threshold,
-            timeIndex: i / sampleRate
+            threshold: yinParams.threshold,
+            timeIndex: i / sampleRate,
           });
         }
-        
+
         return yinResults;
       }
 
@@ -563,6 +701,60 @@
           drawYinChart();
         }
       });
+
+      // --- YIN PARAMETER EVENT LISTENERS ---
+      function recomputeYin() {
+        if (lastAudioBuffer && yinData.length > 0) {
+          yinData = performYinAnalysis(lastAudioBuffer);
+          drawYinChart();
+        }
+      }
+
+      document
+        .getElementById("yinFrameSize")
+        .addEventListener("change", (e) => {
+          yinParams.frameSize = parseInt(e.target.value, 10);
+          recomputeYin();
+        });
+
+      document.getElementById("yinHopSize").addEventListener("change", (e) => {
+        yinParams.hopSize = parseInt(e.target.value, 10);
+        recomputeYin();
+      });
+
+      document
+        .getElementById("yinThresholdSlider")
+        .addEventListener("input", (e) => {
+          yinParams.threshold = parseFloat(e.target.value);
+          document.getElementById("yinThresholdValue").textContent =
+            yinParams.threshold.toFixed(2);
+          recomputeYin();
+        });
+
+      document
+        .getElementById("yinMinFreqSlider")
+        .addEventListener("input", (e) => {
+          yinParams.minFreq = parseInt(e.target.value, 10);
+          document.getElementById("yinMinFreqValue").textContent =
+            yinParams.minFreq;
+          recomputeYin();
+        });
+
+      document
+        .getElementById("yinMaxFreqSlider")
+        .addEventListener("input", (e) => {
+          yinParams.maxFreq = parseInt(e.target.value, 10);
+          document.getElementById("yinMaxFreqValue").textContent =
+            yinParams.maxFreq;
+          recomputeYin();
+        });
+
+      document
+        .getElementById("yinInterpolation")
+        .addEventListener("change", (e) => {
+          yinParams.interpolation = e.target.checked;
+          recomputeYin();
+        });
 
       // --- CORE AUDIO FUNCTIONS ---
       async function startRecording() {
@@ -627,10 +819,10 @@
             strengthData = [];
             yinData = [];
             lastAudioBuffer = audioBuffer; // Store for replay
-            
+
             // Perform YIN analysis
             yinData = performYinAnalysis(audioBuffer);
-            
+
             analyzeAndDraw(audioBuffer);
             playAudio(audioBuffer);
           } catch (err) {
@@ -712,6 +904,7 @@
             instructions.innerHTML =
               'Hold the <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> key to record';
             controls.style.display = "grid";
+            document.getElementById("yinControls").classList.remove("hidden");
             drawSpectrogram();
             drawPitchChart();
             drawStrengthChart();
@@ -1116,13 +1309,23 @@
         const yinThreshold = document.getElementById("yinThreshold");
         const yinPitchValue = document.getElementById("yinPitchValue");
 
-        const avgPitch = yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
-        const avgConfidence = yinData.reduce((sum, frame) => sum + frame.confidence, 0) / yinData.length;
+        const avgPitch =
+          yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
+        const avgConfidence =
+          yinData.reduce((sum, frame) => sum + frame.confidence, 0) /
+          yinData.length;
 
-        yinDiffValue.textContent = `Min: ${Math.min(...avgFrame.differenceFunction).toFixed(2)}`;
-        yinCmndValue.textContent = `Min: ${Math.min(...avgFrame.cmndf).toFixed(3)}`;
+        yinDiffValue.textContent = `Min: ${Math.min(
+          ...avgFrame.differenceFunction
+        ).toFixed(2)}`;
+        yinCmndValue.textContent = `Min: ${Math.min(...avgFrame.cmndf).toFixed(
+          3
+        )}`;
         yinThreshold.textContent = avgFrame.threshold.toFixed(3);
-        yinPitchValue.textContent = avgPitch > 0 ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)` : "No pitch";
+        yinPitchValue.textContent =
+          avgPitch > 0
+            ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
+            : "No pitch";
 
         // Draw three sections: Difference Function, CMNDF, and Pitch over Time
         const sectionHeight = height / 3;
@@ -1130,22 +1333,27 @@
         // Section 1: Difference Function
         ctx.fillStyle = "#1F2937";
         ctx.fillRect(0, 0, width, sectionHeight);
-        
+
         ctx.fillStyle = "#3B82F6";
         ctx.font = "12px Inter";
         ctx.textAlign = "left";
         ctx.fillText("Difference Function", 10, 20);
 
-        if (avgFrame.differenceFunction && avgFrame.differenceFunction.length > 0) {
+        if (
+          avgFrame.differenceFunction &&
+          avgFrame.differenceFunction.length > 0
+        ) {
           const maxDiff = Math.max(...avgFrame.differenceFunction);
           ctx.strokeStyle = "#3B82F6";
           ctx.lineWidth = 1;
           ctx.beginPath();
-          
+
           for (let i = 0; i < avgFrame.differenceFunction.length; i++) {
             const x = (i / avgFrame.differenceFunction.length) * width;
-            const y = sectionHeight - (avgFrame.differenceFunction[i] / maxDiff) * (sectionHeight - 30);
-            
+            const y =
+              sectionHeight -
+              (avgFrame.differenceFunction[i] / maxDiff) * (sectionHeight - 30);
+
             if (i === 0) {
               ctx.moveTo(x, y);
             } else {
@@ -1158,14 +1366,21 @@
         // Section 2: CMNDF
         ctx.fillStyle = "#1F2937";
         ctx.fillRect(0, sectionHeight, width, sectionHeight);
-        
+
         ctx.fillStyle = "#10B981";
         ctx.font = "12px Inter";
         ctx.textAlign = "left";
-        ctx.fillText("Cumulative Mean Normalized Difference Function", 10, sectionHeight + 20);
+        ctx.fillText(
+          "Cumulative Mean Normalized Difference Function",
+          10,
+          sectionHeight + 20
+        );
 
         // Draw threshold line
-        const thresholdY = sectionHeight + sectionHeight - (avgFrame.threshold * (sectionHeight - 30));
+        const thresholdY =
+          sectionHeight +
+          sectionHeight -
+          avgFrame.threshold * (sectionHeight - 30);
         ctx.strokeStyle = "#F59E0B";
         ctx.lineWidth = 1;
         ctx.setLineDash([5, 5]);
@@ -1179,11 +1394,14 @@
           ctx.strokeStyle = "#10B981";
           ctx.lineWidth = 2;
           ctx.beginPath();
-          
+
           for (let i = 0; i < avgFrame.cmndf.length; i++) {
             const x = (i / avgFrame.cmndf.length) * width;
-            const y = sectionHeight + sectionHeight - Math.min(avgFrame.cmndf[i], 1) * (sectionHeight - 30);
-            
+            const y =
+              sectionHeight +
+              sectionHeight -
+              Math.min(avgFrame.cmndf[i], 1) * (sectionHeight - 30);
+
             if (i === 0) {
               ctx.moveTo(x, y);
             } else {
@@ -1195,8 +1413,11 @@
           // Mark the detected period with a red dot
           if (avgFrame.tau > 0 && avgFrame.tau < avgFrame.cmndf.length) {
             const tauX = (avgFrame.tau / avgFrame.cmndf.length) * width;
-            const tauY = sectionHeight + sectionHeight - Math.min(avgFrame.cmndf[avgFrame.tau], 1) * (sectionHeight - 30);
-            
+            const tauY =
+              sectionHeight +
+              sectionHeight -
+              Math.min(avgFrame.cmndf[avgFrame.tau], 1) * (sectionHeight - 30);
+
             ctx.fillStyle = "#EF4444";
             ctx.beginPath();
             ctx.arc(tauX, tauY, 4, 0, 2 * Math.PI);
@@ -1207,49 +1428,60 @@
         // Section 3: YIN Pitch over Time
         ctx.fillStyle = "#1F2937";
         ctx.fillRect(0, 2 * sectionHeight, width, sectionHeight);
-        
+
         ctx.fillStyle = "#8B5CF6";
         ctx.font = "12px Inter";
         ctx.textAlign = "left";
-        ctx.fillText("YIN Pitch Detection Over Time", 10, 2 * sectionHeight + 20);
+        ctx.fillText(
+          "YIN Pitch Detection Over Time",
+          10,
+          2 * sectionHeight + 20
+        );
 
-        const validPitches = yinData.filter(frame => frame.pitch > 0);
+        const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
-          const minPitch = Math.min(...validPitches.map(f => f.pitch));
-          const maxPitch = Math.max(...validPitches.map(f => f.pitch));
+          const minPitch = Math.min(...validPitches.map((f) => f.pitch));
+          const maxPitch = Math.max(...validPitches.map((f) => f.pitch));
           const pitchRange = Math.max(maxPitch - minPitch, 50);
 
           // Draw pitch line with confidence-based opacity
           ctx.lineWidth = 2;
-          
+
           let lastValidIndex = -1;
           for (let i = 0; i < yinData.length; i++) {
             const frame = yinData[i];
             if (frame.pitch > 0) {
               const x = (i / (yinData.length - 1)) * width;
-              const y = 2 * sectionHeight + sectionHeight - ((frame.pitch - minPitch) / pitchRange) * (sectionHeight - 30);
-              
+              const y =
+                2 * sectionHeight +
+                sectionHeight -
+                ((frame.pitch - minPitch) / pitchRange) * (sectionHeight - 30);
+
               // Color based on confidence
               const alpha = Math.max(0.3, frame.confidence);
               ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
-              
+
               // Only draw line if previous frame also had valid pitch (consecutive frames)
               if (lastValidIndex >= 0 && i === lastValidIndex + 1) {
                 const lastX = (lastValidIndex / (yinData.length - 1)) * width;
-                const lastY = 2 * sectionHeight + sectionHeight - ((yinData[lastValidIndex].pitch - minPitch) / pitchRange) * (sectionHeight - 30);
-                
+                const lastY =
+                  2 * sectionHeight +
+                  sectionHeight -
+                  ((yinData[lastValidIndex].pitch - minPitch) / pitchRange) *
+                    (sectionHeight - 30);
+
                 ctx.beginPath();
                 ctx.moveTo(lastX, lastY);
                 ctx.lineTo(x, y);
                 ctx.stroke();
               }
-              
+
               // Draw confidence dots
               ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`;
               ctx.beginPath();
               ctx.arc(x, y, 2, 0, 2 * Math.PI);
               ctx.fill();
-              
+
               lastValidIndex = i;
             }
           }
@@ -1258,13 +1490,21 @@
           ctx.fillStyle = "#6B7280";
           ctx.font = "10px Inter";
           ctx.textAlign = "right";
-          ctx.fillText(`${Math.round(maxPitch)}Hz`, width - 5, 2 * sectionHeight + 25);
+          ctx.fillText(
+            `${Math.round(maxPitch)}Hz`,
+            width - 5,
+            2 * sectionHeight + 25
+          );
           ctx.fillText(`${Math.round(minPitch)}Hz`, width - 5, height - 10);
         } else {
           ctx.fillStyle = "#9CA3AF";
           ctx.font = "14px Inter";
           ctx.textAlign = "center";
-          ctx.fillText("No pitch detected", width / 2, 2 * sectionHeight + sectionHeight / 2);
+          ctx.fillText(
+            "No pitch detected",
+            width / 2,
+            2 * sectionHeight + sectionHeight / 2
+          );
         }
 
         // Draw section dividers
