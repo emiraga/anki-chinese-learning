@@ -288,50 +288,29 @@ const useAnkiHanziProgress = () => {
   return { characterProgress, loading, error };
 };
 
-// Helper function to calculate linear regression
-const calculateLinearRegression = (data: [number, number][]) => {
-  const n = data.length;
-  if (n < 2) return null;
-
-  const sumX = data.reduce((sum, [x]) => sum + x, 0);
-  const sumY = data.reduce((sum, [, y]) => sum + y, 0);
-  const sumXY = data.reduce((sum, [x, y]) => sum + x * y, 0);
-  const sumXX = data.reduce((sum, [x]) => sum + x * x, 0);
-
-  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
-
-  return { slope, intercept };
-};
-
-// Helper function to extrapolate progress
-const extrapolateProgress = (characterProgress: { [key: string]: number }) => {
+// Simple helper function to calculate progress rate
+const calculateProgress = (characterProgress: { [key: string]: number }) => {
   const entries = Object.entries(characterProgress).sort(([a], [b]) =>
     a.localeCompare(b)
   );
-  if (entries.length < 2) return null;
+  if (entries.length === 0) return null;
 
-  // Convert dates to timestamps for regression
-  const dataPoints: [number, number][] = entries.map(([date, count]) => [
-    new Date(date).getTime(),
-    count,
-  ]);
-
-  const regression = calculateLinearRegression(dataPoints);
-  if (!regression) return null;
-
-  const { slope, intercept } = regression;
-  const currentDate = new Date();
+  const firstDate = new Date(entries[0][0]);
+  const lastDate = new Date(entries[entries.length - 1][0]);
   const currentCount = entries[entries.length - 1][1];
+  
+  // Calculate elapsed days (assume intercept is 0 at first date)
+  const elapsedDays = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  // Simple rate: characters learned / days elapsed
+  const charsPerDay = currentCount / elapsedDays;
 
-  // Calculate days until targets (slope is chars per millisecond, convert to chars per day)
-  const charsPerDay = slope * (24 * 60 * 60 * 1000);
-
-  if (charsPerDay <= 0) return null; // No progress or declining
+  if (charsPerDay <= 0) return null; // No progress
 
   const daysTo2000 = Math.ceil((2000 - currentCount) / charsPerDay);
   const daysTo3000 = Math.ceil((3000 - currentCount) / charsPerDay);
 
+  const currentDate = new Date();
   const dateTo2000 = new Date(
     currentDate.getTime() + daysTo2000 * 24 * 60 * 60 * 1000
   );
@@ -345,7 +324,6 @@ const extrapolateProgress = (characterProgress: { [key: string]: number }) => {
     daysTo3000: daysTo3000 > 0 ? daysTo3000 : null,
     dateTo2000: daysTo2000 > 0 ? dateTo2000 : null,
     dateTo3000: daysTo3000 > 0 ? dateTo3000 : null,
-    regression,
   };
 };
 
@@ -353,7 +331,7 @@ const extrapolateProgress = (characterProgress: { [key: string]: number }) => {
 const ProgressChart: React.FC<{
   characterProgress: { [key: string]: number };
 }> = ({ characterProgress }) => {
-  const extrapolation = extrapolateProgress(characterProgress);
+  const extrapolation = calculateProgress(characterProgress);
 
   if (Object.keys(characterProgress).length === 0) {
     return <div>No data to display</div>;
@@ -474,7 +452,7 @@ export const AnkiHanziProgress = () => {
     return <div>No Hanzi characters learned yet or no data found.</div>;
   }
 
-  const extrapolation = extrapolateProgress(characterProgress);
+  const extrapolation = calculateProgress(characterProgress);
   const currentCount = Math.max(...Object.values(characterProgress));
 
   // Calculate total days of learning
