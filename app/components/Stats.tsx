@@ -1,6 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import anki from "~/apis/anki";
 import { useAsync } from "react-async-hook";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
 
 const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
   htmlContent,
@@ -338,6 +349,92 @@ const extrapolateProgress = (characterProgress: { [key: string]: number }) => {
   };
 };
 
+// Recharts Progress Chart Component
+const ProgressChart: React.FC<{
+  characterProgress: { [key: string]: number };
+}> = ({ characterProgress }) => {
+  const extrapolation = extrapolateProgress(characterProgress);
+
+  if (Object.keys(characterProgress).length === 0) {
+    return <div>No data to display</div>;
+  }
+
+  // Prepare actual progress data
+  const entries = Object.entries(characterProgress).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  const allData = entries.map(([date, count]) => ({
+    date,
+    actual: count,
+    dateObj: new Date(date),
+  }));
+
+  // Calculate max value for Y-axis
+  const maxValue = Math.max(...entries.map(([, count]) => count));
+  const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
+
+  // Custom tooltip
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const date = new Date(label).toLocaleDateString();
+      return (
+        <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
+          <p className="text-sm font-medium">{date}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}: {entry.value} characters
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Format date for x-axis
+  const formatXAxisDate = (tickItem: string) => {
+    const date = new Date(tickItem);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "2-digit",
+    });
+  };
+
+  return (
+    <div className="w-full h-96 mb-6">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={allData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatXAxisDate}
+            tick={{ fontSize: 12 }}
+            interval="preserveStartEnd"
+          />
+          <YAxis domain={[0, yAxisMax]} tick={{ fontSize: 12 }} tickCount={8} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend />
+
+          {/* Actual progress line */}
+          <Line
+            type="monotone"
+            dataKey="actual"
+            stroke="#3b82f6"
+            strokeWidth={3}
+            dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+            name="Actual Progress"
+            connectNulls={false}
+          />
+          
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 export const AnkiHtmlStats: React.FC<{}> = ({}) => {
   const { loading, error, result } = useAsync(
     async () =>
@@ -380,29 +477,58 @@ export const AnkiHanziProgress = () => {
   const extrapolation = extrapolateProgress(characterProgress);
   const currentCount = Math.max(...Object.values(characterProgress));
 
+  // Calculate total days of learning
+  const entries = Object.entries(characterProgress).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  const firstDate = entries.length > 0 ? new Date(entries[0][0]) : null;
+  const lastDate =
+    entries.length > 0 ? new Date(entries[entries.length - 1][0]) : null;
+
+  const totalDays =
+    firstDate && lastDate
+      ? Math.ceil(
+          (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)
+        ) + 1
+      : 0;
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-4">Hanzi Learning Progress</h2>
 
+        {/* Progress Chart */}
+        <ProgressChart characterProgress={characterProgress} />
+
         {/* Progress Summary */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-800">Current Progress</h3>
-            <p className="text-2xl font-bold text-blue-600">{currentCount}</p>
-            <p className="text-sm text-blue-600">characters learned</p>
+            <h3 className="font-semibold text-blue-800">
+              {currentCount} Characters Progress
+            </h3>
+            <p className="text-2xl font-bold text-blue-600">
+              {totalDays} <span className="text-sm">days past</span>
+            </p>
+            <p className="text-xs text-blue-500 mt-1">
+              Since {firstDate?.toLocaleDateString()}
+            </p>
           </div>
 
           {extrapolation && (
             <>
               <div className="bg-red-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-red-800">2000 Characters</h3>
+                <h3 className="font-semibold text-red-800">
+                  2000 Characters Target
+                </h3>
                 {extrapolation.daysTo2000 ? (
                   <>
                     <p className="text-2xl font-bold text-red-600">
-                      {extrapolation.daysTo2000}
+                      {extrapolation.daysTo2000}{" "}
+                      <span className="text-sm text-red-600">
+                        days remaining
+                      </span>
                     </p>
-                    <p className="text-sm text-red-600">days remaining</p>
+
                     <p className="text-xs text-red-500 mt-1">
                       {extrapolation.dateTo2000?.toLocaleDateString()}
                     </p>
@@ -414,14 +540,17 @@ export const AnkiHanziProgress = () => {
 
               <div className="bg-yellow-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-yellow-800">
-                  3000 Characters
+                  3000 Characters Target
                 </h3>
                 {extrapolation.daysTo3000 ? (
                   <>
                     <p className="text-2xl font-bold text-yellow-600">
-                      {extrapolation.daysTo3000}
+                      {extrapolation.daysTo3000}{" "}
+                      <span className="text-sm text-yellow-600">
+                        days remaining
+                      </span>
                     </p>
-                    <p className="text-sm text-yellow-600">days remaining</p>
+
                     <p className="text-xs text-yellow-500 mt-1">
                       {extrapolation.dateTo3000?.toLocaleDateString()}
                     </p>
