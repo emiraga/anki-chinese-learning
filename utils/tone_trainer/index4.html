@@ -148,10 +148,19 @@
         </div>
       </div>
 
-      <!-- Spectrogram Canvas -->
+      <!-- Spectrogram Canvas with YIN Pitch Overlay -->
       <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">Spectrogram</h3>
-        <canvas id="spectrogramCanvas"></canvas>
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          Spectrogram with YIN Pitch Overlay
+        </h3>
+        <div class="relative">
+          <canvas id="spectrogramCanvas"></canvas>
+          <canvas
+            id="yinPitchCanvas"
+            class="absolute top-0 left-0 pointer-events-none"
+            style="background: transparent"
+          ></canvas>
+        </div>
         <div
           id="loadingOverlay"
           class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
@@ -163,6 +172,29 @@
             <p class="text-gray-300 text-sm">Computing charts...</p>
           </div>
         </div>
+        <div
+          id="yinPitchLoadingOverlay"
+          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
+        >
+          <div class="text-center">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"
+            ></div>
+            <p class="text-gray-300 text-sm">Computing YIN pitch...</p>
+          </div>
+        </div>
+        <!-- <div
+          class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
+        >
+          <div class="text-center">
+            <div class="text-yellow-400 font-medium">Threshold</div>
+            <div id="yinThreshold">-</div>
+          </div>
+          <div class="text-center">
+            <div class="text-purple-400 font-medium">YIN Pitch</div>
+            <div id="yinPitchValue">-</div>
+          </div>
+        </div> -->
       </div>
 
       <!-- YIN Algorithm Controls -->
@@ -295,37 +327,8 @@
         </div>
       </div>
 
-      <!-- YIN Pitch Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4 relative">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">YIN Pitch</h3>
-        <canvas id="yinPitchCanvas"></canvas>
-        <div
-          id="yinPitchLoadingOverlay"
-          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
-        >
-          <div class="text-center">
-            <div
-              class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"
-            ></div>
-            <p class="text-gray-300 text-sm">Computing YIN pitch...</p>
-          </div>
-        </div>
-        <div
-          class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
-        >
-          <div class="text-center">
-            <div class="text-yellow-400 font-medium">Threshold</div>
-            <div id="yinThreshold">-</div>
-          </div>
-          <div class="text-center">
-            <div class="text-purple-400 font-medium">YIN Pitch</div>
-            <div id="yinPitchValue">-</div>
-          </div>
-        </div>
-      </div>
-
       <!-- YIN Analysis Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+      <!-- <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
         <h3 class="text-white text-lg font-medium mb-2 px-2">
           YIN Analysis (Difference, CMND)
         </h3>
@@ -342,7 +345,7 @@
             <div id="yinCmndValue">-</div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Audio Strength Chart -->
       <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
@@ -362,8 +365,8 @@
       const canvasCtx = canvas.getContext("2d");
       const strengthCanvas = document.getElementById("strengthCanvas");
       const strengthCanvasCtx = strengthCanvas.getContext("2d");
-      const yinCanvas = document.getElementById("yinCanvas");
-      const yinCanvasCtx = yinCanvas.getContext("2d");
+      // const yinCanvas = document.getElementById("yinCanvas");
+      // const yinCanvasCtx = yinCanvas.getContext("2d");
       const yinPitchCanvas = document.getElementById("yinPitchCanvas");
       const yinPitchCanvasCtx = yinPitchCanvas.getContext("2d");
       const controls = document.getElementById("controls");
@@ -1012,8 +1015,6 @@
 
         // Analyze strength data
         const maxStrength = Math.max(...strengthData);
-        const avgStrength =
-          strengthData.reduce((a, b) => a + b, 0) / strengthData.length;
 
         if (maxStrength === 0) {
           ctx.fillStyle = "#9CA3AF";
@@ -1033,16 +1034,6 @@
           ctx.lineTo(width, y);
         }
         ctx.stroke();
-
-        // Draw average line
-        const avgY = height - (avgStrength / maxStrength) * height;
-        ctx.strokeStyle = "#374151";
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(0, avgY);
-        ctx.lineTo(width, avgY);
-        ctx.stroke();
-        ctx.setLineDash([]);
 
         // Draw strength bars
         const barWidth = width / strengthData.length;
@@ -1066,24 +1057,10 @@
           ctx.fillStyle = color;
           ctx.fillRect(x, y, barWidth - 1, barHeight);
         }
-
-        // Labels
-        ctx.fillStyle = "#6B7280";
-        ctx.font = "10px Inter";
-        ctx.textAlign = "left";
-        ctx.fillText("Max", 5, 15);
-        ctx.fillText("Avg", 5, avgY + 3);
-        ctx.fillText("Min", 5, height - 15);
-
-        // Stats
-        ctx.fillStyle = "#9CA3AF";
-        ctx.font = "10px Inter";
-        ctx.textAlign = "right";
-        ctx.fillText(`Peak: ${(maxStrength * 100).toFixed(1)}%`, width - 5, 15);
-        ctx.fillText(`Avg: ${(avgStrength * 100).toFixed(1)}%`, width - 5, 25);
       }
 
       function drawYinChart() {
+        return;
         if (yinData.length === 0) return;
 
         // Set canvas size
@@ -1223,25 +1200,24 @@
       function drawYinPitchChart() {
         if (yinData.length === 0) return;
 
-        // Set canvas size
-        yinPitchCanvas.width = yinPitchCanvas.offsetWidth;
-        yinPitchCanvas.height = 150;
+        // Set canvas size to match the spectrogram canvas
+        yinPitchCanvas.width = canvas.width;
+        yinPitchCanvas.height = canvas.height;
 
         const ctx = yinPitchCanvasCtx;
         const width = yinPitchCanvas.width;
         const height = yinPitchCanvas.height;
 
-        // Clear canvas
-        ctx.fillStyle = "#111827";
-        ctx.fillRect(0, 0, width, height);
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, width, height);
 
         // Calculate average YIN data for visualization
         const avgFrame = yinData[Math.floor(yinData.length / 2)];
         if (!avgFrame) return;
 
         // Update UI indicators
-        const yinThreshold = document.getElementById("yinThreshold");
-        const yinPitchValue = document.getElementById("yinPitchValue");
+        // const yinThreshold = document.getElementById("yinThreshold");
+        // const yinPitchValue = document.getElementById("yinPitchValue");
 
         const avgPitch =
           yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
@@ -1249,64 +1225,71 @@
           yinData.reduce((sum, frame) => sum + frame.confidence, 0) /
           yinData.length;
 
-        yinThreshold.textContent = avgFrame.threshold.toFixed(3);
-        yinPitchValue.textContent =
-          avgPitch > 0
-            ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
-            : "No pitch";
+        // yinThreshold.textContent = avgFrame.threshold.toFixed(3);
+        // yinPitchValue.textContent =
+        //   avgPitch > 0
+        //     ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
+        //     : "No pitch";
 
         const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
-          const minPitch = Math.min(...validPitches.map((f) => f.pitch));
+          const minPitch = Math.min(50, ...validPitches.map((f) => f.pitch));
           const maxPitch = Math.max(...validPitches.map((f) => f.pitch));
           const pitchRange = Math.max(maxPitch - minPitch, 50);
 
           // Draw pitch line with confidence-based opacity
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 3;
 
-          let lastValidIndex = -1;
+          let lastValidX = -1;
+          let lastValidY = -1;
+
           for (let i = 0; i < yinData.length; i++) {
             const frame = yinData[i];
             if (frame.pitch > 0) {
-              const x = (i / (yinData.length - 1)) * width;
-              const y =
-                height -
-                ((frame.pitch - minPitch) / pitchRange) * (height - 30);
+              // Map time index to canvas width (matching spectrogram time axis)
+              const timeRatio = i / (yinData.length - 1);
+              const x = timeRatio * width;
 
-              // Color based on confidence
-              const alpha = Math.max(0.3, frame.confidence);
-              ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
+              // Map pitch to independent Y-axis (full canvas height for pitch range)
+              const pitchRatio = (frame.pitch - minPitch) / pitchRange;
+              const y = height - pitchRatio * height;
 
-              // Only draw line if previous frame also had valid pitch (consecutive frames)
-              if (lastValidIndex >= 0 && i === lastValidIndex + 1) {
-                const lastX = (lastValidIndex / (yinData.length - 1)) * width;
-                const lastY =
-                  height -
-                  ((yinData[lastValidIndex].pitch - minPitch) / pitchRange) *
-                    (height - 30);
+              // Color based on confidence with bright, visible colors
+              const alpha = Math.max(0.4, frame.confidence);
+              const strokeAlpha = Math.max(0.9, frame.confidence);
 
+              // Use bright yellow/white for high visibility over spectrogram
+              ctx.strokeStyle = `rgba(255, 255, 0, ${strokeAlpha})`;
+              ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+
+              // Draw line connecting consecutive valid pitch points
+              if (lastValidX >= 0 && lastValidY >= 0) {
                 ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
+                ctx.moveTo(lastValidX, lastValidY);
                 ctx.lineTo(x, y);
                 ctx.stroke();
               }
 
               // Draw confidence dots
-              ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`;
               ctx.beginPath();
-              ctx.arc(x, y, 2, 0, 2 * Math.PI);
+              ctx.arc(x, y, 3, 0, 2 * Math.PI);
               ctx.fill();
 
-              lastValidIndex = i;
+              lastValidX = x;
+              lastValidY = y;
+            } else {
+              // Reset line drawing when pitch is invalid
+              lastValidX = -1;
+              lastValidY = -1;
             }
           }
 
-          // Draw pitch range labels
-          ctx.fillStyle = "#6B7280";
-          ctx.font = "10px Inter";
-          ctx.textAlign = "right";
-          ctx.fillText(`${Math.round(maxPitch)}Hz`, width - 5, 35);
-          ctx.fillText(`${Math.round(minPitch)}Hz`, width - 5, height - 10);
+          // Draw pitch range labels on the overlay
+          ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.font = "12px Inter";
+          ctx.textAlign = "left";
+          ctx.fillText(`${Math.round(maxPitch)}Hz`, 5, 20);
+          ctx.fillText(`${Math.round(minPitch)}Hz`, 5, height - 10);
         } else {
           ctx.fillStyle = "#9CA3AF";
           ctx.font = "14px Inter";
