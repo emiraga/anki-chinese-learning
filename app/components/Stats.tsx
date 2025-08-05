@@ -11,6 +11,8 @@ import {
   Legend,
   ResponsiveContainer,
   ReferenceLine,
+  BarChart,
+  Bar,
 } from "recharts";
 
 const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
@@ -298,10 +300,13 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
   const firstDate = new Date(entries[0][0]);
   const lastDate = new Date(entries[entries.length - 1][0]);
   const currentCount = entries[entries.length - 1][1];
-  
+
   // Calculate elapsed days (assume intercept is 0 at first date)
-  const elapsedDays = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  
+  const elapsedDays =
+    Math.ceil(
+      (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
   // Simple rate: characters learned / days elapsed
   const charsPerDay = currentCount / elapsedDays;
 
@@ -327,12 +332,153 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
   };
 };
 
+// Helper function to calculate monthly learning rates
+const calculateMonthlyRates = (characterProgress: {
+  [key: string]: number;
+}) => {
+  const entries = Object.entries(characterProgress).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  if (entries.length === 0) return [];
+
+  // Group data by month
+  const monthlyData: { [key: string]: { learned: number; totalDays: number } } =
+    {};
+
+  // Process each date to calculate characters learned per month
+  for (let i = 0; i < entries.length; i++) {
+    const [date, cumulativeCount] = entries[i];
+    const currentDate = new Date(date);
+    const monthKey = `${currentDate.getFullYear()}-${String(
+      currentDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+
+    // Get characters learned on this date
+    const prevCount = i > 0 ? entries[i - 1][1] : 0;
+    const charactersLearnedThisDate = cumulativeCount - prevCount;
+
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { learned: 0, totalDays: 0 };
+    }
+
+    monthlyData[monthKey].learned += charactersLearnedThisDate;
+  }
+
+  // Calculate days in each month and learning rate
+  const currentDate = new Date();
+  const currentMonthKey = `${currentDate.getFullYear()}-${String(
+    currentDate.getMonth() + 1
+  ).padStart(2, "0")}`;
+
+  return Object.entries(monthlyData).map(([monthKey, data]) => {
+    const [year, month] = monthKey.split("-").map(Number);
+
+    let daysToUse: number;
+    let isCurrentMonth = false;
+
+    if (monthKey === currentMonthKey) {
+      // For current month, use current day of month
+      daysToUse = currentDate.getDate();
+      isCurrentMonth = true;
+    } else {
+      // For completed months, use total days in month
+      daysToUse = new Date(year, month, 0).getDate();
+    }
+
+    const rate = data.learned / daysToUse;
+
+    return {
+      month: monthKey,
+      monthLabel:
+        new Date(year, month - 1).toLocaleDateString("en-US", {
+          month: "short",
+          year: "2-digit",
+        }) + (isCurrentMonth ? "*" : ""),
+      charactersLearned: data.learned,
+      daysInMonth: daysToUse,
+      rate: Math.round(rate * 10) / 10, // Round to 1 decimal
+      isCurrentMonth,
+    };
+  });
+};
+
+// Monthly Learning Rate Bar Chart Component
+const MonthlyLearningRateChart: React.FC<{
+  characterProgress: { [key: string]: number };
+}> = ({ characterProgress }) => {
+  const monthlyRates = calculateMonthlyRates(characterProgress);
+
+  if (monthlyRates.length === 0) {
+    return <div>No monthly data to display</div>;
+  }
+
+  // Custom tooltip for bar chart
+  const CustomBarTooltip = ({
+    active,
+    payload,
+  }: {
+    active: boolean;
+    payload: {
+      payload: {
+        monthLabel: string;
+        rate: number;
+        daysInMonth: number;
+        charactersLearned: number;
+        isCurrentMonth: boolean;
+      };
+    }[];
+  }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
+          <p className="text-sm font-medium">{data.monthLabel}</p>
+          <p className="text-sm text-blue-600">Rate: {data.rate} chars/day</p>
+          <p className="text-xs text-gray-500">
+            {data.charactersLearned} characters in {data.daysInMonth} days
+            {data.isCurrentMonth ? " (so far)" : ""}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="w-full h-64 mb-6">
+      <h3 className="text-lg font-semibold mb-2">Monthly Learning Rate</h3>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={monthlyRates}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="monthLabel" tick={{ fontSize: 12 }} />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            label={{
+              value: "Characters/Day",
+              angle: -90,
+              position: "insideLeft",
+            }}
+          />
+          <Tooltip content={<CustomBarTooltip />} />
+          <Bar
+            dataKey="rate"
+            fill="#10b981"
+            name="Learning Rate"
+            radius={[2, 2, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 // Recharts Progress Chart Component
 const ProgressChart: React.FC<{
   characterProgress: { [key: string]: number };
 }> = ({ characterProgress }) => {
-  const extrapolation = calculateProgress(characterProgress);
-
   if (Object.keys(characterProgress).length === 0) {
     return <div>No data to display</div>;
   }
@@ -352,13 +498,21 @@ const ProgressChart: React.FC<{
   const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active: boolean;
+    label: string;
+    payload: { name: string; value: number; color: string }[];
+  }) => {
     if (active && payload && payload.length) {
       const date = new Date(label).toLocaleDateString();
       return (
         <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
           <p className="text-sm font-medium">{date}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value} characters
             </p>
@@ -394,7 +548,7 @@ const ProgressChart: React.FC<{
           />
           <YAxis domain={[0, yAxisMax]} tick={{ fontSize: 12 }} tickCount={8} />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
+          {/*<Legend />*/}
 
           {/* Actual progress line */}
           <Line
@@ -403,10 +557,9 @@ const ProgressChart: React.FC<{
             stroke="#3b82f6"
             strokeWidth={3}
             dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-            name="Actual Progress"
+            name="Learned hanzi characters"
             connectNulls={false}
           />
-          
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -475,11 +628,8 @@ export const AnkiHanziProgress = () => {
       <div>
         <h2 className="text-2xl font-bold mb-4">Hanzi Learning Progress</h2>
 
-        {/* Progress Chart */}
-        <ProgressChart characterProgress={characterProgress} />
-
         {/* Progress Summary */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg">
             <h3 className="font-semibold text-blue-800">
               {currentCount} Characters Progress
@@ -508,7 +658,7 @@ export const AnkiHanziProgress = () => {
                     </p>
 
                     <p className="text-xs text-red-500 mt-1">
-                      {extrapolation.dateTo2000?.toLocaleDateString()}
+                      Projected {extrapolation.dateTo2000?.toLocaleDateString()}
                     </p>
                   </>
                 ) : (
@@ -530,29 +680,31 @@ export const AnkiHanziProgress = () => {
                     </p>
 
                     <p className="text-xs text-yellow-500 mt-1">
-                      {extrapolation.dateTo3000?.toLocaleDateString()}
+                      Projected {extrapolation.dateTo3000?.toLocaleDateString()}
                     </p>
                   </>
                 ) : (
                   <p className="text-sm text-yellow-600">Target reached!</p>
                 )}
               </div>
+              <div className=" bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-800">Learning Rate</h3>
+                <p className="text-lg font-bold text-green-600">
+                  {extrapolation.charsPerDay} characters per day
+                </p>
+                <p className="text-sm text-green-600">
+                  Based on overall progress trend
+                </p>
+              </div>
             </>
           )}
         </div>
 
-        {/* Learning Rate */}
-        {extrapolation && (
-          <div className="mt-4 bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-green-800">Learning Rate</h3>
-            <p className="text-lg font-bold text-green-600">
-              {extrapolation.charsPerDay} characters per day
-            </p>
-            <p className="text-sm text-green-600">
-              Based on recent progress trend
-            </p>
-          </div>
-        )}
+        {/* Monthly Learning Rate Chart */}
+        <MonthlyLearningRateChart characterProgress={characterProgress} />
+
+        {/* Progress Chart */}
+        <ProgressChart characterProgress={characterProgress} />
       </div>
     </div>
   );
