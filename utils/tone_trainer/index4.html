@@ -177,6 +177,32 @@
         </h3>
         <canvas id="strengthCanvas"></canvas>
       </div>
+
+      <!-- YIN Algorithm Chart -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          YIN Pitch Detection Algorithm
+        </h3>
+        <canvas id="yinCanvas"></canvas>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-xs text-gray-400">
+          <div class="text-center">
+            <div class="text-blue-400 font-medium">Difference Function</div>
+            <div id="yinDiffValue">-</div>
+          </div>
+          <div class="text-center">
+            <div class="text-green-400 font-medium">CMND Function</div>
+            <div id="yinCmndValue">-</div>
+          </div>
+          <div class="text-center">
+            <div class="text-yellow-400 font-medium">Threshold</div>
+            <div id="yinThreshold">0.1</div>
+          </div>
+          <div class="text-center">
+            <div class="text-purple-400 font-medium">YIN Pitch</div>
+            <div id="yinPitchValue">-</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -192,6 +218,8 @@
       const strengthCanvasCtx = strengthCanvas.getContext("2d");
       const productCanvas = document.getElementById("productCanvas");
       const productCanvasCtx = productCanvas.getContext("2d");
+      const yinCanvas = document.getElementById("yinCanvas");
+      const yinCanvasCtx = yinCanvas.getContext("2d");
       const controls = document.getElementById("controls");
       const colorSchemeSelect = document.getElementById("colorScheme");
       const brightnessSlider = document.getElementById("brightness");
@@ -205,6 +233,7 @@
       let spectrogramData = [];
       let pitchData = [];
       let strengthData = [];
+      let yinData = [];
       let lastAudioBuffer = null;
 
       // Visualization Settings
@@ -364,6 +393,123 @@
         return { overallTrend, avgPitch, range, slope };
       }
 
+      // --- YIN ALGORITHM IMPLEMENTATION ---
+      function yinDifferenceFunction(buffer) {
+        const bufferSize = buffer.length;
+        const differenceFunction = new Array(bufferSize / 2);
+        
+        // Step 1: Difference function d_t(τ) = Σ(x_j - x_{j+τ})²
+        for (let tau = 0; tau < bufferSize / 2; tau++) {
+          let sum = 0;
+          for (let j = 0; j < bufferSize / 2; j++) {
+            const delta = buffer[j] - buffer[j + tau];
+            sum += delta * delta;
+          }
+          differenceFunction[tau] = sum;
+        }
+        
+        return differenceFunction;
+      }
+
+      function yinCumulativeMeanNormalizedDifference(differenceFunction) {
+        const cmndf = new Array(differenceFunction.length);
+        cmndf[0] = 1;
+        
+        // Step 2: Cumulative mean normalized difference function
+        // d'_t(τ) = { 1 if τ = 0
+        //           { d_t(τ) / ((1/τ) * Σ_{j=1}^τ d_t(j)) if τ ≠ 0
+        let runningSum = 0;
+        for (let tau = 1; tau < differenceFunction.length; tau++) {
+          runningSum += differenceFunction[tau];
+          cmndf[tau] = differenceFunction[tau] / (runningSum / tau);
+        }
+        
+        return cmndf;
+      }
+
+      function yinAbsoluteThreshold(cmndf, threshold = 0.1) {
+        // Step 3: Absolute threshold
+        // Find the first minimum below the threshold
+        for (let tau = 2; tau < cmndf.length; tau++) {
+          if (cmndf[tau] < threshold) {
+            // Check if this is a local minimum
+            while (tau + 1 < cmndf.length && cmndf[tau + 1] < cmndf[tau]) {
+              tau++;
+            }
+            return tau;
+          }
+        }
+        return -1; // No period found
+      }
+
+      function yinParabolicInterpolation(cmndf, tauEstimate) {
+        // Step 4: Parabolic interpolation for better accuracy
+        if (tauEstimate < 1 || tauEstimate >= cmndf.length - 1) {
+          return tauEstimate;
+        }
+        
+        const s0 = cmndf[tauEstimate - 1];
+        const s1 = cmndf[tauEstimate];
+        const s2 = cmndf[tauEstimate + 1];
+        
+        // Parabolic interpolation formula
+        const betterTau = tauEstimate + (s2 - s0) / (2 * (2 * s1 - s2 - s0));
+        return betterTau;
+      }
+
+      function performYinAnalysis(audioBuffer, frameSize = 2048, hopSize = 512) {
+        const sampleRate = audioBuffer.sampleRate;
+        const audioData = audioBuffer.getChannelData(0);
+        const yinResults = [];
+        
+        // Process audio in overlapping frames
+        for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
+          const frame = audioData.slice(i, i + frameSize);
+          
+          // Step 1: Difference function
+          const differenceFunction = yinDifferenceFunction(frame);
+          
+          // Step 2: Cumulative mean normalized difference function
+          const cmndf = yinCumulativeMeanNormalizedDifference(differenceFunction);
+          
+          // Step 3: Absolute threshold
+          const threshold = 0.1;
+          let tauEstimate = yinAbsoluteThreshold(cmndf, threshold);
+          
+          let pitch = 0;
+          let confidence = 0;
+          
+          if (tauEstimate > 0) {
+            // Step 4: Parabolic interpolation
+            const betterTau = yinParabolicInterpolation(cmndf, tauEstimate);
+            
+            // Convert tau to frequency
+            pitch = sampleRate / betterTau;
+            
+            // Confidence is inverse of CMNDF value at the estimated tau
+            confidence = 1 - cmndf[Math.round(betterTau)];
+            
+            // Filter out unrealistic pitches
+            if (pitch < 50 || pitch > 2000) {
+              pitch = 0;
+              confidence = 0;
+            }
+          }
+          
+          yinResults.push({
+            pitch: pitch,
+            confidence: confidence,
+            differenceFunction: differenceFunction.slice(0, 200), // Store first 200 points for visualization
+            cmndf: cmndf.slice(0, 200),
+            tau: tauEstimate,
+            threshold: threshold,
+            timeIndex: i / sampleRate
+          });
+        }
+        
+        return yinResults;
+      }
+
       // --- EVENT LISTENERS ---
       window.addEventListener("load", () => {
         controls.style.display = "none";
@@ -394,6 +540,7 @@
           drawPitchChart();
           drawStrengthChart();
           drawProductChart();
+          drawYinChart();
         }
       });
       brightnessSlider.addEventListener("input", (e) => {
@@ -403,6 +550,7 @@
           drawPitchChart();
           drawStrengthChart();
           drawProductChart();
+          drawYinChart();
         }
       });
       contrastSlider.addEventListener("input", (e) => {
@@ -412,6 +560,7 @@
           drawPitchChart();
           drawStrengthChart();
           drawProductChart();
+          drawYinChart();
         }
       });
 
@@ -476,7 +625,12 @@
             // Initialize data arrays (will be filled during spectrogram analysis)
             pitchData = [];
             strengthData = [];
+            yinData = [];
             lastAudioBuffer = audioBuffer; // Store for replay
+            
+            // Perform YIN analysis
+            yinData = performYinAnalysis(audioBuffer);
+            
             analyzeAndDraw(audioBuffer);
             playAudio(audioBuffer);
           } catch (err) {
@@ -562,6 +716,7 @@
             drawPitchChart();
             drawStrengthChart();
             drawProductChart();
+            drawYinChart();
             playAgainBtn.classList.remove("hidden"); // Show play again button
           })
           .catch((err) => {
@@ -934,6 +1089,190 @@
         ctx.textAlign = "right";
         ctx.fillText(`Peak: ${(maxProduct * 1000).toFixed(0)}`, width - 5, 15);
         ctx.fillText(`Avg: ${(avgProduct * 1000).toFixed(0)}`, width - 5, 25);
+      }
+
+      function drawYinChart() {
+        if (yinData.length === 0) return;
+
+        // Set canvas size
+        yinCanvas.width = yinCanvas.offsetWidth;
+        yinCanvas.height = 300;
+
+        const ctx = yinCanvasCtx;
+        const width = yinCanvas.width;
+        const height = yinCanvas.height;
+
+        // Clear canvas
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(0, 0, width, height);
+
+        // Calculate average YIN data for visualization
+        const avgFrame = yinData[Math.floor(yinData.length / 2)];
+        if (!avgFrame) return;
+
+        // Update UI indicators
+        const yinDiffValue = document.getElementById("yinDiffValue");
+        const yinCmndValue = document.getElementById("yinCmndValue");
+        const yinThreshold = document.getElementById("yinThreshold");
+        const yinPitchValue = document.getElementById("yinPitchValue");
+
+        const avgPitch = yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
+        const avgConfidence = yinData.reduce((sum, frame) => sum + frame.confidence, 0) / yinData.length;
+
+        yinDiffValue.textContent = `Min: ${Math.min(...avgFrame.differenceFunction).toFixed(2)}`;
+        yinCmndValue.textContent = `Min: ${Math.min(...avgFrame.cmndf).toFixed(3)}`;
+        yinThreshold.textContent = avgFrame.threshold.toFixed(3);
+        yinPitchValue.textContent = avgPitch > 0 ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)` : "No pitch";
+
+        // Draw three sections: Difference Function, CMNDF, and Pitch over Time
+        const sectionHeight = height / 3;
+
+        // Section 1: Difference Function
+        ctx.fillStyle = "#1F2937";
+        ctx.fillRect(0, 0, width, sectionHeight);
+        
+        ctx.fillStyle = "#3B82F6";
+        ctx.font = "12px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText("Difference Function", 10, 20);
+
+        if (avgFrame.differenceFunction && avgFrame.differenceFunction.length > 0) {
+          const maxDiff = Math.max(...avgFrame.differenceFunction);
+          ctx.strokeStyle = "#3B82F6";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          
+          for (let i = 0; i < avgFrame.differenceFunction.length; i++) {
+            const x = (i / avgFrame.differenceFunction.length) * width;
+            const y = sectionHeight - (avgFrame.differenceFunction[i] / maxDiff) * (sectionHeight - 30);
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+        }
+
+        // Section 2: CMNDF
+        ctx.fillStyle = "#1F2937";
+        ctx.fillRect(0, sectionHeight, width, sectionHeight);
+        
+        ctx.fillStyle = "#10B981";
+        ctx.font = "12px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText("Cumulative Mean Normalized Difference Function", 10, sectionHeight + 20);
+
+        // Draw threshold line
+        const thresholdY = sectionHeight + sectionHeight - (avgFrame.threshold * (sectionHeight - 30));
+        ctx.strokeStyle = "#F59E0B";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, thresholdY);
+        ctx.lineTo(width, thresholdY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (avgFrame.cmndf && avgFrame.cmndf.length > 0) {
+          ctx.strokeStyle = "#10B981";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          
+          for (let i = 0; i < avgFrame.cmndf.length; i++) {
+            const x = (i / avgFrame.cmndf.length) * width;
+            const y = sectionHeight + sectionHeight - Math.min(avgFrame.cmndf[i], 1) * (sectionHeight - 30);
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+
+          // Mark the detected period with a red dot
+          if (avgFrame.tau > 0 && avgFrame.tau < avgFrame.cmndf.length) {
+            const tauX = (avgFrame.tau / avgFrame.cmndf.length) * width;
+            const tauY = sectionHeight + sectionHeight - Math.min(avgFrame.cmndf[avgFrame.tau], 1) * (sectionHeight - 30);
+            
+            ctx.fillStyle = "#EF4444";
+            ctx.beginPath();
+            ctx.arc(tauX, tauY, 4, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        }
+
+        // Section 3: YIN Pitch over Time
+        ctx.fillStyle = "#1F2937";
+        ctx.fillRect(0, 2 * sectionHeight, width, sectionHeight);
+        
+        ctx.fillStyle = "#8B5CF6";
+        ctx.font = "12px Inter";
+        ctx.textAlign = "left";
+        ctx.fillText("YIN Pitch Detection Over Time", 10, 2 * sectionHeight + 20);
+
+        const validPitches = yinData.filter(frame => frame.pitch > 0);
+        if (validPitches.length > 0) {
+          const minPitch = Math.min(...validPitches.map(f => f.pitch));
+          const maxPitch = Math.max(...validPitches.map(f => f.pitch));
+          const pitchRange = Math.max(maxPitch - minPitch, 50);
+
+          // Draw pitch line with confidence-based opacity
+          ctx.lineWidth = 2;
+          
+          let lastValidX = null, lastValidY = null;
+          for (let i = 0; i < yinData.length; i++) {
+            const frame = yinData[i];
+            if (frame.pitch > 0) {
+              const x = (i / (yinData.length - 1)) * width;
+              const y = 2 * sectionHeight + sectionHeight - ((frame.pitch - minPitch) / pitchRange) * (sectionHeight - 30);
+              
+              // Color based on confidence
+              const alpha = Math.max(0.3, frame.confidence);
+              ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
+              
+              ctx.beginPath();
+              if (lastValidX !== null) {
+                ctx.moveTo(lastValidX, lastValidY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+              }
+              
+              // Draw confidence dots
+              ctx.fillStyle = `rgba(139, 92, 246, ${alpha})`;
+              ctx.beginPath();
+              ctx.arc(x, y, 2, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              lastValidX = x;
+              lastValidY = y;
+            }
+          }
+
+          // Draw pitch range labels
+          ctx.fillStyle = "#6B7280";
+          ctx.font = "10px Inter";
+          ctx.textAlign = "right";
+          ctx.fillText(`${Math.round(maxPitch)}Hz`, width - 5, 2 * sectionHeight + 25);
+          ctx.fillText(`${Math.round(minPitch)}Hz`, width - 5, height - 10);
+        } else {
+          ctx.fillStyle = "#9CA3AF";
+          ctx.font = "14px Inter";
+          ctx.textAlign = "center";
+          ctx.fillText("No pitch detected", width / 2, 2 * sectionHeight + sectionHeight / 2);
+        }
+
+        // Draw section dividers
+        ctx.strokeStyle = "#374151";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, sectionHeight);
+        ctx.lineTo(width, sectionHeight);
+        ctx.moveTo(0, 2 * sectionHeight);
+        ctx.lineTo(width, 2 * sectionHeight);
+        ctx.stroke();
       }
     </script>
   </body>
