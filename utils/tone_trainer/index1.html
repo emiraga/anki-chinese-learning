@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Echo (Hold Space)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* A little extra style for the recording indicator */
+      @keyframes recording-pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      .recording-indicator::before {
+        content: "🔴";
+        margin-right: 0.75rem;
+        animation: recording-pulse 1.5s infinite;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen font-sans select-none"
+  >
+    <div
+      class="p-8 bg-gray-800 rounded-lg shadow-xl text-center w-full max-w-md"
+    >
+      <h1 class="text-4xl font-bold mb-4">Voice Echo</h1>
+      <p class="text-gray-400 mb-6">
+        Press and hold the
+        <kbd
+          class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg"
+          >Space</kbd
+        >
+        key to record your voice.
+      </p>
+
+      <div
+        id="status"
+        class="mt-6 text-xl text-gray-300 h-10 flex items-center justify-center font-medium"
+      >
+        <span>Hold Space to Record</span>
+      </div>
+    </div>
+
+    <footer class="absolute bottom-4 text-gray-500 text-sm">
+      Click the page first if the space bar isn't working.
+    </footer>
+
+    <script>
+      // --- TypeScript Code ---
+
+      // DOM Element
+      const statusDiv = document.getElementById("status");
+
+      // Audio API State
+      let audioContext = null;
+      let stream = null;
+      let scriptProcessor = null;
+      let source = null;
+      let isRecording = false;
+      let recordedChunks = [];
+
+      // Type guard to ensure we have a valid DOM element
+      function assertIsElement(element) {
+        if (!element) {
+          throw new Error("A required DOM element is missing.");
+        }
+      }
+
+      assertIsElement(statusDiv);
+
+      /**
+       * Event handler for keydown events.
+       */
+      window.addEventListener("keydown", (event) => {
+        // Start recording on spacebar press, but only if not already recording.
+        if (event.code === "Space" && !isRecording) {
+          event.preventDefault(); // Prevents page scrolling
+          isRecording = true;
+          startRecording();
+        }
+      });
+
+      /**
+       * Event handler for keyup events.
+       */
+      window.addEventListener("keyup", (event) => {
+        // Stop recording and play back on spacebar release.
+        if (event.code === "Space" && isRecording) {
+          isRecording = false;
+          stopRecordingAndPlayback();
+        }
+      });
+
+      /**
+       * Initializes audio context and starts recording audio chunks.
+       */
+      async function startRecording() {
+        try {
+          recordedChunks = []; // Clear previous recording
+
+          audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)();
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+          source = audioContext.createMediaStreamSource(stream);
+          scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+
+          // Connect nodes: source -> scriptProcessor -> destination (to hear yourself live, if desired)
+          // We connect to destination to avoid a browser bug where onaudioprocess might not fire
+          // if the node isn't connected to an output. We can mute it later if needed.
+          source.connect(scriptProcessor);
+          scriptProcessor.connect(audioContext.destination);
+
+          scriptProcessor.onaudioprocess = (e) => {
+            if (!isRecording) return; // Stop processing if key has been released
+            // Clone the input buffer to store it
+            updateUI("recording");
+            const inputData = e.inputBuffer.getChannelData(0);
+            recordedChunks.push(new Float32Array(inputData));
+          };
+        } catch (err) {
+          // Per your preferences, we signal errors via exceptions.
+          console.error("Error accessing microphone:", err);
+          updateUI(
+            "error",
+            "Could not access microphone. Please grant permission."
+          );
+          isRecording = false; // Reset state on error
+        }
+      }
+
+      /**
+       * Stops recording, combines chunks, and plays them back.
+       */
+      function stopRecordingAndPlayback() {
+        if (!audioContext || recordedChunks.length === 0) {
+          // If user just tapped the key, there might be no chunks. Reset UI.
+          updateUI("idle");
+          return;
+        }
+
+        updateUI("playback");
+
+        // Clean up the recording part
+        if (scriptProcessor) scriptProcessor.disconnect();
+        if (source) source.disconnect();
+        if (stream) stream.getTracks().forEach((track) => track.stop());
+
+        // Create a single audio buffer from all the chunks
+        const totalLength = recordedChunks.reduce(
+          (acc, val) => acc + val.length,
+          0
+        );
+        const playbackBuffer = audioContext.createBuffer(
+          1,
+          totalLength,
+          audioContext.sampleRate
+        );
+        const outputData = playbackBuffer.getChannelData(0);
+
+        let offset = 0;
+        for (const chunk of recordedChunks) {
+          outputData.set(chunk, offset);
+          offset += chunk.length;
+        }
+
+        // Play the buffer
+        const playbackSource = audioContext.createBufferSource();
+        playbackSource.buffer = playbackBuffer;
+        playbackSource.connect(audioContext.destination);
+        playbackSource.start();
+
+        // After playback finishes, clean up the audio context completely.
+        playbackSource.onended = () => {
+          if (audioContext && audioContext.state !== "closed") {
+            audioContext.close();
+          }
+          audioContext = null;
+          updateUI("idle");
+        };
+      }
+
+      /**
+       * Updates the UI status message.
+       */
+      function updateUI(state, message = "") {
+        assertIsElement(statusDiv);
+        switch (state) {
+          case "recording":
+            statusDiv.innerHTML = `<span class="recording-indicator">Recording...</span>`;
+            break;
+          case "playback":
+            statusDiv.innerHTML = `<span>Playing Back...</span>`;
+            break;
+          case "error":
+            statusDiv.innerHTML = `<span class="text-red-400">${message}</span>`;
+            break;
+          case "idle":
+          default:
+            statusDiv.innerHTML = "<span>Hold Space to Record</span>";
+            break;
+        }
+      }
+    </script>
+  </body>
+</html>
