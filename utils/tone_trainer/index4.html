@@ -1222,7 +1222,7 @@
           // Draw pitch line with confidence-based opacity
           ctx.lineWidth = 2;
           
-          let lastValidX = null, lastValidY = null;
+          let lastValidIndex = -1;
           for (let i = 0; i < yinData.length; i++) {
             const frame = yinData[i];
             if (frame.pitch > 0) {
@@ -1233,9 +1233,13 @@
               const alpha = Math.max(0.3, frame.confidence);
               ctx.strokeStyle = `rgba(139, 92, 246, ${alpha})`;
               
-              ctx.beginPath();
-              if (lastValidX !== null) {
-                ctx.moveTo(lastValidX, lastValidY);
+              // Only draw line if previous frame also had valid pitch (consecutive frames)
+              if (lastValidIndex >= 0 && i === lastValidIndex + 1) {
+                const lastX = (lastValidIndex / (yinData.length - 1)) * width;
+                const lastY = 2 * sectionHeight + sectionHeight - ((yinData[lastValidIndex].pitch - minPitch) / pitchRange) * (sectionHeight - 30);
+                
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
                 ctx.lineTo(x, y);
                 ctx.stroke();
               }
@@ -1246,8 +1250,7 @@
               ctx.arc(x, y, 2, 0, 2 * Math.PI);
               ctx.fill();
               
-              lastValidX = x;
-              lastValidY = y;
+              lastValidIndex = i;
             }
           }
 
