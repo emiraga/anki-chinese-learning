@@ -140,8 +140,8 @@
             type="range"
             id="contrast"
             min="0"
-            max="3"
-            value="1"
+            max="5"
+            value="1.5"
             step="0.1"
             class="w-full"
           />
@@ -279,7 +279,7 @@
             id="yinMinFreqSlider"
             min="10"
             max="200"
-            value="10"
+            value="30"
             step="5"
             class="w-full"
           />
@@ -393,7 +393,7 @@
       let settings = {
         colorScheme: "viridis",
         brightness: 0,
-        contrast: 1,
+        contrast: 1.5,
       };
 
       // YIN Algorithm Parameters
@@ -401,7 +401,7 @@
         frameSize: 1024, // Window size for analysis
         hopSize: 32, // Step size between frames
         threshold: 0.3, // Absolute threshold for period detection
-        minFreq: 10, // Minimum frequency to consider (Hz)
+        minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
       };
@@ -474,7 +474,7 @@
       // --- PITCH DETECTION FROM SPECTROGRAM DATA ---
       function computeWeightedAverageFreq(freqData, sampleRate) {
         // Focus on vocal fundamental frequency range (80-400 Hz)
-        const minFreq = 10;
+        const minFreq = 30;
         const maxFreq = MAX_FREQ_HZ;
         const fftSize = FFT_SIZE;
 
@@ -1205,16 +1205,16 @@
         const displayWidth = yinPitchCanvas.offsetWidth;
         const displayHeight = yinPitchCanvas.offsetHeight;
         const pixelRatio = window.devicePixelRatio || 1;
-        
+
         yinPitchCanvas.width = displayWidth * pixelRatio;
         yinPitchCanvas.height = displayHeight * pixelRatio;
-        
+
         // Scale context to ensure correct drawing operations
         yinPitchCanvasCtx.scale(pixelRatio, pixelRatio);
-        
+
         // Set CSS size to maintain display size
-        yinPitchCanvas.style.width = displayWidth + 'px';
-        yinPitchCanvas.style.height = displayHeight + 'px';
+        yinPitchCanvas.style.width = displayWidth + "px";
+        yinPitchCanvas.style.height = displayHeight + "px";
 
         const ctx = yinPitchCanvasCtx;
         const width = displayWidth;
