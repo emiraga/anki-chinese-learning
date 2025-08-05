@@ -254,7 +254,7 @@ def main():
     # Setup Google Cloud credentials
     setup_credentials()
 
-    for noteType in ["TOCFL", "MyWords", "Hanzi"]:
+    for noteType in ["TOCFL", "MyWords", "Hanzi", "Dangdai"]:
         for note_id in find_note_by_empty_audio(noteType)[0:100]:
             note_info = get_note_info(note_id)
             traditional = note_info['fields']['Traditional']['value']

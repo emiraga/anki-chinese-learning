@@ -143,6 +143,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Migration",
           show: phrases.length > 0,
         },
+        {
+          pathname: "/stats_progress",
+          name: "Progress",
+          show: phrases.length > 0,
+        },
       ],
     },
   ].filter((element) => !!element.show);

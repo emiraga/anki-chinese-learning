@@ -36,6 +36,7 @@ type Params = {
   "/props": {};
   "/settings": {};
   "/stats": {};
+  "/stats_progress": {};
   "/study": {};
   "/sylable/:sylable": {
     "sylable": string;

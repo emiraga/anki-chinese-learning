@@ -129,33 +129,18 @@ const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
   );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const HtmlStats: React.FC<{}> = ({}) => {
-  const { loading, error, result } = useAsync(
-    async () =>
-      await anki.statistic.getCollectionStatsHTML({
-        wholeCollection: true,
-      }),
-    []
-  );
-
-  if (loading || !result) {
-    return <>Loading HTML...</>;
-  }
-
-  if (error) {
-    return <>Error with HTML: {error.message}</>;
-  }
-
-  return (
-    <>
-      <AnkiStatsRenderer htmlContent={result} />
-    </>
-  );
+type AnkiReview = {
+  ease: number;
+  factor: number;
+  id: number;
+  ivl: number;
+  lastIvl: number;
+  time: number;
+  type: number;
+  usn: number;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const AnkiHanziProgress = () => {
+const useAnkiHanziProgress = () => {
   const [characterProgress, setCharacterProgress] = useState<{
     [key: string]: number;
   }>({});
@@ -178,23 +163,50 @@ const AnkiHanziProgress = () => {
         });
 
         // We need to map note IDs to their respective characters and card IDs.
-        // Assuming your "Hanzi" note type has a field named "HanziCharacter"
-        // Adjust 'HanziCharacter' to the actual field name in your note type that stores the character.
         const noteToCharMap: { [key: string]: string } = {};
-        const allCardIds: string[] = [];
+        const allCardIds: number[] = [];
         hanziNotesInfo.forEach((note) => {
-          const character = note.fields.Traditional?.value; // Replace 'HanziCharacter'
+          const character = note.fields.Traditional?.value;
           if (character) {
-            const cardId = note.cards[0].toString();
-            noteToCharMap[cardId] = character;
+            const cardId = note.cards[0]; // Keep as number for API call
+            noteToCharMap[cardId.toString()] = character; // Use string for lookup
             allCardIds.push(cardId);
           }
         });
 
-        // 3. Get all reviews for the cards associated with these Hanzi notes
-        const reviewsOfCards = await anki.statistic.getReviewsOfCards({
-          cards: allCardIds,
-        });
+        // 3. Get all reviews for the cards associated with these Hanzi notes (in batches)
+        const batchSize = 100; // Process 100 cards at a time
+        const reviewsOfCards: { [key: string]: AnkiReview[] } = {};
+
+        console.log(
+          `Fetching reviews for ${allCardIds.length} cards in batches of ${batchSize}`
+        );
+
+        for (let i = 0; i < allCardIds.length; i += batchSize) {
+          const batch = allCardIds.slice(i, i + batchSize);
+          console.log(
+            `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+              allCardIds.length / batchSize
+            )} (${batch.length} cards)`
+          );
+
+          const batchReviews = await anki.statistic.getReviewsOfCards({
+            cards: batch,
+          });
+
+          console.log(
+            `Batch returned ${
+              Object.keys(batchReviews).length
+            } card review sets`
+          );
+          Object.assign(reviewsOfCards, batchReviews);
+        }
+
+        console.log(
+          `Total reviews fetched for ${
+            Object.keys(reviewsOfCards).length
+          } cards`
+        );
 
         // 4. Process reviews to build the daily character graph
         const dailyLearnedCharacters: { [key: string]: number } = {};
@@ -262,6 +274,97 @@ const AnkiHanziProgress = () => {
     fetchHanziProgress();
   }, []);
 
+  return { characterProgress, loading, error };
+};
+
+// Helper function to calculate linear regression
+const calculateLinearRegression = (data: [number, number][]) => {
+  const n = data.length;
+  if (n < 2) return null;
+
+  const sumX = data.reduce((sum, [x]) => sum + x, 0);
+  const sumY = data.reduce((sum, [, y]) => sum + y, 0);
+  const sumXY = data.reduce((sum, [x, y]) => sum + x * y, 0);
+  const sumXX = data.reduce((sum, [x]) => sum + x * x, 0);
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  return { slope, intercept };
+};
+
+// Helper function to extrapolate progress
+const extrapolateProgress = (characterProgress: { [key: string]: number }) => {
+  const entries = Object.entries(characterProgress).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  if (entries.length < 2) return null;
+
+  // Convert dates to timestamps for regression
+  const dataPoints: [number, number][] = entries.map(([date, count]) => [
+    new Date(date).getTime(),
+    count,
+  ]);
+
+  const regression = calculateLinearRegression(dataPoints);
+  if (!regression) return null;
+
+  const { slope, intercept } = regression;
+  const currentDate = new Date();
+  const currentCount = entries[entries.length - 1][1];
+
+  // Calculate days until targets (slope is chars per millisecond, convert to chars per day)
+  const charsPerDay = slope * (24 * 60 * 60 * 1000);
+
+  if (charsPerDay <= 0) return null; // No progress or declining
+
+  const daysTo2000 = Math.ceil((2000 - currentCount) / charsPerDay);
+  const daysTo3000 = Math.ceil((3000 - currentCount) / charsPerDay);
+
+  const dateTo2000 = new Date(
+    currentDate.getTime() + daysTo2000 * 24 * 60 * 60 * 1000
+  );
+  const dateTo3000 = new Date(
+    currentDate.getTime() + daysTo3000 * 24 * 60 * 60 * 1000
+  );
+
+  return {
+    charsPerDay: Math.round(charsPerDay * 10) / 10, // Round to 1 decimal
+    daysTo2000: daysTo2000 > 0 ? daysTo2000 : null,
+    daysTo3000: daysTo3000 > 0 ? daysTo3000 : null,
+    dateTo2000: daysTo2000 > 0 ? dateTo2000 : null,
+    dateTo3000: daysTo3000 > 0 ? dateTo3000 : null,
+    regression,
+  };
+};
+
+export const AnkiHtmlStats: React.FC<{}> = ({}) => {
+  const { loading, error, result } = useAsync(
+    async () =>
+      await anki.statistic.getCollectionStatsHTML({
+        wholeCollection: true,
+      }),
+    []
+  );
+
+  if (loading || !result) {
+    return <>Loading HTML...</>;
+  }
+
+  if (error) {
+    return <>Error with HTML: {error.message}</>;
+  }
+
+  return (
+    <>
+      <AnkiStatsRenderer htmlContent={result} />
+    </>
+  );
+};
+
+export const AnkiHanziProgress = () => {
+  const { characterProgress, loading, error } = useAnkiHanziProgress();
+
   if (loading) {
     return <div>Loading Anki data...</div>;
   }
@@ -274,20 +377,76 @@ const AnkiHanziProgress = () => {
     return <div>No Hanzi characters learned yet or no data found.</div>;
   }
 
-  // You would then render this data using a charting library (e.g., Chart.js, Recharts, Nivo)
-  // For simplicity, let's just display it as text for now.
+  const extrapolation = extrapolateProgress(characterProgress);
+  const currentCount = Math.max(...Object.values(characterProgress));
+
   return (
-    <div>
-      <h2>Historical Hanzi Character Learning Progress</h2>
-      <ul>
-        {Object.entries(characterProgress).map(([date, count]) => (
-          <li key={date}>
-            {date}: {count} characters learned so far
-          </li>
-        ))}
-      </ul>
-      {/* Implement your charting component here, passing characterProgress as data */}
-      {/* Example: <LineChart data={characterProgress} /> */}
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Hanzi Learning Progress</h2>
+
+        {/* Progress Summary */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-800">Current Progress</h3>
+            <p className="text-2xl font-bold text-blue-600">{currentCount}</p>
+            <p className="text-sm text-blue-600">characters learned</p>
+          </div>
+
+          {extrapolation && (
+            <>
+              <div className="bg-red-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-red-800">2000 Characters</h3>
+                {extrapolation.daysTo2000 ? (
+                  <>
+                    <p className="text-2xl font-bold text-red-600">
+                      {extrapolation.daysTo2000}
+                    </p>
+                    <p className="text-sm text-red-600">days remaining</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {extrapolation.dateTo2000?.toLocaleDateString()}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-red-600">Target reached!</p>
+                )}
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-yellow-800">
+                  3000 Characters
+                </h3>
+                {extrapolation.daysTo3000 ? (
+                  <>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {extrapolation.daysTo3000}
+                    </p>
+                    <p className="text-sm text-yellow-600">days remaining</p>
+                    <p className="text-xs text-yellow-500 mt-1">
+                      {extrapolation.dateTo3000?.toLocaleDateString()}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-yellow-600">Target reached!</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Learning Rate */}
+        {extrapolation && (
+          <div className="mt-4 bg-green-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-green-800">Learning Rate</h3>
+            <p className="text-lg font-bold text-green-600">
+              {extrapolation.charsPerDay} characters per day
+            </p>
+            <p className="text-sm text-green-600">
+              Based on recent progress trend
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

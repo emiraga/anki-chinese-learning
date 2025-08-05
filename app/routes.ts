@@ -19,6 +19,7 @@ export default [
   route("props", "routes/props.tsx"),
   route("settings", "routes/settings.tsx"),
   route("stats", "routes/stats.tsx"),
+  route("stats_progress", "routes/stats_progress.tsx"),
   route("study", "routes/study.tsx"),
   route("sylable/:sylable", "routes/sylable/$sylable.tsx"),
   route("tag/:tagName", "routes/tag/$tagName.tsx"),
