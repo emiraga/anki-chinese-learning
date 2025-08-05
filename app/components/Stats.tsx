@@ -662,7 +662,7 @@ const LearningConstantsDisplay: React.FC = () => {
             {LEARNING_CONSTANTS.MIN_INTERVAL_DAYS} days
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            To consider "learned"
+            To consider &quot;learned&quot;
           </div>
         </div>
         <div className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600">
