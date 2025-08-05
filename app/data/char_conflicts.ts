@@ -29,6 +29,11 @@ export function getConflictingChars(
             .map((x) => x.pinyinAccented)
         : []
     );
+
+    if (fromPhrases.size === 0 && v.withSound) {
+      return true;
+    }
+
     for (const p of fromPhrases) {
       if (!fromAnki.has(p)) {
         console.log("Missing", p, "in", fromAnki);
