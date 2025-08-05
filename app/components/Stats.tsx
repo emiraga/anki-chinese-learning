@@ -449,10 +449,14 @@ const MonthlyLearningRateChart: React.FC<{
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
-          <p className="text-sm font-medium">{data.monthLabel}</p>
-          <p className="text-sm text-blue-600">Rate: {data.rate} chars/day</p>
-          <p className="text-xs text-gray-500">
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {data.monthLabel}
+          </p>
+          <p className="text-sm text-blue-600 dark:text-blue-400">
+            Rate: {data.rate} chars/day
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {data.charactersLearned} characters in {data.daysInMonth} days
             {data.isCurrentMonth ? " (so far)" : ""}
           </p>
@@ -464,23 +468,29 @@ const MonthlyLearningRateChart: React.FC<{
 
   return (
     <div className="w-full h-64 mb-6">
-      <h3 className="text-lg font-semibold mb-2">Monthly Learning Rate</h3>
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        Monthly Learning Rate
+      </h3>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={monthlyRates}
           margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="monthLabel" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="monthLabel" tick={{ fontSize: 12, fill: 'currentColor' }} />
           <YAxis
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: 'currentColor' }}
             label={{
               value: "Characters/Day",
               angle: -90,
               position: "insideLeft",
+              style: { textAnchor: 'middle', fill: 'currentColor' }
             }}
           />
-          <Tooltip content={<CustomBarTooltip active={false} payload={[]} />} />
+          <Tooltip
+            cursor={false}
+            content={<CustomBarTooltip active={false} payload={[]} />}
+          />
           {averageRate > 0 && (
             <ReferenceLine
               y={averageRate}
@@ -490,6 +500,7 @@ const MonthlyLearningRateChart: React.FC<{
               label={{
                 value: `Avg: ${averageRate} chars/day`,
                 position: "top",
+                style: { fill: 'currentColor' }
               }}
             />
           )}
@@ -540,8 +551,10 @@ const ProgressChart: React.FC<{
     if (active && payload && payload.length) {
       const date = new Date(label).toLocaleDateString("en-CA");
       return (
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
-          <p className="text-sm font-medium">{date}</p>
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {date}
+          </p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value} characters
@@ -573,11 +586,12 @@ const ProgressChart: React.FC<{
           <XAxis
             dataKey="date"
             tickFormatter={formatXAxisDate}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: 'currentColor' }}
             interval="preserveStartEnd"
           />
-          <YAxis domain={[0, yAxisMax]} tick={{ fontSize: 12 }} tickCount={8} />
+          <YAxis domain={[0, yAxisMax]} tick={{ fontSize: 12, fill: 'currentColor' }} tickCount={8} />
           <Tooltip
+            cursor={false}
             content={<CustomTooltip active={false} label="" payload={[]} />}
           />
           {/*<Legend />*/}
@@ -624,33 +638,43 @@ export const AnkiHtmlStats: React.FC<{}> = ({}) => {
 
 const LearningConstantsDisplay: React.FC = () => {
   return (
-    <div className="bg-gray-50 p-4 rounded-lg mb-6">
-      <h3 className="text-lg font-semibold mb-3 text-gray-800">
+    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
+      <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
         Learning Configuration
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-        <div className="bg-white p-3 rounded border">
-          <div className="font-medium text-gray-600">
+        <div className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600">
+          <div className="font-medium text-gray-600 dark:text-gray-300">
             Anki Min Ease Threshold
           </div>
-          <div className="text-lg font-bold text-blue-600">
+          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
             {LEARNING_CONSTANTS.MIN_EASE_THRESHOLD}
           </div>
-          <div className="text-xs text-gray-500">Good/Easy reviews only</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Good/Easy reviews only
+          </div>
         </div>
-        <div className="bg-white p-3 rounded border">
-          <div className="font-medium text-gray-600">Anki Min Interval</div>
-          <div className="text-lg font-bold text-green-600">
+        <div className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600">
+          <div className="font-medium text-gray-600 dark:text-gray-300">
+            Anki Min Interval
+          </div>
+          <div className="text-lg font-bold text-green-600 dark:text-green-400">
             {LEARNING_CONSTANTS.MIN_INTERVAL_DAYS} days
           </div>
-          <div className="text-xs text-gray-500">To consider "learned"</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            To consider "learned"
+          </div>
         </div>
-        <div className="bg-white p-3 rounded border">
-          <div className="font-medium text-gray-600">Anki Min Factor</div>
-          <div className="text-lg font-bold text-purple-600">
+        <div className="bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600">
+          <div className="font-medium text-gray-600 dark:text-gray-300">
+            Anki Min Factor
+          </div>
+          <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
             {LEARNING_CONSTANTS.MIN_FACTOR}
           </div>
-          <div className="text-xs text-gray-500">Review quality threshold</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Review quality threshold
+          </div>
         </div>
       </div>
     </div>
@@ -693,76 +717,84 @@ export const AnkiHanziProgress = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">Hanzi Learning Progress</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+          Hanzi Learning Progress
+        </h2>
 
         {/* Progress Summary */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+            <h3 className="font-semibold text-blue-800 dark:text-blue-200">
               {currentCount} Characters Progress
             </h3>
-            <p className="text-2xl font-bold text-blue-600">
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {totalDays} <span className="text-sm">days past</span>
             </p>
-            <p className="text-xs text-blue-500 mt-1">
+            <p className="text-xs text-blue-500 dark:text-blue-300 mt-1">
               Since {firstDate?.toLocaleDateString("en-CA")}
             </p>
           </div>
 
           {extrapolation && (
             <>
-              <div className="bg-red-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-red-800">
+              <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-red-800 dark:text-red-200">
                   {LEARNING_CONSTANTS.TARGET_CHARS_INTERMEDIATE} Characters
                   Target
                 </h3>
                 {extrapolation.daysTo2000 ? (
                   <>
-                    <p className="text-2xl font-bold text-red-600">
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                       {extrapolation.daysTo2000}{" "}
-                      <span className="text-sm text-red-600">
+                      <span className="text-sm text-red-600 dark:text-red-400">
                         days remaining
                       </span>
                     </p>
 
-                    <p className="text-xs text-red-500 mt-1">
+                    <p className="text-xs text-red-500 dark:text-red-300 mt-1">
                       Projected{" "}
                       {extrapolation.dateTo2000?.toLocaleDateString("en-CA")}
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-red-600">Target reached!</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Target reached!
+                  </p>
                 )}
               </div>
 
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-yellow-800">
+              <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
                   {LEARNING_CONSTANTS.TARGET_CHARS_ADVANCED} Characters Target
                 </h3>
                 {extrapolation.daysTo3000 ? (
                   <>
-                    <p className="text-2xl font-bold text-yellow-600">
+                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                       {extrapolation.daysTo3000}{" "}
-                      <span className="text-sm text-yellow-600">
+                      <span className="text-sm text-yellow-600 dark:text-yellow-400">
                         days remaining
                       </span>
                     </p>
 
-                    <p className="text-xs text-yellow-500 mt-1">
+                    <p className="text-xs text-yellow-500 dark:text-yellow-300 mt-1">
                       Projected{" "}
                       {extrapolation.dateTo3000?.toLocaleDateString("en-CA")}
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-yellow-600">Target reached!</p>
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                    Target reached!
+                  </p>
                 )}
               </div>
-              <div className=" bg-green-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-green-800">Learning Rate</h3>
-                <p className="text-lg font-bold text-green-600">
+              <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-800 dark:text-green-200">
+                  Learning Rate
+                </h3>
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">
                   {extrapolation.charsPerDay} characters per day
                 </p>
-                <p className="text-sm text-green-600">
+                <p className="text-sm text-green-600 dark:text-green-400">
                   Based on overall progress trend
                 </p>
               </div>
