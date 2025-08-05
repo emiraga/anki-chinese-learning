@@ -149,33 +149,20 @@
       </div>
 
       <!-- Spectrogram Canvas -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2">
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative">
         <h3 class="text-white text-lg font-medium mb-2 px-2">Spectrogram</h3>
         <canvas id="spectrogramCanvas"></canvas>
-      </div>
-
-      <!-- Pitch × Strength Product Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">
-          Pitch × Strength Product
-        </h3>
-        <canvas id="productCanvas"></canvas>
-      </div>
-
-      <!-- Pitch Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">
-          Average Pitch Over Time
-        </h3>
-        <canvas id="pitchCanvas"></canvas>
-      </div>
-
-      <!-- Audio Strength Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">
-          Audio Strength Over Time
-        </h3>
-        <canvas id="strengthCanvas"></canvas>
+        <div
+          id="loadingOverlay"
+          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
+        >
+          <div class="text-center">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"
+            ></div>
+            <p class="text-gray-300 text-sm">Computing charts...</p>
+          </div>
+        </div>
       </div>
 
       <!-- YIN Algorithm Controls -->
@@ -193,10 +180,14 @@
             id="yinFrameSize"
             class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
           >
+            <option value="16">16</option>
+            <option value="32">32</option>
+            <option value="64">64</option>
+            <option value="128">128</option>
             <option value="256">256</option>
             <option value="512">512</option>
-            <option value="1024">1024</option>
-            <option value="2048" selected>2048</option>
+            <option value="1024" selected>1024</option>
+            <option value="2048">2048</option>
             <option value="4096">4096</option>
           </select>
         </div>
@@ -210,11 +201,17 @@
             id="yinHopSize"
             class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
           >
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="16">16</option>
+            <option value="32" selected>32</option>
+            <option value="64">64</option>
             <option value="128">128</option>
             <option value="256">256</option>
-            <option value="512" selected>512</option>
+            <option value="512">512</option>
             <option value="1024">1024</option>
             <option value="2048">2048</option>
+            <option value="4096">4096</option>
           </select>
         </div>
         <div>
@@ -228,7 +225,7 @@
             id="yinThresholdSlider"
             min="0.05"
             max="0.5"
-            value="0.1"
+            value="0.15"
             step="0.01"
             class="w-full"
           />
@@ -236,7 +233,7 @@
             class="text-xs text-gray-400 text-center mt-1"
             id="yinThresholdValue"
           >
-            0.10
+            0.15
           </div>
         </div>
         <div>
@@ -248,9 +245,9 @@
           <input
             type="range"
             id="yinMinFreqSlider"
-            min="30"
+            min="10"
             max="200"
-            value="50"
+            value="10"
             step="5"
             class="w-full"
           />
@@ -258,7 +255,7 @@
             class="text-xs text-gray-400 text-center mt-1"
             id="yinMinFreqValue"
           >
-            50
+            10
           </div>
         </div>
         <div>
@@ -270,17 +267,17 @@
           <input
             type="range"
             id="yinMaxFreqSlider"
-            min="500"
-            max="4000"
-            value="2000"
-            step="100"
+            min="100"
+            max="1000"
+            value="300"
+            step="10"
             class="w-full"
           />
           <div
             class="text-xs text-gray-400 text-center mt-1"
             id="yinMaxFreqValue"
           >
-            2000
+            300
           </div>
         </div>
         <div class="flex items-center">
@@ -299,17 +296,26 @@
       </div>
 
       <!-- YIN Pitch Chart -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">
-          YIN Pitch
-        </h3>
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4 relative">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">YIN Pitch</h3>
         <canvas id="yinPitchCanvas"></canvas>
+        <div
+          id="yinPitchLoadingOverlay"
+          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
+        >
+          <div class="text-center">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2"
+            ></div>
+            <p class="text-gray-300 text-sm">Computing YIN pitch...</p>
+          </div>
+        </div>
         <div
           class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
         >
           <div class="text-center">
             <div class="text-yellow-400 font-medium">Threshold</div>
-            <div id="yinThreshold">0.1</div>
+            <div id="yinThreshold">-</div>
           </div>
           <div class="text-center">
             <div class="text-purple-400 font-medium">YIN Pitch</div>
@@ -337,6 +343,14 @@
           </div>
         </div>
       </div>
+
+      <!-- Audio Strength Chart -->
+      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          Audio Strength Over Time
+        </h3>
+        <canvas id="strengthCanvas"></canvas>
+      </div>
     </div>
 
     <script>
@@ -346,12 +360,8 @@
       const playAgainBtn = document.getElementById("playAgainBtn");
       const canvas = document.getElementById("spectrogramCanvas");
       const canvasCtx = canvas.getContext("2d");
-      const pitchCanvas = document.getElementById("pitchCanvas");
-      const pitchCanvasCtx = pitchCanvas.getContext("2d");
       const strengthCanvas = document.getElementById("strengthCanvas");
       const strengthCanvasCtx = strengthCanvas.getContext("2d");
-      const productCanvas = document.getElementById("productCanvas");
-      const productCanvasCtx = productCanvas.getContext("2d");
       const yinCanvas = document.getElementById("yinCanvas");
       const yinCanvasCtx = yinCanvas.getContext("2d");
       const yinPitchCanvas = document.getElementById("yinPitchCanvas");
@@ -360,6 +370,10 @@
       const colorSchemeSelect = document.getElementById("colorScheme");
       const brightnessSlider = document.getElementById("brightness");
       const contrastSlider = document.getElementById("contrast");
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const yinPitchLoadingOverlay = document.getElementById(
+        "yinPitchLoadingOverlay"
+      );
 
       // Audio & State Variables
       let audioContext;
@@ -381,12 +395,12 @@
 
       // YIN Algorithm Parameters
       let yinParams = {
-        frameSize: 2048, // Window size for analysis
-        hopSize: 512, // Step size between frames
-        threshold: 0.1, // Absolute threshold for period detection
-        minFreq: 50, // Minimum frequency to consider (Hz)
-        maxFreq: 2000, // Maximum frequency to consider (Hz)
-        interpolation: true, // Enable parabolic interpolation
+        frameSize: 1024, // Window size for analysis
+        hopSize: 32, // Step size between frames
+        threshold: 0.15, // Absolute threshold for period detection
+        minFreq: 10, // Minimum frequency to consider (Hz)
+        maxFreq: 300, // Maximum frequency to consider (Hz)
+        interpolation: false, // Enable parabolic interpolation
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -457,7 +471,7 @@
       // --- PITCH DETECTION FROM SPECTROGRAM DATA ---
       function computeWeightedAverageFreq(freqData, sampleRate) {
         // Focus on vocal fundamental frequency range (80-400 Hz)
-        const minFreq = 80;
+        const minFreq = 10;
         const maxFreq = MAX_FREQ_HZ;
         const fftSize = FFT_SIZE;
 
@@ -498,8 +512,7 @@
 
       function analyzePitchTrends(pitches) {
         const validPitches = pitches.filter((p) => p > 0);
-        if (validPitches.length < 5)
-          return { overallTrend: "stable", avgPitch: 0, range: 0 };
+        if (validPitches.length < 5) return { avgPitch: 0, range: 0 };
 
         const avgPitch =
           validPitches.reduce((a, b) => a + b, 0) / validPitches.length;
@@ -524,19 +537,11 @@
           }
         }
 
-        if (n < 2) return { overallTrend: "stable", avgPitch, range };
+        if (n < 2) return { avgPitch, range };
 
         const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-        const slopeThreshold = (avgPitch * 0.05) / pitches.length; // 5% change over duration
 
-        let overallTrend = "stable";
-        if (slope > slopeThreshold) {
-          overallTrend = "rising";
-        } else if (slope < -slopeThreshold) {
-          overallTrend = "falling";
-        }
-
-        return { overallTrend, avgPitch, range, slope };
+        return { avgPitch, range, slope };
       }
 
       // --- YIN ALGORITHM IMPLEMENTATION ---
@@ -689,9 +694,7 @@
         settings.colorScheme = e.target.value;
         if (spectrogramData.length > 0) {
           drawSpectrogram();
-          drawPitchChart();
           drawStrengthChart();
-          drawProductChart();
           drawYinChart();
           drawYinPitchChart();
         }
@@ -700,9 +703,7 @@
         settings.brightness = parseInt(e.target.value, 10);
         if (spectrogramData.length > 0) {
           drawSpectrogram();
-          drawPitchChart();
           drawStrengthChart();
-          drawProductChart();
           drawYinChart();
           drawYinPitchChart();
         }
@@ -711,9 +712,7 @@
         settings.contrast = parseFloat(e.target.value);
         if (spectrogramData.length > 0) {
           drawSpectrogram();
-          drawPitchChart();
           drawStrengthChart();
-          drawProductChart();
           drawYinChart();
           drawYinPitchChart();
         }
@@ -722,10 +721,23 @@
       // --- YIN PARAMETER EVENT LISTENERS ---
       function recomputeYin() {
         if (lastAudioBuffer && yinData.length > 0) {
-          yinData = performYinAnalysis(lastAudioBuffer);
-          drawYinChart();
-          drawYinPitchChart();
+          showYinPitchLoadingOverlay();
+          // Use setTimeout to allow overlay to show before heavy computation
+          setTimeout(() => {
+            yinData = performYinAnalysis(lastAudioBuffer);
+            drawYinChart();
+            drawYinPitchChart();
+            hideYinPitchLoadingOverlay();
+          }, 10);
         }
+      }
+
+      function showYinPitchLoadingOverlay() {
+        yinPitchLoadingOverlay.classList.remove("hidden");
+      }
+
+      function hideYinPitchLoadingOverlay() {
+        yinPitchLoadingOverlay.classList.add("hidden");
       }
 
       document
@@ -923,12 +935,12 @@
               'Hold the <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> key to record';
             controls.style.display = "grid";
             document.getElementById("yinControls").classList.remove("hidden");
+
             drawSpectrogram();
-            drawPitchChart();
             drawStrengthChart();
-            drawProductChart();
             drawYinChart();
             drawYinPitchChart();
+
             playAgainBtn.classList.remove("hidden"); // Show play again button
           })
           .catch((err) => {
@@ -981,113 +993,6 @@
           }
         }
         canvasCtx.putImageData(imageData, 0, 0);
-      }
-
-      function drawPitchChart() {
-        if (pitchData.length === 0) return;
-
-        // Set canvas size
-        pitchCanvas.width = pitchCanvas.offsetWidth;
-        pitchCanvas.height = 180; // Increased for indicators
-
-        const ctx = pitchCanvasCtx;
-        const width = pitchCanvas.width;
-        const chartHeight = 120; // Reserve space for indicators
-        const indicatorHeight = 60;
-
-        // Clear canvas
-        ctx.fillStyle = "#111827";
-        ctx.fillRect(0, 0, width, pitchCanvas.height);
-
-        // Analyze pitch trends
-        const analysis = analyzePitchTrends(pitchData);
-
-        // Filter out zero values (no pitch detected)
-        const validPitches = pitchData.filter((p) => p > 0);
-        if (validPitches.length === 0) {
-          ctx.fillStyle = "#9CA3AF";
-          ctx.font = "16px Inter";
-          ctx.textAlign = "center";
-          ctx.fillText("No clear pitch detected", width / 2, chartHeight / 2);
-          return;
-        }
-
-        const minPitch = Math.min(...validPitches);
-        const maxPitch = Math.max(...validPitches);
-        const pitchRange = Math.max(maxPitch - minPitch, 50); // At least 50Hz range
-
-        // Draw reference line for average pitch
-        const avgY =
-          chartHeight -
-          ((analysis.avgPitch - minPitch) / pitchRange) * chartHeight;
-        ctx.strokeStyle = "#374151";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(0, avgY);
-        ctx.lineTo(width, avgY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Draw pitch line with color coding
-        ctx.lineWidth = 3;
-
-        let lastValidX = null,
-          lastValidY = null;
-        for (let i = 0; i < pitchData.length; i++) {
-          if (pitchData[i] > 0) {
-            const x = (i / (pitchData.length - 1)) * width;
-            const y =
-              chartHeight -
-              ((pitchData[i] - minPitch) / pitchRange) * chartHeight;
-
-            // Color based on relative pitch level
-            const relativeToAvg =
-              (pitchData[i] - analysis.avgPitch) / analysis.avgPitch;
-            if (relativeToAvg > 0.1) {
-              ctx.strokeStyle = "#EF4444"; // Red for high
-            } else if (relativeToAvg < -0.1) {
-              ctx.strokeStyle = "#10B981"; // Green for low
-            } else {
-              ctx.strokeStyle = "#3B82F6"; // Blue for medium
-            }
-
-            ctx.beginPath();
-            if (lastValidX !== null) {
-              ctx.moveTo(lastValidX, lastValidY);
-              ctx.lineTo(x, y);
-              ctx.stroke();
-            }
-            lastValidX = x;
-            lastValidY = y;
-          }
-        }
-
-        // Draw indicators at bottom
-        const indicatorY = chartHeight + 20;
-
-        // Stats
-        ctx.fillStyle = "#9CA3AF";
-        ctx.font = "12px Inter";
-        ctx.textAlign = "right";
-        ctx.fillText(
-          `Avg: ${Math.round(analysis.avgPitch)}Hz`,
-          width - 10,
-          indicatorY - 5
-        );
-        ctx.fillText(
-          `Range: ${Math.round(analysis.range)}Hz`,
-          width - 10,
-          indicatorY + 10
-        );
-
-        // Frequency labels on left
-        ctx.fillStyle = "#6B7280";
-        ctx.font = "10px Inter";
-        ctx.textAlign = "left";
-        ctx.fillText(`${Math.round(maxPitch)}Hz`, 5, 15);
-        ctx.fillText(`${Math.round(analysis.avgPitch)}Hz`, 5, avgY + 3);
-        ctx.fillText(`${Math.round(minPitch)}Hz`, 5, chartHeight - 5);
       }
 
       function drawStrengthChart() {
@@ -1176,131 +1081,6 @@
         ctx.textAlign = "right";
         ctx.fillText(`Peak: ${(maxStrength * 100).toFixed(1)}%`, width - 5, 15);
         ctx.fillText(`Avg: ${(avgStrength * 100).toFixed(1)}%`, width - 5, 25);
-      }
-
-      function computePitchStrengthProduct() {
-        if (pitchData.length === 0 || strengthData.length === 0) return [];
-
-        const productData = [];
-        const minLength = Math.min(pitchData.length, strengthData.length);
-
-        for (let i = 0; i < minLength; i++) {
-          const pitch = pitchData[i] || 0;
-          const strength = strengthData[i] || 0;
-
-          // Normalize pitch to 0-1 range (using typical vocal range 80-400 Hz)
-          const normalizedPitch =
-            pitch > 0 ? Math.min(1, Math.max(0, (pitch - 80) / 320)) : 0;
-
-          // Product of normalized pitch and strength
-          const product = normalizedPitch * strength;
-          productData.push(product);
-        }
-
-        return productData;
-      }
-
-      function drawProductChart() {
-        const productData = computePitchStrengthProduct();
-        if (productData.length === 0) return;
-
-        // Set canvas size
-        productCanvas.width = productCanvas.offsetWidth;
-        productCanvas.height = 120;
-
-        const ctx = productCanvasCtx;
-        const width = productCanvas.width;
-        const height = productCanvas.height;
-
-        // Clear canvas
-        ctx.fillStyle = "#111827";
-        ctx.fillRect(0, 0, width, height);
-
-        // Analyze product data
-        const maxProduct = Math.max(...productData);
-        const avgProduct =
-          productData.reduce((a, b) => a + b, 0) / productData.length;
-
-        if (maxProduct === 0) {
-          ctx.fillStyle = "#9CA3AF";
-          ctx.font = "16px Inter";
-          ctx.textAlign = "center";
-          ctx.fillText("No vocal activity detected", width / 2, height / 2);
-          return;
-        }
-
-        // Draw grid lines
-        ctx.strokeStyle = "#374151";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let i = 1; i < 4; i++) {
-          const y = (height / 4) * i;
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-        }
-        ctx.stroke();
-
-        // Draw average line
-        const avgY = height - (avgProduct / maxProduct) * height;
-        ctx.strokeStyle = "#374151";
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(0, avgY);
-        ctx.lineTo(width, avgY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Draw product curve
-        ctx.strokeStyle = "#8B5CF6"; // Purple color for the product
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-
-        let lastValidX = null,
-          lastValidY = null;
-        for (let i = 0; i < productData.length; i++) {
-          const x = (i / (productData.length - 1)) * width;
-          const y = height - (productData[i] / maxProduct) * height;
-
-          if (productData[i] > 0) {
-            if (lastValidX === null) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-            lastValidX = x;
-            lastValidY = y;
-          }
-        }
-        ctx.stroke();
-
-        // Fill area under curve
-        ctx.fillStyle = "rgba(139, 92, 246, 0.2)"; // Semi-transparent purple
-        ctx.beginPath();
-        ctx.moveTo(0, height);
-
-        for (let i = 0; i < productData.length; i++) {
-          const x = (i / (productData.length - 1)) * width;
-          const y = height - (productData[i] / maxProduct) * height;
-          ctx.lineTo(x, y);
-        }
-        ctx.lineTo(width, height);
-        ctx.closePath();
-        ctx.fill();
-
-        // Labels
-        ctx.fillStyle = "#6B7280";
-        ctx.font = "10px Inter";
-        ctx.textAlign = "left";
-        ctx.fillText("Max", 5, 15);
-        ctx.fillText("Avg", 5, avgY + 3);
-        ctx.fillText("Min", 5, height - 15);
-
-        // Stats
-        ctx.fillStyle = "#9CA3AF";
-        ctx.font = "10px Inter";
-        ctx.textAlign = "right";
-        ctx.fillText(`Peak: ${(maxProduct * 1000).toFixed(0)}`, width - 5, 15);
-        ctx.fillText(`Avg: ${(avgProduct * 1000).toFixed(0)}`, width - 5, 25);
       }
 
       function drawYinChart() {
@@ -1474,12 +1254,6 @@
           avgPitch > 0
             ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
             : "No pitch";
-
-        // Draw YIN Pitch over Time
-        ctx.fillStyle = "#8B5CF6";
-        ctx.font = "12px Inter";
-        ctx.textAlign = "left";
-        ctx.fillText("YIN Pitch Detection Over Time", 10, 20);
 
         const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
