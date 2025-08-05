@@ -11,7 +11,18 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  ReferenceLine,
 } from "recharts";
+
+// Learning progress constants
+const LEARNING_CONSTANTS = {
+  MIN_EASE_THRESHOLD: 3, // Good or Easy review (1=Again, 2=Hard, 3=Good, 4=Easy)
+  MIN_INTERVAL_DAYS: 15, // Minimum interval to consider character "learned"
+  MIN_FACTOR: 100, // Minimum factor for review quality
+  BATCH_SIZE: 100, // Cards processed per batch to avoid API limits
+  TARGET_CHARS_INTERMEDIATE: 2000, // Characters needed for intermediate level
+  TARGET_CHARS_ADVANCED: 3000, // Characters needed for advanced level
+} as const;
 
 const AnkiStatsRenderer: React.FC<{ htmlContent: string }> = ({
   htmlContent,
@@ -186,7 +197,7 @@ const useAnkiHanziProgress = () => {
         });
 
         // 3. Get all reviews for the cards associated with these Hanzi notes (in batches)
-        const batchSize = 100; // Process 100 cards at a time
+        const batchSize = LEARNING_CONSTANTS.BATCH_SIZE;
         const reviewsOfCards: { [key: string]: AnkiReview[] } = {};
 
         console.log(
@@ -226,12 +237,10 @@ const useAnkiHanziProgress = () => {
 
         // Sort reviews by timestamp to ensure chronological processing
         // Note: The 'id' in reviews is the reviewTime in milliseconds
-        const allReviews: { cardId: string; id: number; ease: number }[] = [];
+        const allReviews: ({ cardId: string } & AnkiReview)[] = [];
 
         Object.entries(reviewsOfCards).forEach(([cardId, reviews]) => {
-          allReviews.push(
-            ...reviews.map((r) => ({ id: r.id, ease: r.ease, cardId }))
-          );
+          allReviews.push(...reviews.map((r) => ({ cardId, ...r })));
         });
 
         allReviews.sort((a, b) => a.id - b.id);
@@ -249,7 +258,11 @@ const useAnkiHanziProgress = () => {
             // A character is "learned" on its first "Good" or "Easy" review
             // Review 'type': 0 = learning, 1 = review, 2 = relearn, 3 = cram
             // 'ease': 1 = Again, 2 = Hard, 3 = Good, 4 = Easy
-            if (review.ease >= 3) {
+            if (
+              review.ease >= LEARNING_CONSTANTS.MIN_EASE_THRESHOLD &&
+              review.ivl >= LEARNING_CONSTANTS.MIN_INTERVAL_DAYS &&
+              review.factor >= LEARNING_CONSTANTS.MIN_FACTOR
+            ) {
               // Good or Easy
               const reviewDate = new Date(review.id).toLocaleDateString(
                 "en-CA"
@@ -311,8 +324,12 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
 
   if (charsPerDay <= 0) return null; // No progress
 
-  const daysTo2000 = Math.ceil((2000 - currentCount) / charsPerDay);
-  const daysTo3000 = Math.ceil((3000 - currentCount) / charsPerDay);
+  const daysTo2000 = Math.ceil(
+    (LEARNING_CONSTANTS.TARGET_CHARS_INTERMEDIATE - currentCount) / charsPerDay
+  );
+  const daysTo3000 = Math.ceil(
+    (LEARNING_CONSTANTS.TARGET_CHARS_ADVANCED - currentCount) / charsPerDay
+  );
 
   const currentDate = new Date();
   const dateTo2000 = new Date(
@@ -389,7 +406,7 @@ const calculateMonthlyRates = (characterProgress: {
     return {
       month: monthKey,
       monthLabel:
-        new Date(year, month - 1).toLocaleDateString("en-US", {
+        new Date(year, month - 1).toLocaleDateString("en-CA", {
           month: "short",
           year: "2-digit",
         }) + (isCurrentMonth ? "*" : ""),
@@ -406,6 +423,8 @@ const MonthlyLearningRateChart: React.FC<{
   characterProgress: { [key: string]: number };
 }> = ({ characterProgress }) => {
   const monthlyRates = calculateMonthlyRates(characterProgress);
+  const extrapolation = calculateProgress(characterProgress);
+  const averageRate = extrapolation?.charsPerDay || 0;
 
   if (monthlyRates.length === 0) {
     return <div>No monthly data to display</div>;
@@ -462,6 +481,18 @@ const MonthlyLearningRateChart: React.FC<{
             }}
           />
           <Tooltip content={<CustomBarTooltip active={false} payload={[]} />} />
+          {averageRate > 0 && (
+            <ReferenceLine
+              y={averageRate}
+              stroke="#ef4444"
+              strokeDasharray="5 5"
+              strokeWidth={2}
+              label={{
+                value: `Avg: ${averageRate} chars/day`,
+                position: "top",
+              }}
+            />
+          )}
           <Bar
             dataKey="rate"
             fill="#10b981"
@@ -507,7 +538,7 @@ const ProgressChart: React.FC<{
     payload: { name: string; value: number; color: string }[];
   }) => {
     if (active && payload && payload.length) {
-      const date = new Date(label).toLocaleDateString();
+      const date = new Date(label).toLocaleDateString("en-CA");
       return (
         <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
           <p className="text-sm font-medium">{date}</p>
@@ -525,7 +556,7 @@ const ProgressChart: React.FC<{
   // Format date for x-axis
   const formatXAxisDate = (tickItem: string) => {
     const date = new Date(tickItem);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("en-CA", {
       month: "short",
       year: "2-digit",
     });
@@ -591,6 +622,41 @@ export const AnkiHtmlStats: React.FC<{}> = ({}) => {
   );
 };
 
+const LearningConstantsDisplay: React.FC = () => {
+  return (
+    <div className="bg-gray-50 p-4 rounded-lg mb-6">
+      <h3 className="text-lg font-semibold mb-3 text-gray-800">
+        Learning Configuration
+      </h3>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+        <div className="bg-white p-3 rounded border">
+          <div className="font-medium text-gray-600">
+            Anki Min Ease Threshold
+          </div>
+          <div className="text-lg font-bold text-blue-600">
+            {LEARNING_CONSTANTS.MIN_EASE_THRESHOLD}
+          </div>
+          <div className="text-xs text-gray-500">Good/Easy reviews only</div>
+        </div>
+        <div className="bg-white p-3 rounded border">
+          <div className="font-medium text-gray-600">Anki Min Interval</div>
+          <div className="text-lg font-bold text-green-600">
+            {LEARNING_CONSTANTS.MIN_INTERVAL_DAYS} days
+          </div>
+          <div className="text-xs text-gray-500">To consider "learned"</div>
+        </div>
+        <div className="bg-white p-3 rounded border">
+          <div className="font-medium text-gray-600">Anki Min Factor</div>
+          <div className="text-lg font-bold text-purple-600">
+            {LEARNING_CONSTANTS.MIN_FACTOR}
+          </div>
+          <div className="text-xs text-gray-500">Review quality threshold</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AnkiHanziProgress = () => {
   const { characterProgress, loading, error } = useAnkiHanziProgress();
 
@@ -639,7 +705,7 @@ export const AnkiHanziProgress = () => {
               {totalDays} <span className="text-sm">days past</span>
             </p>
             <p className="text-xs text-blue-500 mt-1">
-              Since {firstDate?.toLocaleDateString()}
+              Since {firstDate?.toLocaleDateString("en-CA")}
             </p>
           </div>
 
@@ -647,7 +713,8 @@ export const AnkiHanziProgress = () => {
             <>
               <div className="bg-red-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-red-800">
-                  2000 Characters Target
+                  {LEARNING_CONSTANTS.TARGET_CHARS_INTERMEDIATE} Characters
+                  Target
                 </h3>
                 {extrapolation.daysTo2000 ? (
                   <>
@@ -659,7 +726,8 @@ export const AnkiHanziProgress = () => {
                     </p>
 
                     <p className="text-xs text-red-500 mt-1">
-                      Projected {extrapolation.dateTo2000?.toLocaleDateString()}
+                      Projected{" "}
+                      {extrapolation.dateTo2000?.toLocaleDateString("en-CA")}
                     </p>
                   </>
                 ) : (
@@ -669,7 +737,7 @@ export const AnkiHanziProgress = () => {
 
               <div className="bg-yellow-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-yellow-800">
-                  3000 Characters Target
+                  {LEARNING_CONSTANTS.TARGET_CHARS_ADVANCED} Characters Target
                 </h3>
                 {extrapolation.daysTo3000 ? (
                   <>
@@ -681,7 +749,8 @@ export const AnkiHanziProgress = () => {
                     </p>
 
                     <p className="text-xs text-yellow-500 mt-1">
-                      Projected {extrapolation.dateTo3000?.toLocaleDateString()}
+                      Projected{" "}
+                      {extrapolation.dateTo3000?.toLocaleDateString("en-CA")}
                     </p>
                   </>
                 ) : (
@@ -706,6 +775,9 @@ export const AnkiHanziProgress = () => {
 
         {/* Progress Chart */}
         <ProgressChart characterProgress={characterProgress} />
+
+        {/* Learning Constants Display */}
+        <LearningConstantsDisplay />
       </div>
     </div>
   );
