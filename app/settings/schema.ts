@@ -1,6 +1,14 @@
 import type { JSONSchema7 } from "json-schema";
 import Ajv from "ajv";
 
+type DeepRequired<T> = {
+  [P in keyof T]-?: T[P] extends (infer U)[]
+    ? DeepRequired<U>[]
+    : T[P] extends object
+    ? DeepRequired<T[P]>
+    : T[P];
+};
+
 export interface AppSettings {
   googleCloudApiKey: string;
   phraseNotes: {
@@ -31,8 +39,8 @@ export const defaultSettings: AppSettings = {
   ],
 };
 
-// These are only used to test validity of the schema, it's important for all fields to be filled in.
-const dummySettings: AppSettings = {
+// Used for testing the schema, all fields must be filled in.
+const dummySettings: DeepRequired<AppSettings> = {
   googleCloudApiKey: "test",
   phraseNotes: [
     {
@@ -194,9 +202,30 @@ export function validateSettingsStructure(settings: AppSettings): void {
   }
 }
 
+function validateArraysHaveElements(obj: any, path: string = "root"): void {
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) {
+      throw new Error(
+        `Array at ${path} must have at least one element for validation`
+      );
+    }
+    obj.forEach((item, index) =>
+      validateArraysHaveElements(item, `${path}[${index}]`)
+    );
+  } else if (obj && typeof obj === "object") {
+    Object.entries(obj).forEach(([key, value]) =>
+      validateArraysHaveElements(value, `${path}.${key}`)
+    );
+  }
+}
+
 function validateSchemaInterfaceConsistency(): void {
   try {
     validateSettingsStructure(defaultSettings);
+
+    // Recursively validate that all arrays in dummySettings have elements
+    validateArraysHaveElements(dummySettings);
+
     validateSettingsStructure(dummySettings);
   } catch (error) {
     throw new Error(
