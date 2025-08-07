@@ -4,8 +4,8 @@ import Ajv from "ajv";
 type DeepRequired<T> = {
   [P in keyof T]-?: T[P] extends (infer U)[]
     ? DeepRequired<U>[]
-    : T[P] extends object
-    ? DeepRequired<T[P]>
+    : T[P] extends object | undefined
+    ? DeepRequired<NonNullable<T[P]>>
     : T[P];
 };
 
