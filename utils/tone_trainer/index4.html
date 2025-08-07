@@ -136,13 +136,18 @@
 
       <!-- Spectrogram Canvas with YIN Pitch Overlay -->
       <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative">
-        <!-- <h3 class="text-white text-lg font-medium mb-2 px-2">
-          Spectrogram with YIN Pitch Overlay
-        </h3> -->
+        <h3 class="text-white text-lg font-medium mb-2 px-2">
+          Spectrogram with YIN Pitch (Yellow) & AnalyserNode Pitch (Green)
+        </h3>
         <div class="relative">
           <canvas id="spectrogramCanvas"></canvas>
           <canvas
             id="yinPitchCanvas"
+            class="absolute top-0 left-0 pointer-events-none"
+            style="background: transparent"
+          ></canvas>
+          <canvas
+            id="analyserPitchCanvas"
             class="absolute top-0 left-0 pointer-events-none"
             style="background: transparent"
           ></canvas>
@@ -218,15 +223,61 @@
         </div> -->
       </div>
 
-      <!-- YIN Algorithm Controls -->
+      <!-- Algorithm Controls -->
       <div id="yinControlsSection" class="mt-4 hidden">
         <h3 class="text-white text-lg font-medium mb-3 w-full">
-          YIN Algorithm Parameters:
+          Algorithm Parameters:
         </h3>
 
-        <div
-          id="yinControls"
-          class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-gray-700/50 p-4 rounded-lg"
+        <!-- AnalyserNode Controls -->
+        <div class="mb-4">
+          <h4 class="text-green-400 text-sm font-medium mb-2">AnalyserNode Autocorrelation (Energy-Aware):</h4>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4 bg-gray-700/30 p-3 rounded-lg">
+            <div>
+              <label for="analyserFFTSize" class="block mb-2 text-xs font-medium text-gray-300">FFT Size</label>
+              <select id="analyserFFTSize" class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-1">
+                <option value="256">256</option>
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+                <option value="2048" selected>2048</option>
+                <option value="4096">4096</option>
+              </select>
+            </div>
+            <div>
+              <label for="analyserBufferSize" class="block mb-2 text-xs font-medium text-gray-300">Buffer Size</label>
+              <select id="analyserBufferSize" class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-1">
+                <option value="128">128</option>
+                <option value="256">256</option>
+                <option value="512">512</option>
+                <option value="1024" selected>1024</option>
+                <option value="2048">2048</option>
+              </select>
+            </div>
+            <div>
+              <label for="analyserMinFreq" class="block mb-2 text-xs font-medium text-gray-300">Min Freq (Hz)</label>
+              <input type="range" id="analyserMinFreqSlider" min="20" max="200" value="50" step="5" class="w-full"/>
+              <div class="text-xs text-gray-400 text-center mt-1" id="analyserMinFreqValue">50</div>
+            </div>
+            <div>
+              <label for="analyserMaxFreq" class="block mb-2 text-xs font-medium text-gray-300">Max Freq (Hz)</label>
+              <input type="range" id="analyserMaxFreqSlider" min="200" max="1000" value="300" step="10" class="w-full"/>
+              <div class="text-xs text-gray-400 text-center mt-1" id="analyserMaxFreqValue">300</div>
+            </div>
+            <div>
+              <label for="analyserEnergyThreshold" class="block mb-2 text-xs font-medium text-gray-300">Energy Threshold</label>
+              <input type="range" id="analyserEnergyThresholdSlider" min="0.001" max="0.1" value="0.01" step="0.001" class="w-full"/>
+              <div class="text-xs text-gray-400 text-center mt-1" id="analyserEnergyThresholdValue">0.01</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- YIN Controls -->
+        <div class="mb-2">
+          <h4 class="text-yellow-400 text-sm font-medium mb-2">YIN Algorithm:</h4>
+
+          <div
+            id="yinControls"
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-gray-700/50 p-4 rounded-lg"
         >
           <div>
             <label
@@ -400,6 +451,8 @@
       // const yinCanvasCtx = yinCanvas.getContext("2d");
       const yinPitchCanvas = document.getElementById("yinPitchCanvas");
       const yinPitchCanvasCtx = yinPitchCanvas.getContext("2d");
+      const analyserPitchCanvas = document.getElementById("analyserPitchCanvas");
+      const analyserPitchCanvasCtx = analyserPitchCanvas.getContext("2d");
       const controls = document.getElementById("controls");
       const playButton = document.getElementById("playButton");
       const colorSchemeSelect = document.getElementById("colorScheme");
@@ -419,6 +472,7 @@
       let pitchData = [];
       let strengthData = [];
       let yinData = [];
+      let analyserPitchData = [];
       let lastAudioBuffer = null;
       let currentAudioSource = null;
       let isPlaying = false;
@@ -429,6 +483,15 @@
         colorScheme: "viridis",
         brightness: -50,
         contrast: 1.5,
+      };
+
+      // AnalyserNode Parameters
+      let analyserParams = {
+        fftSize: 2048,
+        bufferSize: 1024,
+        minFreq: 50,
+        maxFreq: 300,
+        energyThreshold: 0.01, // Skip frames below this RMS energy level
       };
 
       // YIN Algorithm Parameters
@@ -580,6 +643,143 @@
         const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
 
         return { avgPitch, range, slope };
+      }
+
+      // --- ANALYSER NODE PITCH DETECTION ---
+      function calculateRMSEnergy(buffer) {
+        let sum = 0;
+        for (let i = 0; i < buffer.length; i++) {
+          sum += buffer[i] * buffer[i];
+        }
+        return Math.sqrt(sum / buffer.length);
+      }
+
+      function autocorrelationPitch(buffer, sampleRate) {
+        // Early energy check - skip processing if frame has insufficient energy
+        const energy = calculateRMSEnergy(buffer);
+        if (energy < analyserParams.energyThreshold) {
+          return { pitch: 0, confidence: 0, energy: energy, skipped: true };
+        }
+        const bufferSize = buffer.length;
+        const halfSize = Math.floor(bufferSize / 2);
+        const correlations = new Array(halfSize);
+
+        // Calculate autocorrelation
+        for (let lag = 0; lag < halfSize; lag++) {
+          let sum = 0;
+          for (let i = 0; i < halfSize; i++) {
+            sum += buffer[i] * buffer[i + lag];
+          }
+          correlations[lag] = sum;
+        }
+
+        // Find first peak after lag 1
+        let maxCorrelation = 0;
+        let bestLag = 0;
+
+        // Skip first few samples to avoid DC component
+        const minLag = Math.floor(sampleRate / analyserParams.maxFreq); // Max freq
+        const maxLag = Math.floor(sampleRate / analyserParams.minFreq);  // Min freq
+
+        for (let lag = minLag; lag < Math.min(maxLag, halfSize); lag++) {
+          if (correlations[lag] > maxCorrelation &&
+              correlations[lag] > correlations[lag - 1] &&
+              correlations[lag] > correlations[lag + 1]) {
+            maxCorrelation = correlations[lag];
+            bestLag = lag;
+          }
+        }
+
+        if (bestLag === 0) return 0;
+
+        // Parabolic interpolation for better accuracy
+        if (bestLag > 0 && bestLag < correlations.length - 1) {
+          const y1 = correlations[bestLag - 1];
+          const y2 = correlations[bestLag];
+          const y3 = correlations[bestLag + 1];
+
+          const a = (y1 - 2 * y2 + y3) / 2;
+          const b = (y3 - y1) / 2;
+
+          if (a !== 0) {
+            const xOffset = -b / (2 * a);
+            bestLag += xOffset;
+          }
+        }
+
+        const frequency = sampleRate / bestLag;
+        const confidence = Math.min(maxCorrelation / correlations[0], 1);
+
+        return { pitch: frequency, confidence: confidence, energy: energy, skipped: false };
+      }
+
+      function performAnalyserNodePitchDetection(audioBuffer) {
+        const offlineCtx = new OfflineAudioContext(
+          1,
+          audioBuffer.length,
+          audioBuffer.sampleRate
+        );
+
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+
+        const analyser = offlineCtx.createAnalyser();
+        analyser.fftSize = analyserParams.fftSize;
+        analyser.smoothingTimeConstant = 0;
+
+        const scriptProcessor = offlineCtx.createScriptProcessor(analyserParams.bufferSize, 1, 1);
+        const analyserResults = [];
+        let totalFrames = 0;
+        let skippedFrames = 0;
+
+        scriptProcessor.onaudioprocess = (e) => {
+          totalFrames++;
+          const timeData = new Float32Array(analyser.fftSize);
+          analyser.getFloatTimeDomainData(timeData);
+
+          const pitchResult = autocorrelationPitch(timeData, audioBuffer.sampleRate);
+
+          if (pitchResult.skipped) {
+            skippedFrames++;
+            // Still add the result but mark it as skipped for visualization
+            analyserResults.push({
+              pitch: 0,
+              confidence: 0,
+              energy: pitchResult.energy,
+              skipped: true,
+              timeIndex: e.playbackTime
+            });
+          } else if (pitchResult.pitch >= analyserParams.minFreq && pitchResult.pitch <= analyserParams.maxFreq && pitchResult.confidence > 0.3) {
+            // Valid pitch detected
+            analyserResults.push({
+              pitch: pitchResult.pitch,
+              confidence: pitchResult.confidence,
+              energy: pitchResult.energy,
+              skipped: false,
+              timeIndex: e.playbackTime
+            });
+          } else {
+            // Invalid pitch (outside range or low confidence)
+            analyserResults.push({
+              pitch: 0,
+              confidence: 0,
+              energy: pitchResult.energy,
+              skipped: false,
+              timeIndex: e.playbackTime
+            });
+          }
+        };
+
+        source.connect(analyser);
+        analyser.connect(scriptProcessor);
+        scriptProcessor.connect(offlineCtx.destination);
+
+        source.start(0);
+
+        return offlineCtx.startRendering().then(() => {
+          console.log(`AnalyserNode Performance: ${skippedFrames}/${totalFrames} frames skipped (${(skippedFrames/totalFrames*100).toFixed(1)}% speedup)`);
+          return analyserResults;
+        });
       }
 
       // --- YIN ALGORITHM IMPLEMENTATION ---
@@ -744,6 +944,9 @@
           drawStrengthChart();
           drawYinChart();
           drawYinPitchChart();
+          if (analyserPitchData.length > 0) {
+            drawAnalyserPitchChart();
+          }
         }
       });
       brightnessSlider.addEventListener("input", (e) => {
@@ -753,6 +956,9 @@
           drawStrengthChart();
           drawYinChart();
           drawYinPitchChart();
+          if (analyserPitchData.length > 0) {
+            drawAnalyserPitchChart();
+          }
         }
       });
       contrastSlider.addEventListener("input", (e) => {
@@ -762,6 +968,9 @@
           drawStrengthChart();
           drawYinChart();
           drawYinPitchChart();
+          if (analyserPitchData.length > 0) {
+            drawAnalyserPitchChart();
+          }
         }
       });
 
@@ -831,6 +1040,58 @@
         .addEventListener("change", (e) => {
           yinParams.interpolation = e.target.checked;
           recomputeYin();
+        });
+
+      // --- ANALYSER NODE PARAMETER EVENT LISTENERS ---
+      function recomputeAnalyserNode() {
+        if (lastAudioBuffer) {
+          const analyserPitchPromise = performAnalyserNodePitchDetection(lastAudioBuffer);
+          analyserPitchPromise.then((results) => {
+            analyserPitchData = results;
+            drawAnalyserPitchChart();
+          });
+        }
+      }
+
+      document
+        .getElementById("analyserFFTSize")
+        .addEventListener("change", (e) => {
+          analyserParams.fftSize = parseInt(e.target.value, 10);
+          recomputeAnalyserNode();
+        });
+
+      document
+        .getElementById("analyserBufferSize")
+        .addEventListener("change", (e) => {
+          analyserParams.bufferSize = parseInt(e.target.value, 10);
+          recomputeAnalyserNode();
+        });
+
+      document
+        .getElementById("analyserMinFreqSlider")
+        .addEventListener("input", (e) => {
+          analyserParams.minFreq = parseInt(e.target.value, 10);
+          document.getElementById("analyserMinFreqValue").textContent =
+            analyserParams.minFreq;
+          recomputeAnalyserNode();
+        });
+
+      document
+        .getElementById("analyserMaxFreqSlider")
+        .addEventListener("input", (e) => {
+          analyserParams.maxFreq = parseInt(e.target.value, 10);
+          document.getElementById("analyserMaxFreqValue").textContent =
+            analyserParams.maxFreq;
+          recomputeAnalyserNode();
+        });
+
+      document
+        .getElementById("analyserEnergyThresholdSlider")
+        .addEventListener("input", (e) => {
+          analyserParams.energyThreshold = parseFloat(e.target.value);
+          document.getElementById("analyserEnergyThresholdValue").textContent =
+            analyserParams.energyThreshold.toFixed(3);
+          recomputeAnalyserNode();
         });
 
       // --- UI HELPER FUNCTIONS ---
@@ -905,10 +1166,19 @@
             pitchData = [];
             strengthData = [];
             yinData = [];
+            analyserPitchData = [];
             lastAudioBuffer = audioBuffer; // Store for replay
 
             // Perform YIN analysis
             yinData = performYinAnalysis(audioBuffer);
+
+            // Perform AnalyserNode pitch analysis in parallel
+            const analyserPitchPromise = performAnalyserNodePitchDetection(audioBuffer);
+            analyserPitchPromise.then((results) => {
+              analyserPitchData = results;
+              drawAnalyserPitchChart();
+            });
+
             hideYinPitchLoadingOverlay();
 
             analyzeAndDraw(audioBuffer);
@@ -1016,6 +1286,7 @@
           pitchData = [];
           strengthData = [];
           yinData = [];
+          analyserPitchData = [];
 
           // Update loading message for YIN analysis
           instructions.innerHTML =
@@ -1023,6 +1294,13 @@
 
           // Perform YIN analysis
           yinData = performYinAnalysis(audioBuffer);
+
+          // Perform AnalyserNode pitch analysis in parallel
+          const analyserPitchPromise = performAnalyserNodePitchDetection(audioBuffer);
+          analyserPitchPromise.then((results) => {
+            analyserPitchData = results;
+            drawAnalyserPitchChart();
+          });
 
           // Update loading message for spectrogram
           instructions.innerHTML =
@@ -1114,6 +1392,9 @@
             drawStrengthChart();
             drawYinChart();
             drawYinPitchChart();
+            if (analyserPitchData.length > 0) {
+              drawAnalyserPitchChart();
+            }
           })
           .catch((err) => {
             console.error("Offline rendering failed:", err);
@@ -1490,6 +1771,116 @@
           ctx.font = "14px Inter";
           ctx.textAlign = "center";
           ctx.fillText("No pitch detected", width / 2, height / 2);
+        }
+      }
+
+      function drawAnalyserPitchChart() {
+        if (analyserPitchData.length === 0) return;
+
+        // Set high resolution canvas dimensions to match spectrogram
+        const displayWidth = analyserPitchCanvas.offsetWidth;
+        const displayHeight = analyserPitchCanvas.offsetHeight;
+        const pixelRatio = window.devicePixelRatio || 1;
+
+        analyserPitchCanvas.width = displayWidth * pixelRatio;
+        analyserPitchCanvas.height = displayHeight * pixelRatio;
+
+        // Scale context to ensure correct drawing operations
+        analyserPitchCanvasCtx.scale(pixelRatio, pixelRatio);
+
+        // Set CSS size to maintain display size
+        analyserPitchCanvas.style.width = displayWidth + "px";
+        analyserPitchCanvas.style.height = displayHeight + "px";
+
+        const ctx = analyserPitchCanvasCtx;
+        const width = displayWidth;
+        const height = displayHeight;
+
+        // Clear canvas with transparent background
+        ctx.clearRect(0, 0, width, height);
+
+        const validPitches = analyserPitchData.filter((frame) => frame.pitch > 0 && !frame.skipped);
+        const skippedFrames = analyserPitchData.filter((frame) => frame.skipped);
+
+        if (validPitches.length > 0) {
+          const minPitch = Math.min(50, ...validPitches.map((f) => f.pitch));
+          const maxPitch = Math.max(...validPitches.map((f) => f.pitch));
+          const pitchRange = Math.max(maxPitch - minPitch, 50);
+
+          // Calculate time scaling to match spectrogram
+          const duration = lastAudioBuffer ? lastAudioBuffer.duration : 1;
+
+          // First draw skipped frames as small gray dots to show where energy was too low
+          for (let i = 0; i < analyserPitchData.length; i++) {
+            const frame = analyserPitchData[i];
+            if (frame.skipped) {
+              const timeRatio = frame.timeIndex / duration;
+              const x = timeRatio * width;
+              const y = height / 2; // Place skipped frames in middle
+
+              ctx.fillStyle = "rgba(128, 128, 128, 0.3)";
+              ctx.beginPath();
+              ctx.arc(x, y, 1, 0, 2 * Math.PI);
+              ctx.fill();
+            }
+          }
+
+          // Then draw valid pitch data as individual dots (no lines)
+          for (let i = 0; i < analyserPitchData.length; i++) {
+            const frame = analyserPitchData[i];
+            if (frame.pitch > 0 && !frame.skipped) {
+              // Map time index to canvas width (matching spectrogram time axis)
+              const timeRatio = frame.timeIndex / duration;
+              const x = timeRatio * width;
+
+              // Map pitch to independent Y-axis (full canvas height for pitch range)
+              const pitchRatio = (frame.pitch - minPitch) / pitchRange;
+              const y = height - pitchRatio * height;
+
+              // Color based on confidence with bright green for high visibility
+              const alpha = Math.max(0.3, frame.confidence);
+
+              // Use bright green color to distinguish from YIN (yellow)
+              ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+
+              // Draw larger confidence dots with shadow (no lines)
+              ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+              ctx.shadowBlur = 3;
+              ctx.shadowOffsetX = 1;
+              ctx.shadowOffsetY = 1;
+
+              ctx.beginPath();
+              ctx.arc(x, y, 4, 0, 2 * Math.PI); // Increased from 2 to 4 pixels
+              ctx.fill();
+
+              // Reset shadow for next elements
+              ctx.shadowColor = "transparent";
+              ctx.shadowBlur = 0;
+              ctx.shadowOffsetX = 0;
+              ctx.shadowOffsetY = 0;
+            }
+          }
+
+          // Draw AnalyserNode pitch range labels and performance info
+          ctx.fillStyle = "rgba(0, 255, 0, 0.9)";
+          ctx.font = "10px Inter";
+          ctx.textAlign = "right";
+          ctx.fillText(`AN: ${Math.round(maxPitch)}Hz`, width - 5, 20);
+          ctx.fillText(`AN: ${Math.round(minPitch)}Hz`, width - 5, height - 10);
+
+          // Show performance statistics
+          const skippedCount = skippedFrames.length;
+          const totalCount = analyserPitchData.length;
+          if (totalCount > 0) {
+            ctx.fillStyle = "rgba(0, 255, 0, 0.7)";
+            ctx.font = "9px Inter";
+            ctx.fillText(`Skipped: ${skippedCount}/${totalCount}`, width - 5, 35);
+          }
+        } else {
+          ctx.fillStyle = "rgba(0, 255, 0, 0.7)";
+          ctx.font = "12px Inter";
+          ctx.textAlign = "right";
+          ctx.fillText("AnalyserNode: No pitch", width - 10, height / 2);
         }
       }
     </script>
