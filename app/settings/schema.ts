@@ -1,10 +1,11 @@
 import type { JSONSchema7 } from "json-schema";
+import Ajv from "ajv";
 
 export interface AppSettings {
   googleCloudApiKey: string;
   phraseNotes: {
     noteType: string;
-    cards?: { name?: string; deck?: string; validateCardsDeck?: boolean };
+    cards?: { name?: string; deckName?: string; validateCardsDeck?: boolean }[];
   }[];
   characterNote?: {
     noteType?: string;
@@ -28,6 +29,21 @@ export const defaultSettings: AppSettings = {
       noteType: "TOCFL",
     },
   ],
+};
+
+// These are only used to test validity of the schema, it's important for all fields to be filled in.
+const dummySettings: AppSettings = {
+  googleCloudApiKey: "test",
+  phraseNotes: [
+    {
+      noteType: "test",
+      cards: [{ name: "test", deckName: "test", validateCardsDeck: true }],
+    },
+  ],
+  characterNote: { noteType: "test" },
+  toolbar: { showPropsLink: true, showStatsLink: true },
+  generativeAi: { llmModelName: "test" },
+  features: { showZhuyin: true },
 };
 
 export const DEFAULT_GEN_AI_MODEL = "gemini-1.5-flash";
@@ -79,6 +95,7 @@ export const settingsJsonSchema: JSONSchema7 = {
                     "Validate that this card is placed in the desired deck",
                 },
               },
+              additionalProperties: false,
               required: [],
             },
           },
@@ -160,3 +177,38 @@ export const settingsUiSchema = {
     },
   },
 };
+
+const ajv = new Ajv({ strict: true, allErrors: true });
+
+export function validateSettingsStructure(settings: AppSettings): void {
+  const validate = ajv.compile(settingsJsonSchema);
+  const isValid = validate(settings);
+
+  if (!isValid) {
+    const errors =
+      validate.errors
+        ?.map((error) => `${error.instancePath || "root"}: ${error.message}`)
+        .join("; ") || "Unknown validation error";
+
+    throw new Error(`Settings validation failed: ${errors}`);
+  }
+}
+
+function validateSchemaInterfaceConsistency(): void {
+  try {
+    validateSettingsStructure(defaultSettings);
+    validateSettingsStructure(dummySettings);
+  } catch (error) {
+    throw new Error(
+      `Schema does not match TypeScript interface: ${(error as Error).message}`
+    );
+  }
+}
+
+// Run validation on module load to catch structural mismatches
+try {
+  validateSchemaInterfaceConsistency();
+} catch (error) {
+  console.error("Schema-Interface mismatch detected on module load:", error);
+  throw error;
+}
