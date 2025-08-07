@@ -202,7 +202,7 @@ export function validateSettingsStructure(settings: AppSettings): void {
   }
 }
 
-function validateArraysHaveElements(obj: any, path: string = "root"): void {
+function validateArraysHaveElements(obj: unknown, path: string = "root"): void {
   if (Array.isArray(obj)) {
     if (obj.length === 0) {
       throw new Error(
