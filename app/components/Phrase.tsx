@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 
 export const PhraseLink: React.FC<{ value?: string }> = ({ value }) => {
-  return <Link to={`/phrase/${encodeURIComponent(value || '')}`}>{value}</Link>;
+  return <Link to={`/phrase/${encodeURIComponent(value || "")}`}>{value}</Link>;
 };
 
 export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
@@ -28,6 +28,9 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
             </th>
             <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
               Pinyin
+            </th>
+            <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+              Part of Speech
             </th>
             <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
               Meaning
@@ -61,6 +64,13 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                     dangerouslySetInnerHTML={{ __html: phrase.pinyin }}
                   ></span>
                   <AnkiAudioPlayer audioField={phrase.audio} />
+                </td>
+                <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: phrase.partOfSpeech || "",
+                    }}
+                  ></span>
                 </td>
                 <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
                   <div className="max-w-md truncate">

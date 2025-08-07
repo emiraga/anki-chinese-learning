@@ -11,6 +11,7 @@ export type PhraseType = {
   source: string;
   traditional: string;
   meaning: string;
+  partOfSpeech?: string;
   pinyin: string;
   tags: string[];
   audio: string;
@@ -67,6 +68,7 @@ export function useAnkiPhrases() {
           source: note.modelName,
           traditional,
           meaning: note.fields["Meaning"].value,
+          partOfSpeech: note.fields["POS"]?.value,
           pinyin,
           tags: note.tags,
           audio: note.fields["Audio"].value,
