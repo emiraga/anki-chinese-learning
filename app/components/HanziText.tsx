@@ -23,8 +23,6 @@ export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
           className = "text-red-600";
         } else if (!characters[c].withSound) {
           className = "text-green-600";
-        } else if (!characters[c].withMeaning) {
-          className = "text-blue-500";
         }
 
         return <CharLink key={i} traditional={c} className={className} />;
@@ -92,8 +90,6 @@ export const HanziSegmentedText: React.FC<{
                   className = "text-red-600";
                 } else if (!characters[c].withSound) {
                   className = "text-green-600";
-                } else if (!characters[c].withMeaning) {
-                  className = "text-blue-500";
                 }
 
                 return (
@@ -118,8 +114,6 @@ export const HanziSegmentedText: React.FC<{
             className = "text-red-600";
           } else if (!characters[c].withSound) {
             className = "text-green-600";
-          } else if (!characters[c].withMeaning) {
-            className = "text-blue-500";
           }
 
           return (

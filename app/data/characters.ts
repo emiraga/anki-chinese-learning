@@ -17,7 +17,6 @@ export type CharacterType = {
   mnemonic: string;
   tags: string[];
   withSound: boolean;
-  withMeaning: boolean;
   todoMoreWork: boolean;
 };
 
@@ -52,7 +51,6 @@ export function getNewCharacter(traditional: string): CharacterType | null {
     mnemonic: "",
     tags: [],
     withSound: true,
-    withMeaning: true,
     todoMoreWork: false,
   };
 }
@@ -97,7 +95,6 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             mnemonic: "",
             tags: [],
             withSound: true,
-            withMeaning: true,
             todoMoreWork: false,
           };
           const first = pinyinSorted[0];
@@ -168,7 +165,6 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,
             withSound: !note.tags.includes("not-learning-sound-yet"),
-            withMeaning: !note.tags.includes("not-learning-meaning-yet"),
             todoMoreWork:
               note.tags.includes("TODO") ||
               note.tags.length < 2 ||

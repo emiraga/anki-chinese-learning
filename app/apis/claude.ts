@@ -6,9 +6,7 @@ export function sentencesPrompt(
   characters: CharactersType,
   options: { learn?: string }
 ) {
-  let charsComplete = Object.values(characters).filter(
-    (c) => c.withSound && c.withMeaning
-  );
+  let charsComplete = Object.values(characters).filter((c) => c.withSound);
 
   return `
 I am learning Traditional Mandarin with focus on Mandarin that is used in Taiwan.

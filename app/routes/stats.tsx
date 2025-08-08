@@ -14,13 +14,8 @@ export function meta({}: Route.MetaArgs) {
 export default function Stats() {
   const { props, phrases, characters } = useOutletContext<OutletContext>();
 
-  let charsComplete = Object.values(characters).filter(
-    (c) => c.withSound && c.withMeaning
-  );
+  let charsComplete = Object.values(characters).filter((c) => c.withSound);
   let charsWithoutSound = Object.values(characters).filter((c) => !c.withSound);
-  let charsWithoutMeaning = Object.values(characters).filter(
-    (c) => !c.withMeaning
-  );
   const uniquePhrases = new Set(phrases.map((phrase) => phrase.traditional));
   return (
     <MainFrame>
@@ -38,15 +33,6 @@ export default function Stats() {
           List of characters without sound: ({charsWithoutSound.length})
         </h3>
         {charsWithoutSound.map((p, i) => (
-          <span key={i}>{p.traditional}</span>
-        ))}
-      </Section>
-
-      <Section className="block" display={charsWithoutMeaning.length > 0}>
-        <h3 className="font-serif text-4xl my-2">
-          List of characters without meaning: ({charsWithoutMeaning.length})
-        </h3>
-        {charsWithoutMeaning.map((p, i) => (
           <span key={i}>{p.traditional}</span>
         ))}
       </Section>
