@@ -16,6 +16,7 @@ import { PropCard } from "./PropCard";
 import { useEffect, useMemo, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
+import { LoadingProgressBar } from "./LoadingProgressBar";
 
 function IntegrityColorsInAnki() {
   const { characters } = useOutletContext<OutletContext>();
@@ -893,9 +894,7 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
 
       <section className="block m-4">
         {loading ? (
-          <div>
-            {stage} {progressPercentage.toFixed(2)}%
-          </div>
+          <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} />
         ) : undefined}
         {error ? <div>error loading cards: {error}</div> : undefined}
       </section>
