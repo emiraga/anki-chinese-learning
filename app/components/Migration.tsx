@@ -725,6 +725,141 @@ function MigrationPinyinZhuyinConsistency() {
   );
 }
 
+function MigrationCharacterZhuyin() {
+  const { characters } = useOutletContext<OutletContext>();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+
+  const filtered = useMemo(
+    () =>
+      Object.values(characters)
+        .filter(
+          (char) => char.ankiId && char.pinyinAnki && char.pinyinAnki.length > 0
+        )
+        .map((char) => {
+          let expectedZhuyin = "";
+          try {
+            expectedZhuyin = pinyinToZhuyin(char.pinyin[0].pinyinAccented)
+              .map((x) => (Array.isArray(x) ? x.join("") : x))
+              .map((x) => (x?.startsWith("˙") ? x.substring(1) + x[0] : x))
+              .join("");
+          } catch (error) {
+            console.warn(
+              "Failed to convert character pinyin to zhuyin:",
+              char.pinyin[0].pinyinAccented,
+              error
+            );
+            return null;
+          }
+
+          const actualZhuyin = char.zhuyinAnki?.[0]?.trim();
+          const isConsistent = actualZhuyin === expectedZhuyin;
+
+          return {
+            ...char,
+            expectedZhuyin,
+            isConsistent,
+          };
+        })
+        .filter(
+          (char): char is NonNullable<typeof char> =>
+            char !== null && !char.isConsistent
+        ),
+    [characters]
+  );
+
+  if (filtered.length === 0) {
+    return undefined;
+  }
+
+  return (
+    <>
+      <h3 className="font-serif text-3xl">
+        Character Zhuyin Inconsistency Issues:{" "}
+        <button
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors disabled:opacity-50"
+          disabled={isProcessing}
+          onClick={async () => {
+            setIsProcessing(true);
+            setProgress({ current: 0, total: filtered.length });
+
+            for (let i = 0; i < filtered.length; i++) {
+              const char = filtered[i];
+              setProgress({ current: i + 1, total: filtered.length });
+
+              await anki.note.updateNoteFields({
+                note: {
+                  id: char.ankiId || 0,
+                  // eslint-disable-next-line @typescript-eslint/naming-convention
+                  fields: { Zhuyin: char.expectedZhuyin },
+                },
+              });
+            }
+
+            setIsProcessing(false);
+            alert("Fixed all character zhuyin inconsistencies!");
+          }}
+        >
+          {isProcessing ? "Processing..." : "Fix all zhuyin!"}
+        </button>
+        {isProcessing && (
+          <div className="mt-2">
+            <progress
+              className="w-full h-2"
+              value={progress.current}
+              max={progress.total}
+            />
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {progress.current} / {progress.total} characters
+            </div>
+          </div>
+        )}
+      </h3>
+
+      <div className="mx-4">
+        {filtered.map((char, i) => (
+          <div key={i} className="border-b py-2">
+            <CharCardDetails char={char} />
+            <div className="text-sm">
+              Current Zhuyin:{" "}
+              <span className="text-red-500">
+                {char.zhuyinAnki?.[0] || "(empty)"}
+              </span>
+            </div>
+            <div className="text-sm">
+              Expected Zhuyin:{" "}
+              <span className="text-green-500">{char.expectedZhuyin}</span>
+            </div>
+            <button
+              className="rounded-2xl px-2 py-1 mt-1 bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 hover:bg-green-300 dark:hover:bg-green-700 transition-colors text-sm"
+              onClick={async () => {
+                await anki.note.updateNoteFields({
+                  note: {
+                    id: char.ankiId || 0,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    fields: { Zhuyin: char.expectedZhuyin },
+                  },
+                });
+                alert("Fixed!");
+              }}
+            >
+              Fix zhuyin field
+            </button>
+            <button
+              className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              onClick={async () => {
+                await ankiOpenBrowse(`Traditional:${char.traditional}`);
+              }}
+            >
+              anki
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export const MigrationEverything: React.FC<{}> = ({}) => {
   const { progressPercentage, stage, loading, error, notesByCards } =
     useAnkiCards();
@@ -748,6 +883,9 @@ export const MigrationEverything: React.FC<{}> = ({}) => {
       </section>
       <section className="block m-4">
         <MigrationPinyinZhuyinConsistency />
+      </section>
+      <section className="block m-4">
+        <MigrationCharacterZhuyin />
       </section>
       <section className="block m-4">
         <DuplicatePhrase source="MyWords" fromOthers={["TOCFL"]} />

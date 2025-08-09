@@ -14,6 +14,7 @@ export type CharacterType = {
   meaning2: string;
   pinyin: PinyinType[];
   pinyinAnki?: string[];
+  zhuyinAnki?: string[];
   mnemonic: string;
   tags: string[];
   withSound: boolean;
@@ -162,6 +163,9 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
               note.fields["Meaning2"]?.value || note.fields["Meaning"].value,
             pinyin: [pinyin1].concat(pinyin2 || []),
             pinyinAnki: [pinyinAnki1].concat(pinyinAnki2 || []),
+            zhuyinAnki: note.fields["Zhuyin"]
+              ? [note.fields["Zhuyin"].value]
+              : undefined,
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,
             withSound: !note.tags.includes("not-learning-sound-yet"),
