@@ -48,6 +48,7 @@ type Params = {
   "/todo_chars": {};
   "/chars_sentence_input": {};
   "/chars_multiple_pronunciation": {};
+  "/exam_level": {};
   "/tone/:toneName": {
     "toneName": string;
   };

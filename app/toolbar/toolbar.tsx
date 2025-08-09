@@ -148,6 +148,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Progress",
           show: phrases.length > 0,
         },
+        {
+          pathname: "/exam_level",
+          name: "Exam level",
+          show: phrases.length > 0,
+        },
       ],
     },
   ].filter((element) => !!element.show);

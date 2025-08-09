@@ -30,6 +30,7 @@ export default [
     "chars_multiple_pronunciation",
     "routes/chars_multiple_pronunciation.tsx"
   ),
+  route("exam_level", "routes/exam_level.tsx"),
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),
   index("routes/index.tsx"),
