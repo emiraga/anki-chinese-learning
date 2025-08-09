@@ -24,7 +24,7 @@ const chunk = <T>(array: T[], size: number): T[][] => {
   return chunks;
 };
 
-export const useAnkiCards = () => {
+export const useAnkiCards = (filter: string) => {
   const [notesByCards, setNotesByCards] = useState<NoteWithCards[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -48,7 +48,7 @@ export const useAnkiCards = () => {
       setStage("Finding notes...");
 
       const noteIds = await anki.note.findNotes({
-        query: getAnkiNoteFilter() + " -is:suspended",
+        query: getAnkiNoteFilter() + " " + filter,
       });
       if (!isMountedRef.current || noteIds.length === 0) {
         setLoading(false);

@@ -17,7 +17,7 @@ import {
 // Learning progress constants
 const LEARNING_CONSTANTS = {
   MIN_EASE_THRESHOLD: 3, // Good or Easy review (1=Again, 2=Hard, 3=Good, 4=Easy)
-  MIN_INTERVAL_DAYS: 15, // Minimum interval to consider character "learned"
+  MIN_INTERVAL_DAYS: 21, // Minimum interval to consider character "learned"
   MIN_FACTOR: 100, // Minimum factor for review quality
   BATCH_SIZE: 100, // Cards processed per batch to avoid API limits
   TARGET_CHARS_INTERMEDIATE: 2000, // Characters needed for intermediate level

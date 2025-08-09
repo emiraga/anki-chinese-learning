@@ -862,7 +862,7 @@ function IntegrityCharacterZhuyin() {
 
 export const IntegrityEverything: React.FC<{}> = ({}) => {
   const { progressPercentage, stage, loading, error, notesByCards } =
-    useAnkiCards();
+    useAnkiCards("-is:suspended");
 
   return (
     <>

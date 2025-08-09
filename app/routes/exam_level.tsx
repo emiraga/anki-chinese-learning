@@ -8,21 +8,19 @@ type ExamCard = {
   noteId: number;
   tags: string[];
   tocflLevel?: string;
-  status: 'pending' | 'in_progress' | 'mature' | 'learning';
+  status: "pending" | "in_progress" | "mature";
 };
 
 const ProgressBar: React.FC<{
   level: string;
   pending: number;
-  learning: number;
   inProgress: number;
   mature: number;
   total: number;
-}> = ({ level, pending, learning, inProgress, mature, total }) => {
+}> = ({ level, pending, inProgress, mature, total }) => {
   if (total === 0) return null;
 
   const pendingPercent = (pending / total) * 100;
-  const learningPercent = (learning / total) * 100;
   const inProgressPercent = (inProgress / total) * 100;
   const maturePercent = (mature / total) * 100;
 
@@ -36,7 +34,7 @@ const ProgressBar: React.FC<{
           {total} cards
         </span>
       </div>
-      
+
       <div className="w-full bg-gray-200 rounded-full h-6 mb-3 dark:bg-gray-700">
         <div className="h-6 rounded-full flex">
           {pending > 0 && (
@@ -46,15 +44,6 @@ const ProgressBar: React.FC<{
               title={`Pending: ${pending}`}
             >
               {pendingPercent > 15 && pending}
-            </div>
-          )}
-          {learning > 0 && (
-            <div
-              className="bg-yellow-400 dark:bg-yellow-500 flex items-center justify-center text-xs text-white font-medium"
-              style={{ width: `${learningPercent}%` }}
-              title={`Learning: ${learning}`}
-            >
-              {learningPercent > 15 && learning}
             </div>
           )}
           {inProgress > 0 && (
@@ -77,18 +66,12 @@ const ProgressBar: React.FC<{
           )}
         </div>
       </div>
-      
+
       <div className="grid grid-cols-4 gap-2 text-sm">
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-400 dark:bg-gray-500 rounded mr-2"></div>
           <span className="text-gray-700 dark:text-gray-300">
             Pending: {pending}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-yellow-400 dark:bg-yellow-500 rounded mr-2"></div>
-          <span className="text-gray-700 dark:text-gray-300">
-            Learning: {learning}
           </span>
         </div>
         <div className="flex items-center">
@@ -116,65 +99,66 @@ export function meta({}: Route.MetaArgs) {
 }
 
 function ExamLevelContent() {
-  const { notesByCards, loading, progressPercentage, stage, error, reload } = useAnkiCards();
+  const { notesByCards, loading, progressPercentage, stage, error, reload } =
+    useAnkiCards("card:0 (tag:TOCFL::L0 OR tag:TOCFL::L1 OR tag:TOCFL::L2)");
 
   // Process notes to get exam cards (only first card from each note)
   const examCards: ExamCard[] = notesByCards.map((note: NoteWithCards) => {
     // Sort cards by card ID to get the first card consistently
     const sortedCards = note.cardDetails.sort((a, b) => a.cardId - b.cardId);
     const firstCard = sortedCards[0];
-    
+
     // Extract TOCFL level from tags (e.g., "TOCFL::L0" -> "L0")
-    const tocflTag = note.tags.find(tag => tag.startsWith("TOCFL::"));
+    const tocflTag = note.tags.find((tag) => tag.startsWith("TOCFL::"));
     const tocflLevel = tocflTag?.split("::")[1];
-    
+
     // Debug logging to see actual card properties
     if (note.noteId === notesByCards[0]?.noteId) {
-      console.log('First card debug:', {
+      console.log("First card debug:", {
         cardId: firstCard.cardId,
         type: firstCard.type,
         queue: firstCard.queue,
         due: firstCard.due,
         interval: firstCard.interval,
-        ease: firstCard.ease,
+        // ease: firstCard.ease,
         reps: firstCard.reps,
         lapses: firstCard.lapses,
-        left: firstCard.left
+        left: firstCard.left,
       });
     }
-    
+
     // Determine status based on card properties (using queue which is more reliable)
-    let status: ExamCard['status'] = 'pending';
-    
+    let status: ExamCard["status"] = "pending";
+
     // Anki queue values:
     // -3: user buried (sched v1)
-    // -2: sched buried (sched v1) 
+    // -2: sched buried (sched v1)
     // -1: suspended
     // 0: new
-    // 1: learning
     // 2: review (due)
-    // 3: in learning, next rev in at least a day after the previous review
     // 4: preview
-    
-    if (firstCard.queue === -1) { // Suspended
-      status = 'pending';
-    } else if (firstCard.queue === 0) { // New
-      status = 'pending';
-    } else if (firstCard.queue === 1 || firstCard.queue === 3) { // Learning
-      status = 'learning';
-    } else if (firstCard.queue === 2) { // Review
+
+    if (firstCard.queue === -1) {
+      // Suspended
+      status = "pending";
+    } else if (firstCard.queue === 0) {
+      // New
+      status = "pending";
+    } else if (firstCard.queue === 2) {
+      // Review
       // Mature cards typically have interval >= 21 days
-      status = firstCard.interval >= 21 ? 'mature' : 'in_progress';
+      status = firstCard.interval >= 21 ? "mature" : "in_progress";
     } else {
       // Fallback to type if queue is unexpected
-      if (firstCard.type === 2) { // Suspended
-        status = 'pending';
-      } else if (firstCard.type === 0) { // New
-        status = 'pending';
-      } else if (firstCard.type === 1) { // Learning
-        status = 'learning';
-      } else if (firstCard.type === 2) { // Review
-        status = firstCard.interval >= 21 ? 'mature' : 'in_progress';
+      if (firstCard.type === 2) {
+        // Suspended
+        status = "pending";
+      } else if (firstCard.type === 0) {
+        // New
+        status = "pending";
+      } else if (firstCard.type === 2) {
+        // Review
+        status = firstCard.interval >= 21 ? "mature" : "in_progress";
       }
     }
 
@@ -201,8 +185,8 @@ function ExamLevelContent() {
     if (a === "No Level") return 1;
     if (b === "No Level") return -1;
     // Sort by level number (L0, L1, L2, etc.)
-    const aNum = parseInt(a.replace('L', ''));
-    const bNum = parseInt(b.replace('L', ''));
+    const aNum = parseInt(a.replace("L", ""));
+    const bNum = parseInt(b.replace("L", ""));
     return aNum - bNum;
   });
 
@@ -215,7 +199,9 @@ function ExamLevelContent() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-center mb-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-700 dark:text-gray-300">{stage}</span>
+            <span className="ml-3 text-gray-700 dark:text-gray-300">
+              {stage}
+            </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
             <div
@@ -259,28 +245,6 @@ function ExamLevelContent() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Exam Level Analysis
         </h1>
-        <button
-          onClick={reload}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          Refresh
-        </button>
-      </div>
-
-      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-        <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-400 mb-2">
-          About This Analysis
-        </h2>
-        <p className="text-blue-800 dark:text-blue-300 text-sm">
-          This page analyzes your Anki cards by TOCFL (Test of Chinese as a Foreign Language) level. 
-          Only the first card from each note is considered. Cards are categorized as:
-        </p>
-        <ul className="list-disc list-inside text-blue-800 dark:text-blue-300 text-sm mt-2 ml-4">
-          <li><strong>Pending:</strong> New or suspended cards</li>
-          <li><strong>Learning:</strong> Cards currently being learned</li>
-          <li><strong>In Progress:</strong> Review cards with interval &lt; 21 days</li>
-          <li><strong>Mature:</strong> Review cards with interval ≥ 21 days</li>
-        </ul>
       </div>
 
       {sortedLevels.length === 0 ? (
@@ -294,20 +258,24 @@ function ExamLevelContent() {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Total: {examCards.length} notes analyzed
           </p>
-          
+
           {sortedLevels.map((level) => {
             const levelCards = cardsByLevel[level];
-            const pending = levelCards.filter(c => c.status === 'pending').length;
-            const learning = levelCards.filter(c => c.status === 'learning').length;
-            const inProgress = levelCards.filter(c => c.status === 'in_progress').length;
-            const mature = levelCards.filter(c => c.status === 'mature').length;
-            
+            const pending = levelCards.filter(
+              (c) => c.status === "pending"
+            ).length;
+            const inProgress = levelCards.filter(
+              (c) => c.status === "in_progress"
+            ).length;
+            const mature = levelCards.filter(
+              (c) => c.status === "mature"
+            ).length;
+
             return (
               <ProgressBar
                 key={level}
                 level={level}
                 pending={pending}
-                learning={learning}
                 inProgress={inProgress}
                 mature={mature}
                 total={levelCards.length}
@@ -316,6 +284,29 @@ function ExamLevelContent() {
           })}
         </div>
       )}
+
+      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-400 mb-2">
+          About This Analysis
+        </h2>
+        <p className="text-blue-800 dark:text-blue-300 text-sm">
+          This page analyzes your Anki cards by TOCFL (Test of Chinese as a
+          Foreign Language) level. Only the first card from each note is
+          considered. Cards are categorized as:
+        </p>
+        <ul className="list-disc list-inside text-blue-800 dark:text-blue-300 text-sm mt-2 ml-4">
+          <li>
+            <strong>Pending:</strong> New or suspended cards
+          </li>
+          <li>
+            <strong>In Progress:</strong> Review cards with interval &lt; 21
+            days
+          </li>
+          <li>
+            <strong>Mature:</strong> Review cards with interval ≥ 21 days
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }
