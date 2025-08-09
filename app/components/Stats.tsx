@@ -166,6 +166,9 @@ const useAnkiHanziProgress = () => {
   const [characterProgress, setCharacterProgress] = useState<{
     [key: string]: number;
   }>({});
+  const [learningTimeDistribution, setLearningTimeDistribution] = useState<
+    number[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -231,9 +234,11 @@ const useAnkiHanziProgress = () => {
           } cards`
         );
 
-        // 4. Process reviews to build the daily character graph
+        // 4. Process reviews to build the daily character graph and learning time distribution
         const dailyLearnedCharacters: { [key: string]: number } = {};
         const seenCharacters = new Set(); // To track uniquely learned characters
+        const characterFirstEncounter: { [key: string]: number } = {}; // Track first review time
+        const learningTimes: number[] = []; // Days from first encounter to learned
 
         // Sort reviews by timestamp to ensure chronological processing
         // Note: The 'id' in reviews is the reviewTime in milliseconds
@@ -246,31 +251,42 @@ const useAnkiHanziProgress = () => {
         allReviews.sort((a, b) => a.id - b.id);
 
         allReviews.forEach((review) => {
-          const cardId = review.cardId; // Anki-Connect getReviewsOfCards sample doesn't include cardId in review object.
-          // This is a potential issue. You might need to restructure if it's not present.
-          // For now, let's assume getReviewsOfCards returns { "cardId": [{review}, {review}] }
-          // or we'd need to iterate through reviewsOfCards structure.
-          // Based on the sample, reviewsOfCards is a map of cardId to list of reviews.
-          // So, we need to iterate reviewsOfCards:
-          const char = noteToCharMap[cardId]; // char for this review's card
+          const cardId = review.cardId;
+          const char = noteToCharMap[cardId];
 
-          if (char && !seenCharacters.has(char)) {
-            // A character is "learned" on its first "Good" or "Easy" review
-            // Review 'type': 0 = learning, 1 = review, 2 = relearn, 3 = cram
-            // 'ease': 1 = Again, 2 = Hard, 3 = Good, 4 = Easy
-            if (
-              review.ease >= LEARNING_CONSTANTS.MIN_EASE_THRESHOLD &&
-              review.ivl >= LEARNING_CONSTANTS.MIN_INTERVAL_DAYS &&
-              review.factor >= LEARNING_CONSTANTS.MIN_FACTOR
-            ) {
-              // Good or Easy
-              const reviewDate = new Date(review.id).toLocaleDateString(
-                "en-CA"
-              ); // YYYY-MM-DD
-              // Add this character to the count for this date
-              dailyLearnedCharacters[reviewDate] =
-                (dailyLearnedCharacters[reviewDate] || 0) + 1;
-              seenCharacters.add(char); // Mark as learned
+          if (char) {
+            // Track first encounter for this character
+            if (!characterFirstEncounter[char]) {
+              characterFirstEncounter[char] = review.id;
+            }
+
+            if (!seenCharacters.has(char)) {
+              // A character is "learned" on its first "Good" or "Easy" review
+              // Review 'type': 0 = learning, 1 = review, 2 = relearn, 3 = cram
+              // 'ease': 1 = Again, 2 = Hard, 3 = Good, 4 = Easy
+              if (
+                review.ease >= LEARNING_CONSTANTS.MIN_EASE_THRESHOLD &&
+                review.ivl >= LEARNING_CONSTANTS.MIN_INTERVAL_DAYS &&
+                review.factor >= LEARNING_CONSTANTS.MIN_FACTOR
+              ) {
+                // Good or Easy - character is now learned
+                const reviewDate = new Date(review.id).toLocaleDateString(
+                  "en-CA"
+                ); // YYYY-MM-DD
+                // Add this character to the count for this date
+                dailyLearnedCharacters[reviewDate] =
+                  (dailyLearnedCharacters[reviewDate] || 0) + 1;
+                seenCharacters.add(char); // Mark as learned
+
+                // Calculate learning time in days
+                const firstEncounterTime = characterFirstEncounter[char];
+                const learnedTime = review.id;
+                const timeDifferenceMs = learnedTime - firstEncounterTime;
+                const timeDifferenceDays = Math.ceil(
+                  timeDifferenceMs / (1000 * 60 * 60 * 24)
+                );
+                learningTimes.push(timeDifferenceDays);
+              }
             }
           }
         });
@@ -286,6 +302,7 @@ const useAnkiHanziProgress = () => {
         });
 
         setCharacterProgress(cumulativeGraphData);
+        setLearningTimeDistribution(learningTimes);
       } catch (err) {
         console.error("Error fetching Anki data:", err);
         setError(
@@ -299,7 +316,7 @@ const useAnkiHanziProgress = () => {
     fetchHanziProgress();
   }, []);
 
-  return { characterProgress, loading, error };
+  return { characterProgress, learningTimeDistribution, loading, error };
 };
 
 // Simple helper function to calculate progress rate
@@ -418,6 +435,132 @@ const calculateMonthlyRates = (characterProgress: {
   });
 };
 
+// Learning Time Distribution Histogram Component
+const LearningTimeDistributionChart: React.FC<{
+  learningTimeDistribution: number[];
+}> = ({ learningTimeDistribution }) => {
+  if (learningTimeDistribution.length === 0) {
+    return <div>No learning time data to display</div>;
+  }
+
+  // Create histogram data with bins
+  const maxDays = Math.max(...learningTimeDistribution);
+  const binSize = Math.max(1, Math.ceil(maxDays / 20)); // Aim for ~20 bins
+  const numBins = Math.ceil(maxDays / binSize);
+
+  const histogramData = Array.from({ length: numBins }, (_, i) => {
+    const binStart = i * binSize;
+    const binEnd = (i + 1) * binSize;
+    const count = learningTimeDistribution.filter(
+      (days) => days >= binStart && days < binEnd
+    ).length;
+
+    return {
+      binLabel: `${binStart}-${binEnd - 1}`,
+      binStart,
+      binEnd: binEnd - 1,
+      count,
+      days: binStart + binSize / 2, // Midpoint for display
+    };
+  }).filter((bin) => bin.count > 0); // Only show bins with data
+
+  // Calculate statistics
+  const avgLearningTime =
+    Math.round(
+      (learningTimeDistribution.reduce((a, b) => a + b, 0) /
+        learningTimeDistribution.length) *
+        10
+    ) / 10;
+
+  const sortedTimes = [...learningTimeDistribution].sort((a, b) => a - b);
+  const medianLearningTime =
+    sortedTimes.length % 2 === 0
+      ? (sortedTimes[sortedTimes.length / 2 - 1] +
+          sortedTimes[sortedTimes.length / 2]) /
+        2
+      : sortedTimes[Math.floor(sortedTimes.length / 2)];
+
+  const CustomHistogramTooltip = ({
+    active,
+    payload,
+  }: {
+    active: boolean;
+    payload: {
+      payload: {
+        binLabel: string;
+        count: number;
+        binStart: number;
+        binEnd: number;
+      };
+    }[];
+  }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {data.binStart}-{data.binEnd} days
+          </p>
+          <p className="text-sm text-purple-600 dark:text-purple-400">
+            {data.count} characters
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="w-full h-64 mb-20">
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        Learning Time Distribution
+      </h3>
+      <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+        <span className="mr-4">Average: {avgLearningTime} days</span>
+        <span className="mr-4">Median: {medianLearningTime} days</span>
+        <span>Total characters: {learningTimeDistribution.length}</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={histogramData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis
+            dataKey="binLabel"
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            label={{
+              value: "Days to Learn",
+              position: "insideBottom",
+              offset: -10,
+              style: { textAnchor: "middle", fill: "currentColor" },
+            }}
+          />
+          <YAxis
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            label={{
+              value: "Number of Characters",
+              angle: -90,
+              position: "insideLeft",
+              style: { textAnchor: "middle", fill: "currentColor" },
+            }}
+          />
+          <Tooltip
+            cursor={false}
+            content={<CustomHistogramTooltip active={false} payload={[]} />}
+          />
+          <Bar
+            dataKey="count"
+            fill="#8b5cf6"
+            name="Characters"
+            radius={[2, 2, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 // Monthly Learning Rate Bar Chart Component
 const MonthlyLearningRateChart: React.FC<{
   characterProgress: { [key: string]: number };
@@ -477,14 +620,17 @@ const MonthlyLearningRateChart: React.FC<{
           margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="monthLabel" tick={{ fontSize: 12, fill: 'currentColor' }} />
+          <XAxis
+            dataKey="monthLabel"
+            tick={{ fontSize: 12, fill: "currentColor" }}
+          />
           <YAxis
-            tick={{ fontSize: 12, fill: 'currentColor' }}
+            tick={{ fontSize: 12, fill: "currentColor" }}
             label={{
               value: "Characters/Day",
               angle: -90,
               position: "insideLeft",
-              style: { textAnchor: 'middle', fill: 'currentColor' }
+              style: { textAnchor: "middle", fill: "currentColor" },
             }}
           />
           <Tooltip
@@ -500,7 +646,7 @@ const MonthlyLearningRateChart: React.FC<{
               label={{
                 value: `Avg: ${averageRate} chars/day`,
                 position: "top",
-                style: { fill: 'currentColor' }
+                style: { fill: "currentColor" },
               }}
             />
           )}
@@ -577,6 +723,9 @@ const ProgressChart: React.FC<{
 
   return (
     <div className="w-full h-96 mb-6">
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        Cumulative Characters Learned Over Time
+      </h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={allData}
@@ -586,10 +735,26 @@ const ProgressChart: React.FC<{
           <XAxis
             dataKey="date"
             tickFormatter={formatXAxisDate}
-            tick={{ fontSize: 12, fill: 'currentColor' }}
+            tick={{ fontSize: 12, fill: "currentColor" }}
             interval="preserveStartEnd"
+            label={{
+              value: "Date",
+              position: "insideBottom",
+              offset: -10,
+              style: { textAnchor: "middle", fill: "currentColor" },
+            }}
           />
-          <YAxis domain={[0, yAxisMax]} tick={{ fontSize: 12, fill: 'currentColor' }} tickCount={8} />
+          <YAxis
+            domain={[0, yAxisMax]}
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            tickCount={8}
+            label={{
+              value: "Characters Learned",
+              angle: -90,
+              position: "insideLeft",
+              style: { textAnchor: "middle", fill: "currentColor" },
+            }}
+          />
           <Tooltip
             cursor={false}
             content={<CustomTooltip active={false} label="" payload={[]} />}
@@ -682,7 +847,8 @@ const LearningConstantsDisplay: React.FC = () => {
 };
 
 export const AnkiHanziProgress = () => {
-  const { characterProgress, loading, error } = useAnkiHanziProgress();
+  const { characterProgress, learningTimeDistribution, loading, error } =
+    useAnkiHanziProgress();
 
   if (loading) {
     return <div>Loading Anki data...</div>;
@@ -807,6 +973,11 @@ export const AnkiHanziProgress = () => {
 
         {/* Progress Chart */}
         <ProgressChart characterProgress={characterProgress} />
+
+        {/* Learning Time Distribution Chart */}
+        <LearningTimeDistributionChart
+          learningTimeDistribution={learningTimeDistribution}
+        />
 
         {/* Learning Constants Display */}
         <LearningConstantsDisplay />
