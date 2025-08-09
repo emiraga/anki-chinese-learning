@@ -55,7 +55,7 @@ export const PinyinTable: React.FC<{
                 return (
                   <td key={final}>
                     <PinyinCell
-                      value={FULL_MAP[initial][final]}
+                      sylable={FULL_MAP[initial][final]}
                       knownSounds={knownSounds}
                       showZhuyin={showZhuyin}
                     ></PinyinCell>

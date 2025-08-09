@@ -125,7 +125,7 @@ export const useAnkiCards = (filter: string) => {
         setLoading(false);
       }
     }
-  }, []); // Empty dependency array is correct.
+  }, [filter]);
 
   // Auto-load on mount and handle unmounting
   useEffect(() => {

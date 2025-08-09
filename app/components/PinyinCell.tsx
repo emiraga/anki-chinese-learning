@@ -9,26 +9,25 @@ import type { KnownSoundsType } from "../data/characters";
 import { useDarkMode } from "./DarkModeToggle";
 
 export const PinyinCell: React.FC<{
-  value: string;
+  sylable: string;
   knownSounds: KnownSoundsType;
   showZhuyin?: boolean;
-}> = ({ value, knownSounds, showZhuyin }) => {
+}> = ({ sylable, knownSounds, showZhuyin }) => {
   const { isDarkMode } = useDarkMode();
 
-  if (knownSounds[value] === undefined || !knownSounds[value]) {
+  if (knownSounds[sylable] === undefined || !knownSounds[sylable]) {
     return <></>;
   }
-  if (Object.values(knownSounds[value])[0].length === 0) {
+  if (Object.values(knownSounds[sylable])[0].length === 0) {
     return <></>;
   }
-  let isSingle = Object.values(knownSounds[value]).length === 1;
+  let isSingle = Object.values(knownSounds[sylable]).length === 1;
   let pinyin1 = isSingle
-    ? Object.values(knownSounds[value])[0][0].pinyin[0].pinyinAccented
-    : value;
+    ? Object.values(knownSounds[sylable])[0][0].pinyin[0].pinyinAccented
+    : sylable;
   let tone = isSingle
-    ? Object.values(knownSounds[value])[0][0].pinyin[0].tone
+    ? Object.values(knownSounds[sylable])[0][0].pinyin[0].tone
     : 0;
-  let sylable = Object.values(knownSounds[value])[0][0].pinyin[0].sylable;
 
   return (
     <Tooltip.Root>
@@ -46,7 +45,7 @@ export const PinyinCell: React.FC<{
       <Tooltip.Portal>
         <Tooltip.Positioner sideOffset={10}>
           <Tooltip.Popup className={styles.Popup} data-dark-mode={isDarkMode}>
-            {Object.entries(knownSounds[value]).map(([tone, values]) => {
+            {Object.entries(knownSounds[sylable]).map(([tone, values]) => {
               return (
                 <div key={tone}>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
