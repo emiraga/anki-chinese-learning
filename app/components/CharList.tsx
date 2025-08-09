@@ -8,14 +8,15 @@ import { getAllPinyinUnreliable } from "~/data/pinyin_function";
 import { STYLE_TONE } from "pinyin";
 import { comparePinyin } from "~/data/pinyin_function";
 
-export const CharList: React.FC<{ characters: CharacterType[] }> = ({
-  characters,
-}) => {
+export const CharList: React.FC<{
+  characters: CharacterType[];
+  showZhuyin?: boolean;
+}> = ({ characters, showZhuyin }) => {
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 m-2">
       {characters.map((v, i) => (
         <div key={i}>
-          <CharCard v={v} />
+          <CharCard v={v} showZhuyin={showZhuyin} />
         </div>
       ))}
     </div>

@@ -18,7 +18,10 @@ export const CharLink: React.FC<{
   );
 };
 
-export const CharCard: React.FC<{ v: CharacterType }> = ({ v }) => {
+export const CharCard: React.FC<{ v: CharacterType; showZhuyin?: boolean }> = ({
+  v,
+  showZhuyin,
+}) => {
   return (
     <div>
       <div className="flex w-full">
@@ -26,7 +29,11 @@ export const CharCard: React.FC<{ v: CharacterType }> = ({ v }) => {
           <CharLink traditional={v.traditional} />
         </div>
         <div className="flex-1">
-          {v.withSound ? <PinyinList pinyin={v.pinyin} /> : <></>}
+          {v.withSound ? (
+            <PinyinList pinyin={v.pinyin} showZhuyin={showZhuyin} />
+          ) : (
+            <></>
+          )}
           <div>{v.meaning2}</div>
         </div>
       </div>

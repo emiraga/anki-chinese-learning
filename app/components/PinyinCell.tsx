@@ -53,7 +53,7 @@ export const PinyinCell: React.FC<{
                     Tone {tone}
                   </div>
                   {values.map((v, i) => {
-                    return <CharCard key={i} v={v} />;
+                    return <CharCard key={i} v={v} showZhuyin={showZhuyin} />;
                   })}
                 </div>
               );

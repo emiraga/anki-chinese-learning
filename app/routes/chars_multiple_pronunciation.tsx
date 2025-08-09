@@ -9,6 +9,7 @@ import type { CharacterType } from "~/data/characters";
 import type { PinyinType } from "~/data/pinyin_function";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "../components/index.module.css";
+import { useSettings } from "~/settings/SettingsContext";
 
 type CharWithPronunciations = CharacterType & {
   countSylables: number;
@@ -22,8 +23,10 @@ type CharWithPronunciations = CharacterType & {
 
 function CharacterTable({
   characters,
+  showZhuyin,
 }: {
   characters: CharWithPronunciations[];
+  showZhuyin?: boolean;
 }) {
   return (
     <table className="border-collapse">
@@ -43,7 +46,7 @@ function CharacterTable({
             <td className="p-2">
               {Object.values(char.phrasesPinyin).map((pinyin) => (
                 <span className="mx-3 inline-block" key={pinyin.pinyinAccented}>
-                  <PinyinText v={pinyin} />{" "}
+                  <PinyinText v={pinyin} showZhuyin={showZhuyin} />{" "}
                   <span className="text-gray-500">({pinyin.count} times)</span>
                 </span>
               ))}
@@ -51,7 +54,7 @@ function CharacterTable({
             <td className="p-2">
               {Object.values(char.phrasesIgnoredPinyin).map((pinyin) => (
                 <span className="mx-3 inline-block" key={pinyin.pinyinAccented}>
-                  <PinyinText v={pinyin} />{" "}
+                  <PinyinText v={pinyin} showZhuyin={showZhuyin} />{" "}
                   <span className="text-gray-500">({pinyin.count} times)</span>
                 </span>
               ))}
@@ -72,6 +75,9 @@ export function meta({}: Route.MetaArgs) {
 
 export default function TodoCharsMultiplePronunciation() {
   const { characters, charPhrasesPinyin } = useOutletContext<OutletContext>();
+  const {
+    settings: { features },
+  } = useSettings();
 
   const characters2: CharWithPronunciations[] = Object.values(characters).map(
     (char) => {
@@ -116,14 +122,20 @@ export default function TodoCharsMultiplePronunciation() {
         <h3 className="font-serif text-2xl mb-4">
           Multiple pronounciations ({multiple.length}):
         </h3>
-        <CharacterTable characters={multiple} />
+        <CharacterTable
+          characters={multiple}
+          showZhuyin={features?.showZhuyin}
+        />
       </Section>
 
       <Section className="m-3" display={sameSylable.length > 0}>
         <h3 className="font-serif text-2xl mb-4">
           Same sylable but different tones ({sameSylable.length}):
         </h3>
-        <CharacterTable characters={sameSylable} />
+        <CharacterTable
+          characters={sameSylable}
+          showZhuyin={features?.showZhuyin}
+        />
       </Section>
 
       <Section className="mx-3 mt-3" display={ignored.length > 0}>
@@ -135,7 +147,10 @@ export default function TodoCharsMultiplePronunciation() {
             </h3>
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
-            <CharacterTable characters={ignored} />
+            <CharacterTable
+              characters={ignored}
+              showZhuyin={features?.showZhuyin}
+            />
           </Collapsible.Panel>
         </Collapsible.Root>
       </Section>
