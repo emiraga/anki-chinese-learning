@@ -60,6 +60,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                   <PhraseLink value={phrase.traditional} />
                 </td>
                 <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                  <span className="inline-block mr-2">{phrase.zhuyin}</span>
                   <span
                     dangerouslySetInnerHTML={{ __html: phrase.pinyin }}
                   ></span>
