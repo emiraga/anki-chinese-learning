@@ -445,7 +445,7 @@ const LearningTimeDistributionChart: React.FC<{
 
   // Create histogram data with bins
   const maxDays = Math.max(...learningTimeDistribution);
-  const binSize = Math.max(1, Math.ceil(maxDays / 20)); // Aim for ~20 bins
+  const binSize = Math.max(1, Math.ceil(maxDays / 40)); // Aim for ~40 bins
   const numBins = Math.ceil(maxDays / binSize);
 
   const histogramData = Array.from({ length: numBins }, (_, i) => {
