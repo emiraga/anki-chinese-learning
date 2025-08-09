@@ -128,17 +128,54 @@ function ExamLevelContent() {
     const tocflTag = note.tags.find(tag => tag.startsWith("TOCFL::"));
     const tocflLevel = tocflTag?.split("::")[1];
     
-    // Determine status based on card properties
+    // Debug logging to see actual card properties
+    if (note.noteId === notesByCards[0]?.noteId) {
+      console.log('First card debug:', {
+        cardId: firstCard.cardId,
+        type: firstCard.type,
+        queue: firstCard.queue,
+        due: firstCard.due,
+        interval: firstCard.interval,
+        ease: firstCard.ease,
+        reps: firstCard.reps,
+        lapses: firstCard.lapses,
+        left: firstCard.left
+      });
+    }
+    
+    // Determine status based on card properties (using queue which is more reliable)
     let status: ExamCard['status'] = 'pending';
-    if (firstCard.type === 2) { // Suspended
+    
+    // Anki queue values:
+    // -3: user buried (sched v1)
+    // -2: sched buried (sched v1) 
+    // -1: suspended
+    // 0: new
+    // 1: learning
+    // 2: review (due)
+    // 3: in learning, next rev in at least a day after the previous review
+    // 4: preview
+    
+    if (firstCard.queue === -1) { // Suspended
       status = 'pending';
-    } else if (firstCard.type === 0) { // New
+    } else if (firstCard.queue === 0) { // New
       status = 'pending';
-    } else if (firstCard.type === 1) { // Learning
+    } else if (firstCard.queue === 1 || firstCard.queue === 3) { // Learning
       status = 'learning';
-    } else if (firstCard.type === 3) { // Review
+    } else if (firstCard.queue === 2) { // Review
       // Mature cards typically have interval >= 21 days
       status = firstCard.interval >= 21 ? 'mature' : 'in_progress';
+    } else {
+      // Fallback to type if queue is unexpected
+      if (firstCard.type === 2) { // Suspended
+        status = 'pending';
+      } else if (firstCard.type === 0) { // New
+        status = 'pending';
+      } else if (firstCard.type === 1) { // Learning
+        status = 'learning';
+      } else if (firstCard.type === 2) { // Review
+        status = firstCard.interval >= 21 ? 'mature' : 'in_progress';
+      }
     }
 
     return {
