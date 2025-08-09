@@ -13,7 +13,7 @@ import {
   REVERSE_FULL_MAP,
 } from "~/data/pinyin_table";
 import { PropCard } from "./PropCard";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 
@@ -589,44 +589,48 @@ function MigrationPinyinZhuyinConsistency() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
 
-  const filtered = phrases
-    .filter((phrase) => phrase.zhuyin && phrase.pinyin)
-    .map((phrase) => {
-      let expectedZhuyin = "";
-      try {
-        expectedZhuyin = pinyinToZhuyin(
-          phrase.pinyin.replaceAll("<div>", "").replaceAll("</div>", "")
-        )
-          .map((x) => (Array.isArray(x) ? x.join("") : x))
-          .map((x) => (x?.startsWith("˙") ? x.substring(1) + x[0] : x))
-          .join("");
-      } catch (error) {
-        console.warn(
-          "Failed to convert pinyin to zhuyin:",
-          phrase.pinyin,
-          error
-        );
-        return null;
-      }
+  const filtered = useMemo(
+    () =>
+      phrases
+        .filter((phrase) => phrase.zhuyin && phrase.pinyin)
+        .map((phrase) => {
+          let expectedZhuyin = "";
+          try {
+            expectedZhuyin = pinyinToZhuyin(
+              phrase.pinyin.replaceAll("<div>", "").replaceAll("</div>", "")
+            )
+              .map((x) => (Array.isArray(x) ? x.join("") : x))
+              .map((x) => (x?.startsWith("˙") ? x.substring(1) + x[0] : x))
+              .join("");
+          } catch (error) {
+            console.warn(
+              "Failed to convert pinyin to zhuyin:",
+              phrase.pinyin,
+              error
+            );
+            return null;
+          }
 
-      const actualZhuyin = phrase.zhuyin
-        ?.trim()
-        .replaceAll("?", "")
-        .replaceAll("'", "")
-        .replaceAll(",", "")
-        .replaceAll(/\s/g, "");
-      const isConsistent = actualZhuyin === expectedZhuyin;
+          const actualZhuyin = phrase.zhuyin
+            ?.trim()
+            .replaceAll("?", "")
+            .replaceAll("'", "")
+            .replaceAll(",", "")
+            .replaceAll(/\s/g, "");
+          const isConsistent = actualZhuyin === expectedZhuyin;
 
-      return {
-        ...phrase,
-        expectedZhuyin,
-        isConsistent,
-      };
-    })
-    .filter(
-      (phrase): phrase is NonNullable<typeof phrase> =>
-        phrase !== null && !phrase.isConsistent
-    );
+          return {
+            ...phrase,
+            expectedZhuyin,
+            isConsistent,
+          };
+        })
+        .filter(
+          (phrase): phrase is NonNullable<typeof phrase> =>
+            phrase !== null && !phrase.isConsistent
+        ),
+    [phrases]
+  );
 
   if (filtered.length === 0) {
     return undefined;
@@ -651,7 +655,7 @@ function MigrationPinyinZhuyinConsistency() {
                 note: {
                   id: phrase.noteId,
                   // eslint-disable-next-line @typescript-eslint/naming-convention
-                  fields: { Zhuyin: "" }, //phrase.expectedZhuyin
+                  fields: { Zhuyin: "" },
                 },
               });
             }
@@ -660,7 +664,7 @@ function MigrationPinyinZhuyinConsistency() {
             alert("Fixed all zhuyin inconsistencies!");
           }}
         >
-          {isProcessing ? "Processing..." : "Auto-fix all!"}
+          {isProcessing ? "Processing..." : "Empty all zhuyin!"}
         </button>
         {isProcessing && (
           <div className="mt-2">
@@ -698,13 +702,13 @@ function MigrationPinyinZhuyinConsistency() {
                   note: {
                     id: phrase.noteId,
                     // eslint-disable-next-line @typescript-eslint/naming-convention
-                    fields: { Zhuyin: "" }, //phrase.expectedZhuyin
+                    fields: { Zhuyin: "" },
                   },
                 });
-                alert("Fixed!");
+                alert("Done!");
               }}
             >
-              Fix this one
+              Empty zhuyin field
             </button>
             <button
               className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
