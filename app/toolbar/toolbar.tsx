@@ -139,8 +139,8 @@ export const MainToolbarNoOutlet: React.FC<{
           show: phrases.length > 0,
         },
         {
-          pathname: "/migration",
-          name: "Migration",
+          pathname: "/integrity",
+          name: "Integrity",
           show: phrases.length > 0,
         },
         {

@@ -1,18 +1,18 @@
-import { MigrationEverything } from "~/components/Migration";
+import { IntegrityEverything } from "~/components/Integrity";
 import type { Route } from "./+types/index";
 import MainFrame from "~/toolbar/frame";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Migration" },
+    { title: "Integrity" },
     { name: "description", content: "Welcome to React Router!" },
   ];
 }
 
-export default function Migration() {
+export default function Integrity() {
   return (
     <MainFrame>
-      <MigrationEverything />
+      <IntegrityEverything />
     </MainFrame>
   );
 }

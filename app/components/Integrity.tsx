@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 
-function MigrationColorsInAnki() {
+function IntegrityColorsInAnki() {
   const { characters } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -127,7 +127,7 @@ function MigrationColorsInAnki() {
   );
 }
 
-function MigrationActorPlaceAnki() {
+function IntegrityActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -249,7 +249,7 @@ function MigrationActorPlaceAnki() {
   );
 }
 
-function MigrationPropNames() {
+function IntegrityPropNames() {
   const { props } = useOutletContext<OutletContext>();
 
   const filtered = Object.values(props).filter(
@@ -584,7 +584,7 @@ function MixedNew({
   );
 }
 
-function MigrationPinyinZhuyinConsistency() {
+function IntegrityPinyinZhuyinConsistency() {
   const { phrases } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -725,7 +725,7 @@ function MigrationPinyinZhuyinConsistency() {
   );
 }
 
-function MigrationCharacterZhuyin() {
+function IntegrityCharacterZhuyin() {
   const { characters } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -860,20 +860,20 @@ function MigrationCharacterZhuyin() {
   );
 }
 
-export const MigrationEverything: React.FC<{}> = ({}) => {
+export const IntegrityEverything: React.FC<{}> = ({}) => {
   const { progressPercentage, stage, loading, error, notesByCards } =
     useAnkiCards();
 
   return (
     <>
       <section className="block m-4">
-        <MigrationColorsInAnki />
+        <IntegrityColorsInAnki />
       </section>
       <section className="block m-4">
-        <MigrationActorPlaceAnki />
+        <IntegrityActorPlaceAnki />
       </section>
       <section className="block m-4">
-        <MigrationPropNames />
+        <IntegrityPropNames />
       </section>
       <section className="block m-4">
         <MissingActorNotes />
@@ -882,10 +882,10 @@ export const MigrationEverything: React.FC<{}> = ({}) => {
         <LowerCasePinyin />
       </section>
       <section className="block m-4">
-        <MigrationPinyinZhuyinConsistency />
+        <IntegrityPinyinZhuyinConsistency />
       </section>
       <section className="block m-4">
-        <MigrationCharacterZhuyin />
+        <IntegrityCharacterZhuyin />
       </section>
       <section className="block m-4">
         <DuplicatePhrase source="MyWords" fromOthers={["TOCFL"]} />
