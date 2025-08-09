@@ -13,6 +13,7 @@ import {
   Bar,
   ReferenceLine,
 } from "recharts";
+import { LoadingProgressBar } from "./LoadingProgressBar";
 
 // Learning progress constants
 const LEARNING_CONSTANTS = {
@@ -171,21 +172,32 @@ const useAnkiHanziProgress = () => {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [stage, setStage] = useState("Initializing...");
 
   useEffect(() => {
     const fetchHanziProgress = async () => {
       try {
         setLoading(true);
+        setProgressPercentage(0);
+        setStage("Finding Hanzi notes...");
+        
         // 1. Get all notes of the "Hanzi" note type
         // AnkiConnect's 'findNotes' action allows querying by note type
         const hanziNoteIds = await anki.note.findNotes({
           query: 'note:"Hanzi" -is:new -is:suspended',
         });
+        
+        setProgressPercentage(10);
+        setStage(`Found ${hanziNoteIds.length} Hanzi notes, getting details...`);
 
         // 2. Get detailed information for these notes (to extract the character field)
         const hanziNotesInfo = await anki.note.notesInfo({
           notes: hanziNoteIds,
         });
+        
+        setProgressPercentage(20);
+        setStage("Processing note information...");
 
         // We need to map note IDs to their respective characters and card IDs.
         const noteToCharMap: { [key: string]: string } = {};
@@ -206,14 +218,22 @@ const useAnkiHanziProgress = () => {
         console.log(
           `Fetching reviews for ${allCardIds.length} cards in batches of ${batchSize}`
         );
+        
+        setProgressPercentage(25);
+        setStage(`Fetching reviews for ${allCardIds.length} cards...`);
 
+        const totalBatches = Math.ceil(allCardIds.length / batchSize);
+        
         for (let i = 0; i < allCardIds.length; i += batchSize) {
           const batch = allCardIds.slice(i, i + batchSize);
+          const currentBatch = Math.floor(i / batchSize) + 1;
+          
           console.log(
-            `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-              allCardIds.length / batchSize
-            )} (${batch.length} cards)`
+            `Processing batch ${currentBatch}/${totalBatches} (${batch.length} cards)`
           );
+          
+          setStage(`Processing batch ${currentBatch}/${totalBatches}...`);
+          setProgressPercentage(25 + (currentBatch / totalBatches) * 50);
 
           const batchReviews = await anki.statistic.getReviewsOfCards({
             // @ts-expect-error next-line
@@ -233,6 +253,9 @@ const useAnkiHanziProgress = () => {
             Object.keys(reviewsOfCards).length
           } cards`
         );
+        
+        setProgressPercentage(80);
+        setStage("Processing reviews to calculate progress...");
 
         // 4. Process reviews to build the daily character graph and learning time distribution
         const dailyLearnedCharacters: { [key: string]: number } = {};
@@ -301,8 +324,14 @@ const useAnkiHanziProgress = () => {
           cumulativeGraphData[date] = cumulativeCount;
         });
 
+        setProgressPercentage(95);
+        setStage("Finalizing results...");
+        
         setCharacterProgress(cumulativeGraphData);
         setLearningTimeDistribution(learningTimes);
+        
+        setProgressPercentage(100);
+        setStage("Complete!");
       } catch (err) {
         console.error("Error fetching Anki data:", err);
         setError(
@@ -316,7 +345,7 @@ const useAnkiHanziProgress = () => {
     fetchHanziProgress();
   }, []);
 
-  return { characterProgress, learningTimeDistribution, loading, error };
+  return { characterProgress, learningTimeDistribution, loading, error, progressPercentage, stage };
 };
 
 // Simple helper function to calculate progress rate
@@ -847,11 +876,11 @@ const LearningConstantsDisplay: React.FC = () => {
 };
 
 export const AnkiHanziProgress = () => {
-  const { characterProgress, learningTimeDistribution, loading, error } =
+  const { characterProgress, learningTimeDistribution, loading, error, progressPercentage, stage } =
     useAnkiHanziProgress();
 
   if (loading) {
-    return <div>Loading Anki data...</div>;
+    return <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} />;
   }
 
   if (error) {
