@@ -1,6 +1,6 @@
 import requests
-from pypinyin import pinyin, Style
-
+import dragonmapper
+import dragonmapper.transcriptions
 
 def anki_connect_request(action, params=None):
     """
@@ -31,24 +31,11 @@ def anki_connect_request(action, params=None):
         raise
 
 
-def pinyin_to_bopomofo(chinese_text):
-    """
-    Convert Chinese text to bopomofo (zhuyin) using pypinyin
-
-    Args:
-        chinese_text (str): Chinese characters to convert
-
-    Returns:
-        str: Bopomofo/Zhuyin representation
-    """
-    if not chinese_text or chinese_text.strip() == "":
+def pinyin_to_bopomofo(pinyin_text):
+    if not pinyin_text or pinyin_text.strip() == "":
         return ""
 
-    # Use pypinyin to convert Chinese characters directly to bopomofo
-    bopomofo_list = pinyin(chinese_text, style=Style.BOPOMOFO)
-
-    # Join the bopomofo syllables with spaces
-    return " ".join([syllable[0] for syllable in bopomofo_list])
+    return dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
 
 
 def find_notes_with_empty_zhuyin(note_type):
@@ -137,8 +124,9 @@ def update_zhuyin_for_note(note_type, note_id):
         return
 
     # Get the Traditional field value (Chinese characters)
-    traditional_field = note_info['fields'].get('Traditional', {})
-    traditional_value = traditional_field.get('value', '').strip()
+    pinyin_field = note_info['fields'].get('Pinyin', {})
+    print(pinyin_field)
+    current_pinyin = pinyin_field.get('value', '').strip().replace("<div>", "").replace("</div>", "")
 
     # Get the current Zhuyin field value
     zhuyin_field = note_info['fields'].get('Zhuyin', {})
@@ -149,14 +137,14 @@ def update_zhuyin_for_note(note_type, note_id):
         print(f"Skipping note {note_id}: Zhuyin field already has content: '{current_zhuyin}'")
         return
 
-    if not traditional_value:
-        print(f"Skipping note {note_id}: No Traditional content found")
+    if not current_pinyin:
+        print(f"Skipping note {note_id}: No pinyin content found")
         return
 
-    print(f"Processing note {note_id}: Traditional='{traditional_value}'")
+    print(f"Processing note {note_id}: Pinyin='{current_pinyin}'")
 
     # Convert Chinese characters to Bopomofo
-    zhuyin_text = pinyin_to_bopomofo(traditional_value)
+    zhuyin_text = pinyin_to_bopomofo(current_pinyin)
 
     if zhuyin_text:
         # Update the note's Zhuyin field
@@ -179,12 +167,8 @@ def main():
         note_ids = find_notes_with_empty_zhuyin(note_type)
 
         # Limit to first 1000 notes for safety
-        for note_id in note_ids[:1000]:
-            try:
-                update_zhuyin_for_note(note_type, note_id)
-            except Exception as e:
-                print(f"Error processing note {note_id}: {e}")
-                continue
+        for note_id in note_ids[:100]:
+            update_zhuyin_for_note(note_type, note_id)
 
         print(f"Completed processing {note_type}")
 

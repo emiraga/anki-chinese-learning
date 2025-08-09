@@ -15,6 +15,7 @@ import {
 import { PropCard } from "./PropCard";
 import { useEffect, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
+import pinyinToZhuyin from "zhuyin-improved";
 
 function MigrationColorsInAnki() {
   const { characters } = useOutletContext<OutletContext>();
@@ -64,11 +65,11 @@ function MigrationColorsInAnki() {
           onClick={async () => {
             setIsProcessing(true);
             setProgress({ current: 0, total: filtered.length });
-            
+
             for (let i = 0; i < filtered.length; i++) {
               const char = filtered[i];
               setProgress({ current: i + 1, total: filtered.length });
-              
+
               await anki.note.updateNoteFields({
                 note: {
                   id: char.ankiId || 0,
@@ -76,7 +77,7 @@ function MigrationColorsInAnki() {
                 },
               });
             }
-            
+
             setIsProcessing(false);
             alert("Fixed all!");
           }}
@@ -85,9 +86,9 @@ function MigrationColorsInAnki() {
         </button>
         {isProcessing && (
           <div className="mt-2">
-            <progress 
-              className="w-full h-2" 
-              value={progress.current} 
+            <progress
+              className="w-full h-2"
+              value={progress.current}
               max={progress.total}
             />
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -185,11 +186,11 @@ function MigrationActorPlaceAnki() {
           onClick={async () => {
             setIsProcessing(true);
             setProgress({ current: 0, total: filtered.length });
-            
+
             for (let i = 0; i < filtered.length; i++) {
               const char = filtered[i];
               setProgress({ current: i + 1, total: filtered.length });
-              
+
               for (const needTag of char.needTags) {
                 await anki.note.addTags({
                   notes: [char.ankiId || 0],
@@ -197,7 +198,7 @@ function MigrationActorPlaceAnki() {
                 });
               }
             }
-            
+
             setIsProcessing(false);
             alert("Fixed!");
           }}
@@ -206,9 +207,9 @@ function MigrationActorPlaceAnki() {
         </button>
         {isProcessing && (
           <div className="mt-2">
-            <progress 
-              className="w-full h-2" 
-              value={progress.current} 
+            <progress
+              className="w-full h-2"
+              value={progress.current}
               max={progress.total}
             />
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -583,6 +584,143 @@ function MixedNew({
   );
 }
 
+function MigrationPinyinZhuyinConsistency() {
+  const { phrases } = useOutletContext<OutletContext>();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+
+  const filtered = phrases
+    .filter((phrase) => phrase.zhuyin && phrase.pinyin)
+    .map((phrase) => {
+      let expectedZhuyin = "";
+      try {
+        expectedZhuyin = pinyinToZhuyin(
+          phrase.pinyin.replaceAll("<div>", "").replaceAll("</div>", "")
+        )
+          .map((x) => (Array.isArray(x) ? x.join("") : x))
+          .map((x) => (x?.startsWith("˙") ? x.substring(1) + x[0] : x))
+          .join("");
+      } catch (error) {
+        console.warn(
+          "Failed to convert pinyin to zhuyin:",
+          phrase.pinyin,
+          error
+        );
+        return null;
+      }
+
+      const actualZhuyin = phrase.zhuyin
+        ?.trim()
+        .replaceAll("?", "")
+        .replaceAll("'", "")
+        .replaceAll(",", "")
+        .replaceAll(/\s/g, "");
+      const isConsistent = actualZhuyin === expectedZhuyin;
+
+      return {
+        ...phrase,
+        expectedZhuyin,
+        isConsistent,
+      };
+    })
+    .filter(
+      (phrase): phrase is NonNullable<typeof phrase> =>
+        phrase !== null && !phrase.isConsistent
+    );
+
+  if (filtered.length === 0) {
+    return undefined;
+  }
+
+  return (
+    <>
+      <h3 className="font-serif text-3xl">
+        Pinyin-Zhuyin Consistency Issues:{" "}
+        <button
+          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors disabled:opacity-50"
+          disabled={isProcessing}
+          onClick={async () => {
+            setIsProcessing(true);
+            setProgress({ current: 0, total: filtered.length });
+
+            for (let i = 0; i < filtered.length; i++) {
+              const phrase = filtered[i];
+              setProgress({ current: i + 1, total: filtered.length });
+
+              await anki.note.updateNoteFields({
+                note: {
+                  id: phrase.noteId,
+                  // eslint-disable-next-line @typescript-eslint/naming-convention
+                  fields: { Zhuyin: "" }, //phrase.expectedZhuyin
+                },
+              });
+            }
+
+            setIsProcessing(false);
+            alert("Fixed all zhuyin inconsistencies!");
+          }}
+        >
+          {isProcessing ? "Processing..." : "Auto-fix all!"}
+        </button>
+        {isProcessing && (
+          <div className="mt-2">
+            <progress
+              className="w-full h-2"
+              value={progress.current}
+              max={progress.total}
+            />
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {progress.current} / {progress.total} phrases
+            </div>
+          </div>
+        )}
+      </h3>
+
+      <div className="mx-4">
+        {filtered.map((phrase, i) => (
+          <div key={i} className="border-b py-2">
+            <div className="font-medium">{phrase.traditional}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Pinyin: {phrase.pinyin}
+            </div>
+            <div className="text-sm">
+              Current Zhuyin:{" "}
+              <span className="text-red-500">{phrase.zhuyin}</span>
+            </div>
+            <div className="text-sm">
+              Expected Zhuyin:{" "}
+              <span className="text-green-500">{phrase.expectedZhuyin}</span>
+            </div>
+            <button
+              className="rounded-2xl px-2 py-1 mt-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors text-sm"
+              onClick={async () => {
+                await anki.note.updateNoteFields({
+                  note: {
+                    id: phrase.noteId,
+                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                    fields: { Zhuyin: "" }, //phrase.expectedZhuyin
+                  },
+                });
+                alert("Fixed!");
+              }}
+            >
+              Fix this one
+            </button>
+            <button
+              className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              onClick={async () => {
+                await ankiOpenBrowse(`Traditional:${phrase.traditional}`);
+              }}
+            >
+              anki
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export const MigrationEverything: React.FC<{}> = ({}) => {
   const { progressPercentage, stage, loading, error, notesByCards } =
     useAnkiCards();
@@ -603,6 +741,9 @@ export const MigrationEverything: React.FC<{}> = ({}) => {
       </section>
       <section className="block m-4">
         <LowerCasePinyin />
+      </section>
+      <section className="block m-4">
+        <MigrationPinyinZhuyinConsistency />
       </section>
       <section className="block m-4">
         <DuplicatePhrase source="MyWords" fromOthers={["TOCFL"]} />

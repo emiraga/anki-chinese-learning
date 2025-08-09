@@ -13,6 +13,7 @@ export type PhraseType = {
   meaning: string;
   partOfSpeech?: string;
   pinyin: string;
+  zhuyin?: string;
   tags: string[];
   audio: string;
 };
@@ -70,6 +71,7 @@ export function useAnkiPhrases() {
           meaning: note.fields["Meaning"].value,
           partOfSpeech: note.fields["POS"]?.value,
           pinyin,
+          zhuyin: note.fields["Zhuyin"]?.value,
           tags: note.tags,
           audio: note.fields["Audio"].value,
         };
