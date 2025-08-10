@@ -264,7 +264,7 @@ export const PLACE_TAGS_MAP: { [key: string]: string } = {
 export const PLACE_TAGS_ZHUYIN: { [key: string]: string } = {
   "-_": "",
   "-er": "ㄦ",
-  "-e": "ㄜ",
+  "-e": "ㄜ,ㄝ",
   "-ai": "ㄞ",
   "-(e)n": "ㄣ",
   "-(o)u": "ㄡ",

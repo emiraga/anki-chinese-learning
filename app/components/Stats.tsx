@@ -167,6 +167,9 @@ const useAnkiHanziProgress = () => {
   const [characterProgress, setCharacterProgress] = useState<{
     [key: string]: number;
   }>({});
+  const [charactersStartedLearning, setCharactersStartedLearning] = useState<{
+    [key: string]: number;
+  }>({});
   const [learningTimeDistribution, setLearningTimeDistribution] = useState<
     number[]
   >([]);
@@ -259,7 +262,9 @@ const useAnkiHanziProgress = () => {
 
         // 4. Process reviews to build the daily character graph and learning time distribution
         const dailyLearnedCharacters: { [key: string]: number } = {};
+        const dailyStartedCharacters: { [key: string]: number } = {};
         const seenCharacters = new Set(); // To track uniquely learned characters
+        const startedCharacters = new Set(); // To track uniquely started characters
         const characterFirstEncounter: { [key: string]: number } = {}; // Track first review time
         const learningTimes: number[] = []; // Days from first encounter to learned
 
@@ -281,6 +286,16 @@ const useAnkiHanziProgress = () => {
             // Track first encounter for this character
             if (!characterFirstEncounter[char]) {
               characterFirstEncounter[char] = review.id;
+              
+              // Track when character started learning (first review)
+              if (!startedCharacters.has(char)) {
+                const reviewDate = new Date(review.id).toLocaleDateString(
+                  "en-CA"
+                ); // YYYY-MM-DD
+                dailyStartedCharacters[reviewDate] =
+                  (dailyStartedCharacters[reviewDate] || 0) + 1;
+                startedCharacters.add(char);
+              }
             }
 
             if (!seenCharacters.has(char)) {
@@ -324,10 +339,21 @@ const useAnkiHanziProgress = () => {
           cumulativeGraphData[date] = cumulativeCount;
         });
 
+        // Convert started learning to cumulative graph data
+        const sortedStartedDates = Object.keys(dailyStartedCharacters).sort();
+        let cumulativeStartedCount = 0;
+        const cumulativeStartedGraphData: { [key: string]: number } = {};
+
+        sortedStartedDates.forEach((date) => {
+          cumulativeStartedCount += dailyStartedCharacters[date];
+          cumulativeStartedGraphData[date] = cumulativeStartedCount;
+        });
+
         setProgressPercentage(95);
         setStage("Finalizing results...");
         
         setCharacterProgress(cumulativeGraphData);
+        setCharactersStartedLearning(cumulativeStartedGraphData);
         setLearningTimeDistribution(learningTimes);
         
         setProgressPercentage(100);
@@ -345,7 +371,7 @@ const useAnkiHanziProgress = () => {
     fetchHanziProgress();
   }, []);
 
-  return { characterProgress, learningTimeDistribution, loading, error, progressPercentage, stage };
+  return { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage };
 };
 
 // Simple helper function to calculate progress rate
@@ -694,23 +720,57 @@ const MonthlyLearningRateChart: React.FC<{
 // Recharts Progress Chart Component
 const ProgressChart: React.FC<{
   characterProgress: { [key: string]: number };
-}> = ({ characterProgress }) => {
+  charactersStartedLearning: { [key: string]: number };
+}> = ({ characterProgress, charactersStartedLearning }) => {
   if (Object.keys(characterProgress).length === 0) {
     return <div>No data to display</div>;
   }
 
-  // Prepare actual progress data
-  const entries = Object.entries(characterProgress).sort(([a], [b]) =>
+  // Prepare combined progress data
+  const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
     a.localeCompare(b)
   );
-  const allData = entries.map(([date, count]) => ({
-    date,
-    actual: count,
-    dateObj: new Date(date),
-  }));
+  const startedEntries = Object.entries(charactersStartedLearning).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
 
-  // Calculate max value for Y-axis
-  const maxValue = Math.max(...entries.map(([, count]) => count));
+  // Get all unique dates from both datasets
+  const allDates = new Set([
+    ...learnedEntries.map(([date]) => date),
+    ...startedEntries.map(([date]) => date)
+  ]);
+  const sortedDates = Array.from(allDates).sort();
+  
+  // Debug logging
+  console.log('sortedDates length:', sortedDates.length);
+  console.log('first 10 sortedDates:', sortedDates.slice(0, 10));
+  console.log('last 10 sortedDates:', sortedDates.slice(-10));
+
+  // Create combined data with both metrics, ensuring cumulative values carry forward
+  let lastLearnedCount = 0;
+  let lastStartedCount = 0;
+  
+  const allData = sortedDates.map((date) => {
+    // If we have data for this date, use it and update our running totals
+    if (characterProgress[date] !== undefined) {
+      lastLearnedCount = characterProgress[date];
+    }
+    if (charactersStartedLearning[date] !== undefined) {
+      lastStartedCount = charactersStartedLearning[date];
+    }
+
+    return {
+      date,
+      learned: lastLearnedCount,
+      started: lastStartedCount,
+      dateObj: new Date(date),
+    };
+  });
+
+  // Calculate max value for Y-axis from both datasets
+  const maxLearnedValue = Math.max(...learnedEntries.map(([, count]) => count));
+  const maxStartedValue = Math.max(...startedEntries.map(([, count]) => count));
+  const maxValue = Math.max(maxLearnedValue, maxStartedValue);
   const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
 
   // Custom tooltip
@@ -746,30 +806,31 @@ const ProgressChart: React.FC<{
     const date = new Date(tickItem);
     return date.toLocaleDateString("en-CA", {
       month: "short",
-      year: "2-digit",
+      day: "numeric",
     });
   };
 
   return (
     <div className="w-full h-96 mb-6">
       <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-        Cumulative Characters Learned Over Time
+        Cumulative Characters Progress Over Time
       </h3>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={allData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="date"
             tickFormatter={formatXAxisDate}
-            tick={{ fontSize: 12, fill: "currentColor" }}
-            interval="preserveStartEnd"
+            tick={{ fontSize: 10, fill: "currentColor", angle: -45, textAnchor: "end" }}
+            interval={Math.ceil(sortedDates.length / 16)}
+            height={60}
             label={{
               value: "Date",
               position: "insideBottom",
-              offset: -10,
+              offset: -5,
               style: { textAnchor: "middle", fill: "currentColor" },
             }}
           />
@@ -778,7 +839,7 @@ const ProgressChart: React.FC<{
             tick={{ fontSize: 12, fill: "currentColor" }}
             tickCount={8}
             label={{
-              value: "Characters Learned",
+              value: "Number of Characters",
               angle: -90,
               position: "insideLeft",
               style: { textAnchor: "middle", fill: "currentColor" },
@@ -790,14 +851,25 @@ const ProgressChart: React.FC<{
           />
           {/*<Legend />*/}
 
-          {/* Actual progress line */}
+          {/* Characters started learning line */}
           <Line
             type="monotone"
-            dataKey="actual"
+            dataKey="started"
+            stroke="#10b981"
+            strokeWidth={2}
+            dot={{ fill: "#10b981", strokeWidth: 2, r: 3 }}
+            name="Characters started learning"
+            connectNulls={false}
+          />
+          
+          {/* Characters learned line */}
+          <Line
+            type="monotone"
+            dataKey="learned"
             stroke="#3b82f6"
             strokeWidth={3}
             dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
-            name="Learned hanzi characters"
+            name="Characters fully learned"
             connectNulls={false}
           />
         </LineChart>
@@ -876,7 +948,7 @@ const LearningConstantsDisplay: React.FC = () => {
 };
 
 export const AnkiHanziProgress = () => {
-  const { characterProgress, learningTimeDistribution, loading, error, progressPercentage, stage } =
+  const { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage } =
     useAnkiHanziProgress();
 
   if (loading) {
@@ -1001,7 +1073,10 @@ export const AnkiHanziProgress = () => {
         <MonthlyLearningRateChart characterProgress={characterProgress} />
 
         {/* Progress Chart */}
-        <ProgressChart characterProgress={characterProgress} />
+        <ProgressChart 
+          characterProgress={characterProgress} 
+          charactersStartedLearning={charactersStartedLearning} 
+        />
 
         {/* Learning Time Distribution Chart */}
         <LearningTimeDistributionChart
