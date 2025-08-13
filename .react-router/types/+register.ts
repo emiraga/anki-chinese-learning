@@ -38,6 +38,7 @@ type Params = {
   "/stats": {};
   "/stats_progress": {};
   "/study": {};
+  "/study_weak_chars": {};
   "/sylable/:sylable": {
     "sylable": string;
   };

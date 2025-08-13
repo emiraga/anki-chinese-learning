@@ -115,7 +115,24 @@ export const MainToolbarNoOutlet: React.FC<{
       ],
     },
     { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
-    { pathname: "/study", name: "Study", show: phrases.length > 0 },
+    {
+      pathname: "/study",
+      name: "Study",
+      show: phrases.length > 0,
+      isDropdown: true,
+      submenu: [
+        {
+          pathname: "/study",
+          name: "Study",
+          show: true,
+        },
+        {
+          pathname: "/study_weak_chars",
+          name: "Weak Characters",
+          show: Object.keys(characters).length > 0,
+        },
+      ],
+    },
     { pathname: "/practice", name: "Practice", show: phrases.length > 0 },
     {
       pathname: "/stats",

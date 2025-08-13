@@ -68,6 +68,7 @@ Uses React Router's file-based routing with comprehensive routes for:
 - Practice modes (`/practice`)
 - Settings and statistics (`/settings`, `/stats`)
 - Various filtered views (actors, places, tones, etc.)
+- All routes should be added to @app/routes.ts
 
 ### Settings System (`app/settings/`)
 - **SettingsContext.tsx**: React Context for global settings
@@ -107,7 +108,7 @@ Uses React Router's file-based routing with comprehensive routes for:
 {
     "webCorsOriginList": [
         "http://localhost",
-        "http://localhost:3000", 
+        "http://localhost:3000",
         "http://localhost:5173"
     ]
 }
@@ -128,6 +129,10 @@ Keys are managed through the settings interface and stored in localStorage.
 - **Data Fetching**: Custom hooks for async operations with loading/error states
 - **State Management**: React Context for global state, useState for local state
 
+## File naming
+
+Files are named using underscores as separators.
+
 ## Testing and Quality
 
 - ESLint configuration with TypeScript, React, and accessibility rules
@@ -139,7 +144,7 @@ Keys are managed through the settings interface and stored in localStorage.
 ### Data Hooks
 Custom hooks like `useAnkiCards`, `useAnkiCharacters`, etc. handle:
 - Loading states
-- Error handling  
+- Error handling
 - Data transformation
 - Automatic retries
 
