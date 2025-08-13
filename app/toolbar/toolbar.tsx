@@ -131,6 +131,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Weak Characters",
           show: Object.keys(characters).length > 0,
         },
+        {
+          pathname: "/problematic",
+          name: "Problematic",
+          show: Object.keys(phrases).length > 0,
+        },
       ],
     },
     { pathname: "/practice", name: "Practice", show: phrases.length > 0 },
