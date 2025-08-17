@@ -69,7 +69,6 @@ export const useAnkiCards = (filter: string) => {
         setProgress(allNotes.length);
       }
 
-      setStage("Computing cards...");
       const allCardIds = allNotes.flatMap((note) => note.cards || []);
       if (!isMountedRef.current || allCardIds.length === 0) {
         setLoading(false);
@@ -91,7 +90,6 @@ export const useAnkiCards = (filter: string) => {
         setProgress(allCards.length);
       }
 
-      setStage("Grouping cards by notes...");
       const cardsByNoteId = new Map<number, CardInfo[]>();
       for (const card of allCards) {
         const noteId = card.note;
@@ -110,7 +108,6 @@ export const useAnkiCards = (filter: string) => {
 
       if (isMountedRef.current) {
         setNotesByCards(notesWithCards);
-        setStage("Complete");
       }
     } catch (err: unknown) {
       if (isMountedRef.current) {

@@ -861,6 +861,13 @@ function IntegrityCharacterZhuyin() {
   );
 }
 
+// Configuration for continuous progress bar
+const PROGRESS_STAGE_CONFIG = {
+  "Finding notes...": { start: 0, end: 1 },
+  "Loading notes...": { start: 1, end: 20 },
+  "Loading cards...": { start: 20, end: 100 },
+} as const;
+
 export const IntegrityEverything: React.FC<{}> = ({}) => {
   const { progressPercentage, stage, loading, error, notesByCards } =
     useAnkiCards("-is:suspended");
@@ -894,7 +901,11 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
 
       <section className="block m-4">
         {loading ? (
-          <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} />
+          <LoadingProgressBar
+            stage={stage}
+            progressPercentage={progressPercentage}
+            stageConfig={PROGRESS_STAGE_CONFIG}
+          />
         ) : undefined}
         {error ? <div>error loading cards: {error}</div> : undefined}
       </section>

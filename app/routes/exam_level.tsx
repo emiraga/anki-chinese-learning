@@ -5,6 +5,13 @@ import type { Route } from "./+types/exam_level";
 import MainFrame from "~/toolbar/frame";
 import { LoadingProgressBar } from "~/components/LoadingProgressBar";
 
+// Configuration for continuous progress bar
+const PROGRESS_STAGE_CONFIG = {
+  "Finding notes...": { start: 0, end: 1 },
+  "Loading notes...": { start: 1, end: 20 },
+  "Loading cards...": { start: 20, end: 100 },
+} as const;
+
 type ExamCard = {
   noteId: number;
   tags: string[];
@@ -197,7 +204,11 @@ function ExamLevelContent() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
           Exam Level Analysis
         </h1>
-        <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} />
+        <LoadingProgressBar 
+          stage={stage} 
+          progressPercentage={progressPercentage}
+          stageConfig={PROGRESS_STAGE_CONFIG}
+        />
       </div>
     );
   }
