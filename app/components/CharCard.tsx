@@ -53,28 +53,16 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
 
   const sources = [
     {
-      name: "MoE revised",
+      name: "wiktionary",
       link:
-        "https://dict.revised.moe.edu.tw/search.jsp?md=1&word=" +
+        "https://en.wiktionary.org/wiki/" +
         encodeURIComponent(char.traditional) +
-        "&qMd=0&qCol=1",
+        "#Chinese",
     },
     {
       name: "dong-ch",
       link:
         "https://www.dong-chinese.com/dictionary/search/" +
-        encodeURIComponent(char.traditional),
-    },
-    {
-      name: "hanzihero",
-      link:
-        "https://hanzihero.com/traditional/characters/" +
-        encodeURIComponent(char.traditional),
-    },
-    {
-      name: "kanji koohii",
-      link:
-        "https://kanji.koohii.com/study/kanji/" +
         encodeURIComponent(char.traditional),
     },
     {
@@ -88,17 +76,23 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
       link: "https://hanziyuan.net/#" + encodeURIComponent(char.traditional),
     },
     {
-      name: "claude",
+      name: "MoE revised",
       link:
-        "https://claude.ai/new?q=teach+me+" +
+        "https://dict.revised.moe.edu.tw/search.jsp?md=1&word=" +
+        encodeURIComponent(char.traditional) +
+        "&qMd=0&qCol=1",
+    },
+    {
+      name: "hanzihero",
+      link:
+        "https://hanzihero.com/traditional/characters/" +
         encodeURIComponent(char.traditional),
     },
     {
-      name: "wiktionary",
+      name: "kanji koohii",
       link:
-        "https://en.wiktionary.org/wiki/" +
-        encodeURIComponent(char.traditional) +
-        "#Chinese",
+        "https://kanji.koohii.com/study/kanji/" +
+        encodeURIComponent(char.traditional),
     },
     {
       name: "hanzicraft",
