@@ -12,11 +12,10 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Stats() {
-  const { props, phrases, characters } = useOutletContext<OutletContext>();
+  const { props, characters } = useOutletContext<OutletContext>();
 
   let charsComplete = Object.values(characters).filter((c) => c.withSound);
   let charsWithoutSound = Object.values(characters).filter((c) => !c.withSound);
-  const uniquePhrases = new Set(phrases.map((phrase) => phrase.traditional));
   return (
     <MainFrame>
       <Section className="block" display={props.length > 0}>
@@ -43,15 +42,6 @@ export default function Stats() {
         </h3>
         {charsComplete.map((p, i) => (
           <span key={i}>{p.traditional}</span>
-        ))}
-      </Section>
-
-      <Section className="block" display={uniquePhrases.size > 0}>
-        <h3 className="font-serif text-4xl my-2">
-          List of phrases: ({uniquePhrases.size})
-        </h3>
-        {[...uniquePhrases].map((p, i) => (
-          <span key={i}>{p}。</span>
         ))}
       </Section>
     </MainFrame>
