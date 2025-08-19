@@ -59,7 +59,7 @@ const useAnkiHanziProgress = () => {
     "Fetching reviews...": { start: 25, end: 75 },
     "Processing reviews to calculate progress...": { start: 75, end: 95 },
     "Finalizing results...": { start: 95, end: 100 },
-    "Complete!": { start: 100, end: 100 }
+    "Complete!": { start: 100, end: 100 },
   };
 
   useEffect(() => {
@@ -68,13 +68,13 @@ const useAnkiHanziProgress = () => {
         setLoading(true);
         setProgressPercentage(0);
         setStage("Finding Hanzi notes...");
-        
+
         // 1. Get all notes of the "Hanzi" note type
         // AnkiConnect's 'findNotes' action allows querying by note type
         const hanziNoteIds = await anki.note.findNotes({
           query: 'note:"Hanzi" -is:new -is:suspended',
         });
-        
+
         setProgressPercentage(100);
         setStage("Getting note details...");
 
@@ -82,7 +82,7 @@ const useAnkiHanziProgress = () => {
         const hanziNotesInfo = await anki.note.notesInfo({
           notes: hanziNoteIds,
         });
-        
+
         setProgressPercentage(100);
         setStage("Processing note information...");
 
@@ -105,20 +105,20 @@ const useAnkiHanziProgress = () => {
         console.log(
           `Fetching reviews for ${allCardIds.length} cards in batches of ${batchSize}`
         );
-        
+
         setProgressPercentage(0);
         setStage("Fetching reviews...");
 
         const totalBatches = Math.ceil(allCardIds.length / batchSize);
-        
+
         for (let i = 0; i < allCardIds.length; i += batchSize) {
           const batch = allCardIds.slice(i, i + batchSize);
           const currentBatch = Math.floor(i / batchSize) + 1;
-          
+
           console.log(
             `Processing batch ${currentBatch}/${totalBatches} (${batch.length} cards)`
           );
-          
+
           setStage("Fetching reviews...");
           setProgressPercentage((currentBatch / totalBatches) * 100);
 
@@ -140,7 +140,7 @@ const useAnkiHanziProgress = () => {
             Object.keys(reviewsOfCards).length
           } cards`
         );
-        
+
         setProgressPercentage(0);
         setStage("Processing reviews to calculate progress...");
 
@@ -170,7 +170,7 @@ const useAnkiHanziProgress = () => {
             // Track first encounter for this character
             if (!characterFirstEncounter[char]) {
               characterFirstEncounter[char] = review.id;
-              
+
               // Track when character started learning (first review)
               if (!startedCharacters.has(char)) {
                 const reviewDate = new Date(review.id).toLocaleDateString(
@@ -235,11 +235,11 @@ const useAnkiHanziProgress = () => {
 
         setProgressPercentage(0);
         setStage("Finalizing results...");
-        
+
         setCharacterProgress(cumulativeGraphData);
         setCharactersStartedLearning(cumulativeStartedGraphData);
         setLearningTimeDistribution(learningTimes);
-        
+
         setProgressPercentage(100);
         setStage("Complete!");
       } catch (err) {
@@ -255,7 +255,16 @@ const useAnkiHanziProgress = () => {
     fetchHanziProgress();
   }, []);
 
-  return { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage, stageConfig };
+  return {
+    characterProgress,
+    charactersStartedLearning,
+    learningTimeDistribution,
+    loading,
+    error,
+    progressPercentage,
+    stage,
+    stageConfig,
+  };
 };
 
 // Simple helper function to calculate progress rate
@@ -296,7 +305,7 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
   );
 
   return {
-    charsPerDay: Math.round(charsPerDay * 10) / 10, // Round to 1 decimal
+    charsPerDay: Math.round(charsPerDay * 100) / 100, // Round to 2 decimal
     daysTo2000: daysTo2000 > 0 ? daysTo2000 : null,
     daysTo3000: daysTo3000 > 0 ? daysTo3000 : null,
     dateTo2000: daysTo2000 > 0 ? dateTo2000 : null,
@@ -614,26 +623,26 @@ const ProgressChart: React.FC<{
   const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
     a.localeCompare(b)
   );
-  const startedEntries = Object.entries(charactersStartedLearning).sort(([a], [b]) =>
-    a.localeCompare(b)
+  const startedEntries = Object.entries(charactersStartedLearning).sort(
+    ([a], [b]) => a.localeCompare(b)
   );
 
   // Get all unique dates from both datasets
   const allDates = new Set([
     ...learnedEntries.map(([date]) => date),
-    ...startedEntries.map(([date]) => date)
+    ...startedEntries.map(([date]) => date),
   ]);
   const sortedDates = Array.from(allDates).sort();
-  
+
   // Debug logging
-  console.log('sortedDates length:', sortedDates.length);
-  console.log('first 10 sortedDates:', sortedDates.slice(0, 10));
-  console.log('last 10 sortedDates:', sortedDates.slice(-10));
+  console.log("sortedDates length:", sortedDates.length);
+  console.log("first 10 sortedDates:", sortedDates.slice(0, 10));
+  console.log("last 10 sortedDates:", sortedDates.slice(-10));
 
   // Create combined data with both metrics, ensuring cumulative values carry forward
   let lastLearnedCount = 0;
   let lastStartedCount = 0;
-  
+
   const allData = sortedDates.map((date) => {
     // If we have data for this date, use it and update our running totals
     if (characterProgress[date] !== undefined) {
@@ -746,7 +755,7 @@ const ProgressChart: React.FC<{
             name="Characters started learning"
             connectNulls={false}
           />
-          
+
           {/* Characters learned line */}
           <Line
             type="monotone"
@@ -809,11 +818,25 @@ const LearningConstantsDisplay: React.FC = () => {
 };
 
 export const AnkiHanziProgress = () => {
-  const { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage, stageConfig } =
-    useAnkiHanziProgress();
+  const {
+    characterProgress,
+    charactersStartedLearning,
+    learningTimeDistribution,
+    loading,
+    error,
+    progressPercentage,
+    stage,
+    stageConfig,
+  } = useAnkiHanziProgress();
 
   if (loading) {
-    return <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} stageConfig={stageConfig} />;
+    return (
+      <LoadingProgressBar
+        stage={stage}
+        progressPercentage={progressPercentage}
+        stageConfig={stageConfig}
+      />
+    );
   }
 
   if (error) {
@@ -934,9 +957,9 @@ export const AnkiHanziProgress = () => {
         <MonthlyLearningRateChart characterProgress={characterProgress} />
 
         {/* Progress Chart */}
-        <ProgressChart 
-          characterProgress={characterProgress} 
-          charactersStartedLearning={charactersStartedLearning} 
+        <ProgressChart
+          characterProgress={characterProgress}
+          charactersStartedLearning={charactersStartedLearning}
         />
 
         {/* Learning Time Distribution Chart */}

@@ -96,7 +96,7 @@ export default function App() {
           reload={() => {}}
           loading={loading}
         />
-        <main className="pt-16 p-4 container mx-auto flex flex-col items-center justify-center min-h-screen">
+        <main className="pt-16 p-4 container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
           <p className="text-lg">Loading data...</p>
         </main>
