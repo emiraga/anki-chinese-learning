@@ -236,7 +236,7 @@ def update_audio_on_a_note(note_type, target_text):
 
 def find_note_by_empty_audio(note_type):
     # Search for notes with the specific Traditional field value
-    search_query = f'note:{note_type} Traditional:_* Audio:'
+    search_query = f'note:{note_type} Traditional:_* Audio: -is:suspended'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
