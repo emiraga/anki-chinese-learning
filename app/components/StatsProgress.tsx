@@ -50,6 +50,18 @@ const useAnkiHanziProgress = () => {
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [stage, setStage] = useState("Initializing...");
 
+  // Define stage configuration for smoother progress tracking
+  const stageConfig = {
+    "Initializing...": { start: 0, end: 5 },
+    "Finding Hanzi notes...": { start: 5, end: 10 },
+    "Getting note details...": { start: 10, end: 20 },
+    "Processing note information...": { start: 20, end: 25 },
+    "Fetching reviews...": { start: 25, end: 75 },
+    "Processing reviews to calculate progress...": { start: 75, end: 95 },
+    "Finalizing results...": { start: 95, end: 100 },
+    "Complete!": { start: 100, end: 100 }
+  };
+
   useEffect(() => {
     const fetchHanziProgress = async () => {
       try {
@@ -63,15 +75,15 @@ const useAnkiHanziProgress = () => {
           query: 'note:"Hanzi" -is:new -is:suspended',
         });
         
-        setProgressPercentage(10);
-        setStage(`Found ${hanziNoteIds.length} Hanzi notes, getting details...`);
+        setProgressPercentage(100);
+        setStage("Getting note details...");
 
         // 2. Get detailed information for these notes (to extract the character field)
         const hanziNotesInfo = await anki.note.notesInfo({
           notes: hanziNoteIds,
         });
         
-        setProgressPercentage(20);
+        setProgressPercentage(100);
         setStage("Processing note information...");
 
         // We need to map note IDs to their respective characters and card IDs.
@@ -94,8 +106,8 @@ const useAnkiHanziProgress = () => {
           `Fetching reviews for ${allCardIds.length} cards in batches of ${batchSize}`
         );
         
-        setProgressPercentage(25);
-        setStage(`Fetching reviews for ${allCardIds.length} cards...`);
+        setProgressPercentage(0);
+        setStage("Fetching reviews...");
 
         const totalBatches = Math.ceil(allCardIds.length / batchSize);
         
@@ -107,8 +119,8 @@ const useAnkiHanziProgress = () => {
             `Processing batch ${currentBatch}/${totalBatches} (${batch.length} cards)`
           );
           
-          setStage(`Processing batch ${currentBatch}/${totalBatches}...`);
-          setProgressPercentage(25 + (currentBatch / totalBatches) * 50);
+          setStage("Fetching reviews...");
+          setProgressPercentage((currentBatch / totalBatches) * 100);
 
           const batchReviews = await anki.statistic.getReviewsOfCards({
             // @ts-expect-error next-line
@@ -129,7 +141,7 @@ const useAnkiHanziProgress = () => {
           } cards`
         );
         
-        setProgressPercentage(80);
+        setProgressPercentage(0);
         setStage("Processing reviews to calculate progress...");
 
         // 4. Process reviews to build the daily character graph and learning time distribution
@@ -221,7 +233,7 @@ const useAnkiHanziProgress = () => {
           cumulativeStartedGraphData[date] = cumulativeStartedCount;
         });
 
-        setProgressPercentage(95);
+        setProgressPercentage(0);
         setStage("Finalizing results...");
         
         setCharacterProgress(cumulativeGraphData);
@@ -243,7 +255,7 @@ const useAnkiHanziProgress = () => {
     fetchHanziProgress();
   }, []);
 
-  return { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage };
+  return { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage, stageConfig };
 };
 
 // Simple helper function to calculate progress rate
@@ -797,11 +809,11 @@ const LearningConstantsDisplay: React.FC = () => {
 };
 
 export const AnkiHanziProgress = () => {
-  const { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage } =
+  const { characterProgress, charactersStartedLearning, learningTimeDistribution, loading, error, progressPercentage, stage, stageConfig } =
     useAnkiHanziProgress();
 
   if (loading) {
-    return <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} />;
+    return <LoadingProgressBar stage={stage} progressPercentage={progressPercentage} stageConfig={stageConfig} />;
   }
 
   if (error) {
