@@ -1,18 +1,17 @@
 import type { Route } from "./+types/index";
-import { Link } from "react-router";
 import anki from "~/apis/anki";
 import { useEffect, useState } from "react";
-import { useAsync } from "react-async-hook";
-import { getProblematicCardsComprehensive } from "~/data/problematic";
 import MainFrame from "~/toolbar/frame";
-import ProblematicTable from "~/components/Problematic";
 import { LearnAllCharsLink, LearnLink } from "~/components/Learn";
 import Section from "~/toolbar/section";
 import { HanziText } from "~/components/HanziText";
 import { StudyMore } from "~/components/StudyMore";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Study" }, { name: "description", content: "Learn stuff" }];
+  return [
+    { title: "Study" },
+    { name: "Studying related page", content: "Learn stuff" },
+  ];
 }
 
 export default function Study() {
@@ -20,12 +19,6 @@ export default function Study() {
   const [errorCurrent, setErrorCurrent] = useState<Error | undefined>(
     undefined
   );
-
-  const {
-    loading: loadingProblem,
-    error: errorProblem,
-    result: problematic,
-  } = useAsync(async () => await getProblematicCardsComprehensive(20), []);
 
   useEffect(() => {
     const load = async () => {
@@ -58,17 +51,6 @@ export default function Study() {
         <LearnLink char={current || ""} />
       </Section>
 
-      <Section
-        className="mt-5"
-        loading={loadingProblem}
-        error={errorProblem}
-        display={problematic && problematic.length > 0}
-      >
-        <Link to="/problematic" className="text-xl">
-          Problematic cards:
-        </Link>
-        <ProblematicTable result={problematic} />
-      </Section>
       <StudyMore />
     </MainFrame>
   );
