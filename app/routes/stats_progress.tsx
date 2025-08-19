@@ -3,7 +3,7 @@ import type { Route } from "./+types/index";
 // import type { OutletContext } from "~/data/types";
 import MainFrame from "~/toolbar/frame";
 import Section from "~/toolbar/section";
-import { AnkiHanziProgress } from "~/components/Stats";
+import { AnkiHanziProgress } from "~/components/StatsProgress";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,8 +13,6 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function StatsProgress() {
-  // const { props, phrases, characters } = useOutletContext<OutletContext>();
-
   return (
     <MainFrame>
       <Section className="block" display={true}>
