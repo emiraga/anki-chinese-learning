@@ -199,7 +199,7 @@ export default function SettingsPage() {
           formData={formData}
           onSubmit={handleSubmit}
           onChange={handleOnChange}
-          // eslint-disable-next-line @typescript-eslint/naming-convention
+           
           templates={{ FieldTemplate: CustomFieldTemplate }}
           formContext={{ modifiedFields, hasUnsavedChanges }}
           className="w-full"

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+ 
 // TODO: migrate this to config
 export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   TOCFL: [

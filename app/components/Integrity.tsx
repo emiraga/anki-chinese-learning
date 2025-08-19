@@ -655,7 +655,7 @@ function IntegrityPinyinZhuyinConsistency() {
               await anki.note.updateNoteFields({
                 note: {
                   id: phrase.noteId,
-                  // eslint-disable-next-line @typescript-eslint/naming-convention
+                   
                   fields: { Zhuyin: "" },
                 },
               });
@@ -702,7 +702,7 @@ function IntegrityPinyinZhuyinConsistency() {
                 await anki.note.updateNoteFields({
                   note: {
                     id: phrase.noteId,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                     
                     fields: { Zhuyin: "" },
                   },
                 });
@@ -791,7 +791,7 @@ function IntegrityCharacterZhuyin() {
               await anki.note.updateNoteFields({
                 note: {
                   id: char.ankiId || 0,
-                  // eslint-disable-next-line @typescript-eslint/naming-convention
+                   
                   fields: { Zhuyin: char.expectedZhuyin },
                 },
               });
@@ -837,7 +837,7 @@ function IntegrityCharacterZhuyin() {
                 await anki.note.updateNoteFields({
                   note: {
                     id: char.ankiId || 0,
-                    // eslint-disable-next-line @typescript-eslint/naming-convention
+                     
                     fields: { Zhuyin: char.expectedZhuyin },
                   },
                 });
