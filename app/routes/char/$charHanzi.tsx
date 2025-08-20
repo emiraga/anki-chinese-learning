@@ -76,6 +76,7 @@ export default function CharDetail() {
         <hr className="my-4" />
         <CharCardDetails char={char} />
         <div>
+          <span className="tw-kai text-8xl">{char.traditional}</span>
           <span className="font-mono text-8xl">{char.traditional}</span>
           <span className="font-thin text-8xl">{char.traditional}</span>
           <span className="font-serif text-8xl">{char.traditional}</span>
