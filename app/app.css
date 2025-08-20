@@ -2,7 +2,12 @@
 
 @font-face {
   font-family: "TW-MOE-Std-Kai";
-  src: url('_MoeStandardKai.ttf') format("truetype");
+  src: url("_MoeStandardKai.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "TW-Kai";
+  src: url("_kaiu.ttf") format("truetype");
 }
 
 @theme {
@@ -194,5 +199,5 @@ tr.row-male > th {
 }
 
 .tw-kai {
-  font-family: 'TW-MOE-Std-Kai', 'TW-Kai', kaiti, cursive;
+  font-family: "TW-MOE-Std-Kai", "TW-Kai", kaiti, cursive;
 }
