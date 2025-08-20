@@ -314,38 +314,67 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
 };
 
 // Helper function to calculate monthly learning rates
-const calculateMonthlyRates = (characterProgress: {
-  [key: string]: number;
-}) => {
-  const entries = Object.entries(characterProgress).sort(([a], [b]) =>
+const calculateMonthlyRates = (
+  characterProgress: { [key: string]: number },
+  charactersStartedLearning: { [key: string]: number }
+) => {
+  const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
     a.localeCompare(b)
   );
-  if (entries.length === 0) return [];
+  const startedEntries = Object.entries(charactersStartedLearning).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  
+  if (learnedEntries.length === 0 && startedEntries.length === 0) return [];
 
   // Group data by month
-  const monthlyData: { [key: string]: { learned: number; totalDays: number } } =
-    {};
+  const monthlyData: { 
+    [key: string]: { 
+      learned: number; 
+      started: number;
+      totalDays: number; 
+    } 
+  } = {};
 
-  // Process each date to calculate characters learned per month
-  for (let i = 0; i < entries.length; i++) {
-    const [date, cumulativeCount] = entries[i];
+  // Process learned characters
+  for (let i = 0; i < learnedEntries.length; i++) {
+    const [date, cumulativeCount] = learnedEntries[i];
     const currentDate = new Date(date);
     const monthKey = `${currentDate.getFullYear()}-${String(
       currentDate.getMonth() + 1
     ).padStart(2, "0")}`;
 
     // Get characters learned on this date
-    const prevCount = i > 0 ? entries[i - 1][1] : 0;
+    const prevCount = i > 0 ? learnedEntries[i - 1][1] : 0;
     const charactersLearnedThisDate = cumulativeCount - prevCount;
 
     if (!monthlyData[monthKey]) {
-      monthlyData[monthKey] = { learned: 0, totalDays: 0 };
+      monthlyData[monthKey] = { learned: 0, started: 0, totalDays: 0 };
     }
 
     monthlyData[monthKey].learned += charactersLearnedThisDate;
   }
 
-  // Calculate days in each month and learning rate
+  // Process started characters
+  for (let i = 0; i < startedEntries.length; i++) {
+    const [date, cumulativeCount] = startedEntries[i];
+    const currentDate = new Date(date);
+    const monthKey = `${currentDate.getFullYear()}-${String(
+      currentDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+
+    // Get characters started on this date
+    const prevCount = i > 0 ? startedEntries[i - 1][1] : 0;
+    const charactersStartedThisDate = cumulativeCount - prevCount;
+
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = { learned: 0, started: 0, totalDays: 0 };
+    }
+
+    monthlyData[monthKey].started += charactersStartedThisDate;
+  }
+
+  // Calculate days in each month and learning rates
   const currentDate = new Date();
   const currentMonthKey = `${currentDate.getFullYear()}-${String(
     currentDate.getMonth() + 1
@@ -366,7 +395,8 @@ const calculateMonthlyRates = (characterProgress: {
       daysToUse = new Date(year, month, 0).getDate();
     }
 
-    const rate = data.learned / daysToUse;
+    const learnedRate = data.learned / daysToUse;
+    const startedRate = data.started / daysToUse;
 
     return {
       month: monthKey,
@@ -376,8 +406,10 @@ const calculateMonthlyRates = (characterProgress: {
           year: "2-digit",
         }) + (isCurrentMonth ? "*" : ""),
       charactersLearned: data.learned,
+      charactersStarted: data.started,
       daysInMonth: daysToUse,
-      rate: Math.round(rate * 10) / 10, // Round to 1 decimal
+      learnedRate: Math.round(learnedRate * 10) / 10, // Round to 1 decimal
+      startedRate: Math.round(startedRate * 10) / 10, // Round to 1 decimal
       isCurrentMonth,
     };
   });
@@ -512,8 +544,9 @@ const LearningTimeDistributionChart: React.FC<{
 // Monthly Learning Rate Bar Chart Component
 const MonthlyLearningRateChart: React.FC<{
   characterProgress: { [key: string]: number };
-}> = ({ characterProgress }) => {
-  const monthlyRates = calculateMonthlyRates(characterProgress);
+  charactersStartedLearning: { [key: string]: number };
+}> = ({ characterProgress, charactersStartedLearning }) => {
+  const monthlyRates = calculateMonthlyRates(characterProgress, charactersStartedLearning);
   const extrapolation = calculateProgress(characterProgress);
   const averageRate = extrapolation?.charsPerDay || 0;
 
@@ -525,14 +558,21 @@ const MonthlyLearningRateChart: React.FC<{
   const CustomBarTooltip = ({
     active,
     payload,
+    label,
   }: {
     active: boolean;
+    label: string;
     payload: {
+      name: string;
+      value: number;
+      color: string;
       payload: {
         monthLabel: string;
-        rate: number;
+        learnedRate: number;
+        startedRate: number;
         daysInMonth: number;
         charactersLearned: number;
+        charactersStarted: number;
         isCurrentMonth: boolean;
       };
     }[];
@@ -545,11 +585,13 @@ const MonthlyLearningRateChart: React.FC<{
             {data.monthLabel}
           </p>
           <p className="text-sm text-blue-600 dark:text-blue-400">
-            Rate: {data.rate} chars/day
+            Learned: {data.learnedRate} chars/day ({data.charactersLearned} total)
+          </p>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Started: {data.startedRate} chars/day ({data.charactersStarted} total)
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {data.charactersLearned} characters in {data.daysInMonth} days
-            {data.isCurrentMonth ? " (so far)" : ""}
+            {data.daysInMonth} days{data.isCurrentMonth ? " (so far)" : ""}
           </p>
         </div>
       );
@@ -583,7 +625,7 @@ const MonthlyLearningRateChart: React.FC<{
           />
           <Tooltip
             cursor={false}
-            content={<CustomBarTooltip active={false} payload={[]} />}
+            content={<CustomBarTooltip active={false} label="" payload={[]} />}
           />
           {averageRate > 0 && (
             <ReferenceLine
@@ -592,16 +634,22 @@ const MonthlyLearningRateChart: React.FC<{
               strokeDasharray="5 5"
               strokeWidth={2}
               label={{
-                value: `Avg: ${averageRate} chars/day`,
+                value: `Avg learned: ${averageRate} chars/day`,
                 position: "top",
                 style: { fill: "currentColor" },
               }}
             />
           )}
           <Bar
-            dataKey="rate"
+            dataKey="learnedRate"
+            fill="#3b82f6"
+            name="Characters Learned"
+            radius={[2, 2, 0, 0]}
+          />
+          <Bar
+            dataKey="startedRate"
             fill="#10b981"
-            name="Learning Rate"
+            name="Characters Started Learning"
             radius={[2, 2, 0, 0]}
           />
         </BarChart>
@@ -954,7 +1002,10 @@ export const AnkiHanziProgress = () => {
         </div>
 
         {/* Monthly Learning Rate Chart */}
-        <MonthlyLearningRateChart characterProgress={characterProgress} />
+        <MonthlyLearningRateChart 
+          characterProgress={characterProgress} 
+          charactersStartedLearning={charactersStartedLearning}
+        />
 
         {/* Progress Chart */}
         <ProgressChart
