@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { SchemaType } from "@google/generative-ai";
 import type { GenerationConfig } from "@google/generative-ai";
 import { useSettings } from "~/settings/SettingsContext";
 import { useGenerativeModel } from "~/apis/google_genai";
+import { useAnkiPhrases } from "~/data/phrases";
 import Textarea from "react-textarea-autosize";
 
 export interface ExtractedPhrase {
@@ -10,6 +11,7 @@ export interface ExtractedPhrase {
   pinyin: string;
   zhuyin?: string;
   meaning: string;
+  isDuplicate?: boolean;
 }
 
 const PhrasesImport: React.FC = () => {
@@ -18,8 +20,14 @@ const PhrasesImport: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { settings } = useSettings();
+  const { phrases: existingPhrases, loading: phrasesLoading } = useAnkiPhrases();
 
   const genAImodel = useGenerativeModel(settings);
+
+  // Create a set of existing traditional characters for quick lookup
+  const existingPhrasesSet = useMemo(() => {
+    return new Set(existingPhrases.map(phrase => phrase.traditional));
+  }, [existingPhrases]);
 
   const promptMain = `
 Analyze the provided text and extract Chinese phrases/words with their corresponding information.
@@ -113,7 +121,12 @@ IMPORTANT RULES:
       const parsedResponse = JSON.parse(responseText);
 
       if (parsedResponse.phrases && parsedResponse.phrases.length > 0) {
-        setExtractedPhrases(parsedResponse.phrases);
+        // Check for duplicates and mark them
+        const phrasesWithDuplicateCheck = parsedResponse.phrases.map((phrase: ExtractedPhrase) => ({
+          ...phrase,
+          isDuplicate: existingPhrasesSet.has(phrase.traditional)
+        }));
+        setExtractedPhrases(phrasesWithDuplicateCheck);
       } else {
         setError("No Chinese phrases found in the provided text.");
       }
@@ -157,10 +170,10 @@ IMPORTANT RULES:
       <div className="mb-6 flex gap-2">
         <button
           onClick={handleExtractPhrases}
-          disabled={isProcessing || !inputText.trim()}
+          disabled={isProcessing || !inputText.trim() || phrasesLoading}
           className="px-6 py-3 bg-sky-600 text-white font-semibold rounded-md shadow-sm hover:bg-sky-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
         >
-          {isProcessing ? "Extracting..." : "Extract Phrases"}
+          {isProcessing ? "Extracting..." : phrasesLoading ? "Loading existing phrases..." : "Extract Phrases"}
         </button>
         <button
           onClick={handleClear}
@@ -190,13 +203,29 @@ IMPORTANT RULES:
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Extracted Phrases ({extractedPhrases.length})
+            {extractedPhrases.some(p => p.isDuplicate) && (
+              <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400">
+                ⚠️ {extractedPhrases.filter(p => p.isDuplicate).length} duplicates found
+              </span>
+            )}
           </h3>
           <div className="space-y-3">
             {extractedPhrases.map((phrase, index) => (
               <div
                 key={index}
-                className="p-4 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm"
+                className={`p-4 rounded-lg shadow-sm ${
+                  phrase.isDuplicate
+                    ? "bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
+                    : "bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700"
+                }`}
               >
+                {phrase.isDuplicate && (
+                  <div className="mb-3 p-2 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                      ⚠️ This phrase already exists in your Anki collection
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                   <div>
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
