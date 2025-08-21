@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { SchemaType } from "@google/generative-ai";
 import type { GenerationConfig } from "@google/generative-ai";
 import { useSettings } from "~/settings/SettingsContext";
@@ -25,6 +25,8 @@ const PhrasesImport: React.FC = () => {
   const [isAddingToAnki, setIsAddingToAnki] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [ankiSuccess, setAnkiSuccess] = useState<string | null>(null);
+  const [selectedPhraseNoteIndex, setSelectedPhraseNoteIndex] =
+    useState<number>(0);
   const { settings } = useSettings();
   const { phrases: existingPhrases, loading: phrasesLoading } =
     useAnkiPhrases();
@@ -35,6 +37,13 @@ const PhrasesImport: React.FC = () => {
   const existingPhrasesSet = useMemo(() => {
     return new Set(existingPhrases.map((phrase) => phrase.traditional));
   }, [existingPhrases]);
+
+  // Reset selected phrase note index if it becomes invalid
+  useEffect(() => {
+    if (selectedPhraseNoteIndex >= settings.phraseNotes.length) {
+      setSelectedPhraseNoteIndex(0);
+    }
+  }, [settings.phraseNotes.length, selectedPhraseNoteIndex]);
 
   const promptMain = `
 Analyze the provided text and extract Chinese phrases/words with their corresponding information.
@@ -173,20 +182,27 @@ IMPORTANT RULES:
       return;
     }
 
+    if (selectedPhraseNoteIndex >= settings.phraseNotes.length) {
+      setError("Selected note type is invalid.");
+      return;
+    }
+
     setIsAddingToAnki(true);
     setError(null);
     setAnkiSuccess(null);
 
     try {
-      // Use the first configured phrase note type
-      const noteType = settings.phraseNotes[0];
-      
+      // Use the selected phrase note type
+      const noteType = settings.phraseNotes[selectedPhraseNoteIndex];
+
       // Get deck name from the first card configuration, or use a default
       const deckName = noteType.cards?.[0]?.deckName || "Default";
-      
+
       // Filter out duplicates if user wants to avoid them
-      const phrasesToAdd = extractedPhrases.filter(phrase => !phrase.isDuplicate);
-      
+      const phrasesToAdd = extractedPhrases.filter(
+        (phrase) => !phrase.isDuplicate
+      );
+
       if (phrasesToAdd.length === 0) {
         setError("No new phrases to add (all are duplicates).");
         setIsAddingToAnki(false);
@@ -203,7 +219,7 @@ IMPORTANT RULES:
           Meaning: phrase.meaning,
           ...(phrase.zhuyin ? { Zhuyin: phrase.zhuyin } : {}),
         },
-        tags: ["imported"],
+        tags: [],
         options: {
           allowDuplicate: false,
         },
@@ -211,21 +227,53 @@ IMPORTANT RULES:
 
       // Add notes to Anki
       const results = await anki.note.addNotes({ notes });
-      
+
       if (results) {
-        const successCount = results.filter(id => id !== null).length;
+        const successCount = results.filter((id) => id !== null).length;
         const failureCount = results.length - successCount;
-        
+
         if (successCount > 0) {
-          setAnkiSuccess(`Successfully added ${successCount} phrases to Anki${failureCount > 0 ? ` (${failureCount} failed)` : ''}.`);
+          // Get successful note IDs
+          const successfulNoteIds = results.filter(
+            (id) => id !== null
+          ) as string[];
+
+          // Get cards for the created notes and set due date to today
+          try {
+            const notesInfo = await anki.note.notesInfo({
+              notes: successfulNoteIds.map((id) => parseInt(id)),
+            });
+            const allCardIds: number[] = [];
+
+            for (const note of notesInfo) {
+              allCardIds.push(...note.cards);
+            }
+
+            if (allCardIds.length > 0) {
+              await anki.card.setDueDate({ cards: allCardIds, days: "0" });
+            }
+          } catch (dueDateError) {
+            console.error("Failed to set due dates:", dueDateError);
+            // Don't fail the whole operation if due date setting fails
+          }
+
+          setAnkiSuccess(
+            `Successfully added ${successCount} phrases to Anki${
+              failureCount > 0 ? ` (${failureCount} failed)` : ""
+            }.`
+          );
           // Remove successfully added phrases
           const failedIndices = new Set();
           results.forEach((id, index) => {
             if (id === null) failedIndices.add(index);
           });
-          setExtractedPhrases(phrases => phrases.filter((phrase, index) => 
-            phrase.isDuplicate || failedIndices.has(phrasesToAdd.findIndex(p => p === phrase))
-          ));
+          setExtractedPhrases((phrases) =>
+            phrases.filter(
+              (phrase, index) =>
+                phrase.isDuplicate ||
+                failedIndices.has(phrasesToAdd.findIndex((p) => p === phrase))
+            )
+          );
         } else {
           setError("Failed to add any phrases to Anki.");
         }
@@ -234,7 +282,9 @@ IMPORTANT RULES:
       }
     } catch (e) {
       console.error(e);
-      setError("Error adding phrases to Anki. Please check your Anki connection.");
+      setError(
+        "Error adding phrases to Anki. Please check your Anki connection."
+      );
     } finally {
       setIsAddingToAnki(false);
     }
@@ -261,6 +311,35 @@ IMPORTANT RULES:
         />
       </div>
 
+      {settings.phraseNotes.length > 1 && (
+        <div className="mb-6">
+          <label
+            htmlFor="phraseNoteSelect"
+            className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+          >
+            Anki Note Type:
+          </label>
+          <select
+            id="phraseNoteSelect"
+            value={selectedPhraseNoteIndex}
+            onChange={(e) =>
+              setSelectedPhraseNoteIndex(parseInt(e.target.value))
+            }
+            disabled={isProcessing || isAddingToAnki}
+            className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md text-md shadow-sm text-gray-900 dark:text-gray-100
+                       focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
+          >
+            {settings.phraseNotes.map((phraseNote, index) => (
+              <option key={index} value={index}>
+                {phraseNote.noteType}
+                {phraseNote.cards?.[0]?.deckName &&
+                  ` (${phraseNote.cards[0].deckName})`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="mb-6 flex gap-2">
         <button
           onClick={handleExtractPhrases}
@@ -283,19 +362,33 @@ IMPORTANT RULES:
         {extractedPhrases.length > 0 && (
           <button
             onClick={handleAddToAnki}
-            disabled={isProcessing || isAddingToAnki || extractedPhrases.filter(p => !p.isDuplicate).length === 0}
+            disabled={
+              isProcessing ||
+              isAddingToAnki ||
+              extractedPhrases.filter((p) => !p.isDuplicate).length === 0
+            }
             className="px-6 py-3 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
           >
-            {isAddingToAnki ? "Adding to Anki..." : `Add to Anki (${extractedPhrases.filter(p => !p.isDuplicate).length})`}
+            {isAddingToAnki
+              ? "Adding to Anki..."
+              : `Add to Anki (${
+                  extractedPhrases.filter((p) => !p.isDuplicate).length
+                })`}
           </button>
         )}
       </div>
 
       {(isProcessing || isAddingToAnki) && (
         <div className="text-center mb-6">
-          <div className={`animate-spin mx-auto rounded-full h-8 w-8 border-b-2 mb-2 ${isAddingToAnki ? 'border-green-600' : 'border-sky-600'}`}></div>
+          <div
+            className={`animate-spin mx-auto rounded-full h-8 w-8 border-b-2 mb-2 ${
+              isAddingToAnki ? "border-green-600" : "border-sky-600"
+            }`}
+          ></div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {isProcessing ? "Analyzing text and extracting phrases..." : "Adding phrases to Anki..."}
+            {isProcessing
+              ? "Analyzing text and extracting phrases..."
+              : "Adding phrases to Anki..."}
           </p>
         </div>
       )}
@@ -308,7 +401,9 @@ IMPORTANT RULES:
 
       {ankiSuccess && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-          <p className="text-green-700 dark:text-green-400 text-sm">{ankiSuccess}</p>
+          <p className="text-green-700 dark:text-green-400 text-sm">
+            {ankiSuccess}
+          </p>
         </div>
       )}
 
