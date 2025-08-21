@@ -585,7 +585,11 @@ function MixedNew({
   );
 }
 
-function MyWordsNewAndNotSuspended({ notesByCards }: { notesByCards: NoteWithCards[] }) {
+function MyWordsNewAndNotSuspended({
+  notesByCards,
+}: {
+  notesByCards: NoteWithCards[];
+}) {
   const myWordsNotes = notesByCards
     .filter((note) => note.modelName === "MyWords")
     .map((note) => ({
@@ -602,10 +606,13 @@ function MyWordsNewAndNotSuspended({ notesByCards }: { notesByCards: NoteWithCar
 
   return (
     <>
-      <h3 className="font-serif text-3xl">MyWords with new unsuspended cards:</h3>
+      <h3 className="font-serif text-3xl">
+        MyWords with new unsuspended cards:
+      </h3>
       {myWordsNotes.map((note, i) => (
         <div key={i}>
-          🚨 MyWords with new cards that are not suspended: {note.fields["Traditional"]?.value || note.fields["Hanzi"]?.value}
+          🚨 MyWords with new cards:{" "}
+          {note.fields["Traditional"]?.value || note.fields["Hanzi"]?.value}
           <button
             className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             onClick={async () => {
@@ -617,9 +624,15 @@ function MyWordsNewAndNotSuspended({ notesByCards }: { notesByCards: NoteWithCar
           <button
             className="rounded-2xl bg-green-100 dark:bg-green-900 p-1 ml-2 inline text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
             onClick={async () => {
-              const newCardIds = note.newNotSuspendedCards.map((card) => card.cardId);
+              const newCardIds = note.newNotSuspendedCards.map(
+                (card) => card.cardId
+              );
               await anki.card.setDueDate({ cards: newCardIds, days: "0" });
-              alert("Set due date to today for " + (note.fields["Traditional"]?.value || note.fields["Hanzi"]?.value));
+              alert(
+                "Set due date to today for " +
+                  (note.fields["Traditional"]?.value ||
+                    note.fields["Hanzi"]?.value)
+              );
             }}
           >
             fix due date
@@ -700,7 +713,7 @@ function IntegrityPinyinZhuyinConsistency() {
               await anki.note.updateNoteFields({
                 note: {
                   id: phrase.noteId,
-                   
+
                   fields: { Zhuyin: "" },
                 },
               });
@@ -747,7 +760,7 @@ function IntegrityPinyinZhuyinConsistency() {
                 await anki.note.updateNoteFields({
                   note: {
                     id: phrase.noteId,
-                     
+
                     fields: { Zhuyin: "" },
                   },
                 });
@@ -836,7 +849,7 @@ function IntegrityCharacterZhuyin() {
               await anki.note.updateNoteFields({
                 note: {
                   id: char.ankiId || 0,
-                   
+
                   fields: { Zhuyin: char.expectedZhuyin },
                 },
               });
@@ -882,7 +895,7 @@ function IntegrityCharacterZhuyin() {
                 await anki.note.updateNoteFields({
                   note: {
                     id: char.ankiId || 0,
-                     
+
                     fields: { Zhuyin: char.expectedZhuyin },
                   },
                 });

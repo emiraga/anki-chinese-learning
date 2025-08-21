@@ -201,3 +201,15 @@ tr.row-male > th {
 .tw-kai {
   font-family: "TW-MOE-Std-Kai", "TW-Kai", kaiti, cursive;
 }
+
+.hanzipen-tc {
+  font-family: "HanziPen TC", kaiti, cursive;
+}
+
+.libian-tc {
+  font-family: "Libian TC", kaiti, cursive;
+}
+
+.wawati-tc {
+  font-family: "Wawati TC", kaiti, cursive;
+}
