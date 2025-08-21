@@ -4,6 +4,7 @@ import type { GenerationConfig } from "@google/generative-ai";
 import { useSettings } from "~/settings/SettingsContext";
 import { useGenerativeModel } from "~/apis/google_genai";
 import { useAnkiPhrases } from "~/data/phrases";
+import anki from "~/apis/anki";
 import Textarea from "react-textarea-autosize";
 import { HanziText } from "./HanziText";
 
@@ -21,7 +22,9 @@ const PhrasesImport: React.FC = () => {
     []
   );
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isAddingToAnki, setIsAddingToAnki] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [ankiSuccess, setAnkiSuccess] = useState<string | null>(null);
   const { settings } = useSettings();
   const { phrases: existingPhrases, loading: phrasesLoading } =
     useAnkiPhrases();
@@ -150,12 +153,91 @@ IMPORTANT RULES:
     setInputText("");
     setExtractedPhrases([]);
     setError(null);
+    setAnkiSuccess(null);
   };
 
   const handleDeletePhrase = (indexToDelete: number) => {
     setExtractedPhrases((phrases) =>
       phrases.filter((_, index) => index !== indexToDelete)
     );
+  };
+
+  const handleAddToAnki = async () => {
+    if (extractedPhrases.length === 0) {
+      setError("No phrases to add to Anki.");
+      return;
+    }
+
+    if (settings.phraseNotes.length === 0) {
+      setError("No phrase note types configured in settings.");
+      return;
+    }
+
+    setIsAddingToAnki(true);
+    setError(null);
+    setAnkiSuccess(null);
+
+    try {
+      // Use the first configured phrase note type
+      const noteType = settings.phraseNotes[0];
+      
+      // Get deck name from the first card configuration, or use a default
+      const deckName = noteType.cards?.[0]?.deckName || "Default";
+      
+      // Filter out duplicates if user wants to avoid them
+      const phrasesToAdd = extractedPhrases.filter(phrase => !phrase.isDuplicate);
+      
+      if (phrasesToAdd.length === 0) {
+        setError("No new phrases to add (all are duplicates).");
+        setIsAddingToAnki(false);
+        return;
+      }
+
+      // Prepare notes for Anki
+      const notes = phrasesToAdd.map((phrase) => ({
+        deckName: deckName,
+        modelName: noteType.noteType,
+        fields: {
+          Traditional: phrase.traditional,
+          Pinyin: phrase.pinyin,
+          Meaning: phrase.meaning,
+          ...(phrase.zhuyin ? { Zhuyin: phrase.zhuyin } : {}),
+        },
+        tags: ["imported"],
+        options: {
+          allowDuplicate: false,
+        },
+      }));
+
+      // Add notes to Anki
+      const results = await anki.note.addNotes({ notes });
+      
+      if (results) {
+        const successCount = results.filter(id => id !== null).length;
+        const failureCount = results.length - successCount;
+        
+        if (successCount > 0) {
+          setAnkiSuccess(`Successfully added ${successCount} phrases to Anki${failureCount > 0 ? ` (${failureCount} failed)` : ''}.`);
+          // Remove successfully added phrases
+          const failedIndices = new Set();
+          results.forEach((id, index) => {
+            if (id === null) failedIndices.add(index);
+          });
+          setExtractedPhrases(phrases => phrases.filter((phrase, index) => 
+            phrase.isDuplicate || failedIndices.has(phrasesToAdd.findIndex(p => p === phrase))
+          ));
+        } else {
+          setError("Failed to add any phrases to Anki.");
+        }
+      } else {
+        setError("Failed to add phrases to Anki.");
+      }
+    } catch (e) {
+      console.error(e);
+      setError("Error adding phrases to Anki. Please check your Anki connection.");
+    } finally {
+      setIsAddingToAnki(false);
+    }
   };
 
   return (
@@ -193,18 +275,27 @@ IMPORTANT RULES:
         </button>
         <button
           onClick={handleClear}
-          disabled={isProcessing}
+          disabled={isProcessing || isAddingToAnki}
           className="px-6 py-3 bg-gray-600 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
         >
           Clear
         </button>
+        {extractedPhrases.length > 0 && (
+          <button
+            onClick={handleAddToAnki}
+            disabled={isProcessing || isAddingToAnki || extractedPhrases.filter(p => !p.isDuplicate).length === 0}
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isAddingToAnki ? "Adding to Anki..." : `Add to Anki (${extractedPhrases.filter(p => !p.isDuplicate).length})`}
+          </button>
+        )}
       </div>
 
-      {isProcessing && (
+      {(isProcessing || isAddingToAnki) && (
         <div className="text-center mb-6">
-          <div className="animate-spin mx-auto rounded-full h-8 w-8 border-b-2 border-sky-600 mb-2"></div>
+          <div className={`animate-spin mx-auto rounded-full h-8 w-8 border-b-2 mb-2 ${isAddingToAnki ? 'border-green-600' : 'border-sky-600'}`}></div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Analyzing text and extracting phrases...
+            {isProcessing ? "Analyzing text and extracting phrases..." : "Adding phrases to Anki..."}
           </p>
         </div>
       )}
@@ -212,6 +303,12 @@ IMPORTANT RULES:
       {error && (
         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
           <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      {ankiSuccess && (
+        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+          <p className="text-green-700 dark:text-green-400 text-sm">{ankiSuccess}</p>
         </div>
       )}
 
