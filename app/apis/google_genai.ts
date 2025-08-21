@@ -1,5 +1,9 @@
 import { DEFAULT_GEN_AI_MODEL, type AppSettings } from "~/settings/schema";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { 
+  GoogleGenerativeAI, 
+  type GenerativeModel,
+  type GenerationConfig
+} from "@google/generative-ai";
 import { useMemo } from "react";
 
 export function useGenerativeModel(settings: AppSettings) {

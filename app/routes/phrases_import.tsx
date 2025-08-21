@@ -1,4 +1,5 @@
 import MainToolbar from "~/toolbar/toolbar";
+import PhrasesImport from "~/components/PhrasesImport";
 import type { Route } from "./+types/index";
 
 export function meta({}: Route.MetaArgs) {
@@ -8,7 +9,7 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function PhrasesImport() {
+export default function PhrasesImportRoute() {
   return (
     <main>
       <MainToolbar />
@@ -16,7 +17,7 @@ export default function PhrasesImport() {
         Import Phrases
       </h3>
       <section className="block mx-4">
-        {/* Import functionality will be added here */}
+        <PhrasesImport />
       </section>
     </main>
   );
