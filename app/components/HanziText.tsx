@@ -4,6 +4,7 @@ import type { OutletContext } from "~/data/types";
 import { CharCardDetails, CharLink } from "./CharCard";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { segmentChineseText, type SegmentationAlgorithm } from "~/data/utils";
+import { useMemo } from "react";
 
 export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
   const { characters } = useOutletContext<OutletContext>();
@@ -55,30 +56,44 @@ export const HanziSegmentedText: React.FC<{
   value?: string;
   algorithm?: SegmentationAlgorithm;
 }> = ({ value, algorithm }) => {
-  const { characters } = useOutletContext<OutletContext>();
+  const { characters, phrases } = useOutletContext<OutletContext>();
+
+  const knowPhrases = useMemo(() => {
+    return new Set(phrases.map((p) => p.traditional));
+  }, [phrases]);
+
+  const segments = useMemo(
+    () => (value ? segmentChineseText(value, algorithm) : []),
+    [value, algorithm]
+  );
 
   if (!value) {
     return <></>;
   }
 
-  const segments = segmentChineseText(value, algorithm);
-
   return (
     <>
-      {/*<div className="font-mono text-lg">
-        {segments.map((x) => (x.isWord ? "(" + x.text + ")" : x.text)).join("")}
-      </div>*/}
       {segments.map((segment, i) => {
         if (segment.text === "\n") {
           return <br key={i} />;
         }
 
         // For multi-character words, wrap in a container with word styling
-        if (segment.isWord) {
+        if (segment.text.length > 1) {
+          const shouldUnderline =
+            [...segment.text].filter((c) => !IGNORE_PHRASE_CHARS.has(c))
+              .length > 0;
+
           return (
             <span
               key={i}
-              className="inline-block border-b border-gray-600 mx-1"
+              className={`inline-block ${
+                shouldUnderline
+                  ? knowPhrases.has(segment.text)
+                    ? " border-b border-gray-600 "
+                    : " border-b border-red-500 "
+                  : ""
+              } mx-1`}
             >
               {[...segment.text].map((c, charIndex) => {
                 if (IGNORE_PHRASE_CHARS.has(c)) {
@@ -104,10 +119,10 @@ export const HanziSegmentedText: React.FC<{
           );
         } else {
           // Single character or punctuation
-          if (IGNORE_PHRASE_CHARS.has(segment.text)) {
-            return segment.text;
-          }
           const c = segment.text[0];
+          if (IGNORE_PHRASE_CHARS.has(c)) {
+            return c;
+          }
 
           let className = "";
           if (!characters[c]) {
@@ -116,13 +131,7 @@ export const HanziSegmentedText: React.FC<{
             className = "text-green-600";
           }
 
-          return (
-            <CharLink
-              key={i}
-              traditional={segment.text}
-              className={className}
-            />
-          );
+          return <CharLink key={i} traditional={c} className={className} />;
         }
       })}
     </>

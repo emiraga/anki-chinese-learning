@@ -73,13 +73,6 @@ export default function TodoCharsSentenceInput() {
           </select>
         </div>
 
-        {/*<div className="m-4">
-          <h4 className="text-lg font-semibold mb-2">Original Text:</h4>
-          <div className="text-2xl">
-            <HanziText value={sentence} />
-          </div>
-        </div>*/}
-
         <div className="m-4">
           <h4 className="text-lg font-semibold mb-2">Segmented Text:</h4>
           <div className="text-2xl">
