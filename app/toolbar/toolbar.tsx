@@ -114,7 +114,24 @@ export const MainToolbarNoOutlet: React.FC<{
         },
       ],
     },
-    { pathname: "/phrases", name: "Phrases", show: phrases.length > 0 },
+    {
+      pathname: "/phrases",
+      name: "Phrases",
+      show: phrases.length > 0,
+      isDropdown: true,
+      submenu: [
+        {
+          pathname: "/phrases",
+          name: "Phrases",
+          show: true,
+        },
+        {
+          pathname: "/phrases_import",
+          name: "Import",
+          show: true,
+        },
+      ],
+    },
     {
       pathname: "/study",
       name: "Study",

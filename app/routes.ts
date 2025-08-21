@@ -10,6 +10,7 @@ export default [
   route("integrity", "routes/integrity.tsx"),
   route("phrase/:phraseHanzi", "routes/phrase/$phraseHanzi.tsx"),
   route("phrases", "routes/phrases.tsx"),
+  route("phrases_import", "routes/phrases_import.tsx"),
   route("pinyin", "routes/pinyin.tsx"),
   route("place/:placeName", "routes/place/$placeName.tsx"),
   route("places", "routes/places.tsx"),

@@ -23,6 +23,7 @@ type Params = {
     "phraseHanzi": string;
   };
   "/phrases": {};
+  "/phrases_import": {};
   "/pinyin": {};
   "/place/:placeName": {
     "placeName": string;
