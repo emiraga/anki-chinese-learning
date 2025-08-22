@@ -321,19 +321,19 @@ const calculateMonthlyRates = (
   const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
     a.localeCompare(b)
   );
-  const startedEntries = Object.entries(charactersStartedLearning).sort(([a], [b]) =>
-    a.localeCompare(b)
+  const startedEntries = Object.entries(charactersStartedLearning).sort(
+    ([a], [b]) => a.localeCompare(b)
   );
-  
+
   if (learnedEntries.length === 0 && startedEntries.length === 0) return [];
 
   // Group data by month
-  const monthlyData: { 
-    [key: string]: { 
-      learned: number; 
+  const monthlyData: {
+    [key: string]: {
+      learned: number;
       started: number;
-      totalDays: number; 
-    } 
+      totalDays: number;
+    };
   } = {};
 
   // Process learned characters
@@ -546,7 +546,10 @@ const MonthlyLearningRateChart: React.FC<{
   characterProgress: { [key: string]: number };
   charactersStartedLearning: { [key: string]: number };
 }> = ({ characterProgress, charactersStartedLearning }) => {
-  const monthlyRates = calculateMonthlyRates(characterProgress, charactersStartedLearning);
+  const monthlyRates = calculateMonthlyRates(
+    characterProgress,
+    charactersStartedLearning
+  );
   const extrapolation = calculateProgress(characterProgress);
   const averageRate = extrapolation?.charsPerDay || 0;
 
@@ -558,7 +561,6 @@ const MonthlyLearningRateChart: React.FC<{
   const CustomBarTooltip = ({
     active,
     payload,
-    label,
   }: {
     active: boolean;
     label: string;
@@ -585,10 +587,12 @@ const MonthlyLearningRateChart: React.FC<{
             {data.monthLabel}
           </p>
           <p className="text-sm text-blue-600 dark:text-blue-400">
-            Learned: {data.learnedRate} chars/day ({data.charactersLearned} total)
+            Learned: {data.learnedRate} chars/day ({data.charactersLearned}{" "}
+            total)
           </p>
           <p className="text-sm text-green-600 dark:text-green-400">
-            Started: {data.startedRate} chars/day ({data.charactersStarted} total)
+            Started: {data.startedRate} chars/day ({data.charactersStarted}{" "}
+            total)
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {data.daysInMonth} days{data.isCurrentMonth ? " (so far)" : ""}
@@ -1002,8 +1006,8 @@ export const AnkiHanziProgress = () => {
         </div>
 
         {/* Monthly Learning Rate Chart */}
-        <MonthlyLearningRateChart 
-          characterProgress={characterProgress} 
+        <MonthlyLearningRateChart
+          characterProgress={characterProgress}
           charactersStartedLearning={charactersStartedLearning}
         />
 

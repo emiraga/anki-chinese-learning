@@ -269,7 +269,7 @@ IMPORTANT RULES:
           });
           setExtractedPhrases((phrases) =>
             phrases.filter(
-              (phrase, index) =>
+              (phrase) =>
                 phrase.isDuplicate ||
                 failedIndices.has(phrasesToAdd.findIndex((p) => p === phrase))
             )
