@@ -498,6 +498,9 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
               ) {
                 return undefined;
               }
+              if (card.deckName === "Chinese forgot cards today") {
+                return undefined;
+              }
               const id =
                 note.fields["ID"]?.value ||
                 note.fields["Traditional"]?.value ||
