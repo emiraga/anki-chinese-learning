@@ -198,19 +198,14 @@ IMPORTANT RULES:
       // Get deck name from the first card configuration, or use a default
       const deckName = noteType.cards?.[0]?.deckName || "Default";
 
-      // Filter out duplicates if user wants to avoid them
-      const phrasesToAdd = extractedPhrases.filter(
-        (phrase) => !phrase.isDuplicate
-      );
-
-      if (phrasesToAdd.length === 0) {
-        setError("No new phrases to add (all are duplicates).");
+      if (extractedPhrases.length === 0) {
+        setError("No new phrases to add.");
         setIsAddingToAnki(false);
         return;
       }
 
       // Prepare notes for Anki
-      const notes = phrasesToAdd.map((phrase) => ({
+      const notes = extractedPhrases.map((phrase) => ({
         deckName: deckName,
         modelName: noteType.noteType,
         fields: {
@@ -268,10 +263,8 @@ IMPORTANT RULES:
             if (id === null) failedIndices.add(index);
           });
           setExtractedPhrases((phrases) =>
-            phrases.filter(
-              (phrase) =>
-                phrase.isDuplicate ||
-                failedIndices.has(phrasesToAdd.findIndex((p) => p === phrase))
+            phrases.filter((phrase) =>
+              failedIndices.has(extractedPhrases.findIndex((p) => p === phrase))
             )
           );
         } else {
@@ -363,17 +356,13 @@ IMPORTANT RULES:
           <button
             onClick={handleAddToAnki}
             disabled={
-              isProcessing ||
-              isAddingToAnki ||
-              extractedPhrases.filter((p) => !p.isDuplicate).length === 0
+              isProcessing || isAddingToAnki || extractedPhrases.length === 0
             }
             className="px-6 py-3 bg-green-600 text-white font-semibold rounded-md shadow-sm hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
           >
             {isAddingToAnki
               ? "Adding to Anki..."
-              : `Add to Anki (${
-                  extractedPhrases.filter((p) => !p.isDuplicate).length
-                })`}
+              : `Add to Anki (${extractedPhrases.length})`}
           </button>
         )}
       </div>
