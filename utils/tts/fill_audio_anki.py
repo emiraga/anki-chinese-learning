@@ -1,3 +1,12 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "requests",
+#   "google.cloud.texttospeech",
+# ]
+# ///
+
 import os
 import requests
 import base64
@@ -43,7 +52,7 @@ def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"
     # Select the type of audio file
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=0.8,  # Speed (0.25 to 4.0)
+        speaking_rate=1.0,  # Speed (0.25 to 4.0)
         pitch=0.0,          # Pitch (-20.0 to 20.0)
         volume_gain_db=0.0  # Volume (-96.0 to 16.0)
     )
@@ -246,7 +255,7 @@ def find_note_by_empty_audio(note_type):
             print(f"Found {len(note_ids)} note(s) with empty audio")
             return note_ids
 
-    print(f"No notes found with empty audio")
+    print("No notes found with empty audio")
     return []
 
 

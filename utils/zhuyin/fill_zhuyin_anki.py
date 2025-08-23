@@ -1,3 +1,12 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.1"
+# dependencies = [
+#   "requests",
+#   "dragonmapper",
+# ]
+# ///
+
 import requests
 import dragonmapper
 import dragonmapper.transcriptions
