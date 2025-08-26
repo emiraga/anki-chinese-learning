@@ -19,13 +19,12 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function StudyWeakChars() {
-  const { loading, characters, charPhrasesPinyin } =
-    useOutletContext<OutletContext>();
+  const { loading, characters, phrases } = useOutletContext<OutletContext>();
 
   const weakChars = useMemo(() => {
-    if (loading || !characters || !charPhrasesPinyin) return [];
-    return getWeakCharacters(charPhrasesPinyin, characters, 30);
-  }, [loading, characters, charPhrasesPinyin]);
+    if (loading || !characters || !phrases) return [];
+    return getWeakCharacters(phrases, characters, 300);
+  }, [loading, characters, phrases]);
 
   return (
     <MainFrame>
@@ -56,11 +55,6 @@ export default function StudyWeakChars() {
                   <span className="font-bold">{charInfo.totalPhraseCount}</span>{" "}
                   phrase{charInfo.totalPhraseCount !== 1 ? "s" : ""}
                 </div>
-                {charInfo.pronunciationCount > 1 && (
-                  <div className="text-xs text-gray-500">
-                    {charInfo.pronunciationCount} pronunciations
-                  </div>
-                )}
               </div>
 
               {characters[charInfo.char] && (

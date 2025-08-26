@@ -1,40 +1,31 @@
-import type { CharsToPhrasesPinyin } from "./phrases";
+import type { PhraseType } from "./phrases";
 import type { CharactersType } from "./characters";
 
 export interface WeakCharacterInfo {
   char: string;
   totalPhraseCount: number;
-  pronunciationCount: number;
 }
 
 export function getWeakCharacters(
-  charPhrasesPinyin: CharsToPhrasesPinyin,
+  phrases: PhraseType[],
   characters: CharactersType,
   limit: number = 20
 ): WeakCharacterInfo[] {
-  const weakChars: WeakCharacterInfo[] = [];
-
-  for (const [char, pronunciations] of Object.entries(charPhrasesPinyin)) {
-    if (!characters[char]) continue;
-
-    let totalPhraseCount = 0;
-    let pronunciationCount = 0;
-
-    for (const pronunciation of Object.values(pronunciations)) {
-      if (pronunciation.count && !pronunciation.ignoredFifthTone) {
-        totalPhraseCount += pronunciation.count;
-        pronunciationCount++;
+  const count: { [key: string]: number } = {};
+  for (const [c] of Object.entries(characters).filter(([, v]) => v.withSound)) {
+    count[c] = 0;
+  }
+  for (const phrase of phrases) {
+    for (const c of [...phrase.traditional]) {
+      if (count[c] !== undefined) {
+        count[c]++;
       }
     }
-
-    if (totalPhraseCount > 0) {
-      weakChars.push({
-        char,
-        totalPhraseCount,
-        pronunciationCount,
-      });
-    }
   }
+
+  const weakChars: WeakCharacterInfo[] = Object.entries(count).map(
+    ([char, totalPhraseCount]) => ({ char, totalPhraseCount })
+  );
 
   return weakChars
     .sort((a, b) => a.totalPhraseCount - b.totalPhraseCount)
