@@ -18,116 +18,6 @@ import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 import { LoadingProgressBar } from "./LoadingProgressBar";
 
-function IntegrityColorsInAnki() {
-  const { characters } = useOutletContext<OutletContext>();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const filtered = Object.values(characters)
-    .filter((char) => char.pinyinAnki !== undefined)
-    .map((char) => {
-      var e = char.pinyin[0].pinyinAccented;
-      if (char.pinyin[0].tone === 1) {
-        e =
-          '<span style="color: rgb(255, 0, 0);">' +
-          char.pinyin[0].pinyinAccented +
-          "</span>";
-      } else if (char.pinyin[0].tone === 2) {
-        e =
-          '<span style="color: rgb(0, 170, 0);">' +
-          char.pinyin[0].pinyinAccented +
-          "</span>";
-      } else if (char.pinyin[0].tone === 3) {
-        e =
-          '<span style="color: rgb(0, 0, 255);">' +
-          char.pinyin[0].pinyinAccented +
-          "</span>";
-      } else if (char.pinyin[0].tone === 4) {
-        e =
-          '<span style="color: rgb(170, 0, 255);">' +
-          char.pinyin[0].pinyinAccented +
-          "</span>";
-      }
-      return { ...char, expectedPinyin: e };
-    })
-    .filter(
-      (char) =>
-        char.withSound && char.expectedPinyin !== (char.pinyinAnki || [""])[0]
-    );
-  if (filtered.length === 0) {
-    return undefined;
-  }
-  return (
-    <>
-      <h3 className="font-serif text-3xl">
-        Migration of colors:{" "}
-        <button
-          className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors disabled:opacity-50"
-          disabled={isProcessing}
-          onClick={async () => {
-            setIsProcessing(true);
-            setProgress({ current: 0, total: filtered.length });
-
-            for (let i = 0; i < filtered.length; i++) {
-              const char = filtered[i];
-              setProgress({ current: i + 1, total: filtered.length });
-
-              await anki.note.updateNoteFields({
-                note: {
-                  id: char.ankiId || 0,
-                  fields: { Pinyin: char.expectedPinyin },
-                },
-              });
-            }
-
-            setIsProcessing(false);
-            alert("Fixed all!");
-          }}
-        >
-          {isProcessing ? "Processing..." : "Auto-fix all!"}
-        </button>
-        {isProcessing && (
-          <div className="mt-2">
-            <progress
-              className="w-full h-2"
-              value={progress.current}
-              max={progress.total}
-            />
-            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {progress.current} / {progress.total} characters
-            </div>
-          </div>
-        )}
-      </h3>
-
-      <div className="mx-4">
-        {filtered.map((char, i) => (
-          <div key={i}>
-            <hr />
-            <CharCardDetails char={char} />
-            {char.expectedPinyin} ||| {char.pinyin[0].pinyinAccented}
-            {char.ankiId ? (
-              <button
-                className="rounded-2xl px-2 py-1 m-1 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700 transition-colors"
-                onClick={async () => {
-                  await anki.note.updateNoteFields({
-                    note: {
-                      id: char.ankiId || 0,
-                      fields: { Pinyin: char.expectedPinyin },
-                    },
-                  });
-                  alert("Fixed!");
-                }}
-              >
-                Auto-fix!
-              </button>
-            ) : undefined}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
 function IntegrityActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -935,9 +825,6 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
 
   return (
     <>
-      <section className="block m-4">
-        <IntegrityColorsInAnki />
-      </section>
       <section className="block m-4">
         <IntegrityActorPlaceAnki />
       </section>
