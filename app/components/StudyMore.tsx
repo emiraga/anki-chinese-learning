@@ -38,7 +38,8 @@ function TodoPhrases() {
       {notes.map((note, i) => {
         return (
           <div key={i}>
-            🚨 TODO: <PhraseLink value={note.fields["Traditional"]?.value} /> -{" "}
+            🚨 TODO:{" "}
+            <PhraseLink value={note.fields["Traditional"]?.value || ""} /> -{" "}
             <span
               dangerouslySetInnerHTML={{
                 __html: note.fields["Meaning"]?.value,

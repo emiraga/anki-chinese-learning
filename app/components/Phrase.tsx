@@ -1,11 +1,25 @@
 import { ankiOpenBrowse } from "~/apis/anki";
-import type { PhraseType } from "~/data/phrases";
+import { IGNORE_PHRASE_CHARS, type PhraseType } from "~/data/phrases";
 import { TagList } from "./TagList";
-import { Link } from "react-router";
+import { Link, useOutletContext } from "react-router";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
+import type { OutletContext } from "~/data/types";
 
-export const PhraseLink: React.FC<{ value?: string }> = ({ value }) => {
-  return <Link to={`/phrase/${encodeURIComponent(value || "")}`}>{value}</Link>;
+export const PhraseLink: React.FC<{ value: string }> = ({ value }) => {
+  const { characters } = useOutletContext<OutletContext>();
+  return (
+    <Link to={`/phrase/${encodeURIComponent(value)}`}>
+      {[...value].map((c, i) =>
+        !characters[c] && !IGNORE_PHRASE_CHARS.has(c) ? (
+          <span key={i} className="text-red-600">
+            {c}
+          </span>
+        ) : (
+          c
+        )
+      )}
+    </Link>
+  );
 };
 
 export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({

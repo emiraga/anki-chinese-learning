@@ -6,7 +6,7 @@ import { useGenerativeModel } from "~/apis/google_genai";
 import { useAnkiPhrases } from "~/data/phrases";
 import anki from "~/apis/anki";
 import Textarea from "react-textarea-autosize";
-import { HanziText } from "./HanziText";
+import { PhraseLink } from "./Phrase";
 
 export interface ExtractedPhrase {
   traditional: string;
@@ -471,7 +471,7 @@ IMPORTANT RULES:
                       Traditional
                     </span>
                     <p className="text-xl font-medium text-gray-900 dark:text-gray-100">
-                      <HanziText value={phrase.traditional} />
+                      <PhraseLink value={phrase.traditional} />
                       {phrase.isDuplicate && (
                         <span className="text-sm ml-2 text-yellow-800 dark:text-yellow-200 font-medium">
                           ⚠️
