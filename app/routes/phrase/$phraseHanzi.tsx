@@ -10,7 +10,7 @@ import { HanziCardDetails, HanziText } from "~/components/HanziText";
 import { useSettings } from "~/settings/SettingsContext";
 
 export function meta({ params }: Route.MetaArgs) {
-  const phraseHanzi = decodeURIComponent(params.phraseHanzi || '');
+  const phraseHanzi = decodeURIComponent(params.phraseHanzi || "");
   return [
     { title: `Phrase: ${phraseHanzi}` },
     {
@@ -31,10 +31,10 @@ export default function PhraseHanzi() {
 
   const phraseHanzi = decodeURIComponent(encodedPhraseHanzi);
 
-  const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   const filteredPhrases = phrases.filter((phrase) =>
     phrase.traditional.includes(phraseHanzi)
   );
+  const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   return (
     <main>
       <MainToolbar />

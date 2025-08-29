@@ -134,14 +134,42 @@ IMPORTANT RULES:
     try {
       const result = await genAImodel.generateContent(request);
       const responseText = result.response.text();
-      const parsedResponse = JSON.parse(responseText);
+      const parsedResponse = JSON.parse(responseText) as {
+        phrases: ExtractedPhrase[];
+      };
 
       if (parsedResponse.phrases && parsedResponse.phrases.length > 0) {
-        // Check for duplicates and mark them
+        // Check for duplicates using direct Anki search
+        const traditionalPhrases = parsedResponse.phrases.map(
+          (p: ExtractedPhrase) => p.traditional
+        );
+        const searchQuery = traditionalPhrases
+          .map((phrase) => `Traditional:"${phrase}"`)
+          .join(" OR ");
+
+        let ankiDuplicates = new Set<string>(existingPhrasesSet);
+        try {
+          const duplicateNoteIds = await anki.note.findNotes({
+            query: searchQuery,
+          });
+          if (duplicateNoteIds.length > 0) {
+            const duplicateNotesInfo = await anki.note.notesInfo({
+              notes: duplicateNoteIds,
+            });
+            duplicateNotesInfo.forEach((note) => {
+              if (note.fields.Traditional) {
+                ankiDuplicates.add(note.fields.Traditional.value);
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Failed to check for duplicates in Anki:", e);
+        }
+
         const phrasesWithDuplicateCheck = parsedResponse.phrases.map(
           (phrase: ExtractedPhrase) => ({
             ...phrase,
-            isDuplicate: existingPhrasesSet.has(phrase.traditional),
+            isDuplicate: ankiDuplicates.has(phrase.traditional),
           })
         );
         setExtractedPhrases(phrasesWithDuplicateCheck);
