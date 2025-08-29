@@ -403,7 +403,7 @@ const calculateMonthlyRates = (
       monthLabel:
         new Date(year, month - 1).toLocaleDateString("en-CA", {
           month: "short",
-          year: "2-digit",
+          year: "numeric",
         }) + (isCurrentMonth ? "*" : ""),
       charactersLearned: data.learned,
       charactersStarted: data.started,
