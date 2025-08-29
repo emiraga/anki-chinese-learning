@@ -2,12 +2,12 @@
 
 @font-face {
   font-family: "TW-MOE-Std-Kai";
-  src: url("_MoeStandardKai.ttf") format("truetype");
+  src: url("/_MoeStandardKai.ttf") format("truetype");
 }
 
 @font-face {
   font-family: "TW-Kai";
-  src: url("_kaiu.ttf") format("truetype");
+  src: url("/_kaiu.ttf") format("truetype");
 }
 
 @theme {
