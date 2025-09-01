@@ -1,22 +1,26 @@
 import * as React from "react";
-import { useAnkiCards } from "~/apis/anki";
-import type { NoteWithCards } from "~/apis/anki";
+import { useState, useEffect, useCallback } from "react";
+import anki from "~/apis/anki";
+import { getAnkiNoteFilter } from "~/apis/anki";
 import type { Route } from "./+types/exam_level";
 import MainFrame from "~/toolbar/frame";
 import { LoadingProgressBar } from "~/components/LoadingProgressBar";
 
 // Configuration for continuous progress bar
 const PROGRESS_STAGE_CONFIG = {
-  "Finding notes...": { start: 0, end: 1 },
-  "Loading notes...": { start: 1, end: 20 },
-  "Loading cards...": { start: 20, end: 100 },
+  "Loading L0 cards...": { start: 0, end: 20 },
+  "Loading L1 cards...": { start: 20, end: 40 },
+  "Loading L2 cards...": { start: 40, end: 60 },
+  "Loading L4 cards...": { start: 60, end: 80 },
+  "Loading L5 cards...": { start: 80, end: 100 },
 } as const;
 
-type ExamCard = {
-  noteId: number;
-  tags: string[];
-  tocflLevel?: string;
-  status: "pending" | "in_progress" | "mature";
+type LevelStats = {
+  level: string;
+  pending: number;
+  inProgress: number;
+  mature: number;
+  total: number;
 };
 
 const LearningProgressBar: React.FC<{
@@ -107,81 +111,80 @@ export function meta({}: Route.MetaArgs) {
 }
 
 function ExamLevelContent() {
-  const { notesByCards, loading, progressPercentage, stage, error, reload } =
-    useAnkiCards("card:0 (tag:TOCFL::L0 OR tag:TOCFL::L1 OR tag:TOCFL::L2)");
+  const [levelStats, setLevelStats] = useState<LevelStats[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [progressPercentage, setProgressPercentage] = useState<number>(0);
+  const [stage, setStage] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [totalCards, setTotalCards] = useState<number>(0);
 
-  // Process notes to get exam cards (only first card from each note)
-  const examCards: ExamCard[] = notesByCards.map((note: NoteWithCards) => {
-    // Sort cards by card ID to get the first card consistently
-    const sortedCards = note.cardDetails.sort((a, b) => a.cardId - b.cardId);
-    const firstCard = sortedCards[0];
+  const loadCardCounts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setProgressPercentage(0);
+      setLevelStats([]);
+      setTotalCards(0);
 
-    // Extract TOCFL level from tags (e.g., "TOCFL::L0" -> "L0")
-    const tocflTag = note.tags.find((tag) => tag.startsWith("TOCFL::"));
-    const tocflLevel = tocflTag?.split("::")[1];
+      const levels = ["L0", "L1", "L2", "L4", "L5"];
+      const baseFilter = getAnkiNoteFilter();
+      const results: LevelStats[] = [];
+      let total = 0;
 
-    // Determine status based on card properties (using queue which is more reliable)
-    let status: ExamCard["status"] = "pending";
+      for (let i = 0; i < levels.length; i++) {
+        const level = levels[i];
+        setStage(`Loading ${level} cards...`);
 
-    // Anki queue values:
-    // -3: user buried (sched v1)
-    // -2: sched buried (sched v1)
-    // -1: suspended
-    // 0: new
-    // 2: review (due)
-    // 4: preview
+        // Query for each status type serially
+        setProgressPercentage(0);
+        const pendingIds = await anki.note.findNotes({
+          query: `${baseFilter} card:0 tag:TOCFL::${level} (is:new OR is:suspended)`,
+        });
 
-    if (firstCard.queue === -1) {
-      // Suspended
-      status = "pending";
-    } else if (firstCard.queue === 0) {
-      // New
-      status = "pending";
-    } else if (firstCard.queue === 2) {
-      // Review
-      // Mature cards typically have interval >= 21 days
-      status = firstCard.interval >= 21 ? "mature" : "in_progress";
-    } else {
-      // Fallback to type if queue is unexpected
-      if (firstCard.type === 2) {
-        // Suspended
-        status = "pending";
-      } else if (firstCard.type === 0) {
-        // New
-        status = "pending";
-      } else if (firstCard.type === 2) {
-        // Review
-        status = firstCard.interval >= 21 ? "mature" : "in_progress";
+        setProgressPercentage(33);
+        const inProgressIds = await anki.note.findNotes({
+          query: `${baseFilter} card:0 tag:TOCFL::${level} -is:new -is:suspended prop:ivl<21`,
+        });
+
+        setProgressPercentage(66);
+        const matureIds = await anki.note.findNotes({
+          query: `${baseFilter} card:0 tag:TOCFL::${level} prop:ivl>=21`,
+        });
+
+        setProgressPercentage(99);
+        const pending = pendingIds.length;
+        const inProgress = inProgressIds.length;
+        const mature = matureIds.length;
+        const levelTotal = pending + inProgress + mature;
+
+        results.push({
+          level,
+          pending,
+          inProgress,
+          mature,
+          total: levelTotal,
+        });
+
+        total += levelTotal;
+        setProgressPercentage(((i + 1) / levels.length) * 100);
       }
+
+      setLevelStats(results);
+      setTotalCards(total);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred while loading card counts");
+      }
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    return {
-      noteId: note.noteId,
-      tags: note.tags,
-      tocflLevel,
-      status,
-    };
-  });
-
-  // Group cards by TOCFL level
-  const cardsByLevel = examCards.reduce((acc, card) => {
-    const level = card.tocflLevel || "No Level";
-    if (!acc[level]) {
-      acc[level] = [];
-    }
-    acc[level].push(card);
-    return acc;
-  }, {} as Record<string, ExamCard[]>);
-
-  // Sort levels (L0, L1, L2, etc., then No Level)
-  const sortedLevels = Object.keys(cardsByLevel).sort((a, b) => {
-    if (a === "No Level") return 1;
-    if (b === "No Level") return -1;
-    // Sort by level number (L0, L1, L2, etc.)
-    const aNum = parseInt(a.replace("L", ""));
-    const bNum = parseInt(b.replace("L", ""));
-    return aNum - bNum;
-  });
+  useEffect(() => {
+    loadCardCounts();
+  }, [loadCardCounts]);
 
   if (loading) {
     return (
@@ -210,7 +213,7 @@ function ExamLevelContent() {
           </h3>
           <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
           <button
-            onClick={reload}
+            onClick={loadCardCounts}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             Try Again
@@ -228,7 +231,7 @@ function ExamLevelContent() {
         </h1>
       </div>
 
-      {sortedLevels.length === 0 ? (
+      {levelStats.length === 0 ? (
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
           <p className="text-gray-600 dark:text-gray-400">
             No cards found. Make sure you have Anki cards with TOCFL tags.
@@ -237,32 +240,19 @@ function ExamLevelContent() {
       ) : (
         <div>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Total: {examCards.length} notes analyzed
+            Total: {totalCards} cards analyzed
           </p>
 
-          {sortedLevels.map((level) => {
-            const levelCards = cardsByLevel[level];
-            const pending = levelCards.filter(
-              (c) => c.status === "pending"
-            ).length;
-            const inProgress = levelCards.filter(
-              (c) => c.status === "in_progress"
-            ).length;
-            const mature = levelCards.filter(
-              (c) => c.status === "mature"
-            ).length;
-
-            return (
-              <LearningProgressBar
-                key={level}
-                level={level}
-                pending={pending}
-                inProgress={inProgress}
-                mature={mature}
-                total={levelCards.length}
-              />
-            );
-          })}
+          {levelStats.map((stats) => (
+            <LearningProgressBar
+              key={stats.level}
+              level={stats.level}
+              pending={stats.pending}
+              inProgress={stats.inProgress}
+              mature={stats.mature}
+              total={stats.total}
+            />
+          ))}
         </div>
       )}
 
