@@ -121,14 +121,6 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
           if (traditional.length !== 1) {
             throw new Error("should be a single character: " + traditional);
           }
-          const notLearningSound1 =
-            (note.fields["Meaning 2"]?.value?.length ?? 0) === 0;
-          const notLearningSound2 = note.tags.includes(
-            "not-learning-sound-yet"
-          );
-          if (notLearningSound1 !== notLearningSound2) {
-            throw new Error("Not learning sound conflict: " + traditional);
-          }
 
           const pinyinAnki1 = note.fields["Pinyin"].value;
           const pinyinAnki2 = note.fields["Pinyin others"]?.value
@@ -146,15 +138,6 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
                   .map((p) => fromAccentedPinyin(cleanPinyinAnkiField(p)))
               : undefined;
 
-          if (
-            note.tags.includes("not-learning-sound-yet") &&
-            note.tags.includes("not-learning-meaning-yet")
-          ) {
-            throw new Error(
-              "Not learning either meaning or sound for Hanzi char: " +
-                traditional
-            );
-          }
           let info: CharacterType = {
             ankiId: note.noteId,
             traditional,
