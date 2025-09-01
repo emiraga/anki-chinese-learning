@@ -19,7 +19,7 @@ type ExamCard = {
   status: "pending" | "in_progress" | "mature";
 };
 
-const ProgressBar: React.FC<{
+const LearningProgressBar: React.FC<{
   level: string;
   pending: number;
   inProgress: number;
@@ -120,21 +120,6 @@ function ExamLevelContent() {
     const tocflTag = note.tags.find((tag) => tag.startsWith("TOCFL::"));
     const tocflLevel = tocflTag?.split("::")[1];
 
-    // Debug logging to see actual card properties
-    if (note.noteId === notesByCards[0]?.noteId) {
-      console.log("First card debug:", {
-        cardId: firstCard.cardId,
-        type: firstCard.type,
-        queue: firstCard.queue,
-        due: firstCard.due,
-        interval: firstCard.interval,
-        // ease: firstCard.ease,
-        reps: firstCard.reps,
-        lapses: firstCard.lapses,
-        left: firstCard.left,
-      });
-    }
-
     // Determine status based on card properties (using queue which is more reliable)
     let status: ExamCard["status"] = "pending";
 
@@ -204,8 +189,8 @@ function ExamLevelContent() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
           Exam Level Analysis
         </h1>
-        <LoadingProgressBar 
-          stage={stage} 
+        <LoadingProgressBar
+          stage={stage}
           progressPercentage={progressPercentage}
           stageConfig={PROGRESS_STAGE_CONFIG}
         />
@@ -268,7 +253,7 @@ function ExamLevelContent() {
             ).length;
 
             return (
-              <ProgressBar
+              <LearningProgressBar
                 key={level}
                 level={level}
                 pending={pending}

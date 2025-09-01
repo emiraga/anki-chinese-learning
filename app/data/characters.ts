@@ -25,7 +25,6 @@ function fromAccentedPinyin(pinyin: string): PinyinType {
   const sylable = removeTone(pinyin);
   const toneMatch = diacriticToNumber(pinyin).match(/([a-z]+)([1-5])*$/);
   if (!toneMatch) {
-    console.log(pinyin);
     throw new Error("invalid pinyin: " + pinyin);
   }
   let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
