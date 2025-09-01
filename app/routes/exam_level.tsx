@@ -138,17 +138,17 @@ function ExamLevelContent() {
         // Query for each status type serially
         setProgressPercentage(0);
         const pendingIds = await anki.note.findNotes({
-          query: `${baseFilter} card:0 tag:TOCFL::${level} (is:new OR is:suspended)`,
+          query: `${baseFilter} card:0 (tag:TOCFL::${level} OR tag:${level}) (is:new OR is:suspended)`,
         });
 
         setProgressPercentage(33);
         const inProgressIds = await anki.note.findNotes({
-          query: `${baseFilter} card:0 tag:TOCFL::${level} -is:new -is:suspended prop:ivl<21`,
+          query: `${baseFilter} card:0 (tag:TOCFL::${level} OR tag:${level}) -is:new -is:suspended prop:ivl<21`,
         });
 
         setProgressPercentage(66);
         const matureIds = await anki.note.findNotes({
-          query: `${baseFilter} card:0 tag:TOCFL::${level} prop:ivl>=21`,
+          query: `${baseFilter} card:0 (tag:TOCFL::${level} OR tag:${level}) prop:ivl>=21`,
         });
 
         setProgressPercentage(99);
