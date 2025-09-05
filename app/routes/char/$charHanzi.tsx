@@ -80,10 +80,10 @@ export default function CharDetail() {
           {/*<span className="font-mono text-8xl">{char.traditional}</span>*/}
           <span className="font-thin text-8xl">{char.traditional}</span>
           <span className="font-serif text-8xl">{char.traditional}</span>
-          <span className="hanzipen-tc text-8xl">{char.traditional}</span>
-          <span className="libian-tc text-8xl">{char.traditional}</span>
+          {/*<span className="hanzipen-tc text-8xl">{char.traditional}</span>*/}
+          {/*<span className="libian-tc text-8xl">{char.traditional}</span>*/}
           {/*<span className="wawati-tc text-8xl">{char.traditional}</span>*/}
-          <span className="xingkai-tc text-8xl">{char.traditional}</span>
+          {/*<span className="xingkai-tc text-8xl">{char.traditional}</span>*/}
           {/*<span className="lingwai-tc text-8xl">{char.traditional}</span>*/}
         </div>
         <hr className="my-4" />
