@@ -329,11 +329,7 @@ const calculateMonthlyRates = (
 
   // Group data by month
   const monthlyData: {
-    [key: string]: {
-      learned: number;
-      started: number;
-      totalDays: number;
-    };
+    [key: string]: { learned: number; started: number; totalDays: number };
   } = {};
 
   // Process learned characters
@@ -708,6 +704,7 @@ const ProgressChart: React.FC<{
       date,
       learned: lastLearnedCount,
       started: lastStartedCount,
+      inProgress: lastStartedCount - lastLearnedCount,
       dateObj: new Date(date),
     };
   });
@@ -816,6 +813,17 @@ const ProgressChart: React.FC<{
             strokeWidth={3}
             dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
             name="Characters fully learned"
+            connectNulls={false}
+          />
+
+          {/* Characters in progress line */}
+          <Line
+            type="monotone"
+            dataKey="inProgress"
+            stroke="#f63b82"
+            strokeWidth={3}
+            dot={{ fill: "#f63b82", strokeWidth: 1, r: 2 }}
+            name="Characters in progress"
             connectNulls={false}
           />
         </LineChart>
