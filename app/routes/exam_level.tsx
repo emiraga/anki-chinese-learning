@@ -8,9 +8,10 @@ import { LoadingProgressBar } from "~/components/LoadingProgressBar";
 
 // Configuration for continuous progress bar
 const PROGRESS_STAGE_CONFIG = {
-  "Loading L0 cards...": { start: 0, end: 20 },
-  "Loading L1 cards...": { start: 20, end: 40 },
-  "Loading L2 cards...": { start: 40, end: 60 },
+  "Loading L0 cards...": { start: 0, end: 15 },
+  "Loading L1 cards...": { start: 15, end: 40 },
+  "Loading L2 cards...": { start: 30, end: 45 },
+  "Loading L3 cards...": { start: 45, end: 60 },
   "Loading L4 cards...": { start: 60, end: 80 },
   "Loading L5 cards...": { start: 80, end: 100 },
 } as const;
@@ -126,7 +127,7 @@ function ExamLevelContent() {
       setLevelStats([]);
       setTotalCards(0);
 
-      const levels = ["L0", "L1", "L2", "L4", "L5"];
+      const levels = ["L0", "L1", "L2", "L3", "L4", "L5"];
       const baseFilter = getAnkiNoteFilter();
       const results: LevelStats[] = [];
       let total = 0;
