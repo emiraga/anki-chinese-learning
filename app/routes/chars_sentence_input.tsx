@@ -52,44 +52,41 @@ export default function TodoCharsSentenceInput() {
           />
         </h3>
 
-        <div className="m-4">
-          <label
-            htmlFor="segmentationAlgorithm"
-            className="block text-sm font-medium mb-2"
-          >
-            Segmentation Algorithm:
-          </label>
-          <select
-            id="segmentationAlgorithm"
-            value={algorithm}
-            onChange={(e) =>
-              setAlgorithm(e.target.value as SegmentationAlgorithm)
-            }
-            className="border border-gray-300 rounded px-3 py-1"
-          >
-            <option value="intl-tw">Intl.Segmenter Taiwan (Browser)</option>
-            <option value="intl-cn">Intl.Segmenter China (Browser)</option>
-            <option value="character">Character by Character</option>
-          </select>
-        </div>
+        {sentence.length > 0 ? (
+          <>
+            <div className="m-4">
+              <label
+                htmlFor="segmentationAlgorithm"
+                className="block text-sm font-medium mb-2"
+              >
+                Segmentation Algorithm:
+              </label>
+              <select
+                id="segmentationAlgorithm"
+                value={algorithm}
+                onChange={(e) =>
+                  setAlgorithm(e.target.value as SegmentationAlgorithm)
+                }
+                className="border border-gray-300 rounded px-3 py-1"
+              >
+                <option value="intl-tw">Intl.Segmenter Taiwan (Browser)</option>
+                <option value="intl-cn">Intl.Segmenter China (Browser)</option>
+                <option value="character">Character by Character</option>
+              </select>
+            </div>
 
-        <div className="m-4">
-          <h4 className="text-lg font-semibold mb-2">Segmented Text:</h4>
-          <div className="text-2xl">
-            <HanziSegmentedText value={sentence} algorithm={algorithm} />
-          </div>
-          <p className="text-sm text-gray-600 mt-2">
-            Words are underlined to show segmentation boundaries
-          </p>
-        </div>
+            <div className="m-4">
+              <h4 className="text-lg font-semibold mb-2">Segmented Text:</h4>
+              <div className="text-2xl">
+                <HanziSegmentedText value={sentence} algorithm={algorithm} />
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Words are underlined to show segmentation boundaries
+              </p>
+            </div>
+          </>
+        ) : undefined}
       </section>
-      <Section display={!!settings.characterNote?.noteType}>
-        {[...removeDuplicateChars(sentence, IGNORE_PHRASE_CHARS)].map(
-          (c, i) => (
-            <HanziCardDetails key={i} c={c} characters={characters} />
-          )
-        )}
-      </Section>
     </main>
   );
 }
