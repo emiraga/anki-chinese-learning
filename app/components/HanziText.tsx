@@ -5,6 +5,7 @@ import { CharCardDetails, CharLink } from "./CharCard";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { segmentChineseText, type SegmentationAlgorithm } from "~/data/utils";
 import { useMemo } from "react";
+import { Link } from "react-router";
 
 export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
   const { characters } = useOutletContext<OutletContext>();
@@ -85,15 +86,16 @@ export const HanziSegmentedText: React.FC<{
               .length > 0;
 
           return (
-            <span
+            <Link
               key={i}
+              to={`/phrase/${segment.text}`}
               className={`inline-block ${
                 shouldUnderline
                   ? knowPhrases.has(segment.text)
-                    ? " border-b border-gray-600 "
-                    : " border-b border-red-500 "
+                    ? " border-b-2 border-gray-600 hover:border-blue-500 "
+                    : " border-b-2 border-red-500 hover:border-blue-500 "
                   : ""
-              } mx-1`}
+              } mx-1 px-1 py-1 cursor-pointer`}
             >
               {[...segment.text].map((c, charIndex) => {
                 if (IGNORE_PHRASE_CHARS.has(c)) {
@@ -115,7 +117,7 @@ export const HanziSegmentedText: React.FC<{
                   />
                 );
               })}
-            </span>
+            </Link>
           );
         } else {
           // Single character or punctuation
