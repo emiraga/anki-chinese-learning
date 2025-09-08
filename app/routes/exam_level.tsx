@@ -9,7 +9,7 @@ import { LoadingProgressBar } from "~/components/LoadingProgressBar";
 // Configuration for continuous progress bar
 const PROGRESS_STAGE_CONFIG = {
   "Loading L0 cards...": { start: 0, end: 15 },
-  "Loading L1 cards...": { start: 15, end: 40 },
+  "Loading L1 cards...": { start: 15, end: 30 },
   "Loading L2 cards...": { start: 30, end: 45 },
   "Loading L3 cards...": { start: 45, end: 60 },
   "Loading L4 cards...": { start: 60, end: 80 },
