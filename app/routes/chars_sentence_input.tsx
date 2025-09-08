@@ -1,20 +1,9 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
-import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
-import {
-  HanziCardDetails,
-  // HanziText,
-  HanziSegmentedText,
-} from "~/components/HanziText";
-import {
-  removeDuplicateChars,
-  useLocalStorageState,
-  type SegmentationAlgorithm,
-} from "~/data/utils";
-import Section from "~/toolbar/section";
-import { useSettings } from "~/settings/SettingsContext";
+import { HanziSegmentedText } from "~/components/HanziText";
+import { useLocalStorageState, type SegmentationAlgorithm } from "~/data/utils";
 import Textarea from "react-textarea-autosize";
 
 export function meta({}: Route.MetaArgs) {
@@ -25,7 +14,6 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function TodoCharsSentenceInput() {
-  const { characters } = useOutletContext<OutletContext>();
   let [sentence, setSentence] = useLocalStorageState(
     "todoCharsSentenceInput",
     ""
@@ -34,7 +22,6 @@ export default function TodoCharsSentenceInput() {
     "segmentationAlgorithm",
     "intl-tw"
   );
-  const { settings } = useSettings();
 
   return (
     <main>

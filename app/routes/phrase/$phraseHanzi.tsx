@@ -3,7 +3,7 @@ import type { Route } from "../+types/index";
 import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { PhraseList } from "~/components/Phrase";
-import { SearchMorePhrases } from "~/components/StudyMore";
+import { SearchMorePhrases } from "~/components/MorePhrases";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { removeDuplicateChars } from "~/data/utils";
 import { HanziCardDetails, HanziText } from "~/components/HanziText";

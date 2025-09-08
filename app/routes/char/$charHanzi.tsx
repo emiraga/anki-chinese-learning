@@ -8,7 +8,7 @@ import { PROP_MISC_TAGS } from "~/data/props";
 import { PhraseList } from "~/components/Phrase";
 import { LearnLink, PromptsLink } from "~/components/Learn";
 import { getNewCharacter } from "~/data/characters";
-import { SearchMorePhrases } from "~/components/StudyMore";
+import { SearchMorePhrases } from "~/components/MorePhrases";
 import { PinyinText } from "~/components/PinyinText";
 import { useSettings } from "~/settings/SettingsContext";
 import { comparePinyin } from "~/data/pinyin_function";

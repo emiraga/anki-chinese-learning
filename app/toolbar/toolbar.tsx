@@ -158,6 +158,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Problematic",
           show: Object.keys(phrases).length > 0,
         },
+        {
+          pathname: "/advance_cards",
+          name: "Advance Cards",
+          show: true,
+        },
       ],
     },
     { pathname: "/practice", name: "Practice", show: phrases.length > 0 },

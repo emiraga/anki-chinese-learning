@@ -24,6 +24,7 @@ export default [
   route("stats_progress", "routes/stats_progress.tsx"),
   route("study", "routes/study.tsx"),
   route("study_weak_chars", "routes/study_weak_chars.tsx"),
+  route("advance_cards", "routes/advance_cards.tsx"),
   route("sylable/:sylable", "routes/sylable/$sylable.tsx"),
   route("tag/:tagName", "routes/tag/$tagName.tsx"),
   route("tags", "routes/tags.tsx"),
