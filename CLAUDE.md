@@ -81,6 +81,7 @@ Uses React Router's file-based routing with comprehensive routes for:
 - Requires AnkiConnect addon installed in Anki desktop
 - Fetches cards, notes, and manages Anki data
 - Automatic synchronization with Anki database
+- API documentation: https://git.sr.ht/~foosoft/anki-connect
 
 ### AI-Powered Learning
 - Claude API integration for sentence generation

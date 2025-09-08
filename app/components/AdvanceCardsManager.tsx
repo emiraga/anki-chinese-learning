@@ -66,6 +66,14 @@ const AdvanceCardsManager: React.FC = () => {
       parts.push(`"${filters.textFilter}"`);
     }
 
+    if (filters.dueDateLongerThan !== undefined) {
+      parts.push(`prop:due>=${filters.dueDateLongerThan}`);
+    }
+
+    if (filters.intervalLongerThan !== undefined) {
+      parts.push(`prop:ivl>=${filters.intervalLongerThan}`);
+    }
+
     parts.push("-is:suspended");
     parts.push("-is:new");
 
@@ -113,28 +121,14 @@ const AdvanceCardsManager: React.FC = () => {
         cards: allCardIds,
       });
 
-      setStage("Filtering cards...");
-      const filteredCards: CardWithDue[] = allCards
-        .map((card) => ({
-          ...card,
-          daysUntilDue: calculateDaysUntilDue(card.due),
-        }))
-        .filter((card) => {
-          const meetsDateCriteria =
-            filters.dueDateLongerThan !== undefined
-              ? card.daysUntilDue > filters.dueDateLongerThan
-              : true;
+      setStage("Processing cards...");
+      const cardsWithDue: CardWithDue[] = allCards.map((card) => ({
+        ...card,
+        daysUntilDue: calculateDaysUntilDue(card.due),
+      }));
 
-          const meetsIntervalCriteria =
-            filters.intervalLongerThan !== undefined
-              ? card.interval > filters.intervalLongerThan
-              : true;
-
-          return meetsDateCriteria && meetsIntervalCriteria;
-        });
-
-      setMatchingCards(filteredCards);
-      setStage(`Found ${filteredCards.length} cards`);
+      setMatchingCards(cardsWithDue);
+      setStage(`Found ${cardsWithDue.length} cards`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to query cards");
     } finally {
@@ -162,15 +156,29 @@ const AdvanceCardsManager: React.FC = () => {
         return;
       } else {
         setStage(
-          `Bringing ${cardIds.length} cards closer (within ${targetDays} days)...`
+          `Randomly distributing ${cardIds.length} cards between tomorrow and ${targetDays} days...`
         );
 
-        // Use setDueDate which accepts days as string
-        await anki.card.setDueDate({
-          cards: cardIds,
-          days: targetDays.toString(),
-        });
-        setProgress(100);
+        // Process cards in batches to show progress and avoid overwhelming Anki
+        const batchSize = 50;
+        for (let i = 0; i < cardIds.length; i += batchSize) {
+          const batch = cardIds.slice(i, i + batchSize);
+          
+          // Set each card to a random due date between 1 and targetDays
+          for (const cardId of batch) {
+            const randomDays = Math.floor(Math.random() * targetDays) + 1; // 1 to targetDays
+            await anki.card.setDueDate({
+              cards: [cardId],
+              days: randomDays.toString(),
+            });
+          }
+          
+          const progressPercent = Math.floor(((i + batch.length) / cardIds.length) * 100);
+          setProgress(progressPercent);
+          setStage(
+            `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(cardIds.length / batchSize)}... (${progressPercent}%)`
+          );
+        }
       }
 
       setStage("Action completed successfully!");
@@ -425,7 +433,7 @@ const AdvanceCardsManager: React.FC = () => {
                 className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Cards will be due within this many days from today
+                Cards will be randomly distributed between tomorrow and this many days from today
               </p>
             </div>
 
