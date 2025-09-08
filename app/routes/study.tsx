@@ -5,7 +5,6 @@ import MainFrame from "~/toolbar/frame";
 import { LearnAllCharsLink, LearnLink } from "~/components/Learn";
 import Section from "~/toolbar/section";
 import { HanziText } from "~/components/HanziText";
-import { StudyMore } from "~/components/StudyMore";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -50,8 +49,6 @@ export default function Study() {
         </h1>
         <LearnLink char={current || ""} />
       </Section>
-
-      <StudyMore />
     </MainFrame>
   );
 }

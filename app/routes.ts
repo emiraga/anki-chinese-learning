@@ -11,6 +11,7 @@ export default [
   route("phrase/:phraseHanzi", "routes/phrase/$phraseHanzi.tsx"),
   route("phrases", "routes/phrases.tsx"),
   route("phrases_import", "routes/phrases_import.tsx"),
+  route("phrases_more", "routes/phrases_more.tsx"),
   route("pinyin", "routes/pinyin.tsx"),
   route("place/:placeName", "routes/place/$placeName.tsx"),
   route("places", "routes/places.tsx"),

@@ -126,6 +126,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/phrases_more",
+          name: "Discover More",
+          show: true,
+        },
+        {
           pathname: "/phrases_import",
           name: "Import",
           show: true,

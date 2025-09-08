@@ -230,7 +230,7 @@ function NextCharsByFrequency({}: {}) {
   );
 }
 
-export const StudyMore: React.FC<{}> = ({}) => {
+export const MorePhrases: React.FC<{}> = ({}) => {
   return (
     <>
       <section className="block m-4">

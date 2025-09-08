@@ -24,6 +24,7 @@ type Params = {
   };
   "/phrases": {};
   "/phrases_import": {};
+  "/phrases_more": {};
   "/pinyin": {};
   "/place/:placeName": {
     "placeName": string;
