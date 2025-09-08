@@ -158,3 +158,4 @@ Custom hooks like `useAnkiCards`, `useAnkiCharacters`, etc. handle:
 - Chunked batch processing for large datasets
 - Proper error handling and user feedback
 - Progress tracking for long-running operations
+- For anki queries, use this as a documentation https://docs.ankiweb.net/searching.html
