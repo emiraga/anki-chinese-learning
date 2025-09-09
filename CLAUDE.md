@@ -159,3 +159,4 @@ Custom hooks like `useAnkiCards`, `useAnkiCharacters`, etc. handle:
 - Proper error handling and user feedback
 - Progress tracking for long-running operations
 - For anki queries, use this as a documentation https://docs.ankiweb.net/searching.html
+- typecheck and lint after each major task

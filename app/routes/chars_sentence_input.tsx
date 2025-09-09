@@ -1,7 +1,5 @@
 import MainToolbar from "~/toolbar/toolbar";
 import type { Route } from "./+types/index";
-import { useOutletContext } from "react-router";
-import type { OutletContext } from "~/data/types";
 import { HanziSegmentedText } from "~/components/HanziText";
 import { useLocalStorageState, type SegmentationAlgorithm } from "~/data/utils";
 import Textarea from "react-textarea-autosize";

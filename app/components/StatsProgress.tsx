@@ -42,6 +42,12 @@ const useAnkiHanziProgress = () => {
   const [charactersStartedLearning, setCharactersStartedLearning] = useState<{
     [key: string]: number;
   }>({});
+  const [dailyLearnedCharacters, setDailyLearnedCharacters] = useState<{
+    [key: string]: number;
+  }>({});
+  const [dailyStartedCharacters, setDailyStartedCharacters] = useState<{
+    [key: string]: number;
+  }>({});
   const [learningTimeDistribution, setLearningTimeDistribution] = useState<
     number[]
   >([]);
@@ -238,6 +244,8 @@ const useAnkiHanziProgress = () => {
 
         setCharacterProgress(cumulativeGraphData);
         setCharactersStartedLearning(cumulativeStartedGraphData);
+        setDailyLearnedCharacters(dailyLearnedCharacters);
+        setDailyStartedCharacters(dailyStartedCharacters);
         setLearningTimeDistribution(learningTimes);
 
         setProgressPercentage(100);
@@ -258,6 +266,8 @@ const useAnkiHanziProgress = () => {
   return {
     characterProgress,
     charactersStartedLearning,
+    dailyLearnedCharacters,
+    dailyStartedCharacters,
     learningTimeDistribution,
     loading,
     error,
@@ -658,6 +668,144 @@ const MonthlyLearningRateChart: React.FC<{
   );
 };
 
+// Daily Incremental Chart Component
+const DailyIncrementalChart: React.FC<{
+  dailyLearnedCharacters: { [key: string]: number };
+  dailyStartedCharacters: { [key: string]: number };
+}> = ({ dailyLearnedCharacters, dailyStartedCharacters }) => {
+  if (
+    Object.keys(dailyLearnedCharacters).length === 0 &&
+    Object.keys(dailyStartedCharacters).length === 0
+  ) {
+    return <div>No daily data to display</div>;
+  }
+
+  // Get all unique dates from both datasets
+  const allDates = new Set([
+    ...Object.keys(dailyLearnedCharacters),
+    ...Object.keys(dailyStartedCharacters),
+  ]);
+  const sortedDates = Array.from(allDates).sort();
+
+  // Create combined data
+  const allData = sortedDates.map((date) => ({
+    date,
+    learned: dailyLearnedCharacters[date] || 0,
+    started: dailyStartedCharacters[date] || 0,
+    dateObj: new Date(date),
+  }));
+
+  // Calculate max value for Y-axis
+  const maxLearnedValue = Math.max(...Object.values(dailyLearnedCharacters), 0);
+  const maxStartedValue = Math.max(...Object.values(dailyStartedCharacters), 0);
+  const maxValue = Math.max(maxLearnedValue, maxStartedValue);
+  const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
+
+  // Custom tooltip
+  const CustomTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active: boolean;
+    label: string;
+    payload: { name: string; value: number; color: string }[];
+  }) => {
+    if (active && payload && payload.length) {
+      const date = new Date(label).toLocaleDateString("en-CA");
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {date}
+          </p>
+          {payload.map((entry, index) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}: {entry.value} characters
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Format date for x-axis
+  const formatXAxisDate = (tickItem: string) => {
+    const date = new Date(tickItem);
+    return date.toLocaleDateString("en-CA", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  return (
+    <div className="w-full h-96 mb-6">
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        Daily New Characters Progress
+      </h3>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={allData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatXAxisDate}
+            tick={{ fontSize: 10, fill: "currentColor", textAnchor: "end" }}
+            angle={-45}
+            interval={Math.ceil(sortedDates.length / 16)}
+            height={60}
+            label={{
+              value: "Date",
+              position: "insideBottom",
+              offset: -5,
+              style: { textAnchor: "middle", fill: "currentColor" },
+            }}
+          />
+          <YAxis
+            domain={[0, yAxisMax]}
+            tick={{ fontSize: 12, fill: "currentColor" }}
+            tickCount={8}
+            label={{
+              value: "Number of Characters",
+              angle: -90,
+              position: "insideLeft",
+              style: { textAnchor: "middle", fill: "currentColor" },
+            }}
+          />
+          <Tooltip
+            cursor={false}
+            content={<CustomTooltip active={false} label="" payload={[]} />}
+          />
+
+          {/* Characters started learning line */}
+          <Line
+            type="monotone"
+            dataKey="started"
+            stroke="#10b981"
+            strokeWidth={2}
+            dot={{ fill: "#10b981", strokeWidth: 2, r: 3 }}
+            name="Characters started learning"
+            connectNulls={false}
+          />
+
+          {/* Characters learned line */}
+          <Line
+            type="monotone"
+            dataKey="learned"
+            stroke="#3b82f6"
+            strokeWidth={3}
+            dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+            name="Characters fully learned"
+            connectNulls={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 // Recharts Progress Chart Component
 const ProgressChart: React.FC<{
   characterProgress: { [key: string]: number };
@@ -881,6 +1029,8 @@ export const AnkiHanziProgress = () => {
   const {
     characterProgress,
     charactersStartedLearning,
+    dailyLearnedCharacters,
+    dailyStartedCharacters,
     learningTimeDistribution,
     loading,
     error,
@@ -1023,6 +1173,12 @@ export const AnkiHanziProgress = () => {
         <ProgressChart
           characterProgress={characterProgress}
           charactersStartedLearning={charactersStartedLearning}
+        />
+
+        {/* Daily Incremental Chart */}
+        <DailyIncrementalChart
+          dailyLearnedCharacters={dailyLearnedCharacters}
+          dailyStartedCharacters={dailyStartedCharacters}
         />
 
         {/* Learning Time Distribution Chart */}

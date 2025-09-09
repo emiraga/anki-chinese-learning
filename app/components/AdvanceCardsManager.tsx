@@ -76,6 +76,7 @@ const AdvanceCardsManager: React.FC = () => {
 
     parts.push("-is:suspended");
     parts.push("-is:new");
+    parts.push("-deck:filtered");
 
     return parts.length > 0 ? parts.join(" ") : "";
   };
@@ -163,7 +164,7 @@ const AdvanceCardsManager: React.FC = () => {
         const batchSize = 50;
         for (let i = 0; i < cardIds.length; i += batchSize) {
           const batch = cardIds.slice(i, i + batchSize);
-          
+
           // Set each card to a random due date between 1 and targetDays
           for (const cardId of batch) {
             const randomDays = Math.floor(Math.random() * targetDays) + 1; // 1 to targetDays
@@ -172,11 +173,15 @@ const AdvanceCardsManager: React.FC = () => {
               days: randomDays.toString(),
             });
           }
-          
-          const progressPercent = Math.floor(((i + batch.length) / cardIds.length) * 100);
+
+          const progressPercent = Math.floor(
+            ((i + batch.length) / cardIds.length) * 100
+          );
           setProgress(progressPercent);
           setStage(
-            `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(cardIds.length / batchSize)}... (${progressPercent}%)`
+            `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+              cardIds.length / batchSize
+            )}... (${progressPercent}%)`
           );
         }
       }
@@ -433,7 +438,8 @@ const AdvanceCardsManager: React.FC = () => {
                 className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Cards will be randomly distributed between tomorrow and this many days from today
+                Cards will be randomly distributed between tomorrow and this
+                many days from today
               </p>
             </div>
 
