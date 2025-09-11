@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigate,
 } from "react-router";
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -15,6 +16,7 @@ import { useAnkiCharacters } from "./data/characters";
 import { MainToolbarNoOutlet } from "./toolbar/toolbar";
 import { SettingsProvider } from "./settings/SettingsContext";
 import { DarkModeProvider, useDarkMode } from "./components/DarkModeToggle";
+import { useEffect } from "react";
 
 export const links: Route.LinksFunction = () => [
   // { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -31,6 +33,27 @@ export const links: Route.LinksFunction = () => [
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isDarkMode } = useDarkMode();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'p' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        const target = event.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+          return;
+        }
+
+        event.preventDefault();
+        const pinyin = window.prompt('Enter pinyin syllable:');
+        if (pinyin && pinyin.trim()) {
+          navigate(`/sylable/${pinyin.trim()}`);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   return (
     <html lang="en" className={isDarkMode ? "dark" : ""}>
