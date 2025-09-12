@@ -202,6 +202,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Exam level",
           show: phrases.length > 0,
         },
+        {
+          pathname: "/help",
+          name: "Help",
+          show: true,
+        },
       ],
     },
   ].filter((element) => !!element.show);

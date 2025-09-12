@@ -53,6 +53,7 @@ type Params = {
   "/chars_sentence_input": {};
   "/chars_multiple_pronunciation": {};
   "/exam_level": {};
+  "/help": {};
   "/tone/:toneName": {
     "toneName": string;
   };
