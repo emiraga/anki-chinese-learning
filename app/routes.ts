@@ -38,5 +38,6 @@ export default [
   route("help", "routes/help.tsx"),
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),
+  route("zhuyin_typing", "routes/zhuyin_typing.tsx"),
   index("routes/index.tsx"),
 ] satisfies RouteConfig;

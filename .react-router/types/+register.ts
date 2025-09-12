@@ -58,4 +58,5 @@ type Params = {
     "toneName": string;
   };
   "/tones": {};
+  "/zhuyin_typing": {};
 };

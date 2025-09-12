@@ -7,12 +7,12 @@ export default function Help() {
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
           Help & Keyboard Shortcuts
         </h1>
-        
+
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
             Keyboard Shortcuts
           </h2>
-          
+
           <div className="space-y-4">
             <div className="border-l-4 border-blue-500 pl-4">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -27,13 +27,19 @@ export default function Help() {
                 </span>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Press the <strong>P</strong> key on any page to quickly navigate to a syllable page. 
-                A prompt will appear where you can enter a pinyin syllable (e.g., "pai", "ma", "zhong"). 
-                After entering the syllable, you'll be taken to <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">/sylable/[syllable]</code> 
+                Press the <strong>P</strong> key on any page to quickly navigate
+                to a syllable page. A prompt will appear where you can enter a
+                pinyin syllable (e.g., &quot;pai&quot;, &quot;ma&quot;,
+                &quot;zhong&quot;). After entering the syllable, you&apos;ll be
+                taken to{" "}
+                <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                  /sylable/[syllable]
+                </code>
                 to study characters and phrases with that pronunciation.
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                Note: This shortcut is disabled when typing in input fields or text areas.
+                Note: This shortcut is disabled when typing in input fields or
+                text areas.
               </p>
             </div>
           </div>
@@ -43,7 +49,7 @@ export default function Help() {
           <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
             Navigation Tips
           </h2>
-          
+
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -51,11 +57,13 @@ export default function Help() {
               </h3>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 <li>• Browse characters by frequency and difficulty</li>
-                <li>• View detailed breakdowns including radicals and components</li>
+                <li>
+                  • View detailed breakdowns including radicals and components
+                </li>
                 <li>• Practice writing and recognition</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Phrase Learning
@@ -66,7 +74,7 @@ export default function Help() {
                 <li>• Discover contextual usage examples</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Practice Modes
@@ -77,7 +85,7 @@ export default function Help() {
                 <li>• Pinyin tone recognition</li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Anki Integration
@@ -96,11 +104,21 @@ export default function Help() {
             Getting Started
           </h2>
           <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
-            <li>Make sure Anki desktop is running with AnkiConnect addon installed</li>
+            <li>
+              Make sure Anki desktop is running with AnkiConnect addon installed
+            </li>
             <li>Configure your API keys in Settings if using AI features</li>
             <li>Import or create your first set of phrases and characters</li>
-            <li>Start studying with the Practice mode or browse by categories</li>
-            <li>Use the <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">P</kbd> shortcut for quick syllable lookup</li>
+            <li>
+              Start studying with the Practice mode or browse by categories
+            </li>
+            <li>
+              Use the{" "}
+              <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">
+                P
+              </kbd>{" "}
+              shortcut for quick syllable lookup
+            </li>
           </ol>
         </div>
       </div>

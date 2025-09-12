@@ -165,7 +165,24 @@ export const MainToolbarNoOutlet: React.FC<{
         },
       ],
     },
-    { pathname: "/practice", name: "Practice", show: phrases.length > 0 },
+    {
+      pathname: "/practice",
+      name: "Practice",
+      show: phrases.length > 0,
+      isDropdown: true,
+      submenu: [
+        {
+          pathname: "/practice",
+          name: "Practice",
+          show: true,
+        },
+        {
+          pathname: "/zhuyin_typing",
+          name: "Zhuyin Typing",
+          show: true,
+        },
+      ],
+    },
     {
       pathname: "/stats",
       name: "Stats",
