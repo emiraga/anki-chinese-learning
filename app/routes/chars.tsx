@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { CharList } from "~/components/CharList";
 import { useOutletContext } from "react-router";
@@ -18,14 +18,13 @@ export default function Chars() {
     settings: { features },
   } = useSettings();
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <section className="block">
         <CharList
           characters={Object.values(characters)}
           showZhuyin={features?.showZhuyin}
         />
       </section>
-    </main>
+    </MainFrame>
   );
 }

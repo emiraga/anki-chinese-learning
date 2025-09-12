@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "../+types/index";
 import { Link, useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -22,8 +22,7 @@ export default function SylableDetail() {
     .sort((a, b) => a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable));
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <div className="mx-4">
         <h3 className="font-serif text-4xl">
           <Link to="/" className="text-blue-800">
@@ -38,6 +37,6 @@ export default function SylableDetail() {
           return <CharCardDetails key={i} char={char} />;
         })}
       </div>
-    </main>
+    </MainFrame>
   );
 }

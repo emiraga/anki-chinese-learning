@@ -8,7 +8,8 @@ const MainFrame: React.FC<{
   error?: Error;
   children: React.ReactNode;
   disableKeyboardShortcuts?: boolean;
-}> = ({ loading, error, children, disableKeyboardShortcuts = false }) => {
+  disablePadding?: boolean;
+}> = ({ loading, error, children, disableKeyboardShortcuts = false, disablePadding = false }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,7 +70,7 @@ const MainFrame: React.FC<{
   return (
     <Tooltip.Provider delay={0} closeDelay={0}>
       <MainToolbar />
-      <main className="p-4">{children}</main>
+      <main className={disablePadding ? "" : "p-4"}>{children}</main>
     </Tooltip.Provider>
   );
 };

@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { PropList } from "~/components/PropList";
 import { useOutletContext } from "react-router";
@@ -17,8 +17,7 @@ export default function Props() {
   const [search, setSearch] = useState("");
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <h3 className="font-serif text-4xl m-4">
         List of props: ({props.length})
         <input
@@ -39,6 +38,6 @@ export default function Props() {
           }
         />
       </section>
-    </main>
+    </MainFrame>
   );
 }

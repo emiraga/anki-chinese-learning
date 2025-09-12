@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -27,8 +27,7 @@ export default function Phrases() {
       : phrases;
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <h3 className="font-serif text-4xl m-4 text-gray-900 dark:text-gray-100">
         List of phrases: ({phrases.length})
         <input
@@ -43,6 +42,6 @@ export default function Phrases() {
       <section className="block mx-4">
         <PhraseList phrases={filteredPhrases} />
       </section>
-    </main>
+    </MainFrame>
   );
 }

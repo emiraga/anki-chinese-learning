@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { CharListConflicts } from "~/components/CharList";
 import { useOutletContext } from "react-router";
@@ -23,8 +23,7 @@ export default function Conflicts() {
   );
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <section className="block">
         <CharListConflicts
           knownProps={knownProps}
@@ -32,6 +31,6 @@ export default function Conflicts() {
           charPhrasesPinyin={charPhrasesPinyin}
         />
       </section>
-    </main>
+    </MainFrame>
   );
 }

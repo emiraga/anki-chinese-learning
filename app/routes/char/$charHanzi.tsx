@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "../+types/index";
 import { Link, useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -53,8 +53,7 @@ export default function CharDetail() {
 
   const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <div className="mx-4">
         <h3 className="font-serif text-4xl">
           <Link to="/chars" className="text-blue-800">
@@ -121,6 +120,6 @@ export default function CharDetail() {
           filterUnknownChars={true}
         />
       </div>
-    </main>
+    </MainFrame>
   );
 }

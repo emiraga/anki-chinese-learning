@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import type { OutletContext } from "~/data/types";
 import { useOutletContext } from "react-router";
@@ -14,8 +14,7 @@ export default function InvalidData() {
   const { invalidData } = useOutletContext<OutletContext>();
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <section className="block mx-4">
         <h3 className="font-serif text-4xl m-4">
           Encountered invalid data: ({invalidData.length})
@@ -38,6 +37,6 @@ export default function InvalidData() {
           </ul>
         )}
       </section>
-    </main>
+    </MainFrame>
   );
 }

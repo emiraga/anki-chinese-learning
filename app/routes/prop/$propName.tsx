@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "../+types/index";
 import { Link, useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -86,8 +86,7 @@ export default function PropDetail() {
   }
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <div className="mx-4">
         <h3 className="font-serif text-4xl">
           <Link to="/props" className="text-blue-800">
@@ -97,6 +96,6 @@ export default function PropDetail() {
         </h3>
         <PropRender propName={"prop::" + propName} />
       </div>
-    </main>
+    </MainFrame>
   );
 }

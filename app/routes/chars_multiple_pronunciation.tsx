@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -116,8 +116,7 @@ export default function TodoCharsMultiplePronunciation() {
   );
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <Section className="m-3" display={multiple.length > 0}>
         <h3 className="font-serif text-2xl mb-4">
           Multiple pronounciations ({multiple.length}):
@@ -154,6 +153,6 @@ export default function TodoCharsMultiplePronunciation() {
           </Collapsible.Panel>
         </Collapsible.Root>
       </Section>
-    </main>
+    </MainFrame>
   );
 }

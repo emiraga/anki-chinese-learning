@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { useAsync } from "react-async-hook";
 import anki from "~/apis/anki";
@@ -16,8 +16,7 @@ export default function Tags() {
   );
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <Section
         className="block mx-4"
         error={error}
@@ -33,6 +32,6 @@ export default function Tags() {
           ))}
         </ul>
       </Section>
-    </main>
+    </MainFrame>
   );
 }

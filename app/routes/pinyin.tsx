@@ -1,7 +1,6 @@
 import type { Route } from "./+types/index";
 import { PinyinTable } from "~/components/PinyinTable";
-import { Tooltip } from "@base-ui-components/react/tooltip";
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
@@ -18,16 +17,13 @@ export default function Index() {
   const { settings } = useSettings();
 
   return (
-    <Tooltip.Provider delay={0} closeDelay={0}>
-      <MainToolbar />
-      <main className="pt-4 pb-4">
-        <section className="block">
-          <PinyinTable
-            knownSounds={knownSounds}
-            showZhuyin={settings.features?.showZhuyin}
-          />
-        </section>
-      </main>
-    </Tooltip.Provider>
+    <MainFrame disablePadding>
+      <section className="block">
+        <PinyinTable
+          knownSounds={knownSounds}
+          showZhuyin={settings.features?.showZhuyin}
+        />
+      </section>
+    </MainFrame>
   );
 }

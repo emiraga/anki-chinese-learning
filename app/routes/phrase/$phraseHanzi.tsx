@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "../+types/index";
 import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -36,8 +36,7 @@ export default function PhraseHanzi() {
   );
   const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       {[
         ...removeDuplicateChars(
           removeDuplicateChars(phraseHanzi, IGNORE_PHRASE_CHARS),
@@ -68,6 +67,6 @@ export default function PhraseHanzi() {
         search={phraseHanzi}
         filterUnknownChars={true}
       />
-    </main>
+    </MainFrame>
   );
 }

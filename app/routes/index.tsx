@@ -1,7 +1,6 @@
 import type { Route } from "./+types/index";
 import { PinyinTable } from "~/components/PinyinTable";
-import { Tooltip } from "@base-ui-components/react/tooltip";
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import SettingsPage from "~/components/Settings";
@@ -17,26 +16,22 @@ export function meta({}: Route.MetaArgs) {
 export default function Index() {
   const { knownSounds, characters } = useOutletContext<OutletContext>();
   const { settings } = useSettings();
+  const hasCharacters = Object.keys(characters).length > 0;
 
   return (
-    <Tooltip.Provider delay={0} closeDelay={0}>
-      <MainToolbar />
-      {Object.keys(characters).length ? (
-        <main className="pt-4 pb-4">
-          <section className="block">
-            <PinyinTable
-              knownSounds={knownSounds}
-              showZhuyin={settings.features?.showZhuyin}
-            />
-          </section>
-        </main>
+    <MainFrame disablePadding={hasCharacters}>
+      {hasCharacters ? (
+        <section className="block">
+          <PinyinTable
+            knownSounds={knownSounds}
+            showZhuyin={settings.features?.showZhuyin}
+          />
+        </section>
       ) : (
-        <main>
-          <section className="block mx-4">
-            <SettingsPage />
-          </section>
-        </main>
+        <section className="block mx-4">
+          <SettingsPage />
+        </section>
       )}
-    </Tooltip.Provider>
+    </MainFrame>
   );
 }

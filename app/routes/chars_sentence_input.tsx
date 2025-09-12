@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { HanziSegmentedText } from "~/components/HanziText";
 import { useLocalStorageState, type SegmentationAlgorithm } from "~/data/utils";
@@ -22,8 +22,7 @@ export default function TodoCharsSentenceInput() {
   );
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <section className="block">
         <h3 className="font-serif text-2xl m-4">
           <p>Write some chinese text (or copy-paste it):</p>
@@ -72,6 +71,6 @@ export default function TodoCharsSentenceInput() {
           </>
         ) : undefined}
       </section>
-    </main>
+    </MainFrame>
   );
 }

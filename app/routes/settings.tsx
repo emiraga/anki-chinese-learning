@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import SettingsPage from "~/components/Settings";
 
@@ -8,11 +8,10 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Settings() {
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <section className="block mx-4">
         <SettingsPage />
       </section>
-    </main>
+    </MainFrame>
   );
 }

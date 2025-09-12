@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
@@ -18,11 +18,10 @@ export default function TodoChars() {
   const { settings } = useSettings();
 
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <Section display={!!settings.characterNote?.noteType}>
         <TodoCharsList phrases={phrases} characters={characters} />
       </Section>
-    </main>
+    </MainFrame>
   );
 }

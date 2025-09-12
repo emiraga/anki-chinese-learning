@@ -1,4 +1,4 @@
-import MainToolbar from "~/toolbar/toolbar";
+import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { Link } from "react-router";
 import { ACTOR_TAGS_MAP } from "~/data/pinyin_table";
@@ -12,8 +12,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Actors() {
   return (
-    <main>
-      <MainToolbar />
+    <MainFrame>
       <h3 className="font-serif text-4xl m-4">
         List of actors: ({Object.values(ACTOR_TAGS_MAP).length})
       </h3>
@@ -30,6 +29,6 @@ export default function Actors() {
           );
         })}
       </section>
-    </main>
+    </MainFrame>
   );
 }
