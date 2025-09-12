@@ -18,41 +18,37 @@ import { SettingsProvider } from "./settings/SettingsContext";
 import { DarkModeProvider, useDarkMode } from "./components/DarkModeToggle";
 import { useEffect } from "react";
 
-export const links: Route.LinksFunction = () => [
-  // { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  // {
-  //   rel: "preconnect",
-  //   href: "https://fonts.gstatic.com",
-  //   crossOrigin: "anonymous",
-  // },
-  // {
-  //   rel: "stylesheet",
-  //   href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  // },
-];
-
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isDarkMode } = useDarkMode();
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'p' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (
+        event.key === "p" &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
         const target = event.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        ) {
           return;
         }
 
         event.preventDefault();
-        const pinyin = window.prompt('Enter pinyin syllable:');
+        const pinyin = window.prompt("Enter pinyin syllable:");
         if (pinyin && pinyin.trim()) {
           navigate(`/sylable/${pinyin.trim()}`);
         }
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [navigate]);
 
   return (

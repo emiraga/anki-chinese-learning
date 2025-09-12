@@ -232,6 +232,11 @@ const AdvanceCardsManager: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">Advance Cards Manager</h2>
+      <p className="text-gray-500 dark:text-gray-400 mb-6">
+        Find and manage Anki cards with long intervals or due dates far in the
+        future. Use filters to identify cards that haven&apos;t been reviewed
+        recently, then bring them closer for more frequent practice.
+      </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
