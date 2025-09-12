@@ -3,7 +3,7 @@ import MainFrame from '~/toolbar/frame';
 
 export default function ZhuyinTypingPage() {
   return (
-    <MainFrame>
+    <MainFrame disableKeyboardShortcuts>
       <ZhuyinTyping />
     </MainFrame>
   );

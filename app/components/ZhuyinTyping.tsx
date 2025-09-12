@@ -108,8 +108,9 @@ const ZhuyinTyping = () => {
         event.metaKey ||
         event.altKey ||
         event.ctrlKey
-      )
+      ) {
         return;
+      }
 
       // Prevent default browser behavior for all keys to avoid Firefox search bar
       event.preventDefault();

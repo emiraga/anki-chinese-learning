@@ -108,10 +108,6 @@ const useAnkiHanziProgress = () => {
         const batchSize = LEARNING_CONSTANTS.BATCH_SIZE;
         const reviewsOfCards: { [key: string]: AnkiReview[] } = {};
 
-        console.log(
-          `Fetching reviews for ${allCardIds.length} cards in batches of ${batchSize}`
-        );
-
         setProgressPercentage(0);
         setStage("Fetching reviews...");
 
@@ -121,10 +117,6 @@ const useAnkiHanziProgress = () => {
           const batch = allCardIds.slice(i, i + batchSize);
           const currentBatch = Math.floor(i / batchSize) + 1;
 
-          console.log(
-            `Processing batch ${currentBatch}/${totalBatches} (${batch.length} cards)`
-          );
-
           setStage("Fetching reviews...");
           setProgressPercentage((currentBatch / totalBatches) * 100);
 
@@ -133,19 +125,8 @@ const useAnkiHanziProgress = () => {
             cards: batch,
           });
 
-          console.log(
-            `Batch returned ${
-              Object.keys(batchReviews).length
-            } card review sets`
-          );
           Object.assign(reviewsOfCards, batchReviews);
         }
-
-        console.log(
-          `Total reviews fetched for ${
-            Object.keys(reviewsOfCards).length
-          } cards`
-        );
 
         setProgressPercentage(0);
         setStage("Processing reviews to calculate progress...");
@@ -829,11 +810,6 @@ const ProgressChart: React.FC<{
     ...startedEntries.map(([date]) => date),
   ]);
   const sortedDates = Array.from(allDates).sort();
-
-  // Debug logging
-  console.log("sortedDates length:", sortedDates.length);
-  console.log("first 10 sortedDates:", sortedDates.slice(0, 10));
-  console.log("last 10 sortedDates:", sortedDates.slice(-10));
 
   // Create combined data with both metrics, ensuring cumulative values carry forward
   let lastLearnedCount = 0;
