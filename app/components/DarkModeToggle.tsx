@@ -20,26 +20,19 @@ const DarkModeContext = createContext<DarkModeContextType | undefined>(
 
 // Dark mode provider component
 export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSystemMode, setIsSystemMode] = useState(true);
-
   // Initialize dark mode from localStorage or system preference
-  useEffect(() => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedOverride = localStorage.getItem("darkModeOverride");
-
     if (savedOverride !== null) {
-      // User has overridden the system preference
-      setIsDarkMode(JSON.parse(savedOverride));
-      setIsSystemMode(false);
-    } else {
-      // Use system preference
-      const systemPrefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      setIsDarkMode(systemPrefersDark);
-      setIsSystemMode(true);
+      return JSON.parse(savedOverride);
     }
-  }, []);
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  const [isSystemMode, setIsSystemMode] = useState(() => {
+    const savedOverride = localStorage.getItem("darkModeOverride");
+    return savedOverride === null;
+  });
 
   // Listen for system preference changes when in system mode
   useEffect(() => {
