@@ -6,7 +6,6 @@ import { HanziText } from "~/components/HanziText";
 import { LearnLink } from "~/components/Learn";
 import type { OutletContext } from "~/data/types";
 import { getWeakCharacters } from "~/data/weak_chars";
-import { useMemo } from "react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -21,10 +20,9 @@ export function meta({}: Route.MetaArgs) {
 export default function StudyWeakChars() {
   const { loading, characters, phrases } = useOutletContext<OutletContext>();
 
-  const weakChars = useMemo(() => {
-    if (loading || !characters || !phrases) return [];
-    return getWeakCharacters(phrases, characters, 300);
-  }, [loading, characters, phrases]);
+  const weakChars = loading || !characters || !phrases
+    ? []
+    : getWeakCharacters(phrases, characters, 300);
 
   return (
     <MainFrame>
