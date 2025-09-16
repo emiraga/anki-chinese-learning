@@ -63,10 +63,7 @@ export const HanziSegmentedText: React.FC<{
     return new Set(phrases.map((p) => p.traditional));
   }, [phrases]);
 
-  const segments = useMemo(
-    () => (value ? segmentChineseText(value, algorithm) : []),
-    [value, algorithm]
-  );
+  const segments = value ? segmentChineseText(value, algorithm) : [];
 
   if (!value) {
     return <></>;
