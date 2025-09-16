@@ -402,6 +402,37 @@ const calculateMonthlyRates = (
   });
 };
 
+// Custom tooltip component for histogram
+const CustomHistogramTooltip = ({
+  active,
+  payload,
+}: {
+  active: boolean;
+  payload: {
+    payload: {
+      binLabel: string;
+      count: number;
+      binStart: number;
+      binEnd: number;
+    };
+  }[];
+}) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {data.binStart}-{data.binEnd} days
+        </p>
+        <p className="text-sm text-purple-600 dark:text-purple-400">
+          {data.count} characters
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 // Learning Time Distribution Histogram Component
 const LearningTimeDistributionChart: React.FC<{
   learningTimeDistribution: number[];
@@ -446,36 +477,6 @@ const LearningTimeDistributionChart: React.FC<{
           sortedTimes[sortedTimes.length / 2]) /
         2
       : sortedTimes[Math.floor(sortedTimes.length / 2)];
-
-  const CustomHistogramTooltip = ({
-    active,
-    payload,
-  }: {
-    active: boolean;
-    payload: {
-      payload: {
-        binLabel: string;
-        count: number;
-        binStart: number;
-        binEnd: number;
-      };
-    }[];
-  }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {data.binStart}-{data.binEnd} days
-          </p>
-          <p className="text-sm text-purple-600 dark:text-purple-400">
-            {data.count} characters
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="w-full h-64 mb-20">
@@ -528,6 +529,52 @@ const LearningTimeDistributionChart: React.FC<{
   );
 };
 
+// Custom tooltip component for bar chart
+const CustomBarTooltip = ({
+  active,
+  payload,
+}: {
+  active: boolean;
+  label: string;
+  payload: {
+    name: string;
+    value: number;
+    color: string;
+    payload: {
+      monthLabel: string;
+      learnedRate: number;
+      startedRate: number;
+      daysInMonth: number;
+      charactersLearned: number;
+      charactersStarted: number;
+      isCurrentMonth: boolean;
+    };
+  }[];
+}) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {data.monthLabel}
+        </p>
+        <p className="text-sm text-blue-600 dark:text-blue-400">
+          Learned: {data.learnedRate} chars/day ({data.charactersLearned}{" "}
+          total)
+        </p>
+        <p className="text-sm text-green-600 dark:text-green-400">
+          Started: {data.startedRate} chars/day ({data.charactersStarted}{" "}
+          total)
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {data.daysInMonth} days{data.isCurrentMonth ? " (so far)" : ""}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 // Monthly Learning Rate Bar Chart Component
 const MonthlyLearningRateChart: React.FC<{
   characterProgress: { [key: string]: number };
@@ -543,52 +590,6 @@ const MonthlyLearningRateChart: React.FC<{
   if (monthlyRates.length === 0) {
     return <div>No monthly data to display</div>;
   }
-
-  // Custom tooltip for bar chart
-  const CustomBarTooltip = ({
-    active,
-    payload,
-  }: {
-    active: boolean;
-    label: string;
-    payload: {
-      name: string;
-      value: number;
-      color: string;
-      payload: {
-        monthLabel: string;
-        learnedRate: number;
-        startedRate: number;
-        daysInMonth: number;
-        charactersLearned: number;
-        charactersStarted: number;
-        isCurrentMonth: boolean;
-      };
-    }[];
-  }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {data.monthLabel}
-          </p>
-          <p className="text-sm text-blue-600 dark:text-blue-400">
-            Learned: {data.learnedRate} chars/day ({data.charactersLearned}{" "}
-            total)
-          </p>
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Started: {data.startedRate} chars/day ({data.charactersStarted}{" "}
-            total)
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {data.daysInMonth} days{data.isCurrentMonth ? " (so far)" : ""}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="w-full h-64 mb-6">
@@ -649,6 +650,34 @@ const MonthlyLearningRateChart: React.FC<{
   );
 };
 
+// Custom tooltip component for daily chart
+const CustomDailyTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active: boolean;
+  label: string;
+  payload: { name: string; value: number; color: string }[];
+}) => {
+  if (active && payload && payload.length) {
+    const date = new Date(label).toLocaleDateString("en-CA");
+    return (
+      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {date}
+        </p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value} characters
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 // Daily Incremental Chart Component
 const DailyIncrementalChart: React.FC<{
   dailyLearnedCharacters: { [key: string]: number };
@@ -681,34 +710,6 @@ const DailyIncrementalChart: React.FC<{
   const maxStartedValue = Math.max(...Object.values(dailyStartedCharacters), 0);
   const maxValue = Math.max(maxLearnedValue, maxStartedValue);
   const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
-
-  // Custom tooltip
-  const CustomTooltip = ({
-    active,
-    payload,
-    label,
-  }: {
-    active: boolean;
-    label: string;
-    payload: { name: string; value: number; color: string }[];
-  }) => {
-    if (active && payload && payload.length) {
-      const date = new Date(label).toLocaleDateString("en-CA");
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {date}
-          </p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {entry.value} characters
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   // Format date for x-axis
   const formatXAxisDate = (tickItem: string) => {
@@ -757,7 +758,7 @@ const DailyIncrementalChart: React.FC<{
           />
           <Tooltip
             cursor={false}
-            content={<CustomTooltip active={false} label="" payload={[]} />}
+            content={<CustomDailyTooltip active={false} label="" payload={[]} />}
           />
 
           {/* Characters started learning line */}
@@ -812,26 +813,35 @@ const ProgressChart: React.FC<{
   const sortedDates = Array.from(allDates).sort();
 
   // Create combined data with both metrics, ensuring cumulative values carry forward
-  let lastLearnedCount = 0;
-  let lastStartedCount = 0;
+  const allData = sortedDates.reduce((acc, date) => {
+    const prevData = acc[acc.length - 1];
+    const prevLearnedCount = prevData?.learned || 0;
+    const prevStartedCount = prevData?.started || 0;
 
-  const allData = sortedDates.map((date) => {
-    // If we have data for this date, use it and update our running totals
-    if (characterProgress[date] !== undefined) {
-      lastLearnedCount = characterProgress[date];
-    }
-    if (charactersStartedLearning[date] !== undefined) {
-      lastStartedCount = charactersStartedLearning[date];
-    }
+    // If we have data for this date, use it, otherwise use previous values
+    const learnedCount = characterProgress[date] !== undefined
+      ? characterProgress[date]
+      : prevLearnedCount;
+    const startedCount = charactersStartedLearning[date] !== undefined
+      ? charactersStartedLearning[date]
+      : prevStartedCount;
 
-    return {
+    acc.push({
       date,
-      learned: lastLearnedCount,
-      started: lastStartedCount,
-      inProgress: lastStartedCount - lastLearnedCount,
+      learned: learnedCount,
+      started: startedCount,
+      inProgress: startedCount - learnedCount,
       dateObj: new Date(date),
-    };
-  });
+    });
+
+    return acc;
+  }, [] as Array<{
+    date: string;
+    learned: number;
+    started: number;
+    inProgress: number;
+    dateObj: Date;
+  }>);
 
   // Calculate max value for Y-axis from both datasets
   const maxLearnedValue = Math.max(...learnedEntries.map(([, count]) => count));
@@ -839,33 +849,6 @@ const ProgressChart: React.FC<{
   const maxValue = Math.max(maxLearnedValue, maxStartedValue);
   const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
 
-  // Custom tooltip
-  const CustomTooltip = ({
-    active,
-    payload,
-    label,
-  }: {
-    active: boolean;
-    label: string;
-    payload: { name: string; value: number; color: string }[];
-  }) => {
-    if (active && payload && payload.length) {
-      const date = new Date(label).toLocaleDateString("en-CA");
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {date}
-          </p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {entry.value} characters
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   // Format date for x-axis
   const formatXAxisDate = (tickItem: string) => {
@@ -914,7 +897,7 @@ const ProgressChart: React.FC<{
           />
           <Tooltip
             cursor={false}
-            content={<CustomTooltip active={false} label="" payload={[]} />}
+            content={<CustomDailyTooltip active={false} label="" payload={[]} />}
           />
           {/*<Legend />*/}
 
