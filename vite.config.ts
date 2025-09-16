@@ -31,4 +31,10 @@ export default defineConfig({
   optimizeDeps: {
     exclude: external,
   },
+  server: {
+    fs: {
+      // Allow serving files from outside the project root for dev tools
+      allow: ['..'],
+    },
+  },
 });

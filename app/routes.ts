@@ -39,5 +39,7 @@ export default [
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),
   route("zhuyin_typing", "routes/zhuyin_typing.tsx"),
+  // Handle development tool files
+  route("installHook.js.map", "routes/dev_files.tsx"),
   index("routes/index.tsx"),
 ] satisfies RouteConfig;
