@@ -23,16 +23,19 @@ interface TypingStats {
 }
 
 const ZhuyinTyping = () => {
-  const [currentCharacter, setCurrentCharacter] =
-    useState<ZhuyinCharacter | null>(null);
-  const [showZhuyin, setShowZhuyin] = useState<boolean>(true);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [stats, setStats] = useState<TypingStats>({});
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [totalSuccess, setTotalSuccess] = useState(0);
-  const [lastDelay, setLastDelay] = useState<number | null>(null);
   const [answerLog, setAnswerLog] = useState<LogEntry[]>([]);
+
+  // Initialize with first character immediately
+  const [currentCharacter, setCurrentCharacter] = useState<ZhuyinCharacter | null>(
+    () => getRandomZhuyinCharacter({})
+  );
+  const [showZhuyin, setShowZhuyin] = useState<boolean>(() => Math.random() < 0.5);
+  const [startTime, setStartTime] = useState<number | null>(() => Date.now());
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [lastDelay, setLastDelay] = useState<number | null>(null);
 
   const generateNewCharacter = useCallback((statsToUse: TypingStats) => {
     const newChar = getRandomZhuyinCharacter(statsToUse);
@@ -157,9 +160,6 @@ const ZhuyinTyping = () => {
     [currentCharacter, startTime, updateStats, showZhuyin, generateNewCharacter]
   );
 
-  useEffect(() => {
-    generateNewCharacter({});
-  }, [generateNewCharacter]);
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
