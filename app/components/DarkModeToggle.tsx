@@ -5,6 +5,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { useLocalStorageState } from "~/data/utils";
 
 // Dark mode context
 interface DarkModeContextType {
@@ -20,57 +21,46 @@ const DarkModeContext = createContext<DarkModeContextType | undefined>(
 
 // Dark mode provider component
 export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSystemMode, setIsSystemMode] = useState(true);
+  // Use localStorage hook for dark mode override (null means use system preference)
+  const [darkModeOverride, setDarkModeOverride] = useLocalStorageState<boolean | null>(
+    "darkModeOverride",
+    null
+  );
 
-  // Initialize dark mode from localStorage or system preference
+  const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+
+  // Initialize and listen for system preference changes
   useEffect(() => {
-    const savedOverride = localStorage.getItem("darkModeOverride");
-
-    if (savedOverride !== null) {
-      // User has overridden the system preference
-      setIsDarkMode(JSON.parse(savedOverride));
-      setIsSystemMode(false);
-    } else {
-      // Use system preference
-      const systemPrefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      setIsDarkMode(systemPrefersDark);
-      setIsSystemMode(true);
-    }
-  }, []);
-
-  // Listen for system preference changes when in system mode
-  useEffect(() => {
-    if (!isSystemMode) return;
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches);
+    const updateSystemPreference = () => {
+      try {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setSystemPrefersDark(prefersDark);
+      } catch {
+        // SSR fallback
+        setSystemPrefersDark(false);
+      }
     };
 
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [isSystemMode]);
+    // Set initial value
+    updateSystemPreference();
+
+    // Listen for changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", updateSystemPreference);
+    return () => mediaQuery.removeEventListener("change", updateSystemPreference);
+  }, []);
+
+  // Determine current dark mode state and system mode status
+  const isDarkMode = darkModeOverride !== null ? darkModeOverride : systemPrefersDark;
+  const isSystemMode = darkModeOverride === null;
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    setIsSystemMode(false);
-
-    // Save the user's override preference
-    localStorage.setItem("darkModeOverride", JSON.stringify(newMode));
+    setDarkModeOverride(newMode);
   };
 
   const resetToSystem = () => {
-    // Remove the override and return to system preference
-    localStorage.removeItem("darkModeOverride");
-    setIsSystemMode(true);
-    const systemPrefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    setIsDarkMode(systemPrefersDark);
+    setDarkModeOverride(null);
   };
 
   return (

@@ -41,13 +41,17 @@ export function useLocalStorageState<T>(
   // preventing repeated localStorage access.
   const [value, setValue] = useState<T>(() => {
     try {
-      const storedValue = window.localStorage.getItem(key);
-      // If a value is found in localStorage, parse it. Otherwise, use the initialValue.
-      return storedValue ? JSON.parse(storedValue) : initialValue;
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const storedValue = window.localStorage.getItem(key);
+        // If a value is found in localStorage, parse it. Otherwise, use the initialValue.
+        return storedValue ? JSON.parse(storedValue) : initialValue;
+      }
+      return initialValue;
     } catch (error) {
       // If there's an error (e.g., in a server-side rendering environment
       // where localStorage is not available), return the initial value.
-      console.error(`Error reading localStorage key “${key}”:`, error);
+      console.error(`Error reading localStorage key "${key}":`, error);
       return initialValue;
     }
   });
@@ -56,11 +60,14 @@ export function useLocalStorageState<T>(
   // This effect will run every time `key` or `value` is updated.
   useEffect(() => {
     try {
-      // Save the state to localStorage, converting it to a JSON string.
-      window.localStorage.setItem(key, JSON.stringify(value));
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        // Save the state to localStorage, converting it to a JSON string.
+        window.localStorage.setItem(key, JSON.stringify(value));
+      }
     } catch (error) {
       // Handle potential errors, e.g., if localStorage is full.
-      console.error(`Error writing to localStorage key “${key}”:`, error);
+      console.error(`Error writing to localStorage key "${key}":`, error);
     }
   }, [key, value]);
 
