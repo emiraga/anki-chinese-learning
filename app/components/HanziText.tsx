@@ -1,4 +1,4 @@
-import { useOutletContext } from "react-router";
+import { useOutletContext, useNavigate } from "react-router";
 import { getNewCharacter, type CharactersType } from "~/data/characters";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails, CharLink } from "./CharCard";
@@ -58,6 +58,7 @@ export const HanziSegmentedText: React.FC<{
   algorithm?: SegmentationAlgorithm;
 }> = ({ value, algorithm }) => {
   const { characters, phrases } = useOutletContext<OutletContext>();
+  const navigate = useNavigate();
 
   const knowPhrases = useMemo(() => {
     return new Set(phrases.map((p) => p.traditional));
@@ -86,9 +87,9 @@ export const HanziSegmentedText: React.FC<{
               .length > 0;
 
           return (
-            <Link
+            <span
               key={i}
-              to={`/phrase/${segment.text}`}
+              onClick={() => navigate(`/phrase/${segment.text}`)}
               className={`inline-block ${
                 shouldUnderline
                   ? knowPhrases.has(segment.text)
@@ -117,7 +118,7 @@ export const HanziSegmentedText: React.FC<{
                   />
                 );
               })}
-            </Link>
+            </span>
           );
         } else {
           // Single character or punctuation
