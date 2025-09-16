@@ -1,5 +1,5 @@
 import MainFrame from "~/toolbar/frame";
-import type { Route } from "../+types/index";
+import type { Route } from "./+types/$phraseHanzi";
 import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { PhraseList } from "~/components/Phrase";
