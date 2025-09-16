@@ -5,7 +5,6 @@ import { CharCardDetails, CharLink } from "./CharCard";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { segmentChineseText, type SegmentationAlgorithm } from "~/data/utils";
 import { useMemo } from "react";
-import { Link } from "react-router";
 
 export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
   const { characters } = useOutletContext<OutletContext>();
@@ -90,6 +89,14 @@ export const HanziSegmentedText: React.FC<{
             <span
               key={i}
               onClick={() => navigate(`/phrase/${segment.text}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/phrase/${segment.text}`);
+                }
+              }}
+              tabIndex={0}
+              role="button"
               className={`inline-block ${
                 shouldUnderline
                   ? knowPhrases.has(segment.text)

@@ -16,11 +16,7 @@ const external = [
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    reactRouter({
-      babel: {
-        plugins: ['babel-plugin-react-compiler'],
-      },
-    }),
+    reactRouter(),
     tsconfigPaths()
   ],
   build: {
