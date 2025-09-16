@@ -5,7 +5,7 @@ import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import { type CharsToPhrasesPinyin } from "~/data/phrases";
 import { getAllPinyinUnreliable } from "~/data/pinyin_function";
-import { STYLE_TONE } from "pinyin";
+import pinyin from "pinyin";
 import { comparePinyin } from "~/data/pinyin_function";
 
 export const CharList: React.FC<{
@@ -77,7 +77,7 @@ export const CharListConflicts: React.FC<{
                 </div>
                 <p>
                   From library:
-                  {getAllPinyinUnreliable(v.traditional, STYLE_TONE).map(
+                  {getAllPinyinUnreliable(v.traditional, pinyin.STYLE_TONE).map(
                     (p, i) => (
                       <span className="ml-10" key={i}>
                         {p}
