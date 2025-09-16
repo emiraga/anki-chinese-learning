@@ -7,7 +7,7 @@ import {
   type AppSettings,
 } from "../settings/schema";
 import type { IChangeEvent } from "@rjsf/core";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useBeforeUnload, useBlocker } from "react-router";
 import { useDarkMode } from "./DarkModeToggle";
 import type { FieldTemplateProps } from "@rjsf/utils";
@@ -107,27 +107,11 @@ const CustomFieldTemplate = (props: FieldTemplateProps) => {
 export default function SettingsPage() {
   const { settings, updateSettings, resetSettings } = useSettings();
   const [formData, setFormData] = useState<AppSettings>(settings);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [modifiedFields, setModifiedFields] = useState<string[]>([]);
 
-  // Update form data when settings change from outside
-  useEffect(() => {
-    setFormData(settings);
-    setHasUnsavedChanges(false);
-    setModifiedFields([]);
-  }, [settings]);
+  // Derive state instead of using effects
+  const hasUnsavedChanges = JSON.stringify(formData) !== JSON.stringify(settings);
+  const modifiedFields = hasUnsavedChanges ? findDifferingPaths(formData, settings) : [];
 
-  // Check if there are unsaved changes and update modified fields
-  useEffect(() => {
-    const hasChanges = JSON.stringify(formData) !== JSON.stringify(settings);
-    setHasUnsavedChanges(hasChanges);
-    if (hasChanges) {
-      const newModifiedFields = findDifferingPaths(formData, settings);
-      setModifiedFields(newModifiedFields);
-    } else {
-      setModifiedFields([]);
-    }
-  }, [formData, settings]);
 
   const handleSubmit = (data: IChangeEvent<AppSettings>) => {
     if (data.formData) {
