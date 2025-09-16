@@ -20,25 +20,30 @@ const DarkModeContext = createContext<DarkModeContextType | undefined>(
 
 // Dark mode provider component
 export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize dark mode from localStorage or system preference
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window === "undefined") return false; // Default for SSR
-    const savedOverride = localStorage.getItem("darkModeOverride");
-    if (savedOverride !== null) {
-      return JSON.parse(savedOverride);
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSystemMode, setIsSystemMode] = useState(true);
 
-  const [isSystemMode, setIsSystemMode] = useState(() => {
-    if (typeof window === "undefined") return true; // Default for SSR
+  // Initialize dark mode from localStorage or system preference
+  useEffect(() => {
     const savedOverride = localStorage.getItem("darkModeOverride");
-    return savedOverride === null;
-  });
+
+    if (savedOverride !== null) {
+      // User has overridden the system preference
+      setIsDarkMode(JSON.parse(savedOverride));
+      setIsSystemMode(false);
+    } else {
+      // Use system preference
+      const systemPrefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+      setIsDarkMode(systemPrefersDark);
+      setIsSystemMode(true);
+    }
+  }, []);
 
   // Listen for system preference changes when in system mode
   useEffect(() => {
-    if (!isSystemMode || typeof window === "undefined") return;
+    if (!isSystemMode) return;
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = (e: MediaQueryListEvent) => {
@@ -55,14 +60,10 @@ export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
     setIsSystemMode(false);
 
     // Save the user's override preference
-    if (typeof window !== "undefined") {
-      localStorage.setItem("darkModeOverride", JSON.stringify(newMode));
-    }
+    localStorage.setItem("darkModeOverride", JSON.stringify(newMode));
   };
 
   const resetToSystem = () => {
-    if (typeof window === "undefined") return;
-
     // Remove the override and return to system preference
     localStorage.removeItem("darkModeOverride");
     setIsSystemMode(true);
