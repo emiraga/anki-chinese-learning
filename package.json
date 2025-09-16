@@ -37,7 +37,7 @@
     "@react-router/dev": "^7.5.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^20",
+    "@types/node": "^24.5.0",
     "@types/pinyin": "^2.10.2",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
