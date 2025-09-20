@@ -84,7 +84,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
         // Load character info from phrases.
         for (const hanzi of Object.keys(charPhrasesPinyin)) {
           const pinyinSorted = Object.values(charPhrasesPinyin[hanzi]).sort(
-            comparePinyin
+            comparePinyin,
           );
           let info: CharacterType = {
             ankiId: 0,
@@ -126,11 +126,11 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             ?.split(",")
             .map((p) => cleanPinyinAnkiField(p));
           const pinyin1 = fromAccentedPinyin(
-            cleanPinyinAnkiField(note.fields["Pinyin"].value)
+            cleanPinyinAnkiField(note.fields["Pinyin"].value),
           );
 
           const pinyin2 =
-            note.tags.includes("multiple-pronounciation-character") &&
+            note.tags.includes("chinese::multiple-pronounciation-character") &&
             note.fields["Pinyin others"]?.value?.length > 0
               ? note.fields["Pinyin others"]?.value
                   .split(",")
@@ -150,11 +150,11 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
               : undefined,
             mnemonic: note.fields["Mnemonic"].value,
             tags: note.tags,
-            withSound: !note.tags.includes("not-learning-sound-yet"),
+            withSound: !note.tags.includes("chinese::not-learning-sound-yet"),
             todoMoreWork:
               note.tags.includes("TODO") ||
               note.tags.length < 2 ||
-              note.tags.includes("some-props-missing") ||
+              note.tags.includes("chinese::some-props-missing") ||
               note.tags.filter((t) => t.startsWith("prop::")).length === 0,
           };
 

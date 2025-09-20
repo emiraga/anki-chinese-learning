@@ -10,7 +10,7 @@ export const TodoCharsList: React.FC<{
 }> = ({ phrases, characters }) => {
   let todo = Object.values(characters).filter((c) => c.todoMoreWork);
   let somePropsIgnored = Object.values(characters).filter((c) =>
-    c.tags.includes("some-props-ignored")
+    c.tags.includes("chinese::some-props-ignored"),
   );
   let missingChars = getMissingPhraseChars(phrases, characters);
 

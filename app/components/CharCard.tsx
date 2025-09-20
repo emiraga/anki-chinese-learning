@@ -182,16 +182,16 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
                     },
                   });
                 }
-                if (!notes[0].tags.includes("some-props-missing")) {
+                if (!notes[0].tags.includes("chinese::some-props-missing")) {
                   await anki.note.addTags({
                     notes: notesId,
-                    tags: "some-props-missing",
+                    tags: "chinese::some-props-missing",
                   });
                 }
-                if (notes[0].tags.includes("not-learning-sound-yet")) {
+                if (notes[0].tags.includes("chinese::not-learning-sound-yet")) {
                   await anki.note.removeTags({
                     notes: notesId,
-                    tags: "not-learning-sound-yet",
+                    tags: "chinese::not-learning-sound-yet",
                   });
                 }
                 alert("All done, enabled!");

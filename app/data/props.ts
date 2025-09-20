@@ -10,9 +10,8 @@ export type PropType = {
 export type KnownPropsType = { [key: string]: PropType };
 
 export const PROP_MISC_TAGS = [
-  "some-props-ignored",
-  "repeated-duplicated-prop",
-  "some-props-missing",
+  "chinese::repeated-duplicated-prop",
+  "chinese::some-props-missing",
 ];
 
 // Create a custom hook to load and manage Anki data with reload capability
@@ -41,7 +40,7 @@ export function useAnkiProps() {
             "Prop " +
               note.fields["Prop"].value +
               " invalid tags: " +
-              note.tags.join(", ")
+              note.tags.join(", "),
           );
         }
 
