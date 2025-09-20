@@ -45,23 +45,21 @@ const constructHomophoneGroups = (phrases: Array<{
   meaning: string;
   zhuyin?: string;
 }>): HomophoneGroup[] => {
-  // Group phrases by stripped zhuyin
-  const zhuyinGroups: { [key: string]: typeof phrases } = {};
+  // Group phrases by stripped pinyin
+  const pinyinGroups: { [key: string]: typeof phrases } = {};
 
   phrases.forEach((phrase) => {
-    if (!phrase.zhuyin) return;
-
-    const strippedZhuyin = stripZhuyinTones(phrase.zhuyin);
-    if (!zhuyinGroups[strippedZhuyin]) {
-      zhuyinGroups[strippedZhuyin] = [];
+    const strippedPinyin = stripPinyinTones(phrase.pinyin);
+    if (!pinyinGroups[strippedPinyin]) {
+      pinyinGroups[strippedPinyin] = [];
     }
-    zhuyinGroups[strippedZhuyin].push(phrase);
+    pinyinGroups[strippedPinyin].push(phrase);
   });
 
   // Filter to only include groups with multiple different traditional characters
   const homophones: HomophoneGroup[] = [];
 
-  Object.entries(zhuyinGroups).forEach(([strippedZhuyin, groupPhrases]) => {
+  Object.entries(pinyinGroups).forEach(([strippedPinyin, groupPhrases]) => {
     // Get unique traditional characters in this group
     const uniqueTraditional = new Set(groupPhrases.map((p) => p.traditional));
 
@@ -72,8 +70,8 @@ const constructHomophoneGroups = (phrases: Array<{
         return groupPhrases.find((p) => p.traditional === traditional)!;
       });
 
-      // Get the stripped pinyin from the first phrase in the group
-      const strippedPinyin = stripPinyinTones(uniquePhrases[0].pinyin);
+      // Get the stripped zhuyin from the first phrase in the group (if available)
+      const strippedZhuyin = uniquePhrases[0].zhuyin ? stripZhuyinTones(uniquePhrases[0].zhuyin) : "";
 
       homophones.push({
         zhuyinWithoutTones: strippedZhuyin,
@@ -104,7 +102,7 @@ const constructHomophoneGroups = (phrases: Array<{
     }
 
     // Finally alphabetically by pronunciation
-    return a.zhuyinWithoutTones.localeCompare(b.zhuyinWithoutTones);
+    return a.pinyinWithoutTones.localeCompare(b.pinyinWithoutTones);
   });
 };
 
@@ -133,7 +131,8 @@ export default function Homophones() {
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
               >
                 <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
-                  Pronunciation: {group.zhuyinWithoutTones} ({group.pinyinWithoutTones})
+                  Pronunciation: {group.pinyinWithoutTones}
+                  {group.zhuyinWithoutTones && ` (${group.zhuyinWithoutTones})`}
                 </h2>
                 <div className="overflow-x-auto">
                   <table className="min-w-full table-auto">
