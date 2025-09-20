@@ -18,13 +18,16 @@ const stripZhuyinTones = (zhuyin: string): string => {
   return zhuyin.replace(/[ˊˇˋ˙]/g, "");
 };
 
-export default function Homophones() {
-  const { phrases } = useOutletContext<OutletContext>();
-
+const constructHomophoneGroups = (phrases: Array<{
+  traditional: string;
+  pinyin: string;
+  meaning: string;
+  zhuyin?: string;
+}>): HomophoneGroup[] => {
   // Group phrases by stripped zhuyin
   const zhuyinGroups: { [key: string]: typeof phrases } = {};
 
-  phrases.forEach(phrase => {
+  phrases.forEach((phrase) => {
     if (!phrase.zhuyin) return;
 
     const strippedZhuyin = stripZhuyinTones(phrase.zhuyin);
@@ -39,18 +42,18 @@ export default function Homophones() {
 
   Object.entries(zhuyinGroups).forEach(([strippedZhuyin, groupPhrases]) => {
     // Get unique traditional characters in this group
-    const uniqueTraditional = new Set(groupPhrases.map(p => p.traditional));
+    const uniqueTraditional = new Set(groupPhrases.map((p) => p.traditional));
 
     // Only include if there are multiple different traditional characters
     if (uniqueTraditional.size > 1) {
       // Deduplicate phrases with same traditional character
-      const uniquePhrases = Array.from(uniqueTraditional).map(traditional => {
-        return groupPhrases.find(p => p.traditional === traditional)!;
+      const uniquePhrases = Array.from(uniqueTraditional).map((traditional) => {
+        return groupPhrases.find((p) => p.traditional === traditional)!;
       });
 
       homophones.push({
         zhuyinWithoutTones: strippedZhuyin,
-        phrases: uniquePhrases.map(phrase => ({
+        phrases: uniquePhrases.map((phrase) => ({
           traditional: phrase.traditional,
           pinyin: phrase.pinyin,
           meaning: phrase.meaning,
@@ -61,10 +64,10 @@ export default function Homophones() {
   });
 
   // Sort by length of traditional field (longest first), then by number of homophones (descending), then alphabetically
-  const homophoneGroups = homophones.sort((a, b) => {
+  return homophones.sort((a, b) => {
     // First sort by maximum length of traditional characters in each group
-    const maxLengthA = Math.max(...a.phrases.map(p => p.traditional.length));
-    const maxLengthB = Math.max(...b.phrases.map(p => p.traditional.length));
+    const maxLengthA = Math.max(...a.phrases.map((p) => p.traditional.length));
+    const maxLengthB = Math.max(...b.phrases.map((p) => p.traditional.length));
 
     if (maxLengthA !== maxLengthB) {
       return maxLengthB - maxLengthA; // Longest first
@@ -78,31 +81,19 @@ export default function Homophones() {
     // Finally alphabetically by pronunciation
     return a.zhuyinWithoutTones.localeCompare(b.zhuyinWithoutTones);
   });
+};
 
-  if (phrases.length === 0) {
-    return (
-      <MainFrame>
-        <div className="p-6">
-          <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-            Homophones
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            No phrases loaded. Please load some phrases first.
-          </p>
-        </div>
-      </MainFrame>
-    );
-  }
+export default function Homophones() {
+  const { phrases } = useOutletContext<OutletContext>();
+
+  const homophoneGroups = constructHomophoneGroups(phrases);
 
   return (
     <MainFrame>
       <div className="p-6">
-        <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
-          Homophones
-        </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Words with the same pronunciation (zhuyin without tone marks) but different characters.
-          Found {homophoneGroups.length} homophone groups.
+          Words with the similar syllables (but often different tones). Found{" "}
+          {homophoneGroups.length} homophone groups.
         </p>
 
         {homophoneGroups.length === 0 ? (
@@ -112,7 +103,10 @@ export default function Homophones() {
         ) : (
           <div className="space-y-6">
             {homophoneGroups.map((group, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
+              >
                 <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
                   Pronunciation: {group.zhuyinWithoutTones}
                 </h2>

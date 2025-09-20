@@ -62,7 +62,7 @@ export const MainToolbarNoOutlet: React.FC<{
   const conflictingChars = getConflictingChars(
     knownProps,
     characters,
-    charPhrasesPinyin
+    charPhrasesPinyin,
   ).length;
   const missingChars = getMissingPhraseChars(phrases, characters);
 
@@ -138,7 +138,7 @@ export const MainToolbarNoOutlet: React.FC<{
         {
           pathname: "/homophones",
           name: "Homophones",
-          show: true,
+          show: phrases.length > 0,
         },
       ],
     },
@@ -250,7 +250,7 @@ export const MainToolbarNoOutlet: React.FC<{
         .some(
           (submenuItem) =>
             location.pathname === submenuItem.pathname ||
-            location.pathname.startsWith(submenuItem.pathname + "/")
+            location.pathname.startsWith(submenuItem.pathname + "/"),
         );
     }
 
@@ -273,7 +273,7 @@ export const MainToolbarNoOutlet: React.FC<{
 
   // Determine the active submenu for the subtoolbar
   const activeDropdownItem = listWithCounters.find((item) =>
-    isMenuItemActive(item)
+    isMenuItemActive(item),
   );
   const activeSubmenu =
     activeDropdownItem?.submenu?.filter((item) => item.show) || [];
