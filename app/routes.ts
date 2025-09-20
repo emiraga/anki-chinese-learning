@@ -36,6 +36,7 @@ export default [
   ),
   route("exam_level", "routes/exam_level.tsx"),
   route("help", "routes/help.tsx"),
+  route("homophones", "routes/homophones.tsx"),
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),
   route("zhuyin_typing", "routes/zhuyin_typing.tsx"),

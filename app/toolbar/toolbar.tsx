@@ -135,6 +135,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Import",
           show: true,
         },
+        {
+          pathname: "/homophones",
+          name: "Homophones",
+          show: true,
+        },
       ],
     },
     {

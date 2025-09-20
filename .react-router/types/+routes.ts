@@ -123,6 +123,9 @@ type Pages = {
   "/help": {
     params: {};
   };
+  "/homophones": {
+    params: {};
+  };
   "/tone/:toneName": {
     params: {
       "toneName": string;
@@ -142,7 +145,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/stats" | "/stats_progress" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/stats" | "/stats_progress" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -271,6 +274,10 @@ type RouteFiles = {
   "routes/help.tsx": {
     id: "routes/help";
     page: "/help";
+  };
+  "routes/homophones.tsx": {
+    id: "routes/homophones";
+    page: "/homophones";
   };
   "routes/tone/$toneName.tsx": {
     id: "routes/tone/$toneName";
