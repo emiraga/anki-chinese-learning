@@ -3,7 +3,8 @@ import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import MainFrame from "~/toolbar/frame";
 import { PhraseMeaning } from "~/components/Phrase";
-import { stripZhuyinTones, stripPinyinTones } from "~/utils/pinyin_zhuyin";
+import { stripZhuyinTones } from "~/utils/zhuyin";
+import { stripPinyinTones } from "~/utils/pinyin";
 
 type HomophoneGroup = {
   zhuyinWithoutTones: string;

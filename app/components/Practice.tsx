@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { SchemaType } from "@google/generative-ai";
 import type { GenerationConfig } from "@google/generative-ai";
 import type { PhraseType } from "~/data/phrases";
-import { pickRandomElements, useLocalStorageState } from "~/data/utils";
+import { pickRandomElements } from "~/utils/array";
+import { useLocalStorageState } from "~/utils/localStorage";
 import { useSettings } from "~/settings/SettingsContext";
 import { useGenerativeModel } from "~/apis/google_genai";
 import {

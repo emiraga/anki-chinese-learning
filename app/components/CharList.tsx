@@ -4,9 +4,8 @@ import { PinyinText } from "./PinyinText";
 import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import { type CharsToPhrasesPinyin } from "~/data/phrases";
-import { getAllPinyinUnreliable } from "~/data/pinyin_function";
+import { getAllPinyinUnreliable, comparePinyin } from "~/utils/pinyin";
 import pinyin from "pinyin";
-import { comparePinyin } from "~/data/pinyin_function";
 
 export const CharList: React.FC<{
   characters: CharacterType[];

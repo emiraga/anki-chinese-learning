@@ -422,3 +422,7 @@ export const PINYIN_TO_ZHUYIN: { [key: string]: string } = {
 };
 
 export const ZHUYIN_TONE = [undefined, "", "ˊ", "ˇ", "`", "˙"];
+
+export const stripZhuyinTones = (zhuyin: string): string => {
+  return zhuyin.replace(/[ˊˇˋ˙]/g, "");
+};

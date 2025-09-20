@@ -11,7 +11,7 @@ import { getNewCharacter } from "~/data/characters";
 import { SearchMorePhrases } from "~/components/MorePhrases";
 import { PinyinText } from "~/components/PinyinText";
 import { useSettings } from "~/settings/SettingsContext";
-import { comparePinyin } from "~/data/pinyin_function";
+import { comparePinyin } from "~/utils/pinyin";
 
 export function meta({ params }: Route.MetaArgs) {
   return [

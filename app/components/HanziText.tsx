@@ -3,7 +3,7 @@ import { getNewCharacter, type CharactersType } from "~/data/characters";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails, CharLink } from "./CharCard";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
-import { segmentChineseText, type SegmentationAlgorithm } from "~/data/utils";
+import { segmentChineseText, type SegmentationAlgorithm } from "~/utils/text";
 import { useMemo } from "react";
 
 export const HanziText: React.FC<{ value?: string }> = ({ value }) => {

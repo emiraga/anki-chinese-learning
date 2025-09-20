@@ -6,7 +6,7 @@ import { PinyinText } from "~/components/PinyinText";
 import { CharLink } from "~/components/CharCard";
 import Section from "~/toolbar/section";
 import type { CharacterType } from "~/data/characters";
-import type { PinyinType } from "~/data/pinyin_function";
+import type { PinyinType } from "~/utils/pinyin";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "../components/index.module.css";
 import { useSettings } from "~/settings/SettingsContext";

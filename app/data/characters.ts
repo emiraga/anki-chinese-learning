@@ -1,10 +1,10 @@
 import pinyin from "pinyin";
-import { getPinyinUnreliable, type PinyinType } from "./pinyin_function";
+import { getPinyinUnreliable, type PinyinType } from "~/utils/pinyin";
 import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import type { CharsToPhrasesPinyin } from "./phrases";
 import { useSettings } from "~/settings/SettingsContext";
-import { cleanPinyinAnkiField, comparePinyin } from "./pinyin_function";
+import { cleanPinyinAnkiField, comparePinyin } from "~/utils/pinyin";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 
 export type CharacterType = {

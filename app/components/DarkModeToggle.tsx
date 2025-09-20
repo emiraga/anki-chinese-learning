@@ -5,7 +5,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { useLocalStorageState } from "~/data/utils";
+import { useLocalStorageState } from "~/utils/localStorage";
 
 // Dark mode context
 interface DarkModeContextType {

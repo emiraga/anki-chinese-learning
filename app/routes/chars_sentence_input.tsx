@@ -1,7 +1,8 @@
 import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
 import { HanziSegmentedText } from "~/components/HanziText";
-import { useLocalStorageState, type SegmentationAlgorithm } from "~/data/utils";
+import { useLocalStorageState } from "~/utils/localStorage";
+import { type SegmentationAlgorithm } from "~/utils/text";
 import Textarea from "react-textarea-autosize";
 
 export function meta({}: Route.MetaArgs) {

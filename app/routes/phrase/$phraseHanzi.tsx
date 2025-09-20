@@ -5,7 +5,7 @@ import type { OutletContext } from "~/data/types";
 import { PhraseList } from "~/components/Phrase";
 import { SearchMorePhrases } from "~/components/MorePhrases";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
-import { removeDuplicateChars } from "~/data/utils";
+import { removeDuplicateChars } from "~/utils/array";
 import { HanziCardDetails, HanziText } from "~/components/HanziText";
 import { useSettings } from "~/settings/SettingsContext";
 

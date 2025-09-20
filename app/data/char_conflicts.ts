@@ -5,7 +5,7 @@ import {
   type CharsToPhrasesPinyin,
   type PhraseType,
 } from "~/data/phrases";
-import { removeDuplicateChars } from "~/data/utils";
+import { removeDuplicateChars } from "~/utils/array";
 
 export function getConflictingChars(
   knownProps: KnownPropsType,

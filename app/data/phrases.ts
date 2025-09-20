@@ -3,7 +3,7 @@ import anki from "~/apis/anki";
 import pinyinSplit from "pinyin-split";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 import { useSettings } from "~/settings/SettingsContext";
-import type { PinyinType } from "./pinyin_function";
+import type { PinyinType } from "~/utils/pinyin";
 import type { InvalidDataRecord } from "./types";
 
 export type PhraseType = {

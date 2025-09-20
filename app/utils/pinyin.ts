@@ -38,6 +38,24 @@ export function comparePinyin(a: PinyinType, b: PinyinType) {
 export function cleanPinyinAnkiField(pinyin: string) {
   return pinyin
     .trim()
-    .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
+    .replace(/\<span style="color: rgb\([0-9, ]+\);\"\>/g, "")
     .replace(/\<\/span\>/g, "");
 }
+
+export const stripPinyinTones = (pinyin: string): string => {
+  const cleanPinyin = pinyin
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, (match) => {
+      // Convert accented vowels to basic vowels
+      const map: { [key: string]: string } = {
+        'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+        'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+        'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+        'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+        'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+        'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü'
+      };
+      return map[match] || match;
+    });
+  return cleanPinyin;
+};

@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { Fragment } from "react/jsx-runtime";
-import type { PinyinType } from "~/data/pinyin_function";
-import { PINYIN_TO_ZHUYIN } from "~/data/zhuyin";
+import type { PinyinType } from "~/utils/pinyin";
+import { PINYIN_TO_ZHUYIN } from "~/utils/zhuyin";
 
 export const PinyinText: React.FC<{
   v: PinyinType | null;

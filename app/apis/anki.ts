@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { YankiConnect } from "yanki-connect";
 import { CARDS_INFO } from "~/data/cards";
-import { sleep } from "~/data/utils";
+import { sleep } from "~/utils/text";
 
 const anki: YankiConnect = new YankiConnect();
 export type CardInfo = Awaited<ReturnType<typeof anki.card.cardsInfo>>[number];
