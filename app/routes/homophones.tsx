@@ -2,9 +2,11 @@ import * as React from "react";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import MainFrame from "~/toolbar/frame";
+import { PhraseMeaning } from "~/components/Phrase";
 
 type HomophoneGroup = {
   zhuyinWithoutTones: string;
+  pinyinWithoutTones: string;
   phrases: Array<{
     traditional: string;
     pinyin: string;
@@ -16,6 +18,25 @@ type HomophoneGroup = {
 const stripZhuyinTones = (zhuyin: string): string => {
   // Remove tone marks: ˊ ˇ ˋ ˙ (tones 2, 3, 4, 5) and keep tone 1 (no mark)
   return zhuyin.replace(/[ˊˇˋ˙]/g, "");
+};
+
+const stripPinyinTones = (pinyin: string): string => {
+  // Remove HTML tags first, then tone marks from pinyin
+  const cleanPinyin = pinyin
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
+    .replace(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g, (match) => {
+      // Convert accented vowels to basic vowels
+      const map: { [key: string]: string } = {
+        'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+        'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+        'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+        'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+        'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+        'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü'
+      };
+      return map[match] || match;
+    });
+  return cleanPinyin;
 };
 
 const constructHomophoneGroups = (phrases: Array<{
@@ -51,8 +72,12 @@ const constructHomophoneGroups = (phrases: Array<{
         return groupPhrases.find((p) => p.traditional === traditional)!;
       });
 
+      // Get the stripped pinyin from the first phrase in the group
+      const strippedPinyin = stripPinyinTones(uniquePhrases[0].pinyin);
+
       homophones.push({
         zhuyinWithoutTones: strippedZhuyin,
+        pinyinWithoutTones: strippedPinyin,
         phrases: uniquePhrases.map((phrase) => ({
           traditional: phrase.traditional,
           pinyin: phrase.pinyin,
@@ -108,7 +133,7 @@ export default function Homophones() {
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4"
               >
                 <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
-                  Pronunciation: {group.zhuyinWithoutTones}
+                  Pronunciation: {group.zhuyinWithoutTones} ({group.pinyinWithoutTones})
                 </h2>
                 <div className="overflow-x-auto">
                   <table className="min-w-full table-auto">
@@ -144,7 +169,7 @@ export default function Homophones() {
                             {phrase.zhuyin}
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
-                            {phrase.meaning}
+                            <PhraseMeaning meaning={phrase.meaning} />
                           </td>
                         </tr>
                       ))}

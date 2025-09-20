@@ -5,6 +5,18 @@ import { Link, useOutletContext } from "react-router";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import type { OutletContext } from "~/data/types";
 
+export const PhraseMeaning: React.FC<{
+  meaning: string;
+  className?: string;
+}> = ({ meaning, className = "" }) => {
+  return (
+    <span
+      className={className}
+      dangerouslySetInnerHTML={{ __html: meaning }}
+    />
+  );
+};
+
 export const PhraseLink: React.FC<{ value: string }> = ({ value }) => {
   const { characters } = useOutletContext<OutletContext>();
   return (
@@ -89,9 +101,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                 </td>
                 <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
                   <div className="max-w-md truncate">
-                    <span
-                      dangerouslySetInnerHTML={{ __html: phrase.meaning }}
-                    ></span>
+                    <PhraseMeaning meaning={phrase.meaning} />
                   </div>
                 </td>
               </tr>
