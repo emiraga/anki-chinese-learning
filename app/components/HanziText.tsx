@@ -1,4 +1,4 @@
-import { useOutletContext, useNavigate } from "react-router";
+import { useOutletContext, Link } from "react-router";
 import { getNewCharacter, type CharactersType } from "~/data/characters";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails, CharLink } from "./CharCard";
@@ -57,7 +57,6 @@ export const HanziSegmentedText: React.FC<{
   algorithm?: SegmentationAlgorithm;
 }> = ({ value, algorithm }) => {
   const { characters, phrases } = useOutletContext<OutletContext>();
-  const navigate = useNavigate();
 
   const knowPhrases = useMemo(() => {
     return new Set(phrases.map((p) => p.traditional));
@@ -83,24 +82,16 @@ export const HanziSegmentedText: React.FC<{
               .length > 0;
 
           return (
-            <span
+            <Link
               key={i}
-              onClick={() => navigate(`/phrase/${segment.text}`)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  navigate(`/phrase/${segment.text}`);
-                }
-              }}
-              tabIndex={0}
-              role="button"
+              to={`/phrase/${segment.text}`}
               className={`inline-block ${
                 shouldUnderline
                   ? knowPhrases.has(segment.text)
                     ? " border-b-2 border-gray-600 hover:border-blue-500 "
                     : " border-b-2 border-red-500 hover:border-blue-500 "
                   : ""
-              } mx-1 px-1 py-1 cursor-pointer`}
+              } mx-1 px-1 py-1`}
             >
               {[...segment.text].map((c, charIndex) => {
                 if (IGNORE_PHRASE_CHARS.has(c)) {
@@ -115,14 +106,12 @@ export const HanziSegmentedText: React.FC<{
                 }
 
                 return (
-                  <CharLink
-                    key={charIndex}
-                    traditional={c}
-                    className={className}
-                  />
+                  <span key={charIndex} className={className}>
+                    {c}
+                  </span>
                 );
               })}
-            </span>
+            </Link>
           );
         } else {
           // Single character or punctuation
