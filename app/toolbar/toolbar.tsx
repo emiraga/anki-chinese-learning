@@ -182,6 +182,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/story",
+          name: "Story",
+          show: true,
+        },
+        {
           pathname: "/zhuyin_typing",
           name: "Zhuyin Typing",
           show: true,

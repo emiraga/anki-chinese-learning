@@ -22,6 +22,7 @@ export default [
   route("settings", "routes/settings.tsx"),
   route("stats", "routes/stats.tsx"),
   route("stats_progress", "routes/stats_progress.tsx"),
+  route("story", "routes/story.tsx"),
   route("study", "routes/study.tsx"),
   route("study_weak_chars", "routes/study_weak_chars.tsx"),
   route("advance_cards", "routes/advance_cards.tsx"),
