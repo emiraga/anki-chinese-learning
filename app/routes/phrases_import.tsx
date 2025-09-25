@@ -12,9 +12,6 @@ export function meta({}: Route.MetaArgs) {
 export default function PhrasesImportRoute() {
   return (
     <MainFrame>
-      <h3 className="font-serif text-4xl m-4 text-gray-900 dark:text-gray-100">
-        Import Phrases
-      </h3>
       <section className="block mx-4">
         <PhrasesImport />
       </section>

@@ -20,14 +20,14 @@ export function meta({}: Route.MetaArgs) {
 export default function StudyWeakChars() {
   const { loading, characters, phrases } = useOutletContext<OutletContext>();
 
-  const weakChars = loading || !characters || !phrases
-    ? []
-    : getWeakCharacters(phrases, characters, 300);
+  const weakChars =
+    loading || !characters || !phrases
+      ? []
+      : getWeakCharacters(phrases, characters, 300);
 
   return (
     <MainFrame>
       <Section className="m-1">
-        <h1 className="text-2xl font-bold mb-4">Study Weak Characters</h1>
         <p className="text-gray-600 mb-4">
           Characters with the fewest phrase occurrences - these may need more
           practice!

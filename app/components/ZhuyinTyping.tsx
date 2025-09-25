@@ -29,10 +29,11 @@ const ZhuyinTyping = () => {
   const [answerLog, setAnswerLog] = useState<LogEntry[]>([]);
 
   // Initialize with first character immediately
-  const [currentCharacter, setCurrentCharacter] = useState<ZhuyinCharacter | null>(
-    () => getRandomZhuyinCharacter({})
+  const [currentCharacter, setCurrentCharacter] =
+    useState<ZhuyinCharacter | null>(() => getRandomZhuyinCharacter({}));
+  const [showZhuyin, setShowZhuyin] = useState<boolean>(
+    () => Math.random() < 0.5,
   );
-  const [showZhuyin, setShowZhuyin] = useState<boolean>(() => Math.random() < 0.5);
   const [startTime, setStartTime] = useState<number | null>(() => Date.now());
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [lastDelay, setLastDelay] = useState<number | null>(null);
@@ -77,7 +78,7 @@ const ZhuyinTyping = () => {
         };
       });
     },
-    []
+    [],
   );
 
   const handleKeyPress = useCallback(
@@ -157,9 +158,14 @@ const ZhuyinTyping = () => {
         }, 500);
       }
     },
-    [currentCharacter, startTime, updateStats, showZhuyin, generateNewCharacter]
+    [
+      currentCharacter,
+      startTime,
+      updateStats,
+      showZhuyin,
+      generateNewCharacter,
+    ],
   );
-
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyPress);
@@ -171,19 +177,16 @@ const ZhuyinTyping = () => {
   const overallSuccessRate =
     totalAttempts > 0 ? (totalSuccess / totalAttempts) * 100 : 0;
   const sortedStats = Object.values(stats).sort(
-    (a, b) => b.attempts - a.attempts
+    (a, b) => b.attempts - a.attempts,
   );
 
   return (
     <div className="min-h-screen py-4">
       <div className="mx-auto max-w-4xl px-2">
         <div className="mb-4 text-center">
-          <h1 className="mb-2 text-4xl font-bold text-gray-900 dark:text-white">
-            Zhuyin Touch Typing Practice
-          </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Type the English key shown below when you see a Zhuyin character, or
-            the Zhuyin character when you see an English key
+            Type the English key shown below when you see a Zhuyin character or
+            an English pronounciation
           </p>
         </div>
 
@@ -277,8 +280,8 @@ const ZhuyinTyping = () => {
                             stat.successRate >= 80
                               ? "text-green-600"
                               : stat.successRate >= 60
-                              ? "text-yellow-600"
-                              : "text-red-600"
+                                ? "text-yellow-600"
+                                : "text-red-600"
                           }`}
                         >
                           {stat.successRate.toFixed(1)}%

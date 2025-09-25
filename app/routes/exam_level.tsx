@@ -190,9 +190,6 @@ function ExamLevelContent() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-          Exam Level Analysis
-        </h1>
         <LoadingProgressBar
           stage={stage}
           progressPercentage={progressPercentage}
@@ -205,9 +202,6 @@ function ExamLevelContent() {
   if (error) {
     return (
       <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-          Exam Level Analysis
-        </h1>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
           <h3 className="text-lg font-medium text-red-800 dark:text-red-400 mb-2">
             Error Loading Cards
@@ -226,12 +220,6 @@ function ExamLevelContent() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Exam Level Analysis
-        </h1>
-      </div>
-
       {levelStats.length === 0 ? (
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
           <p className="text-gray-600 dark:text-gray-400">
