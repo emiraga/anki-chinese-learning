@@ -4,7 +4,7 @@
 # dependencies = [
 #   "requests",
 #   "google.cloud.texttospeech",
-#   "pypinyin",
+#   "dragonmapper",
 # ]
 # ///
 
@@ -13,14 +13,14 @@ import requests
 import base64
 import argparse
 from google.cloud import texttospeech
-from pypinyin import lazy_pinyin, Style
+import dragonmapper.transcriptions
 
 
 # Generate API key via https://console.cloud.google.com/apis/credentials
 
 def convert_pinyin_to_numbered(pinyin_text):
     """
-    Convert pinyin with tone marks to numbered format
+    Convert pinyin with tone marks to numbered format using dragonmapper
 
     Args:
         pinyin_text (str): Pinyin with tone marks (e.g., "děi yào")
@@ -28,48 +28,7 @@ def convert_pinyin_to_numbered(pinyin_text):
     Returns:
         str: Pinyin with numbers (e.g., "dei3 yao4")
     """
-    # Break up into syllables
-    syllables = pinyin_text.split()
-    result_syllables = []
-
-    # Tone detection maps
-    tone_chars = {
-        1: 'āēīōūǖ',
-        2: 'áéíóúǘ',
-        3: 'ǎěǐǒǔǚ',
-        4: 'àèìòùǜ'
-    }
-
-    # Diacritic removal map
-    remove_diacritics = {
-        'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
-        'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
-        'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
-        'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
-        'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
-        'ǖ': 'v', 'ǘ': 'v', 'ǚ': 'v', 'ǜ': 'v'
-    }
-
-    for syllable in syllables:
-        # Find tone for this syllable
-        tone_number = None
-        for tone, chars in tone_chars.items():
-            if any(char in chars for char in syllable):
-                tone_number = tone
-                break
-
-        # Remove diacritics
-        clean_syllable = ""
-        for char in syllable:
-            clean_syllable += remove_diacritics.get(char, char)
-
-        # Add tone number at end
-        if tone_number:
-            clean_syllable += str(tone_number)
-
-        result_syllables.append(clean_syllable)
-
-    return ' '.join(result_syllables)
+    return dragonmapper.transcriptions.accented_to_numbered(pinyin_text)
 
 def setup_credentials():
     """
