@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import anki, { type CardInfo, type NoteInfo } from "~/apis/anki";
+import anki, {
+  type CardInfo,
+  type NoteInfo,
+  ankiOpenBrowse,
+} from "~/apis/anki";
 import { LoadingProgressBar } from "./LoadingProgressBar";
 
 interface FilterOptions {
@@ -13,6 +17,8 @@ interface FilterOptions {
 
 interface CardWithDue extends CardInfo {
   daysUntilDue: number;
+  traditional?: string;
+  id?: string;
 }
 
 const AdvanceCardsManager: React.FC = () => {
@@ -29,7 +35,7 @@ const AdvanceCardsManager: React.FC = () => {
   const [availableNoteTypes, setAvailableNoteTypes] = useState<string[]>([]);
   const [targetDays, setTargetDays] = useState(30);
   const [actionType, setActionType] = useState<
-    "reduce_interval" | "bring_closer"
+    "bring_closer" | "bring_closer_and_reset_interval"
   >("bring_closer");
 
   useEffect(() => {
@@ -123,10 +129,20 @@ const AdvanceCardsManager: React.FC = () => {
       });
 
       setStage("Processing cards...");
-      const cardsWithDue: CardWithDue[] = allCards.map((card) => ({
-        ...card,
-        daysUntilDue: calculateDaysUntilDue(card.due),
-      }));
+
+      // Create a map of noteId to note info for quick lookup
+      const noteMap = new Map<number, NoteInfo>();
+      notes.forEach((note) => noteMap.set(note.noteId, note));
+
+      const cardsWithDue: CardWithDue[] = allCards.map((card) => {
+        const noteInfo = noteMap.get(card.note);
+        return {
+          ...card,
+          daysUntilDue: calculateDaysUntilDue(card.due),
+          traditional: noteInfo?.fields?.["Traditional"]?.value || "",
+          id: noteInfo?.fields?.["ID"]?.value || "",
+        };
+      });
 
       setMatchingCards(cardsWithDue);
       setStage(`Found ${cardsWithDue.length} cards`);
@@ -147,17 +163,9 @@ const AdvanceCardsManager: React.FC = () => {
     try {
       const cardIds = matchingCards.map((card) => card.cardId);
 
-      if (actionType === "reduce_interval") {
+      if (actionType === "bring_closer") {
         setStage(
-          `Cannot directly set intervals - this would require answering cards to adjust intervals naturally`
-        );
-        setError(
-          "Direct interval setting is not supported by AnkiConnect. Use 'bring closer' instead."
-        );
-        return;
-      } else {
-        setStage(
-          `Randomly distributing ${cardIds.length} cards between tomorrow and ${targetDays} days...`
+          `Randomly distributing ${cardIds.length} cards between tomorrow and ${targetDays} days...`,
         );
 
         // Process cards in batches to show progress and avoid overwhelming Anki
@@ -175,13 +183,42 @@ const AdvanceCardsManager: React.FC = () => {
           }
 
           const progressPercent = Math.floor(
-            ((i + batch.length) / cardIds.length) * 100
+            ((i + batch.length) / cardIds.length) * 100,
           );
           setProgress(progressPercent);
           setStage(
             `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-              cardIds.length / batchSize
-            )}... (${progressPercent}%)`
+              cardIds.length / batchSize,
+            )}... (${progressPercent}%)`,
+          );
+        }
+      } else if (actionType === "bring_closer_and_reset_interval") {
+        setStage(
+          `Setting due dates within ${targetDays} days and resetting intervals for ${cardIds.length} cards...`,
+        );
+
+        // Process cards in batches to show progress and avoid overwhelming Anki
+        const batchSize = 50;
+        for (let i = 0; i < cardIds.length; i += batchSize) {
+          const batch = cardIds.slice(i, i + batchSize);
+
+          // Set each card to a random due date AND reset interval to 1 day
+          for (const cardId of batch) {
+            const randomDays = Math.floor(Math.random() * targetDays) + 1; // 1 to targetDays
+            await anki.card.setDueDate({
+              cards: [cardId],
+              days: `${randomDays}!`, // "!" sets due date and resets interval to 1 day
+            });
+          }
+
+          const progressPercent = Math.floor(
+            ((i + batch.length) / cardIds.length) * 100,
+          );
+          setProgress(progressPercent);
+          setStage(
+            `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+              cardIds.length / batchSize,
+            )}... (${progressPercent}%)`,
           );
         }
       }
@@ -198,33 +235,39 @@ const AdvanceCardsManager: React.FC = () => {
   const cardsSummary = useMemo(() => {
     if (matchingCards.length === 0) return null;
 
-    const byInterval = matchingCards.reduce((acc, card) => {
-      const intervalRange =
-        card.interval > 365
-          ? "1+ year"
-          : card.interval > 180
-          ? "6m-1y"
-          : card.interval > 90
-          ? "3-6m"
-          : "3m or less";
-      acc[intervalRange] = (acc[intervalRange] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const byInterval = matchingCards.reduce(
+      (acc, card) => {
+        const intervalRange =
+          card.interval > 365
+            ? "1+ year"
+            : card.interval > 180
+              ? "6m-1y"
+              : card.interval > 90
+                ? "3-6m"
+                : "3m or less";
+        acc[intervalRange] = (acc[intervalRange] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-    const byDueDate = matchingCards.reduce((acc, card) => {
-      const dueRange =
-        card.daysUntilDue > 365
-          ? "1+ year"
-          : card.daysUntilDue > 180
-          ? "6m-1y"
-          : card.daysUntilDue > 90
-          ? "3-6m"
-          : card.daysUntilDue > 30
-          ? "1-3m"
-          : "30 days or less";
-      acc[dueRange] = (acc[dueRange] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const byDueDate = matchingCards.reduce(
+      (acc, card) => {
+        const dueRange =
+          card.daysUntilDue > 365
+            ? "1+ year"
+            : card.daysUntilDue > 180
+              ? "6m-1y"
+              : card.daysUntilDue > 90
+                ? "3-6m"
+                : card.daysUntilDue > 30
+                  ? "1-3m"
+                  : "30 days or less";
+        acc[dueRange] = (acc[dueRange] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return { byInterval, byDueDate };
   }, [matchingCards]);
@@ -412,19 +455,20 @@ const AdvanceCardsManager: React.FC = () => {
                   />
                   Bring cards closer (set due date within X days)
                 </label>
-                {/*<label className="flex items-center opacity-50">
+                <label className="flex items-center">
                   <input
                     type="radio"
-                    value="reduce_interval"
-                    checked={actionType === "reduce_interval"}
+                    value="bring_closer_and_reset_interval"
+                    checked={actionType === "bring_closer_and_reset_interval"}
                     onChange={(e) =>
-                      setActionType(e.target.value as "reduce_interval")
+                      setActionType(
+                        e.target.value as "bring_closer_and_reset_interval",
+                      )
                     }
                     className="mr-2"
-                    disabled
                   />
-                  Reduce interval to X days (not supported by AnkiConnect)
-                </label>*/}
+                  Set due date within X days AND reset interval
+                </label>
               </div>
             </div>
 
@@ -490,7 +534,7 @@ const AdvanceCardsManager: React.FC = () => {
                         <span>{range}:</span>
                         <span className="font-medium">{count}</span>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               </div>
@@ -504,7 +548,7 @@ const AdvanceCardsManager: React.FC = () => {
                         <span>{range}:</span>
                         <span className="font-medium">{count}</span>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               </div>
@@ -516,6 +560,8 @@ const AdvanceCardsManager: React.FC = () => {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-3 py-2 text-left">Card ID</th>
+                  <th className="px-3 py-2 text-left">Traditional</th>
+                  <th className="px-3 py-2 text-left">ID</th>
                   <th className="px-3 py-2 text-left">Due (days)</th>
                   <th className="px-3 py-2 text-left">Interval</th>
                   <th className="px-3 py-2 text-left">Type</th>
@@ -525,7 +571,16 @@ const AdvanceCardsManager: React.FC = () => {
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {matchingCards.slice(0, 100).map((card) => (
                   <tr key={card.cardId}>
-                    <td className="px-3 py-2">{card.cardId}</td>
+                    <td className="px-3 py-2">
+                      <button
+                        onClick={() => ankiOpenBrowse(`cid:${card.cardId}`)}
+                        className="text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                      >
+                        {card.cardId}
+                      </button>
+                    </td>
+                    <td className="px-3 py-2">{card.traditional}</td>
+                    <td className="px-3 py-2">{card.id}</td>
                     <td className="px-3 py-2">{card.daysUntilDue}</td>
                     <td className="px-3 py-2">{card.interval}</td>
                     <td className="px-3 py-2">{card.type}</td>
