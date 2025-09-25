@@ -4,16 +4,72 @@
 # dependencies = [
 #   "requests",
 #   "google.cloud.texttospeech",
+#   "pypinyin",
 # ]
 # ///
 
 import os
 import requests
 import base64
+import argparse
 from google.cloud import texttospeech
+from pypinyin import lazy_pinyin, Style
 
 
 # Generate API key via https://console.cloud.google.com/apis/credentials
+
+def convert_pinyin_to_numbered(pinyin_text):
+    """
+    Convert pinyin with tone marks to numbered format
+
+    Args:
+        pinyin_text (str): Pinyin with tone marks (e.g., "děi yào")
+
+    Returns:
+        str: Pinyin with numbers (e.g., "dei3 yao4")
+    """
+    # Break up into syllables
+    syllables = pinyin_text.split()
+    result_syllables = []
+
+    # Tone detection maps
+    tone_chars = {
+        1: 'āēīōūǖ',
+        2: 'áéíóúǘ',
+        3: 'ǎěǐǒǔǚ',
+        4: 'àèìòùǜ'
+    }
+
+    # Diacritic removal map
+    remove_diacritics = {
+        'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+        'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+        'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+        'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+        'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+        'ǖ': 'v', 'ǘ': 'v', 'ǚ': 'v', 'ǜ': 'v'
+    }
+
+    for syllable in syllables:
+        # Find tone for this syllable
+        tone_number = None
+        for tone, chars in tone_chars.items():
+            if any(char in chars for char in syllable):
+                tone_number = tone
+                break
+
+        # Remove diacritics
+        clean_syllable = ""
+        for char in syllable:
+            clean_syllable += remove_diacritics.get(char, char)
+
+        # Add tone number at end
+        if tone_number:
+            clean_syllable += str(tone_number)
+
+        result_syllables.append(clean_syllable)
+
+    return ' '.join(result_syllables)
 
 def setup_credentials():
     """
@@ -27,7 +83,7 @@ def setup_credentials():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcloud_account.json"
 
 
-def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"):
+def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A", pinyin_hint=None):
     """
     Convert text to speech using Taiwanese Mandarin voice
 
@@ -35,12 +91,22 @@ def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"
         text (str): Text to convert (Traditional Chinese characters)
         output_file (str): Output audio file path
         voice_name (str): Voice to use (see available voices below)
+        pinyin_hint (str): Optional pinyin pronunciation hint
     """
     # Initialize the client
     client = texttospeech.TextToSpeechClient()
 
-    # Set the text input
-    synthesis_input = texttospeech.SynthesisInput(text=text)
+    # Set the text input - use SSML if pinyin hint provided
+    if pinyin_hint:
+        # Convert pinyin to numbered format and use phoneme tags
+        numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
+        ssml_text = f'<speak><phoneme alphabet="pinyin" ph="{numbered_pinyin}">{text}</phoneme></speak>'
+        synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
+        print(f"Original pinyin: {pinyin_hint}")
+        print(f"Converted to numbered: {numbered_pinyin}")
+        print(f"SSML: {ssml_text}")
+    else:
+        synthesis_input = texttospeech.SynthesisInput(text=text)
 
     # Build the voice request
     voice = texttospeech.VoiceSelectionParams(
@@ -205,14 +271,10 @@ def update_note_audio(note_id, audio_filename):
         return False
 
 
-def update_audio_on_a_note(note_type, target_text):
+def update_audio_on_a_note(note_type, target_text, pinyin_hint=None):
     """
-    Main function to find note and update audio
+    Main function to find note and update audio (legacy interface)
     """
-
-    # Text to search for
-    voice_name = "cmn-TW-Standard-C"
-
     # Find the note
     note_id = find_note_by_traditional(note_type, target_text)
     if not note_id:
@@ -223,14 +285,40 @@ def update_audio_on_a_note(note_type, target_text):
     if not note_info:
         return
 
+    # Use the more efficient version
+    update_audio_for_note(note_id, note_info, target_text, pinyin_hint)
+
+
+def update_audio_for_note(note_id, note_info, target_text, pinyin_hint=None):
+    """
+    Update audio for a specific note using existing note info
+
+    Args:
+        note_id (int): The note ID
+        note_info (dict): Existing note information from get_note_info
+        target_text (str): Traditional Chinese text to generate audio for
+        pinyin_hint (str): Optional pinyin pronunciation hint (e.g., "de2 dao4")
+    """
+    voice_name = "cmn-TW-Standard-C"
+
     print(f"Found note: {note_info['fields'].get('Traditional', {}).get('value', 'N/A')}")
 
     # Generate audio filename
-    audio_filename = f"emir_tts_{target_text.replace("?", "").replace("*", "")}_{note_id}.mp3"
+    clean_text = target_text.replace('?', '').replace('*', '')
+    if pinyin_hint:
+        # Convert pinyin to numbered format and clean for filename
+        numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
+        clean_pinyin = numbered_pinyin.replace(' ', '_').replace(':', '').replace('*', '').replace('?', '')
+        audio_filename = f"emir_tts_{clean_text}_{clean_pinyin}_{note_id}.mp3"
+    else:
+        audio_filename = f"emir_tts_{clean_text}_{note_id}.mp3"
 
     # Generate TTS audio
-    print(f"Generating TTS audio for: {target_text}")
-    audio_data = taiwanese_tts(target_text, output_file=audio_filename, voice_name=voice_name)
+    if pinyin_hint:
+        print(f"Generating TTS audio for: {target_text} with pinyin hint: {pinyin_hint}")
+    else:
+        print(f"Generating TTS audio for: {target_text}")
+    audio_data = taiwanese_tts(target_text, output_file=audio_filename, voice_name=voice_name, pinyin_hint=pinyin_hint)
 
     # Store audio file in Anki media collection
     if store_media_file(audio_filename, audio_data):
@@ -260,6 +348,11 @@ def find_note_by_empty_audio(note_type):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Generate TTS audio for Anki notes')
+    parser.add_argument('--use-pinyin-hint', action='store_true',
+                       help='Use Pinyin field from notes as pronunciation hints')
+    args = parser.parse_args()
+
     # Setup Google Cloud credentials
     setup_credentials()
 
@@ -268,7 +361,15 @@ def main():
             note_info = get_note_info(note_id)
             traditional = note_info['fields']['Traditional']['value']
             if len(traditional) > 0:
-                update_audio_on_a_note(noteType, traditional)
+                # Get pinyin from note if available and flag is set
+                pinyin_hint = None
+                if args.use_pinyin_hint:
+                    pinyin_hint = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+                    if pinyin_hint:
+                        print(f"Using Pinyin field from note: {pinyin_hint}")
+
+                # Use the more efficient version that reuses note_info
+                update_audio_for_note(note_id, note_info, traditional, pinyin_hint or None)
             else:
                 print("No traditional found", note_info)
 
