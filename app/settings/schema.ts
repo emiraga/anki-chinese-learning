@@ -5,8 +5,8 @@ type DeepRequired<T> = {
   [P in keyof T]-?: T[P] extends (infer U)[]
     ? DeepRequired<U>[]
     : T[P] extends object | undefined
-    ? DeepRequired<NonNullable<T[P]>>
-    : T[P];
+      ? DeepRequired<NonNullable<T[P]>>
+      : T[P];
 };
 
 export interface AppSettings {
@@ -54,7 +54,7 @@ const dummySettings: DeepRequired<AppSettings> = {
   features: { showZhuyin: true },
 };
 
-export const DEFAULT_GEN_AI_MODEL = "gemini-1.5-flash";
+export const DEFAULT_GEN_AI_MODEL = "gemini-2.5-flash";
 
 export const settingsJsonSchema: JSONSchema7 = {
   title: "Application Settings",
@@ -206,15 +206,15 @@ function validateArraysHaveElements(obj: unknown, path: string = "root"): void {
   if (Array.isArray(obj)) {
     if (obj.length === 0) {
       throw new Error(
-        `Array at ${path} must have at least one element for validation`
+        `Array at ${path} must have at least one element for validation`,
       );
     }
     obj.forEach((item, index) =>
-      validateArraysHaveElements(item, `${path}[${index}]`)
+      validateArraysHaveElements(item, `${path}[${index}]`),
     );
   } else if (obj && typeof obj === "object") {
     Object.entries(obj).forEach(([key, value]) =>
-      validateArraysHaveElements(value, `${path}.${key}`)
+      validateArraysHaveElements(value, `${path}.${key}`),
     );
   }
 }
@@ -229,7 +229,7 @@ function validateSchemaInterfaceConsistency(): void {
     validateSettingsStructure(dummySettings);
   } catch (error) {
     throw new Error(
-      `Schema does not match TypeScript interface: ${(error as Error).message}`
+      `Schema does not match TypeScript interface: ${(error as Error).message}`,
     );
   }
 }
