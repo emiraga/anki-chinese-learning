@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 import { LoadingProgressBar } from "./LoadingProgressBar";
+import { PhraseMeaning } from "./Phrase";
 
 function IntegrityActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
@@ -144,7 +145,7 @@ function IntegrityPropNames() {
   const { props } = useOutletContext<OutletContext>();
 
   const filtered = Object.values(props).filter(
-    (prop) => prop.mainTagname !== "prop::" + prop.prop
+    (prop) => prop.mainTagname !== "prop::" + prop.prop,
   );
 
   if (!filtered.length) {
@@ -173,41 +174,235 @@ function DuplicatePhrase({
   fromOthers: string[];
 }) {
   const { phrases } = useOutletContext<OutletContext>();
+  const [deletedNotes, setDeletedNotes] = useState<Set<number>>(new Set());
 
-  const other = new Set(
-    phrases
-      .filter(
-        (phrase) =>
-          phrase.source !== source && fromOthers.includes(phrase.source)
-      )
-      .map((phrase) => phrase.traditional)
+  const otherPhrases = phrases.filter(
+    (phrase) => phrase.source !== source && fromOthers.includes(phrase.source),
   );
 
-  const filtered = phrases.filter(
-    (phrase) => phrase.source === source && other.has(phrase.traditional)
-  );
+  const other = new Set(otherPhrases.map((phrase) => phrase.traditional));
+
+  const filtered = phrases
+    .filter(
+      (phrase) => phrase.source === source && other.has(phrase.traditional),
+    )
+    .filter((phrase) => !deletedNotes.has(phrase.noteId));
+
   if (filtered.length === 0) {
     return undefined;
   }
 
+  // Check for meaning substring matches
+  const meaningSubstringMatches = filtered.filter((phrase) => {
+    const otherVariants = otherPhrases.filter(
+      (p) => p.traditional === phrase.traditional,
+    );
+
+    // Split source meaning by comma and check if all parts appear in other translations
+    const sourceParts = phrase.meaning
+      .toLowerCase()
+      .split(",")
+      .map((part) => part.trim());
+
+    return otherVariants.some((variant) => {
+      const variantMeaning = variant.meaning.toLowerCase();
+
+      // Check if the entire source meaning is a substring
+      if (variantMeaning.includes(phrase.meaning.toLowerCase())) {
+        return true;
+      }
+
+      // Check if all source parts appear in the variant meaning
+      return (
+        sourceParts.length > 1 &&
+        sourceParts.every(
+          (part) => part.length > 0 && variantMeaning.includes(part),
+        )
+      );
+    });
+  });
+
+  // Sort filtered to show meaning matches first
+  const sortedFiltered = [
+    ...meaningSubstringMatches,
+    ...filtered.filter((phrase) => !meaningSubstringMatches.includes(phrase)),
+  ];
+
+  const handleDeleteNote = async (
+    noteId: number,
+    traditional: string,
+    isMeaningSubstring: boolean = false,
+  ) => {
+    if (
+      isMeaningSubstring ||
+      confirm(
+        `Delete ${source} note for "${traditional}"? This cannot be undone.`,
+      )
+    ) {
+      try {
+        await anki.note.deleteNotes({ notes: [noteId] });
+        setDeletedNotes((prev) => new Set(prev).add(noteId));
+      } catch (error) {
+        throw new Error(`Failed to delete note: ${error}`);
+      }
+    }
+  };
+
   return (
     <>
-      <h3 className="font-serif text-3xl">Duplicate phrase:</h3>
-      {filtered.map((phrase, i) => {
-        return (
-          <div key={i}>
-            Duplicate {source}: {phrase.traditional}
-            <button
-              className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-              onClick={async () => {
-                await ankiOpenBrowse(`Traditional:${phrase.traditional}`);
-              }}
-            >
-              anki
-            </button>
-          </div>
-        );
-      })}
+      <h3 className="font-serif text-3xl">
+        Duplicate phrase ({filtered.length}):
+      </h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600 mt-4 table-fixed">
+          <colgroup>
+            <col className="w-32" />
+            <col className="w-80" />
+            <col className="w-auto" />
+          </colgroup>
+          <thead>
+            <tr className="bg-gray-100 dark:bg-gray-800">
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
+                Traditional
+              </th>
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
+                Source Translation
+              </th>
+              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
+                Other Translations
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedFiltered.map((phrase, i) => {
+              const otherVariants = otherPhrases.filter(
+                (p) => p.traditional === phrase.traditional,
+              );
+
+              const hasPinyinMismatch = otherVariants.some(
+                (variant) => variant.pinyin !== phrase.pinyin,
+              );
+
+              const isMeaningSubstring =
+                meaningSubstringMatches.includes(phrase);
+
+              return (
+                <tr
+                  key={i}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 h-32 ${
+                    hasPinyinMismatch
+                      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                      : ""
+                  }`}
+                >
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium align-top">
+                    <div className="flex flex-col gap-2 h-full justify-between">
+                      <div>{phrase.traditional}</div>
+                      <button
+                        className="rounded-xl bg-gray-100 dark:bg-gray-900 px-2 py-1 text-xs text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors self-start"
+                        onClick={async () => {
+                          await ankiOpenBrowse(
+                            `Traditional:${phrase.traditional} -is:new -is:suspended`,
+                          );
+                        }}
+                      >
+                        All notes
+                      </button>
+                    </div>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 align-top">
+                    <div className="text-sm h-full flex flex-col justify-between">
+                      <div>
+                        <div className="font-medium">
+                          {source}: <PhraseMeaning meaning={phrase.meaning} />
+                          {isMeaningSubstring && " ✅"}
+                        </div>
+                        <div
+                          className={`${
+                            hasPinyinMismatch
+                              ? "text-red-600 dark:text-red-400 font-semibold"
+                              : "text-gray-600 dark:text-gray-400"
+                          }`}
+                        >
+                          {hasPinyinMismatch && "⚠️ "}
+                          {phrase.pinyin}
+                          {hasPinyinMismatch && " ❗"}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        <button
+                          className="rounded-xl bg-blue-100 dark:bg-blue-900 px-2 py-1 text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                          onClick={async () => {
+                            await ankiOpenBrowse(
+                              `Traditional:${phrase.traditional} note:${source}`,
+                            );
+                          }}
+                        >
+                          anki
+                        </button>
+                        <button
+                          className="rounded-xl bg-red-100 dark:bg-red-900 px-2 py-1 text-xs text-red-500 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                          onClick={() =>
+                            handleDeleteNote(
+                              phrase.noteId,
+                              phrase.traditional,
+                              isMeaningSubstring,
+                            )
+                          }
+                        >
+                          delete
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 align-top">
+                    <div className="h-full flex flex-col justify-between">
+                      <div>
+                        {otherVariants.map((variant, j) => {
+                          const isPinyinDifferent =
+                            variant.pinyin !== phrase.pinyin;
+                          return (
+                            <div key={j} className="text-sm mb-2 last:mb-0">
+                              <div className="font-medium">
+                                {variant.source}:{" "}
+                                <PhraseMeaning meaning={variant.meaning} />
+                              </div>
+                              <div
+                                className={`${
+                                  isPinyinDifferent
+                                    ? "text-red-600 dark:text-red-400 font-semibold"
+                                    : "text-gray-600 dark:text-gray-400"
+                                }`}
+                              >
+                                {isPinyinDifferent && "⚠️ "}
+                                {variant.pinyin}
+                                {isPinyinDifferent && " ❗"}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <button
+                        className="rounded-xl bg-green-100 dark:bg-green-900 px-2 py-1 text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors mt-1 self-start"
+                        onClick={async () => {
+                          const otherSources = otherVariants
+                            .map((v) => v.source)
+                            .join(" OR note:");
+                          await ankiOpenBrowse(
+                            `Traditional:${phrase.traditional} (note:${otherSources})`,
+                          );
+                        }}
+                      >
+                        anki
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }
@@ -215,14 +410,14 @@ function DuplicatePhrase({
 function LowerCasePinyin() {
   const { phrases, characters } = useOutletContext<OutletContext>();
   const filtered1 = phrases.filter(
-    (phrase) => phrase.pinyin !== phrase.pinyin.toLowerCase()
+    (phrase) => phrase.pinyin !== phrase.pinyin.toLowerCase(),
   );
   const filtered2 = Object.values(characters).filter(
     (char) =>
       char.pinyin[0].pinyinAccented !==
         char.pinyin[0].pinyinAccented.toLowerCase() ||
       char.pinyin[1]?.pinyinAccented !==
-        char.pinyin[1]?.pinyinAccented?.toLowerCase()
+        char.pinyin[1]?.pinyinAccented?.toLowerCase(),
   );
   if (filtered1.length === 0 && filtered2.length === 0) {
     return undefined;
@@ -245,7 +440,7 @@ function LowerCasePinyin() {
 
 function MissingActorNotes() {
   const [actorNotes, setActorNotes] = useState<Set<string> | undefined>(
-    undefined
+    undefined,
   );
 
   useEffect(() => {
@@ -267,7 +462,7 @@ function MissingActorNotes() {
     return <div>Loading...</div>;
   }
   const filtered = Object.entries(ACTOR_TAGS_MAP).filter(
-    ([prefix]) => !actorNotes.has(prefix)
+    ([prefix]) => !actorNotes.has(prefix),
   );
   if (filtered.length === 0) {
     return undefined;
@@ -299,7 +494,7 @@ function MixedSuspension({
       suspendedCards: note.cardDetails.filter(
         (c) =>
           c.queue === -1 &&
-          !note.tags.includes(`card-${c.ord}-ignored-on-purpose`)
+          !note.tags.includes(`card-${c.ord}-ignored-on-purpose`),
       ).length,
       regularCards: note.cardDetails.filter((c) => c.queue !== -1).length,
     }))
@@ -319,7 +514,7 @@ function MixedSuspension({
             className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             onClick={async () => {
               await ankiOpenBrowse(
-                `note:${noteType} ID:${note.fields["ID"].value}`
+                `note:${noteType} ID:${note.fields["ID"].value}`,
               );
             }}
           >
@@ -406,7 +601,7 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
                     className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                     onClick={async () => {
                       await ankiOpenBrowse(
-                        `note:${note.modelName} deck:${card.deckName} ${id}`
+                        `note:${note.modelName} deck:${card.deckName} ${id}`,
                       );
                     }}
                   >
@@ -434,16 +629,16 @@ function MixedNew({
     .map((note) => ({
       ...note,
       learningCards: note.cardDetails.filter(
-        (c) => c.due !== 0 && c.due < 3000
+        (c) => c.due !== 0 && c.due < 3000,
       ),
       newCards: note.cardDetails.filter(
         (c) =>
           (c.due === 0 || c.due > 3000) &&
-          !note.tags.includes(`card-${c.ord}-ignored-on-purpose`)
+          !note.tags.includes(`card-${c.ord}-ignored-on-purpose`),
       ),
     }))
     .filter(
-      (note) => note.learningCards.length > 0 && note.newCards.length > 0
+      (note) => note.learningCards.length > 0 && note.newCards.length > 0,
     );
   if (myNotes.length === 0) {
     return undefined;
@@ -458,7 +653,7 @@ function MixedNew({
             className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
             onClick={async () => {
               await ankiOpenBrowse(
-                `note:${noteType} ID:${note.fields["ID"].value}`
+                `note:${noteType} ID:${note.fields["ID"].value}`,
               );
             }}
           >
@@ -491,7 +686,7 @@ function MyWordsNewAndNotSuspended({
     .map((note) => ({
       ...note,
       newNotSuspendedCards: note.cardDetails.filter(
-        (c) => c.queue !== -1 && (c.due === 0 || c.due > 3000)
+        (c) => c.queue !== -1 && (c.due === 0 || c.due > 3000),
       ),
     }))
     .filter((note) => note.newNotSuspendedCards.length > 0);
@@ -521,13 +716,13 @@ function MyWordsNewAndNotSuspended({
             className="rounded-2xl bg-green-100 dark:bg-green-900 p-1 ml-2 inline text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
             onClick={async () => {
               const newCardIds = note.newNotSuspendedCards.map(
-                (card) => card.cardId
+                (card) => card.cardId,
               );
               await anki.card.setDueDate({ cards: newCardIds, days: "0" });
               alert(
                 "Set due date to today for " +
                   (note.fields["Traditional"]?.value ||
-                    note.fields["Hanzi"]?.value)
+                    note.fields["Hanzi"]?.value),
               );
             }}
           >
@@ -552,7 +747,7 @@ function IntegrityPinyinZhuyinConsistency() {
           let expectedZhuyin = "";
           try {
             expectedZhuyin = pinyinToZhuyin(
-              phrase.pinyin.replaceAll("<div>", "").replaceAll("</div>", "")
+              phrase.pinyin.replaceAll("<div>", "").replaceAll("</div>", ""),
             )
               .map((x) => (Array.isArray(x) ? x.join("") : x))
               .map((x) => (x?.startsWith("˙") ? x.substring(1) + x[0] : x))
@@ -561,7 +756,7 @@ function IntegrityPinyinZhuyinConsistency() {
             console.warn(
               "Failed to convert pinyin to zhuyin:",
               phrase.pinyin,
-              error
+              error,
             );
             return null;
           }
@@ -582,9 +777,9 @@ function IntegrityPinyinZhuyinConsistency() {
         })
         .filter(
           (phrase): phrase is NonNullable<typeof phrase> =>
-            phrase !== null && !phrase.isConsistent
+            phrase !== null && !phrase.isConsistent,
         ),
-    [phrases]
+    [phrases],
   );
 
   if (filtered.length === 0) {
@@ -689,7 +884,8 @@ function IntegrityCharacterZhuyin() {
     () =>
       Object.values(characters)
         .filter(
-          (char) => char.ankiId && char.pinyinAnki && char.pinyinAnki.length > 0
+          (char) =>
+            char.ankiId && char.pinyinAnki && char.pinyinAnki.length > 0,
         )
         .map((char) => {
           let expectedZhuyin = "";
@@ -702,7 +898,7 @@ function IntegrityCharacterZhuyin() {
             console.warn(
               "Failed to convert character pinyin to zhuyin:",
               char.pinyin[0].pinyinAccented,
-              error
+              error,
             );
             return null;
           }
@@ -718,9 +914,9 @@ function IntegrityCharacterZhuyin() {
         })
         .filter(
           (char): char is NonNullable<typeof char> =>
-            char !== null && !char.isConsistent
+            char !== null && !char.isConsistent,
         ),
-    [characters]
+    [characters],
   );
 
   if (filtered.length === 0) {
@@ -848,6 +1044,7 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
       </section>
       <section className="block m-4">
         <DuplicatePhrase source="MyWords" fromOthers={["TOCFL"]} />
+        <DuplicatePhrase source="Dangdai" fromOthers={["TOCFL", "MyWords"]} />
       </section>
 
       <section className="block m-4">
