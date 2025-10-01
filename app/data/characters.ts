@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import anki from "~/apis/anki";
 import type { CharsToPhrasesPinyin } from "./phrases";
 import { useSettings } from "~/settings/SettingsContext";
-import { cleanPinyinAnkiField, comparePinyin } from "~/utils/pinyin";
+import { comparePinyin } from "~/utils/pinyin";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 
 export type CharacterType = {
@@ -124,9 +124,9 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
           const pinyinAnki1 = note.fields["Pinyin"].value;
           const pinyinAnki2 = note.fields["Pinyin others"]?.value
             ?.split(",")
-            .map((p) => cleanPinyinAnkiField(p));
+            .map((p) => p.trim());
           const pinyin1 = fromAccentedPinyin(
-            cleanPinyinAnkiField(note.fields["Pinyin"].value),
+            note.fields["Pinyin"].value.trim(),
           );
 
           const pinyin2 =
@@ -134,7 +134,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
             note.fields["Pinyin others"]?.value?.length > 0
               ? note.fields["Pinyin others"]?.value
                   .split(",")
-                  .map((p) => fromAccentedPinyin(cleanPinyinAnkiField(p)))
+                  .map((p) => fromAccentedPinyin(p.trim()))
               : undefined;
 
           let info: CharacterType = {

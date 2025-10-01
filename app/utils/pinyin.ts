@@ -35,13 +35,6 @@ export function comparePinyin(a: PinyinType, b: PinyinType) {
   return (b.count ?? 0) - (a.count ?? 0);
 }
 
-export function cleanPinyinAnkiField(pinyin: string) {
-  return pinyin
-    .trim()
-    .replace(/\<span style="color: rgb\([0-9, ]+\);\"\>/g, "")
-    .replace(/\<\/span\>/g, "");
-}
-
 export const stripPinyinTones = (pinyin: string): string => {
   const cleanPinyin = pinyin
     .replace(/<[^>]*>/g, "") // Remove HTML tags
