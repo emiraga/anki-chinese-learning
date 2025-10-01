@@ -131,8 +131,6 @@ export function useAnkiPhrases() {
         } else {
           processPinyin(
             pinyin
-              .replace(/\<span style="color: rgb\([0-9, ]+\);"\>/g, "")
-              .replace(/\<\/span\>/g, "")
               .replace("<div>", "")
               .replace("</div>", "")
               .replace("?", "")
@@ -143,7 +141,7 @@ export function useAnkiPhrases() {
               .replace("?", "")
               .replace("，", "")
               .replace(",", "")
-              .replace(" ", "")
+              .replace(" ", ""),
           );
         }
         loaded.push(info);
