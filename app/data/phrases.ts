@@ -62,7 +62,7 @@ export function useAnkiPhrases() {
       const chars: CharsToPhrasesPinyin = {};
 
       for (const note of notes) {
-        const pinyin = note.fields["Pinyin"].value;
+        const pinyin = note.fields["Pinyin"].value.toLowerCase();
         const traditional = note.fields["Traditional"].value;
         const info: PhraseType = {
           noteId: note.noteId,
