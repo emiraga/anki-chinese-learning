@@ -112,6 +112,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Heteronyms",
           show: true,
         },
+        {
+          pathname: "/similar_props",
+          name: "Similar Props",
+          show: Object.keys(characters).length > 0,
+        },
       ],
     },
     {
