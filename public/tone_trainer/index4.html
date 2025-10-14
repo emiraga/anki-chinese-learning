@@ -331,7 +331,7 @@
               <label
                 for="yinFallbackThreshold"
                 class="block mb-2 text-xs font-medium text-gray-300"
-                >Adaptive Fallback</label
+                >Fallback Threshold</label
               >
               <input
                 type="range"
@@ -416,6 +416,19 @@
               >
             </div>
 
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="yinPowerConfidenceAdjust"
+                class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label
+                for="yinInterpolation"
+                class="ml-2 text-xs font-medium text-gray-300"
+                >Power based confidence adjust</label
+              >
+            </div>
+
             <!---->
           </div>
         </div>
@@ -477,7 +490,7 @@
       // YIN Algorithm Parameters
       let yinParams = {
         frameSize: 2048, // Window size for analysis
-        hopSize: 128, // Step size between frames
+        hopSize: 256, // Step size between frames
         threshold: 0.3, // Absolute threshold for period detection
         fallbackThreshold: 0.8, // Fallback threshold for adaptive method
         minFreq: 30, // Minimum frequency to consider (Hz)
@@ -485,6 +498,7 @@
         interpolation: true, // Enable parabolic interpolation
         differenceMethod: "fftZeroPadding", // Difference function method: "simple", "fftSimple", or "fftZeroPadding"
         thresholdMethod: "adaptive", // Threshold method: "simple", "adaptive", or "localMinimum"
+        powerConfidenceAdjust: true,
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -563,6 +577,47 @@
       }
 
       // --- YIN ALGORITHM IMPLEMENTATION ---
+
+      /**
+       * Calculate RMS (Root Mean Square) power of an audio frame
+       * This gives us a measure of the signal strength/loudness
+       * @param frame Audio frame buffer
+       * @returns RMS power value (0 to 1 range typically)
+       */
+      function calculateRMSPower(frame) {
+        let sumSquares = 0;
+        for (let i = 0; i < frame.length; i++) {
+          sumSquares += frame[i] * frame[i];
+        }
+        return Math.sqrt(sumSquares / frame.length);
+      }
+
+      /**
+       * Adjust confidence based on audio power
+       * Low power signals are less reliable for pitch detection
+       * @param confidence Original confidence value (0-1)
+       * @param power RMS power of the frame
+       * @returns Adjusted confidence value
+       */
+      function adjustConfidenceByPower(confidence, power) {
+        // Power threshold below which we start reducing confidence
+        const MIN_POWER_THRESHOLD = 0.01; // Adjust this based on your audio levels
+        const POWER_SCALING_RANGE = 0.05; // Range over which we scale confidence
+
+        if (power < MIN_POWER_THRESHOLD) {
+          // Very low power - heavily reduce confidence
+          return confidence * (power / MIN_POWER_THRESHOLD) * 0.5;
+        } else if (power < MIN_POWER_THRESHOLD + POWER_SCALING_RANGE) {
+          // Medium power - gradually scale confidence
+          const powerRatio =
+            (power - MIN_POWER_THRESHOLD) / POWER_SCALING_RANGE;
+          return confidence * (0.5 + powerRatio * 0.5);
+        }
+
+        // High power - use original confidence
+        return confidence;
+      }
+
       function yinDifferenceFunction(buffer) {
         const bufferSize = buffer.length;
         const differenceFunction = new Array(bufferSize / 2);
@@ -889,6 +944,17 @@
             if (pitch < yinParams.minFreq || pitch > yinParams.maxFreq) {
               pitch = 0;
               confidence = 0;
+            }
+          }
+
+          if (yinParams.powerConfidenceAdjust) {
+            // Calculate RMS power of the frame
+            const framePower = calculateRMSPower(frame);
+
+            // Apply power-based confidence adjustment
+            // Low power signals are less reliable for pitch detection
+            if (confidence > 0) {
+              confidence = adjustConfidenceByPower(confidence, framePower);
             }
           }
 
@@ -1235,6 +1301,16 @@
       setupControl("yinThresholdMethod", yinParams, "thresholdMethod", {
         onChange: recomputeYin,
       });
+
+      setupControl(
+        "yinPowerConfidenceAdjust",
+        yinParams,
+        "powerConfidenceAdjust",
+        {
+          parser: (t) => t.checked,
+          onChange: recomputeYin,
+        },
+      );
 
       // --- CORE AUDIO FUNCTIONS ---
 
@@ -1652,20 +1728,27 @@
           const pitchRange = Math.max(maxPitch - minPitch, 50);
 
           // Draw pitch line with confidence-based opacity
-          ctx.lineWidth = YIN_PITCH_LINE_WIDTH;
+          ctx.lineWidth = 2 * YIN_PITCH_LINE_WIDTH;
 
           // Maximum vertical jump threshold
           const maxJumpThreshold = height * YIN_MAX_JUMP_THRESHOLD_PERCENT;
 
+          // TODO: Make it visually match the spectogram
+          const xOffset =
+            (width * yinParams.frameSize) /
+            (audioContext.sampleRate + 10 * yinParams.frameSize) /
+            1.5;
+
           let lastValidX = -1;
           let lastValidY = -1;
+          let lastValidAlpha = -1;
 
           for (let i = 0; i < yinData.length; i++) {
             const frame = yinData[i];
             if (frame.pitch > 0) {
               // Map time index to canvas width (matching spectrogram time axis)
               const timeRatio = i / (yinData.length - 1);
-              const x = timeRatio * width;
+              const x = xOffset + timeRatio * width;
 
               // Map pitch to independent Y-axis (full canvas height for pitch range)
               const pitchRatio = (frame.pitch - minPitch) / pitchRange;
@@ -1673,10 +1756,7 @@
 
               // Color based on confidence with bright, visible colors
               const alpha = Math.max(0.1, frame.confidence);
-              const strokeAlpha = 0.5;
 
-              // Use bright yellow/white for high visibility over spectrogram
-              ctx.strokeStyle = `rgba(255, 255, 0, ${strokeAlpha})`;
               ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
 
               // Draw line connecting consecutive valid pitch points only if jump is small enough
@@ -1685,6 +1765,13 @@
 
                 // Only draw connecting line if the jump is below threshold
                 if (verticalJump < maxJumpThreshold) {
+                  // Use bright yellow/white for high visibility over spectrogram
+                  const strokeAlpha = Math.min(
+                    lastValidAlpha,
+                    frame.confidence,
+                  );
+                  ctx.strokeStyle = `rgba(255, 255, 255, ${strokeAlpha})`;
+
                   ctx.beginPath();
                   ctx.moveTo(lastValidX, lastValidY);
                   ctx.lineTo(x, y);
@@ -1696,14 +1783,9 @@
               ctx.arc(x, y, YIN_PITCH_POINT_RADIUS, 0, 2 * Math.PI);
               ctx.fill();
 
-              // Reset shadow for next elements
-              ctx.shadowColor = "transparent";
-              ctx.shadowBlur = 0;
-              ctx.shadowOffsetX = 0;
-              ctx.shadowOffsetY = 0;
-
               lastValidX = x;
               lastValidY = y;
+              lastValidAlpha = alpha;
             } else {
               // Reset line drawing when pitch is invalid
               lastValidX = -1;
