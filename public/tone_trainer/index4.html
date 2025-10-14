@@ -459,12 +459,13 @@
     <div class="w-full max-w-4xl mx-auto mt-6">
       <div class="bg-gray-700/50 p-4 rounded-lg">
         <h4 class="text-gray-300 text-sm font-medium mb-3">
-          Load Sample Audio Files:
+          Load Sample Audio Files: (you can also drag-and-drop your own audio
+          files)
         </h4>
         <div class="flex flex-col gap-3">
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/ai_讀書寫字.mp3')"
+              onclick="loadAudioFile('audio/ai_讀書寫字.mp3', 300)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               ai_讀書寫字.mp3
@@ -476,7 +477,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/ai_高富帥_gao1_fu4_shuai4.mp3')"
+              onclick="loadAudioFile('audio/ai_高富帥_gao1_fu4_shuai4.mp3', 300)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               ai_高富帥_gao1_fu4_shuai4.mp3
@@ -488,7 +489,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/ai_今天不用上班.mp3')"
+              onclick="loadAudioFile('audio/ai_今天不用上班.mp3', 300)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               ai_今天不用上班.mp3
@@ -500,7 +501,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/367215_1847127-lq.mp3')"
+              onclick="loadAudioFile('audio/367215_1847127-lq.mp3', 300)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               367215_1847127-lq.mp3
@@ -512,20 +513,21 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/427200_8176931-lq.mp3')"
+              onclick="loadAudioFile('audio/427200_8176931-lq.mp3', 500)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               427200_8176931-lq.mp3
             </button>
             <span class="text-gray-400 text-sm">
               Music: Beatiful female melody. Warning! Increase Max Freq to
-              500Hz, reduce Min Power Threshold
+              500Hz, also warning! since voice is soft, you may need to reduce
+              "Min Power Threshold"
             </span>
           </div>
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/417938_8176931-lq.mp3')"
+              onclick="loadAudioFile('audio/417938_8176931-lq.mp3', 500)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               417938_8176931-lq.mp3
@@ -538,7 +540,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/30084_129090-lq.mp3')"
+              onclick="loadAudioFile('audio/30084_129090-lq.mp3', 800)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               30084_129090-lq.mp3
@@ -1695,7 +1697,7 @@
         }
       }
 
-      async function loadAudioFile(filePath) {
+      async function loadAudioFile(filePath, needMaxFreq = null) {
         try {
           // Stop any currently playing audio
           if (isPlaying) {
@@ -1703,7 +1705,14 @@
           }
 
           // Scroll to top of page
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+
+          // Adjust Max Freq if a minimum is specified and current value is lower
+          if (needMaxFreq !== null && yinParams.maxFreq !== needMaxFreq) {
+            yinParams.maxFreq = needMaxFreq;
+            document.getElementById("yinMaxFreqSlider").value = needMaxFreq;
+            setText("yinMaxFreqValue", needMaxFreq.toString());
+          }
 
           // Show loading indicator
           setStatus("Loading audio file...", {
