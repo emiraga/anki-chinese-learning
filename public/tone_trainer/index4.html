@@ -77,60 +77,6 @@
         </p>
       </div>
 
-      <!-- UI Controls -->
-      <div
-        id="controls"
-        class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6 bg-gray-700/50 p-6 rounded-lg"
-      >
-        <div>
-          <label
-            for="colorScheme"
-            class="block mb-2 text-sm font-medium text-gray-300"
-            >Color Scheme</label
-          >
-          <select
-            id="colorScheme"
-            class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
-          >
-            <option value="viridis">Viridis</option>
-            <option value="plasma">Plasma</option>
-            <option value="hot">Hot</option>
-            <option value="grayscale">Grayscale</option>
-          </select>
-        </div>
-        <div>
-          <label
-            for="brightness"
-            class="block mb-2 text-sm font-medium text-gray-300"
-            >Brightness</label
-          >
-          <input
-            type="range"
-            id="brightness"
-            min="-100"
-            max="100"
-            value="-50"
-            class="w-full"
-          />
-        </div>
-        <div>
-          <label
-            for="contrast"
-            class="block mb-2 text-sm font-medium text-gray-300"
-            >Contrast</label
-          >
-          <input
-            type="range"
-            id="contrast"
-            min="0"
-            max="5"
-            value="1.5"
-            step="0.1"
-            class="w-full"
-          />
-        </div>
-      </div>
-
       <!-- Spectrogram Canvas with YIN Pitch Overlay -->
       <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative">
         <div class="relative">
@@ -197,6 +143,60 @@
             >
             to record.
           </div>
+        </div>
+      </div>
+
+      <!-- Display Controls -->
+      <div
+        id="controls"
+        class="mt-6 mb-2 grid grid-cols-1 md:grid-cols-4 gap-6 bg-gray-700/50 p-6 rounded-lg"
+      >
+        <div>
+          <label
+            for="colorScheme"
+            class="block mb-2 text-sm font-medium text-gray-300"
+            >Color Scheme</label
+          >
+          <select
+            id="colorScheme"
+            class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+          >
+            <option value="viridis">Viridis</option>
+            <option value="plasma">Plasma</option>
+            <option value="hot">Hot</option>
+            <option value="grayscale">Grayscale</option>
+          </select>
+        </div>
+        <div>
+          <label
+            for="brightness"
+            class="block mb-2 text-sm font-medium text-gray-300"
+            >Brightness</label
+          >
+          <input
+            type="range"
+            id="brightness"
+            min="-100"
+            max="100"
+            value="-50"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label
+            for="contrast"
+            class="block mb-2 text-sm font-medium text-gray-300"
+            >Contrast</label
+          >
+          <input
+            type="range"
+            id="contrast"
+            min="0"
+            max="5"
+            value="1.5"
+            step="0.1"
+            class="w-full"
+          />
         </div>
       </div>
 
@@ -594,6 +594,7 @@
         controls.style.display = "none";
         playButton.style.display = "none";
         instructions.innerHTML = "";
+        statusDiv.style.display = 'none';
         // Automatically load and process the preloaded audio
         loadPreloadedAudio();
       });
@@ -718,6 +719,7 @@
 
         statusDiv.style.backgroundColor = "#ef4444";
         instructions.textContent = "Recording...";
+        statusDiv.style.display = 'block';
 
         try {
           // Ensure AudioContext is created by user gesture
@@ -738,6 +740,7 @@
           console.error("Error accessing microphone:", err);
           instructions.textContent =
             "Microphone access denied. Please allow access and try again.";
+          statusDiv.style.display = 'block';
           statusDiv.style.backgroundColor = "#d97706";
           isRecording = false;
         }
@@ -755,6 +758,7 @@
         isRecording = false;
         statusDiv.style.backgroundColor = "#3b82f6";
         instructions.textContent = "Analyzing...";
+        statusDiv.style.display = 'block';
         showYinPitchLoadingOverlay();
       }
 
@@ -783,6 +787,7 @@
             console.error("Error decoding audio data:", err);
             instructions.textContent =
               "Could not process audio. Please try again.";
+            statusDiv.style.display = 'block';
           }
         };
         reader.readAsArrayBuffer(audioBlob);
@@ -859,6 +864,7 @@
           statusDiv.style.backgroundColor = "#3b82f6";
           instructions.innerHTML =
             '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2"></div>Processing preloaded audio...</div>';
+          statusDiv.style.display = 'block';
 
           // Initialize audio context if not already done
           if (!audioContext) {
@@ -882,6 +888,7 @@
           // Update loading message for YIN analysis
           instructions.innerHTML =
             '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-300 mr-2"></div>Computing YIN pitch analysis...</div>';
+          statusDiv.style.display = 'block';
 
           // Perform YIN analysis
           yinData = performYinAnalysis(audioBuffer);
@@ -896,6 +903,7 @@
           // Update UI to show that audio is loaded
           statusDiv.style.backgroundColor = "#374151";
           instructions.innerHTML = "Preloaded audio ready!";
+          statusDiv.style.display = 'none';
 
           // Show controls and play button
           controls.style.display = "grid";
@@ -906,6 +914,7 @@
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
           instructions.innerHTML = "Error loading preloaded audio. ";
+          statusDiv.style.display = 'block';
           statusDiv.style.backgroundColor = "#d97706";
         }
       }
@@ -949,6 +958,7 @@
             );
             statusDiv.style.backgroundColor = "#374151";
             instructions.innerHTML = "";
+            statusDiv.style.display = 'none';
             controls.style.display = "grid";
             playButton.style.display = "flex";
             document
@@ -961,6 +971,7 @@
           .catch((err) => {
             console.error("Offline rendering failed:", err);
             instructions.textContent = "Error during analysis.";
+            statusDiv.style.display = 'block';
           });
       }
 
