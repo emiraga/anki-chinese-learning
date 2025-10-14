@@ -207,7 +207,6 @@ def update_note_audio(note_id, audio_filename):
         bool: True if successful, False otherwise
     """
     # Update the Audio field with the new filename
-    # Format: [sound:filename.mp3]
     audio_field_value = f"[sound:{audio_filename}]"
 
     # Prepare the update
