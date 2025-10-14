@@ -1016,20 +1016,17 @@
       function drawYinPitchChart() {
         if (yinData.length === 0) return;
 
-        // Set high resolution canvas dimensions to match spectrogram
-        const displayWidth = yinPitchCanvas.offsetWidth;
-        const displayHeight = yinPitchCanvas.offsetHeight;
+        // Get display dimensions from CSS
+        const displayWidth = yinPitchCanvas.clientWidth;
+        const displayHeight = yinPitchCanvas.clientHeight;
         const pixelRatio = window.devicePixelRatio || 1;
 
+        // Set high-resolution canvas dimensions
         yinPitchCanvas.width = displayWidth * pixelRatio;
         yinPitchCanvas.height = displayHeight * pixelRatio;
 
-        // Reset and scale context to ensure correct drawing operations
+        // Scale context for high-DPI rendering
         yinPitchCanvasCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-
-        // Set CSS size to maintain display size
-        yinPitchCanvas.style.width = displayWidth + "px";
-        yinPitchCanvas.style.height = displayHeight + "px";
 
         const ctx = yinPitchCanvasCtx;
         const width = displayWidth;
