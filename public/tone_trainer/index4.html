@@ -368,7 +368,6 @@
       let spectrogramData = [];
       let yinData = [];
       let lastAudioBuffer = null;
-      let yinPerformanceData = { totalDiffTime: 0, totalTime: 0, frameCount: 0 };
       let currentAudioSource = null;
       let isPlaying = false;
       let playStartTime = 0;
@@ -585,12 +584,6 @@
 
         // Store performance data
         const totalTime = performance.now() - analysisStartTime;
-        yinPerformanceData = {
-          totalDiffTime: totalDiffTime,
-          totalTime: totalTime,
-          frameCount: frameCount
-        };
-
         console.log(`YIN Performance: Total=${totalTime.toFixed(1)}ms, Diff total=${totalDiffTime.toFixed(1)}ms, Frames=${frameCount}`);
 
         return yinResults;
@@ -600,7 +593,7 @@
       window.addEventListener("load", () => {
         controls.style.display = "none";
         playButton.style.display = "none";
-        instructions.innerHTML = getDefaultInstructions();
+        instructions.innerHTML = "";
         // Automatically load and process the preloaded audio
         loadPreloadedAudio();
       });
@@ -716,18 +709,6 @@
           yinParams.interpolation = e.target.checked;
           recomputeYin();
         });
-
-      // --- UI HELPER FUNCTIONS ---
-      function getRecordInstructions() {
-        return 'Hold <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> to record';
-      }
-      function getPlaybackInstructions() {
-        return 'To <button class="px-4 py-0 bg-blue-800 hover:bg-blue-700 text-gray-300 font-medium rounded-lg transition-colors duration-200" onclick="playLastRecording()">play audio 🔊</button> Press <kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Enter</kbd>';
-      }
-
-      function getDefaultInstructions() {
-        return getPlaybackInstructions() + " • " + getRecordInstructions();
-      }
 
       // --- CORE AUDIO FUNCTIONS ---
       async function startRecording() {
@@ -914,8 +895,7 @@
 
           // Update UI to show that audio is loaded
           statusDiv.style.backgroundColor = "#374151";
-          instructions.innerHTML =
-            "Preloaded audio ready! " + getDefaultInstructions();
+          instructions.innerHTML = "Preloaded audio ready!";
 
           // Show controls and play button
           controls.style.display = "grid";
@@ -925,8 +905,7 @@
             .classList.remove("hidden");
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
-          instructions.innerHTML =
-            "Error loading preloaded audio. " + getRecordInstructions();
+          instructions.innerHTML = "Error loading preloaded audio. ";
           statusDiv.style.backgroundColor = "#d97706";
         }
       }
@@ -969,7 +948,7 @@
               `Analysis complete. Got ${spectrogramData.length} time slices.`
             );
             statusDiv.style.backgroundColor = "#374151";
-            instructions.innerHTML = getDefaultInstructions();
+            instructions.innerHTML = "";
             controls.style.display = "grid";
             playButton.style.display = "flex";
             document
@@ -1060,21 +1039,11 @@
         const avgFrame = yinData[Math.floor(yinData.length / 2)];
         if (!avgFrame) return;
 
-        // Update UI indicators
-        // const yinThreshold = document.getElementById("yinThreshold");
-        // const yinPitchValue = document.getElementById("yinPitchValue");
-
         const avgPitch =
           yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
         const avgConfidence =
           yinData.reduce((sum, frame) => sum + frame.confidence, 0) /
           yinData.length;
-
-        // yinThreshold.textContent = avgFrame.threshold.toFixed(3);
-        // yinPitchValue.textContent =
-        //   avgPitch > 0
-        //     ? `${Math.round(avgPitch)}Hz (${(avgConfidence * 100).toFixed(0)}%)`
-        //     : "No pitch";
 
         const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
@@ -1149,16 +1118,6 @@
           ctx.textAlign = "left";
           ctx.fillText(`${Math.round(maxPitch)}Hz`, 5, 20);
           ctx.fillText(`${Math.round(minPitch)}Hz`, 5, height - 10);
-
-          // Draw YIN performance info
-          if (yinPerformanceData.frameCount > 0) {
-            ctx.fillStyle = "rgba(255, 255, 0, 0.9)";
-            ctx.font = "10px Inter";
-            ctx.textAlign = "left";
-            ctx.fillText(`YIN: ${yinPerformanceData.totalTime.toFixed(0)}ms total`, 5, 35);
-            ctx.fillText(`Diff: ${yinPerformanceData.totalDiffTime.toFixed(0)}ms total`, 5, 47);
-            ctx.fillText(`Frames: ${yinPerformanceData.frameCount}`, 5, 59);
-          }
         } else {
           ctx.fillStyle = "#9CA3AF";
           ctx.font = "14px Inter";
