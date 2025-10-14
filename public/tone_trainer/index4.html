@@ -191,7 +191,7 @@
           <input
             type="range"
             id="brightness"
-            min="-100"
+            min="-150"
             max="100"
             class="w-full"
           />
@@ -536,7 +536,7 @@
        * @param buffer The audio frame buffer.
        * @returns The difference function array.
        */
-      function yinDifferenceFunctionFFT(buffer) {
+      function yinDifferenceFunctionFFT_SomeIssues(buffer) {
         const bufferSize = buffer.length;
         const halfBufferSize = bufferSize / 2;
         const differenceFunction = new Array(halfBufferSize).fill(0);
@@ -580,6 +580,55 @@
 
         // The difference function at tau=0 is 0
         differenceFunction[0] = 0;
+
+        return differenceFunction;
+      }
+
+      /**
+       * Calculates the YIN difference function using a corrected FFT-based approach
+       * with sufficient zero-padding for linear correlation.
+       */
+      function yinDifferenceFunctionFFT_Fixed(buffer) {
+        const N = buffer.length; // Original buffer size
+        const halfBufferSize = N / 2;
+        const differenceFunction = new Array(halfBufferSize).fill(0); // 1. Correct Zero-Padding: Pad to next power of 2 >= 2*N - 1
+
+        const requiredSize = 2 * N - 1;
+        const fftSize = 1 << Math.ceil(Math.log2(requiredSize)); // M: Smallest power of 2 >= 2*N - 1
+        // Initialize the FFT library with the new, larger size
+        const fft = new FFTJS(fftSize); // Create a padded buffer (padded with zeros)
+
+        const paddedBuffer = new Float32Array(fftSize);
+        paddedBuffer.set(buffer); // 2. Compute FFT
+
+        const fftResult = fft.createComplexArray();
+        fft.realTransform(fftResult, paddedBuffer); // 3. Calculate Power Spectral Density (PSD)
+
+        const psd = new Float32Array(fftSize / 2); // PSD is symmetric, only need first half
+        for (let i = 0; i < fftSize; i += 2) {
+          const real = fftResult[i];
+          const imag = fftResult[i + 1];
+          psd[i / 2] = real * real + imag * imag;
+        } // 4. Compute IFFT of PSD to get autocorrelation
+
+        const autocorrelationComplex = fft.createComplexArray(); // Transform the real-valued PSD into a complex format for IFFT
+        for (let i = 0; i < psd.length; i++) {
+          autocorrelationComplex[i * 2] = psd[i];
+          autocorrelationComplex[i * 2 + 1] = 0;
+        }
+        const autocorrelationResult = fft.createComplexArray();
+        fft.inverseTransform(autocorrelationResult, autocorrelationComplex); // 5. Calculate the difference function from autocorrelation
+        // The IFFT results are scaled by 1/fftSize. This should be accounted for.
+
+        const scaleFactor = 1.0 / fftSize; // r(0) is the first (real) element, scaled
+        const r0 = autocorrelationResult[0] * scaleFactor;
+        differenceFunction[0] = 0; // d(0) is 0
+
+        for (let tau = 1; tau < halfBufferSize; tau++) {
+          // r(tau) is the real part of the tau-th element, scaled
+          const r_tau = autocorrelationResult[tau * 2] * scaleFactor; // Use the approximation d(τ) ≈ 2 * (r(0) - r(τ))
+          differenceFunction[tau] = 2.0 * (r0 - r_tau);
+        }
 
         return differenceFunction;
       }
@@ -644,7 +693,7 @@
         let frameCount = 0;
 
         const useDifferenceFunction = yinParams.fft
-          ? yinDifferenceFunctionFFT
+          ? yinDifferenceFunctionFFT_Fixed
           : yinDifferenceFunction;
 
         // Process audio in overlapping frames
