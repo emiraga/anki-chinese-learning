@@ -419,6 +419,9 @@
       let currentAudioSource = null;
       let isPlaying = false;
 
+      // Audio recording sample rate (48000 Hz is high quality, standard for pro audio)
+      const RECORDING_SAMPLE_RATE = 48000;
+
       // Visualization Settings
       let settings = {
         colorScheme: "viridis",
@@ -1090,6 +1093,59 @@
       });
 
       // --- CORE AUDIO FUNCTIONS ---
+
+      /**
+       * Ensures AudioContext is initialized with proper sample rate
+       */
+      function ensureAudioContext() {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext ||
+            window.webkitAudioContext)({ sampleRate: RECORDING_SAMPLE_RATE });
+        }
+        return audioContext;
+      }
+
+      /**
+       * Common workflow for processing audio buffer:
+       * - Performs YIN analysis
+       * - Generates spectrogram
+       * - Updates UI
+       * - Auto-plays audio
+       */
+      async function processAudioBuffer(audioBuffer) {
+        // Store for replay
+        lastAudioBuffer = audioBuffer;
+
+        // Initialize data arrays
+        yinData = [];
+
+        // Update status for YIN analysis
+        setStatus("Computing YIN pitch analysis...", {
+          isLoading: true,
+          spinnerColor: "border-purple-300",
+        });
+
+        // Perform YIN analysis
+        yinData = performYinAnalysis(audioBuffer);
+
+        // Update status for spectrogram
+        setStatus("Generating spectrogram...", {
+          isLoading: true,
+          spinnerColor: "border-green-300",
+        });
+
+        // Analyze and draw visualizations
+        analyzeAndDraw(audioBuffer);
+
+        hideStatus();
+
+        // Show controls and play button
+        showControls();
+
+        // Auto-play the audio
+        playLastRecording();
+      }
+
       async function startRecording() {
         if (isRecording) {
           return;
@@ -1098,13 +1154,14 @@
         audioChunks = [];
 
         try {
-          // Ensure AudioContext is created by user gesture
-          if (!audioContext) {
-            audioContext = new (window.AudioContext ||
-              window.webkitAudioContext)();
-          }
+          // Ensure AudioContext is created by user gesture with high sample rate
+          ensureAudioContext();
+
           const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: {
+              sampleRate: { ideal: RECORDING_SAMPLE_RATE },
+              channelCount: { ideal: 1 },
+            },
           });
           if (!stream) {
             return;
@@ -1159,19 +1216,8 @@
             const audioBuffer = await audioContext.decodeAudioData(
               e.target.result,
             );
-            // Initialize data arrays (will be filled during spectrogram analysis)
-            yinData = [];
-            lastAudioBuffer = audioBuffer; // Store for replay
-
-            // Perform YIN analysis
-            yinData = performYinAnalysis(audioBuffer);
-
             hideYinPitchLoadingOverlay();
-
-            analyzeAndDraw(audioBuffer);
-
-            // Auto-play using the same functionality as the play button
-            playLastRecording();
+            await processAudioBuffer(audioBuffer);
           } catch (err) {
             console.error("Error decoding audio data:", err);
             setStatus("Could not process audio. Please try again.");
@@ -1281,11 +1327,8 @@
             spinnerColor: "border-blue-300",
           });
 
-          // Initialize audio context if not already done
-          if (!audioContext) {
-            audioContext = new (window.AudioContext ||
-              window.webkitAudioContext)();
-          }
+          // Initialize audio context
+          ensureAudioContext();
 
           // Convert base64 data URL to array buffer
           const response = await fetch(PRELOADED_AUDIO_DATA);
@@ -1294,37 +1337,8 @@
           // Decode audio data
           const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-          // Store as last audio buffer for playback
-          lastAudioBuffer = audioBuffer;
-
-          // Initialize data arrays
-          yinData = [];
-
-          // Update loading message for YIN analysis
-          setStatus("Computing YIN pitch analysis...", {
-            isLoading: true,
-            spinnerColor: "border-purple-300",
-          });
-
-          // Perform YIN analysis
-          yinData = performYinAnalysis(audioBuffer);
-
-          // Update loading message for spectrogram
-          setStatus("Generating spectrogram...", {
-            isLoading: true,
-            spinnerColor: "border-green-300",
-          });
-
-          // Analyze and draw visualizations
-          analyzeAndDraw(audioBuffer);
-
-          hideStatus();
-
-          // Show controls and play button
-          showControls();
-
-          // Auto-play the preloaded audio
-          playLastRecording();
+          // Process the audio buffer (YIN analysis, spectrogram, UI updates, auto-play)
+          await processAudioBuffer(audioBuffer);
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
           setStatus("Error loading preloaded audio.", {
@@ -1347,11 +1361,8 @@
             spinnerColor: "border-blue-300",
           });
 
-          // Initialize audio context if not already done
-          if (!audioContext) {
-            audioContext = new (window.AudioContext ||
-              window.webkitAudioContext)();
-          }
+          // Initialize audio context
+          ensureAudioContext();
 
           // Read file as array buffer
           const arrayBuffer = await file.arrayBuffer();
@@ -1359,37 +1370,8 @@
           // Decode audio data
           const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-          // Store as last audio buffer for playback
-          lastAudioBuffer = audioBuffer;
-
-          // Initialize data arrays
-          yinData = [];
-
-          // Update loading message for YIN analysis
-          setStatus("Computing YIN pitch analysis...", {
-            isLoading: true,
-            spinnerColor: "border-purple-300",
-          });
-
-          // Perform YIN analysis
-          yinData = performYinAnalysis(audioBuffer);
-
-          // Update loading message for spectrogram
-          setStatus("Generating spectrogram...", {
-            isLoading: true,
-            spinnerColor: "border-green-300",
-          });
-
-          // Analyze and draw visualizations
-          analyzeAndDraw(audioBuffer);
-
-          hideStatus();
-
-          // Show controls and play button
-          showControls();
-
-          // Auto-play the dropped audio
-          playLastRecording();
+          // Process the audio buffer (YIN analysis, spectrogram, UI updates, auto-play)
+          await processAudioBuffer(audioBuffer);
         } catch (err) {
           console.error("Error loading dropped audio:", err);
           setStatus(
