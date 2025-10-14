@@ -5,5 +5,5 @@ pushd utils/zhuyin
 popd
 
 pushd utils/tts
-./fill_audio_anki.py
+./fill_audio_anki.py --use-pinyin-hint
 popd
