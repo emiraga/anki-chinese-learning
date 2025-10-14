@@ -11,8 +11,9 @@
 }
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 /* Enable class-based dark mode */
@@ -216,4 +217,9 @@ tr.row-male > th {
 
 .xingkai-tc {
   font-family: "Xingkai TC", kaiti, cursive;
+}
+
+/* Anki content rendering */
+.prose img {
+  margin: 10px auto 10px auto;
 }
