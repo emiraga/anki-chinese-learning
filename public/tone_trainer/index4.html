@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tone Analyzer for Mandarin Practice</title>
+    <title>
+      Pitch (Tone) Analyzer for Mandarin Practice - emira.ga (Emir Bosnian)
+    </title>
     <link href="./output.css" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -63,12 +65,6 @@
     class="bg-gray-800 text-gray-200 flex-col items-center justify-center min-h-screen p-4"
   >
     <div class="w-full max-w-4xl mx-auto">
-      <div class="text-center mb-6">
-        <h1 class="text-3xl sm:text-2xl font-bold text-white">
-          Pitch (Tone) Analyzer
-        </h1>
-      </div>
-
       <!-- Status Message -->
       <div
         id="status"
@@ -235,7 +231,6 @@
               <input
                 type="checkbox"
                 id="yinFft"
-                checked
                 class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
               <label for="yinFft" class="ml-2 text-xs font-medium text-gray-300"
@@ -257,7 +252,7 @@
                 <option value="256">256</option>
                 <option value="512">512</option>
                 <option value="1024">1024</option>
-                <option value="2048" selected>2048</option>
+                <option value="2048">2048</option>
                 <option value="4096">4096</option>
               </select>
             </div>
@@ -274,7 +269,7 @@
                 <option value="16">16</option>
                 <option value="32">32</option>
                 <option value="64">64</option>
-                <option value="128" selected>128</option>
+                <option value="128">128</option>
                 <option value="256">256</option>
                 <option value="512">512</option>
                 <option value="1024">1024</option>
@@ -293,7 +288,6 @@
                 id="yinThresholdSlider"
                 min="0.05"
                 max="0.9"
-                value="0.60"
                 step="0.01"
                 class="w-full"
               />
@@ -301,7 +295,6 @@
                 class="text-xs text-gray-400 text-center mt-1"
                 id="yinThresholdValue"
               >
-                0.60
               </div>
             </div>
             <div>
@@ -315,7 +308,6 @@
                 id="yinMinFreqSlider"
                 min="10"
                 max="200"
-                value="30"
                 step="5"
                 class="w-full"
               />
@@ -323,7 +315,6 @@
                 class="text-xs text-gray-400 text-center mt-1"
                 id="yinMinFreqValue"
               >
-                30
               </div>
             </div>
             <div>
@@ -337,7 +328,6 @@
                 id="yinMaxFreqSlider"
                 min="100"
                 max="1000"
-                value="300"
                 step="10"
                 class="w-full"
               />
@@ -345,7 +335,6 @@
                 class="text-xs text-gray-400 text-center mt-1"
                 id="yinMaxFreqValue"
               >
-                300
               </div>
             </div>
 
@@ -353,7 +342,6 @@
               <input
                 type="checkbox"
                 id="yinInterpolation"
-                checked
                 class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
               <label
@@ -889,7 +877,23 @@
           formatter = (v) => v,
         } = config;
 
-        document.getElementById(elementId).addEventListener(eventType, (e) => {
+        const element = document.getElementById(elementId);
+        const initialValue = yinParams[paramKey];
+
+        // Initialize the element with the value from yinParams
+        if (element.type === "checkbox") {
+          element.checked = initialValue;
+        } else {
+          element.value = initialValue;
+        }
+
+        // Initialize display value if provided
+        if (displayElementId) {
+          setText(displayElementId, formatter(initialValue));
+        }
+
+        // Set up event listener for changes
+        element.addEventListener(eventType, (e) => {
           const value = parser(e.target);
           yinParams[paramKey] = value;
 
