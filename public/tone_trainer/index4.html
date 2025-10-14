@@ -1024,8 +1024,8 @@
         yinPitchCanvas.width = displayWidth * pixelRatio;
         yinPitchCanvas.height = displayHeight * pixelRatio;
 
-        // Scale context to ensure correct drawing operations
-        yinPitchCanvasCtx.scale(pixelRatio, pixelRatio);
+        // Reset and scale context to ensure correct drawing operations
+        yinPitchCanvasCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
         // Set CSS size to maintain display size
         yinPitchCanvas.style.width = displayWidth + "px";
