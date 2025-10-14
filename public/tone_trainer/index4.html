@@ -349,7 +349,7 @@
 
     <script src="audio.js"></script>
     <script>
-      // Preloaded audio data
+      // Preloaded audio data defined in public/tone_trainer/audio.js
       const PRELOADED_AUDIO_DATA = window.PRELOADED_AUDIO_DATA;
 
       // DOM Elements
@@ -623,7 +623,6 @@
         controls.style.display = "none";
         playButton.style.display = "none";
         setStatus("", { isVisible: false });
-        // Automatically load and process the preloaded audio
         loadPreloadedAudio();
       });
 
