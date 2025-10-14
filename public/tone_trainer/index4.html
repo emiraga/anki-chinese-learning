@@ -64,6 +64,33 @@
   <body
     class="bg-gray-800 text-gray-200 flex-col items-center justify-center min-h-screen p-4"
   >
+    <!-- Full-page drag and drop overlay -->
+    <div
+      id="dropOverlay"
+      class="fixed inset-0 bg-blue-800/80 border-4 border-dashed border-blue-400 flex items-center justify-center hidden"
+      style="z-index: 9999"
+    >
+      <div class="text-center">
+        <svg
+          class="w-16 h-16 mx-auto mb-4 text-blue-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+          ></path>
+        </svg>
+        <p class="text-blue-100 text-xl font-medium">Drop audio file here</p>
+        <p class="text-blue-200 text-sm mt-2">
+          Supported formats: MP3, WAV, OGG, M4A
+        </p>
+      </div>
+    </div>
+
     <div class="w-full max-w-4xl mx-auto">
       <!-- Spectrogram Canvas with YIN Pitch Overlay -->
       <div
@@ -82,32 +109,6 @@
             class="absolute top-0 w-0.5 bg-white opacity-90 pointer-events-none hidden"
             style="height: 100%; left: 0%; transition: left 0.1s linear"
           ></div>
-          <div
-            id="dropOverlay"
-            class="absolute inset-0 bg-blue-500/60 border-4 border-dashed border-blue-400 flex items-center justify-center rounded-lg hidden"
-          >
-            <div class="text-center">
-              <svg
-                class="w-16 h-16 mx-auto mb-4 text-blue-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                ></path>
-              </svg>
-              <p class="text-blue-100 text-xl font-medium">
-                Drop audio file here
-              </p>
-              <p class="text-blue-200 text-sm mt-2">
-                Supported formats: MP3, WAV, OGG, M4A
-              </p>
-            </div>
-          </div>
         </div>
         <div
           id="yinPitchLoadingOverlay"
@@ -1191,24 +1192,33 @@
       });
 
       // --- DRAG AND DROP EVENT LISTENERS ---
-      dropZone.addEventListener("dragover", (e) => {
+      // Counter to track drag enter/leave events for proper overlay handling
+      let dragCounter = 0;
+
+      document.body.addEventListener("dragenter", (e) => {
         e.preventDefault();
-        e.stopPropagation();
+        dragCounter++;
         show(dropOverlay);
       });
 
-      dropZone.addEventListener("dragleave", (e) => {
+      document.body.addEventListener("dragover", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // Only hide if leaving the dropZone itself, not child elements
-        if (e.target === dropZone) {
+      });
+
+      document.body.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        dragCounter--;
+        // Only hide when all drag events have left
+        if (dragCounter === 0) {
           hide(dropOverlay);
         }
       });
 
-      dropZone.addEventListener("drop", (e) => {
+      document.body.addEventListener("drop", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        dragCounter = 0;
         hide(dropOverlay);
 
         const files = e.dataTransfer.files;
