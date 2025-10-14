@@ -582,11 +582,6 @@
           yinResults.push({
             pitch: pitch,
             confidence: confidence,
-            differenceFunction: differenceFunction.slice(0, 200), // Store first 200 points for visualization
-            cmndf: cmndf.slice(0, 200),
-            tau: tauEstimate,
-            threshold: yinParams.threshold,
-            timeIndex: i / sampleRate,
           });
         }
 
@@ -598,18 +593,17 @@
       }
 
       // --- HELPER FUNCTIONS ---
-      function setStatus(message, options = {}) {
-        const {
-          backgroundColor = null,
-          isVisible = true,
-        } = options;
-
+      function setStatus(message, backgroundColor = null) {
         instructions.innerHTML = message;
-        statusDiv.style.display = isVisible ? 'block' : 'none';
+        statusDiv.style.display = 'block';
 
         if (backgroundColor) {
           statusDiv.style.backgroundColor = backgroundColor;
         }
+      }
+
+      function hideStatus() {
+        statusDiv.style.display = 'none';
       }
 
       function showControls() {
@@ -622,7 +616,7 @@
       window.addEventListener("load", () => {
         controls.style.display = "none";
         playButton.style.display = "none";
-        setStatus("", { isVisible: false });
+        hideStatus();
         loadPreloadedAudio();
       });
 
@@ -776,7 +770,7 @@
         isRecording = true;
         audioChunks = [];
 
-        setStatus("Recording...", { backgroundColor: "#ef4444" });
+        setStatus("Recording...", "#ef4444");
 
         try {
           // Ensure AudioContext is created by user gesture
@@ -797,7 +791,7 @@
           console.error("Error accessing microphone:", err);
           setStatus(
             "Microphone access denied. Please allow access and try again.",
-            { backgroundColor: "#d97706" }
+            "#d97706"
           );
           isRecording = false;
         }
@@ -813,7 +807,7 @@
         }
 
         isRecording = false;
-        setStatus("Analyzing...", { backgroundColor: "#3b82f6" });
+        setStatus("Analyzing...", "#3b82f6");
         showYinPitchLoadingOverlay();
       }
 
@@ -952,7 +946,7 @@
           // Show loading indicator
           setStatus(
             '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2"></div>Processing preloaded audio...</div>',
-            { backgroundColor: "#3b82f6" }
+            "#3b82f6"
           );
 
           // Initialize audio context if not already done
@@ -991,10 +985,7 @@
           analyzeAndDraw(audioBuffer);
 
           // Update UI to show that audio is loaded
-          setStatus("Preloaded audio ready!", {
-            backgroundColor: "#374151",
-            isVisible: false,
-          });
+          hideStatus();
 
           // Show controls and play button
           showControls();
@@ -1003,9 +994,7 @@
           playLastRecording();
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
-          setStatus("Error loading preloaded audio.", {
-            backgroundColor: "#d97706",
-          });
+          setStatus("Error loading preloaded audio.", "#d97706");
         }
       }
 
@@ -1043,10 +1032,7 @@
         offlineCtx
           .startRendering()
           .then(() => {
-            setStatus("", {
-              backgroundColor: "#374151",
-              isVisible: false,
-            });
+            hideStatus();
             showControls();
 
             drawSpectrogram();
