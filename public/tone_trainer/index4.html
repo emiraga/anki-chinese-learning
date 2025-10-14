@@ -955,6 +955,9 @@
           document
             .getElementById("yinControlsSection")
             .classList.remove("hidden");
+
+          // Auto-play the preloaded audio
+          playLastRecording();
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
           instructions.innerHTML = "Error loading preloaded audio. ";
