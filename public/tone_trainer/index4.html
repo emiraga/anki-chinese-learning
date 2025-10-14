@@ -612,6 +612,12 @@
         }
       }
 
+      function showControls() {
+        controls.style.display = "grid";
+        playButton.style.display = "flex";
+        document.getElementById("yinControlsSection").classList.remove("hidden");
+      }
+
       // --- EVENT LISTENERS ---
       window.addEventListener("load", () => {
         controls.style.display = "none";
@@ -992,11 +998,7 @@
           });
 
           // Show controls and play button
-          controls.style.display = "grid";
-          playButton.style.display = "flex";
-          document
-            .getElementById("yinControlsSection")
-            .classList.remove("hidden");
+          showControls();
 
           // Auto-play the preloaded audio
           playLastRecording();
@@ -1046,11 +1048,7 @@
               backgroundColor: "#374151",
               isVisible: false,
             });
-            controls.style.display = "grid";
-            playButton.style.display = "flex";
-            document
-              .getElementById("yinControlsSection")
-              .classList.remove("hidden");
+            showControls();
 
             drawSpectrogram();
             drawYinPitchChart();
