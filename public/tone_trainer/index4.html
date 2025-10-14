@@ -474,6 +474,7 @@
       let yinData = [];
       let analyserPitchData = [];
       let lastAudioBuffer = null;
+      let yinPerformanceData = { totalDiffTime: 0, totalTime: 0, frameCount: 0 };
       let currentAudioSource = null;
       let isPlaying = false;
       let playStartTime = 0;
@@ -855,12 +856,20 @@
         const audioData = audioBuffer.getChannelData(0);
         const yinResults = [];
 
+        // Performance tracking
+        const analysisStartTime = performance.now();
+        let totalDiffTime = 0;
+        let frameCount = 0;
+
         // Process audio in overlapping frames
         for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
           const frame = audioData.slice(i, i + frameSize);
 
-          // Step 1: Difference function
+          // Step 1: Difference function (with timing)
+          const diffStartTime = performance.now();
           const differenceFunction = yinDifferenceFunction(frame);
+          totalDiffTime += performance.now() - diffStartTime;
+          frameCount++;
 
           // Step 2: Cumulative mean normalized difference function
           const cmndf =
@@ -901,6 +910,16 @@
             timeIndex: i / sampleRate,
           });
         }
+
+        // Store performance data
+        const totalTime = performance.now() - analysisStartTime;
+        yinPerformanceData = {
+          totalDiffTime: totalDiffTime,
+          totalTime: totalTime,
+          frameCount: frameCount
+        };
+
+        console.log(`YIN Performance: Total=${totalTime.toFixed(1)}ms, Diff total=${totalDiffTime.toFixed(1)}ms, Frames=${frameCount}`);
 
         return yinResults;
       }
@@ -1766,6 +1785,16 @@
           ctx.textAlign = "left";
           ctx.fillText(`${Math.round(maxPitch)}Hz`, 5, 20);
           ctx.fillText(`${Math.round(minPitch)}Hz`, 5, height - 10);
+
+          // Draw YIN performance info
+          if (yinPerformanceData.frameCount > 0) {
+            ctx.fillStyle = "rgba(255, 255, 0, 0.9)";
+            ctx.font = "10px Inter";
+            ctx.textAlign = "left";
+            ctx.fillText(`YIN: ${yinPerformanceData.totalTime.toFixed(0)}ms total`, 5, 35);
+            ctx.fillText(`Diff: ${yinPerformanceData.totalDiffTime.toFixed(0)}ms total`, 5, 47);
+            ctx.fillText(`Frames: ${yinPerformanceData.frameCount}`, 5, 59);
+          }
         } else {
           ctx.fillStyle = "#9CA3AF";
           ctx.font = "14px Inter";
