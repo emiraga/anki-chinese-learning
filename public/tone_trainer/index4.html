@@ -295,7 +295,7 @@
               class="text-xs text-gray-400 text-center mt-1"
               id="yinMinFreqValue"
             >
-              10
+              30
             </div>
           </div>
           <div>
@@ -370,7 +370,6 @@
       let lastAudioBuffer = null;
       let currentAudioSource = null;
       let isPlaying = false;
-      let playStartTime = 0;
 
       // Visualization Settings
       let settings = {
@@ -535,8 +534,7 @@
         for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
           const frame = audioData.slice(i, i + frameSize);
 
-          // Step 1: Difference function (with timing)
-          const diffStartTime = performance.now();
+          // Step 1: Difference function
           const differenceFunction = yinDifferenceFunction(frame);
           frameCount++;
 
@@ -803,7 +801,6 @@
 
         currentAudioSource = source;
         isPlaying = true;
-        playStartTime = audioContext.currentTime;
 
         // Show progress line
         progressLine.classList.remove("hidden");
@@ -1041,16 +1038,6 @@
         // Clear canvas with transparent background
         ctx.clearRect(0, 0, width, height);
 
-        // Calculate average YIN data for visualization
-        const avgFrame = yinData[Math.floor(yinData.length / 2)];
-        if (!avgFrame) return;
-
-        const avgPitch =
-          yinData.reduce((sum, frame) => sum + frame.pitch, 0) / yinData.length;
-        const avgConfidence =
-          yinData.reduce((sum, frame) => sum + frame.confidence, 0) /
-          yinData.length;
-
         const validPitches = yinData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
           const minPitch = Math.min(
@@ -1079,7 +1066,7 @@
 
               // Color based on confidence with bright, visible colors
               const alpha = Math.max(0.1, frame.confidence);
-              const strokeAlpha = 0;
+              const strokeAlpha = 0.5;
 
               // Use bright yellow/white for high visibility over spectrogram
               ctx.strokeStyle = `rgba(255, 255, 0, ${strokeAlpha})`;
