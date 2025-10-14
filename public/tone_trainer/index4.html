@@ -597,12 +597,26 @@
         return yinResults;
       }
 
+      // --- HELPER FUNCTIONS ---
+      function setStatus(message, options = {}) {
+        const {
+          backgroundColor = null,
+          isVisible = true,
+        } = options;
+
+        instructions.innerHTML = message;
+        statusDiv.style.display = isVisible ? 'block' : 'none';
+
+        if (backgroundColor) {
+          statusDiv.style.backgroundColor = backgroundColor;
+        }
+      }
+
       // --- EVENT LISTENERS ---
       window.addEventListener("load", () => {
         controls.style.display = "none";
         playButton.style.display = "none";
-        instructions.innerHTML = "";
-        statusDiv.style.display = 'none';
+        setStatus("", { isVisible: false });
         // Automatically load and process the preloaded audio
         loadPreloadedAudio();
       });
@@ -757,9 +771,7 @@
         isRecording = true;
         audioChunks = [];
 
-        statusDiv.style.backgroundColor = "#ef4444";
-        instructions.textContent = "Recording...";
-        statusDiv.style.display = 'block';
+        setStatus("Recording...", { backgroundColor: "#ef4444" });
 
         try {
           // Ensure AudioContext is created by user gesture
@@ -778,10 +790,10 @@
           mediaRecorder.start();
         } catch (err) {
           console.error("Error accessing microphone:", err);
-          instructions.textContent =
-            "Microphone access denied. Please allow access and try again.";
-          statusDiv.style.display = 'block';
-          statusDiv.style.backgroundColor = "#d97706";
+          setStatus(
+            "Microphone access denied. Please allow access and try again.",
+            { backgroundColor: "#d97706" }
+          );
           isRecording = false;
         }
       }
@@ -796,9 +808,7 @@
         }
 
         isRecording = false;
-        statusDiv.style.backgroundColor = "#3b82f6";
-        instructions.textContent = "Analyzing...";
-        statusDiv.style.display = 'block';
+        setStatus("Analyzing...", { backgroundColor: "#3b82f6" });
         showYinPitchLoadingOverlay();
       }
 
@@ -825,9 +835,7 @@
             playLastRecording();
           } catch (err) {
             console.error("Error decoding audio data:", err);
-            instructions.textContent =
-              "Could not process audio. Please try again.";
-            statusDiv.style.display = 'block';
+            setStatus("Could not process audio. Please try again.");
           }
         };
         reader.readAsArrayBuffer(audioBlob);
@@ -937,10 +945,10 @@
       async function loadPreloadedAudio() {
         try {
           // Show loading indicator
-          statusDiv.style.backgroundColor = "#3b82f6";
-          instructions.innerHTML =
-            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2"></div>Processing preloaded audio...</div>';
-          statusDiv.style.display = 'block';
+          setStatus(
+            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2"></div>Processing preloaded audio...</div>',
+            { backgroundColor: "#3b82f6" }
+          );
 
           // Initialize audio context if not already done
           if (!audioContext) {
@@ -962,24 +970,26 @@
           yinData = [];
 
           // Update loading message for YIN analysis
-          instructions.innerHTML =
-            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-300 mr-2"></div>Computing YIN pitch analysis...</div>';
-          statusDiv.style.display = 'block';
+          setStatus(
+            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-300 mr-2"></div>Computing YIN pitch analysis...</div>'
+          );
 
           // Perform YIN analysis
           yinData = performYinAnalysis(audioBuffer);
 
           // Update loading message for spectrogram
-          instructions.innerHTML =
-            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-300 mr-2"></div>Generating spectrogram...</div>';
+          setStatus(
+            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-300 mr-2"></div>Generating spectrogram...</div>'
+          );
 
           // Analyze and draw visualizations
           analyzeAndDraw(audioBuffer);
 
           // Update UI to show that audio is loaded
-          statusDiv.style.backgroundColor = "#374151";
-          instructions.innerHTML = "Preloaded audio ready!";
-          statusDiv.style.display = 'none';
+          setStatus("Preloaded audio ready!", {
+            backgroundColor: "#374151",
+            isVisible: false,
+          });
 
           // Show controls and play button
           controls.style.display = "grid";
@@ -992,9 +1002,9 @@
           playLastRecording();
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
-          instructions.innerHTML = "Error loading preloaded audio. ";
-          statusDiv.style.display = 'block';
-          statusDiv.style.backgroundColor = "#d97706";
+          setStatus("Error loading preloaded audio.", {
+            backgroundColor: "#d97706",
+          });
         }
       }
 
@@ -1032,9 +1042,10 @@
         offlineCtx
           .startRendering()
           .then(() => {
-            statusDiv.style.backgroundColor = "#374151";
-            instructions.innerHTML = "";
-            statusDiv.style.display = 'none';
+            setStatus("", {
+              backgroundColor: "#374151",
+              isVisible: false,
+            });
             controls.style.display = "grid";
             playButton.style.display = "flex";
             document
@@ -1046,8 +1057,7 @@
           })
           .catch((err) => {
             console.error("Offline rendering failed:", err);
-            instructions.textContent = "Error during analysis.";
-            statusDiv.style.display = 'block';
+            setStatus("Error during analysis.");
           });
       }
 
