@@ -917,7 +917,7 @@
             playLastRecording();
           } catch (err) {
             console.error("Error decoding audio data:", err);
-            setStatus("Could not process audio. Please try again.", {});
+            setStatus("Could not process audio. Please try again.");
           }
         };
         reader.readAsArrayBuffer(audioBlob);
@@ -1117,7 +1117,7 @@
           })
           .catch((err) => {
             console.error("Offline rendering failed:", err);
-            setStatus("Error during analysis.", {});
+            setStatus("Error during analysis.");
           });
       }
 
