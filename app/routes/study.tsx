@@ -12,7 +12,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Study() {
-  const { current, errorCurrent } = useStudyData();
+  const { cardInfo, errorCurrent } = useStudyData();
 
   return (
     <MainFrame>
@@ -20,7 +20,7 @@ export default function Study() {
         <LearnAllCharsLink />
       </Section>
 
-      <Section className="text-center" loading={!current} error={errorCurrent}>
+      <Section className="text-center" loading={!cardInfo} error={errorCurrent}>
         <StudyComponent />
       </Section>
     </MainFrame>
