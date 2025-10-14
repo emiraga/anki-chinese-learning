@@ -279,6 +279,7 @@
                 <option value="4096">4096</option>
               </select>
             </div>
+
             <div>
               <label
                 for="yinHopSize"
@@ -300,6 +301,7 @@
                 <option value="4096">4096</option>
               </select>
             </div>
+
             <div>
               <label
                 for="yinThreshold"
@@ -319,6 +321,43 @@
                 id="yinThresholdValue"
               ></div>
             </div>
+
+            <div>
+              <label
+                for="yinAdaptiveFallbackThreshold"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Adaptive Fallback</label
+              >
+              <input
+                type="range"
+                id="yinAdaptiveFallbackThresholdSlider"
+                min="0.1"
+                max="1.0"
+                step="0.05"
+                class="w-full"
+              />
+              <div
+                class="text-xs text-gray-400 text-center mt-1"
+                id="yinAdaptiveFallbackThresholdValue"
+              ></div>
+            </div>
+
+            <div>
+              <label
+                for="yinThresholdMethod"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Threshold Method</label
+              >
+              <select
+                id="yinThresholdMethod"
+                class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+              >
+                <option value="simple">Simple</option>
+                <option value="adaptive">Adaptive</option>
+                <option value="localMinimum">Local Minimum</option>
+              </select>
+            </div>
+
             <div>
               <label
                 for="yinMinFreq"
@@ -338,6 +377,7 @@
                 id="yinMinFreqValue"
               ></div>
             </div>
+
             <div>
               <label
                 for="yinMaxFreq"
@@ -434,10 +474,12 @@
         frameSize: 2048, // Window size for analysis
         hopSize: 128, // Step size between frames
         threshold: 0.7, // Absolute threshold for period detection
+        adaptiveFallbackThreshold: 0.8, // Fallback threshold for adaptive method
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
         fft: true, // use FFT algorithm
+        thresholdMethod: "adaptive", // Threshold method: "simple", "adaptive", or "localMinimum"
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -652,7 +694,7 @@
         return cmndf;
       }
 
-      function yinAbsoluteThreshold(cmndf, threshold) {
+      function yinAbsoluteThresholdSimple(cmndf, threshold, sampleRate) {
         // Step 3: Absolute threshold
         // Find the first minimum below the threshold
         for (let tau = 2; tau < cmndf.length; tau++) {
@@ -668,13 +710,72 @@
       }
 
       /**
+       * Adaptive threshold approach: Finds the best pitch candidate using multiple strategies
+       * 1. Look for deepest minimum below threshold (original behavior)
+       * 2. If no candidate found, find global minimum within valid frequency range
+       * 3. Use a dynamic threshold based on signal characteristics
+       */
+      function yinAbsoluteThresholdAdaptive(cmndf, threshold, sampleRate) {
+        const minTau = Math.floor(sampleRate / yinParams.maxFreq);
+        const maxTau = Math.floor(sampleRate / yinParams.minFreq);
+
+        // Clamp search range to valid indices
+        const startTau = Math.max(2, minTau);
+        const endTau = Math.min(cmndf.length - 1, maxTau);
+
+        // Strategy 1: Find deepest minimum below threshold within frequency range
+        let bestTau = -1;
+        let bestValue = threshold;
+
+        for (let tau = startTau; tau < endTau; tau++) {
+          if (cmndf[tau] < bestValue) {
+            // Check if this is a local minimum
+            const isLocalMin =
+              (tau === startTau || cmndf[tau] <= cmndf[tau - 1]) &&
+              (tau === endTau - 1 || cmndf[tau] <= cmndf[tau + 1]);
+
+            if (isLocalMin) {
+              bestValue = cmndf[tau];
+              bestTau = tau;
+            }
+          }
+        }
+
+        // Strategy 2: If no candidate below threshold, find global minimum
+        // but only accept if it's reasonably good (< 0.5 which indicates some periodicity)
+        if (bestTau === -1) {
+          let globalMinTau = -1;
+          let globalMinValue = 1.0;
+
+          for (let tau = startTau; tau < endTau; tau++) {
+            // Check if this is a local minimum
+            const isLocalMin =
+              (tau === startTau || cmndf[tau] <= cmndf[tau - 1]) &&
+              (tau === endTau - 1 || cmndf[tau] <= cmndf[tau + 1]);
+
+            if (isLocalMin && cmndf[tau] < globalMinValue) {
+              globalMinValue = cmndf[tau];
+              globalMinTau = tau;
+            }
+          }
+
+          // Only accept global minimum if it shows reasonable periodicity
+          if (globalMinValue < yinParams.adaptiveFallbackThreshold) {
+            bestTau = globalMinTau;
+          }
+        }
+
+        return bestTau;
+      }
+
+      /**
        * Finds the best pitch candidate (tau) by applying the absolute threshold
        * and then searching for the true local minimum.
        * @param cmndf The Cumulative Mean Normalized Difference Function.
        * @param threshold The YIN absolute threshold (e.g., 0.1 to 0.25).
        * @returns The index tau of the minimum below threshold, or -1.
        */
-      function yinAbsoluteThreshold_issues(cmndf, threshold) {
+      function yinAbsoluteThresholdLocalMinimum(cmndf, threshold, sampleRate) {
         // Start search at tau=2, as tau=0 is always 0 and tau=1 is often too small
         for (let tau = 2; tau < cmndf.length - 1; tau++) {
           // 1. Check if the value is BELOW the absolute threshold
@@ -710,6 +811,13 @@
         return betterTau;
       }
 
+      // Mapping of threshold method names to functions
+      const yinThresholdMethods = {
+        simple: yinAbsoluteThresholdSimple,
+        adaptive: yinAbsoluteThresholdAdaptive,
+        localMinimum: yinAbsoluteThresholdLocalMinimum,
+      };
+
       function performYinAnalysis(audioBuffer, frameSize, hopSize) {
         // Use parameters from yinParams if not provided
         frameSize = frameSize || yinParams.frameSize;
@@ -739,8 +847,15 @@
           const cmndf =
             yinCumulativeMeanNormalizedDifference(differenceFunction);
 
-          // Step 3: Absolute threshold
-          let tauEstimate = yinAbsoluteThreshold(cmndf, yinParams.threshold);
+          // Step 3: Absolute threshold using selected method
+          const thresholdFunction =
+            yinThresholdMethods[yinParams.thresholdMethod] ||
+            yinAbsoluteThresholdAdaptive;
+          let tauEstimate = thresholdFunction(
+            cmndf,
+            yinParams.threshold,
+            sampleRate,
+          );
 
           let pitch = 0;
           let confidence = 0;
@@ -1068,6 +1183,19 @@
         onChange: recomputeYin,
       });
 
+      setupControl(
+        "yinAdaptiveFallbackThresholdSlider",
+        yinParams,
+        "adaptiveFallbackThreshold",
+        {
+          eventType: "input",
+          parser: (t) => parseFloat(t.value),
+          displayElementId: "yinAdaptiveFallbackThresholdValue",
+          formatter: (v) => v.toFixed(2),
+          onChange: recomputeYin,
+        },
+      );
+
       setupControl("yinMinFreqSlider", yinParams, "minFreq", {
         eventType: "input",
         parser: (t) => parseInt(t.value, 10),
@@ -1089,6 +1217,10 @@
 
       setupControl("yinFft", yinParams, "fft", {
         parser: (t) => t.checked,
+        onChange: recomputeYin,
+      });
+
+      setupControl("yinThresholdMethod", yinParams, "thresholdMethod", {
         onChange: recomputeYin,
       });
 
