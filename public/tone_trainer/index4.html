@@ -82,7 +82,10 @@
       </div>
 
       <!-- Spectrogram Canvas with YIN Pitch Overlay -->
-      <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative">
+      <div
+        id="dropZone"
+        class="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative transition-all duration-200"
+      >
         <div class="relative">
           <canvas id="spectrogramCanvas"></canvas>
           <canvas
@@ -95,10 +98,36 @@
             class="absolute top-0 w-0.5 bg-white opacity-90 pointer-events-none hidden"
             style="height: 100%; left: 0%; transition: left 0.1s linear"
           ></div>
+          <div
+            id="dropOverlay"
+            class="absolute inset-0 bg-blue-500/20 border-4 border-dashed border-blue-400 flex items-center justify-center rounded-lg hidden"
+          >
+            <div class="text-center">
+              <svg
+                class="w-16 h-16 mx-auto mb-4 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                ></path>
+              </svg>
+              <p class="text-blue-300 text-xl font-medium">
+                Drop audio file here
+              </p>
+              <p class="text-blue-400 text-sm mt-2">
+                Supported formats: MP3, WAV, OGG, M4A
+              </p>
+            </div>
+          </div>
         </div>
         <div
           id="yinPitchLoadingOverlay"
-          class="absolute inset-0 bg-gray-900/80 items-center justify-center rounded-lg hidden"
+          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
         >
           <div class="text-center">
             <div
@@ -143,7 +172,7 @@
               class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg"
               >Space</kbd
             >
-            to record.
+            to record, or drag & drop an audio file.
           </div>
         </div>
       </div>
@@ -376,6 +405,8 @@
         "yinPitchLoadingOverlay",
       );
       const yinControlsSection = document.getElementById("yinControlsSection");
+      const dropZone = document.getElementById("dropZone");
+      const dropOverlay = document.getElementById("dropOverlay");
 
       // Audio & State Variables
       let audioContext;
@@ -808,6 +839,41 @@
         }
       });
 
+      // --- DRAG AND DROP EVENT LISTENERS ---
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        show(dropOverlay);
+      });
+
+      dropZone.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Only hide if leaving the dropZone itself, not child elements
+        if (e.target === dropZone) {
+          hide(dropOverlay);
+        }
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hide(dropOverlay);
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const file = files[0];
+          // Check if it's an audio file
+          if (file.type.startsWith("audio/")) {
+            loadDroppedAudio(file);
+          } else {
+            setStatus("Please drop an audio file (MP3, WAV, OGG, M4A)", {
+              backgroundColor: "#d97706",
+            });
+          }
+        }
+      });
+
       // Generic handler for control setup and updates
       function setupControl(elementOrId, paramsObject, paramKey, config = {}) {
         const {
@@ -1184,6 +1250,74 @@
           setStatus("Error loading preloaded audio.", {
             backgroundColor: "#d97706",
           });
+        }
+      }
+
+      async function loadDroppedAudio(file) {
+        try {
+          // Stop any currently playing audio
+          if (isPlaying) {
+            stopPlayback();
+          }
+
+          // Show loading indicator
+          setStatus("Processing audio file...", {
+            backgroundColor: "#3b82f6",
+            isLoading: true,
+            spinnerColor: "border-blue-300",
+          });
+
+          // Initialize audio context if not already done
+          if (!audioContext) {
+            audioContext = new (window.AudioContext ||
+              window.webkitAudioContext)();
+          }
+
+          // Read file as array buffer
+          const arrayBuffer = await file.arrayBuffer();
+
+          // Decode audio data
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+          // Store as last audio buffer for playback
+          lastAudioBuffer = audioBuffer;
+
+          // Initialize data arrays
+          yinData = [];
+
+          // Update loading message for YIN analysis
+          setStatus("Computing YIN pitch analysis...", {
+            isLoading: true,
+            spinnerColor: "border-purple-300",
+          });
+
+          // Perform YIN analysis
+          yinData = performYinAnalysis(audioBuffer);
+
+          // Update loading message for spectrogram
+          setStatus("Generating spectrogram...", {
+            isLoading: true,
+            spinnerColor: "border-green-300",
+          });
+
+          // Analyze and draw visualizations
+          analyzeAndDraw(audioBuffer);
+
+          hideStatus();
+
+          // Show controls and play button
+          showControls();
+
+          // Auto-play the dropped audio
+          playLastRecording();
+        } catch (err) {
+          console.error("Error loading dropped audio:", err);
+          setStatus(
+            "Could not process audio file. Make sure it's a valid audio format.",
+            {
+              backgroundColor: "#d97706",
+            },
+          );
         }
       }
 
