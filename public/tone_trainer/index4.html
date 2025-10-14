@@ -373,6 +373,7 @@
       const yinPitchLoadingOverlay = document.getElementById(
         "yinPitchLoadingOverlay"
       );
+      const yinControlsSection = document.getElementById("yinControlsSection");
 
       // Audio & State Variables
       let audioContext;
@@ -643,7 +644,7 @@
       function showControls() {
         show(controls);
         show(playButton);
-        show(document.getElementById("yinControlsSection"));
+        show(yinControlsSection);
       }
 
       // Progress line helpers
