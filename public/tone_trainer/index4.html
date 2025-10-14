@@ -163,6 +163,12 @@
             value="-50"
             class="w-full"
           />
+          <div
+            class="text-xs text-gray-400 text-center mt-1"
+            id="brightnessValue"
+          >
+            -50
+          </div>
         </div>
         <div>
           <label
@@ -173,12 +179,18 @@
           <input
             type="range"
             id="contrast"
-            min="0"
-            max="5"
+            min="0.0"
+            max="5.0"
             value="1.5"
             step="0.1"
             class="w-full"
           />
+          <div
+            class="text-xs text-gray-400 text-center mt-1"
+            id="contrastValue"
+          >
+            1.5
+          </div>
         </div>
         <div>
           <label
@@ -625,26 +637,44 @@
         }
       });
 
-      colorSchemeSelect.addEventListener("change", (e) => {
-        settings.colorScheme = e.target.value;
-        if (spectrogramData.length > 0) {
-          drawSpectrogram();
-          drawYinPitchChart();
-        }
+      // Generic handler for display control updates
+      function setupDisplayControl(element, settingsKey, config = {}) {
+        const {
+          eventType = "change",
+          parser = (v) => v,
+          displayElementId = null,
+          formatter = (v) => v,
+        } = config;
+
+        element.addEventListener(eventType, (e) => {
+          const value = parser(e.target.value);
+          settings[settingsKey] = value;
+
+          if (displayElementId) {
+            document.getElementById(displayElementId).textContent = formatter(value);
+          }
+
+          if (spectrogramData.length > 0) {
+            drawSpectrogram();
+            drawYinPitchChart();
+          }
+        });
+      }
+
+      // Setup all display controls
+      setupDisplayControl(colorSchemeSelect, "colorScheme");
+
+      setupDisplayControl(brightnessSlider, "brightness", {
+        eventType: "input",
+        parser: (v) => parseInt(v, 10),
+        displayElementId: "brightnessValue",
       });
-      brightnessSlider.addEventListener("input", (e) => {
-        settings.brightness = parseInt(e.target.value, 10);
-        if (spectrogramData.length > 0) {
-          drawSpectrogram();
-          drawYinPitchChart();
-        }
-      });
-      contrastSlider.addEventListener("input", (e) => {
-        settings.contrast = parseFloat(e.target.value);
-        if (spectrogramData.length > 0) {
-          drawSpectrogram();
-          drawYinPitchChart();
-        }
+
+      setupDisplayControl(contrastSlider, "contrast", {
+        eventType: "input",
+        parser: (v) => parseFloat(v),
+        displayElementId: "contrastValue",
+        formatter: (v) => v.toFixed(1),
       });
 
       // --- YIN PARAMETER EVENT LISTENERS ---
@@ -668,51 +698,58 @@
         yinPitchLoadingOverlay.classList.add("hidden");
       }
 
-      document
-        .getElementById("yinFrameSize")
-        .addEventListener("change", (e) => {
-          yinParams.frameSize = parseInt(e.target.value, 10);
+      // Generic handler for YIN parameter updates
+      function setupYinControl(elementId, paramKey, config = {}) {
+        const {
+          eventType = "change",
+          parser = (v) => v,
+          displayElementId = null,
+          formatter = (v) => v,
+        } = config;
+
+        document.getElementById(elementId).addEventListener(eventType, (e) => {
+          const value = parser(e.target);
+          yinParams[paramKey] = value;
+
+          if (displayElementId) {
+            document.getElementById(displayElementId).textContent = formatter(value);
+          }
+
           recomputeYin();
         });
+      }
 
-      document.getElementById("yinHopSize").addEventListener("change", (e) => {
-        yinParams.hopSize = parseInt(e.target.value, 10);
-        recomputeYin();
+      // Setup all YIN parameter controls
+      setupYinControl("yinFrameSize", "frameSize", {
+        parser: (t) => parseInt(t.value, 10),
       });
 
-      document
-        .getElementById("yinThresholdSlider")
-        .addEventListener("input", (e) => {
-          yinParams.threshold = parseFloat(e.target.value);
-          document.getElementById("yinThresholdValue").textContent =
-            yinParams.threshold.toFixed(2);
-          recomputeYin();
-        });
+      setupYinControl("yinHopSize", "hopSize", {
+        parser: (t) => parseInt(t.value, 10),
+      });
 
-      document
-        .getElementById("yinMinFreqSlider")
-        .addEventListener("input", (e) => {
-          yinParams.minFreq = parseInt(e.target.value, 10);
-          document.getElementById("yinMinFreqValue").textContent =
-            yinParams.minFreq;
-          recomputeYin();
-        });
+      setupYinControl("yinThresholdSlider", "threshold", {
+        eventType: "input",
+        parser: (t) => parseFloat(t.value),
+        displayElementId: "yinThresholdValue",
+        formatter: (v) => v.toFixed(2),
+      });
 
-      document
-        .getElementById("yinMaxFreqSlider")
-        .addEventListener("input", (e) => {
-          yinParams.maxFreq = parseInt(e.target.value, 10);
-          document.getElementById("yinMaxFreqValue").textContent =
-            yinParams.maxFreq;
-          recomputeYin();
-        });
+      setupYinControl("yinMinFreqSlider", "minFreq", {
+        eventType: "input",
+        parser: (t) => parseInt(t.value, 10),
+        displayElementId: "yinMinFreqValue",
+      });
 
-      document
-        .getElementById("yinInterpolation")
-        .addEventListener("change", (e) => {
-          yinParams.interpolation = e.target.checked;
-          recomputeYin();
-        });
+      setupYinControl("yinMaxFreqSlider", "maxFreq", {
+        eventType: "input",
+        parser: (t) => parseInt(t.value, 10),
+        displayElementId: "yinMaxFreqValue",
+      });
+
+      setupYinControl("yinInterpolation", "interpolation", {
+        parser: (t) => t.checked,
+      });
 
       // --- CORE AUDIO FUNCTIONS ---
       async function startRecording() {
