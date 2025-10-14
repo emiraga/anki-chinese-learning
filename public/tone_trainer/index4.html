@@ -1201,6 +1201,9 @@
           // Draw pitch line with confidence-based opacity
           ctx.lineWidth = 3;
 
+          // Maximum vertical jump threshold
+          const maxJumpThreshold = height * 0.1;
+
           let lastValidX = -1;
           let lastValidY = -1;
 
@@ -1223,12 +1226,17 @@
               ctx.strokeStyle = `rgba(255, 255, 0, ${strokeAlpha})`;
               ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
 
-              // Draw line connecting consecutive valid pitch points
+              // Draw line connecting consecutive valid pitch points only if jump is small enough
               if (lastValidX >= 0 && lastValidY >= 0) {
-                ctx.beginPath();
-                ctx.moveTo(lastValidX, lastValidY);
-                ctx.lineTo(x, y);
-                ctx.stroke();
+                const verticalJump = Math.abs(y - lastValidY);
+
+                // Only draw connecting line if the jump is below threshold
+                if (verticalJump < maxJumpThreshold) {
+                  ctx.beginPath();
+                  ctx.moveTo(lastValidX, lastValidY);
+                  ctx.lineTo(x, y);
+                  ctx.stroke();
+                }
               }
 
               // Draw confidence dots with shadow
