@@ -250,15 +250,20 @@
             class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-700/50 p-4 rounded-lg"
           >
             <!---->
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id="yinFft"
-                class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-              />
-              <label for="yinFft" class="ml-2 text-xs font-medium text-gray-300"
-                >Use faster FFT algorithm</label
+            <div>
+              <label
+                for="yinDifferenceMethod"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Difference Function</label
               >
+              <select
+                id="yinDifferenceMethod"
+                class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+              >
+                <option value="simple">Simple (Slow)</option>
+                <option value="fftSimple">FFT Simple</option>
+                <option value="fftZeroPadding">FFT Zero-Padding</option>
+              </select>
             </div>
 
             <div>
@@ -324,13 +329,13 @@
 
             <div>
               <label
-                for="yinAdaptiveFallbackThreshold"
+                for="yinFallbackThreshold"
                 class="block mb-2 text-xs font-medium text-gray-300"
                 >Adaptive Fallback</label
               >
               <input
                 type="range"
-                id="yinAdaptiveFallbackThresholdSlider"
+                id="yinFallbackThresholdSlider"
                 min="0.1"
                 max="1.0"
                 step="0.05"
@@ -338,7 +343,7 @@
               />
               <div
                 class="text-xs text-gray-400 text-center mt-1"
-                id="yinAdaptiveFallbackThresholdValue"
+                id="yinFallbackThresholdValue"
               ></div>
             </div>
 
@@ -473,12 +478,12 @@
       let yinParams = {
         frameSize: 2048, // Window size for analysis
         hopSize: 128, // Step size between frames
-        threshold: 0.7, // Absolute threshold for period detection
-        adaptiveFallbackThreshold: 0.8, // Fallback threshold for adaptive method
+        threshold: 0.3, // Absolute threshold for period detection
+        fallbackThreshold: 0.8, // Fallback threshold for adaptive method
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
-        fft: true, // use FFT algorithm
+        differenceMethod: "fftZeroPadding", // Difference function method: "simple", "fftSimple", or "fftZeroPadding"
         thresholdMethod: "adaptive", // Threshold method: "simple", "adaptive", or "localMinimum"
       };
 
@@ -581,7 +586,7 @@
        * @param buffer The audio frame buffer.
        * @returns The difference function array.
        */
-      function yinDifferenceFunctionFFT_SomeIssues(buffer) {
+      function yinDifferenceFunctionFFTSimple(buffer) {
         const bufferSize = buffer.length;
         const halfBufferSize = bufferSize / 2;
         const differenceFunction = new Array(halfBufferSize).fill(0);
@@ -633,7 +638,7 @@
        * Calculates the YIN difference function using a corrected FFT-based approach
        * with sufficient zero-padding for linear correlation.
        */
-      function yinDifferenceFunctionFFT_Fixed(buffer) {
+      function yinDifferenceFunctionFftZeroPadding(buffer) {
         const N = buffer.length; // Original buffer size
         const halfBufferSize = N / 2;
         const differenceFunction = new Array(halfBufferSize).fill(0); // 1. Correct Zero-Padding: Pad to next power of 2 >= 2*N - 1
@@ -760,7 +765,7 @@
           }
 
           // Only accept global minimum if it shows reasonable periodicity
-          if (globalMinValue < yinParams.adaptiveFallbackThreshold) {
+          if (globalMinValue < yinParams.fallbackThreshold) {
             bestTau = globalMinTau;
           }
         }
@@ -818,6 +823,13 @@
         localMinimum: yinAbsoluteThresholdLocalMinimum,
       };
 
+      // Mapping of difference function method names to functions
+      const yinDifferenceMethods = {
+        simple: yinDifferenceFunction,
+        fftSimple: yinDifferenceFunctionFFTSimple,
+        fftZeroPadding: yinDifferenceFunctionFftZeroPadding,
+      };
+
       function performYinAnalysis(audioBuffer, frameSize, hopSize) {
         // Use parameters from yinParams if not provided
         frameSize = frameSize || yinParams.frameSize;
@@ -831,9 +843,10 @@
         const analysisStartTime = performance.now();
         let frameCount = 0;
 
-        const useDifferenceFunction = yinParams.fft
-          ? yinDifferenceFunctionFFT_Fixed
-          : yinDifferenceFunction;
+        // Select difference function based on method
+        const useDifferenceFunction =
+          yinDifferenceMethods[yinParams.differenceMethod] ||
+          yinDifferenceFunctionFftZeroPadding;
 
         // Process audio in overlapping frames
         for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
@@ -888,7 +901,7 @@
         // Store performance data
         const totalTime = performance.now() - analysisStartTime;
         console.log(
-          `YIN Performance:${yinParams.fft ? " FFT" : ""} Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`,
+          `YIN Performance: ${yinParams.differenceMethod} - Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`,
         );
 
         return yinResults;
@@ -1184,13 +1197,13 @@
       });
 
       setupControl(
-        "yinAdaptiveFallbackThresholdSlider",
+        "yinFallbackThresholdSlider",
         yinParams,
-        "adaptiveFallbackThreshold",
+        "fallbackThreshold",
         {
           eventType: "input",
           parser: (t) => parseFloat(t.value),
-          displayElementId: "yinAdaptiveFallbackThresholdValue",
+          displayElementId: "yinFallbackThresholdValue",
           formatter: (v) => v.toFixed(2),
           onChange: recomputeYin,
         },
@@ -1215,8 +1228,7 @@
         onChange: recomputeYin,
       });
 
-      setupControl("yinFft", yinParams, "fft", {
-        parser: (t) => t.checked,
+      setupControl("yinDifferenceMethod", yinParams, "differenceMethod", {
         onChange: recomputeYin,
       });
 
