@@ -1061,7 +1061,6 @@
           // Analyze and draw visualizations
           analyzeAndDraw(audioBuffer);
 
-          // Update UI to show that audio is loaded
           hideStatus();
 
           // Show controls and play button
@@ -1239,11 +1238,6 @@
                 }
               }
 
-              // Draw confidence dots with shadow
-              ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-              ctx.shadowBlur = 4;
-              ctx.shadowOffsetX = 1;
-              ctx.shadowOffsetY = 1;
 
               ctx.beginPath();
               ctx.arc(x, y, 3, 0, 2 * Math.PI);
