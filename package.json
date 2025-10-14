@@ -8,7 +8,8 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "tone_trainer": "npx @tailwindcss/cli -i public/tone_trainer/input.css -o public/tone_trainer/output.css"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-alpha.7",

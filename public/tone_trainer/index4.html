@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tone Analyzer for Mandarin Practice</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="./output.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -529,7 +529,6 @@
 
         // Performance tracking
         const analysisStartTime = performance.now();
-        let totalDiffTime = 0;
         let frameCount = 0;
 
         // Process audio in overlapping frames
@@ -539,7 +538,6 @@
           // Step 1: Difference function (with timing)
           const diffStartTime = performance.now();
           const differenceFunction = yinDifferenceFunction(frame);
-          totalDiffTime += performance.now() - diffStartTime;
           frameCount++;
 
           // Step 2: Cumulative mean normalized difference function
@@ -584,7 +582,7 @@
 
         // Store performance data
         const totalTime = performance.now() - analysisStartTime;
-        console.log(`YIN Performance: Total=${totalTime.toFixed(1)}ms, Diff total=${totalDiffTime.toFixed(1)}ms, Frames=${frameCount}`);
+        console.log(`YIN Performance: Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`);
 
         return yinResults;
       }
@@ -953,9 +951,6 @@
         offlineCtx
           .startRendering()
           .then(() => {
-            console.log(
-              `Analysis complete. Got ${spectrogramData.length} time slices.`
-            );
             statusDiv.style.backgroundColor = "#374151";
             instructions.innerHTML = "";
             statusDiv.style.display = 'none';
