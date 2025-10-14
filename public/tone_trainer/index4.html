@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tone Analyzer for Mandarin Practice</title>
-    <link href="./output.css" rel="stylesheet">
+    <link href="./output.css" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -64,7 +64,9 @@
   >
     <div class="w-full max-w-4xl mx-auto">
       <div class="text-center mb-6">
-        <h1 class="text-3xl sm:text-2xl font-bold text-white">Pitch (Tone) Analyzer</h1>
+        <h1 class="text-3xl sm:text-2xl font-bold text-white">
+          Pitch (Tone) Analyzer
+        </h1>
       </div>
 
       <!-- Status Message -->
@@ -220,134 +222,155 @@
       <div id="yinControlsSection" class="mt-4 hidden">
         <!-- YIN Controls -->
         <div class="mb-2">
-          <h4 class="text-yellow-400 text-sm font-medium mb-2">YIN Algorithm parameters:</h4>
+          <h4 class="text-yellow-400 text-sm font-medium mb-2">
+            YIN Algorithm parameters:
+          </h4>
 
           <div
             id="yinControls"
             class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-700/50 p-4 rounded-lg"
-        >
-          <div>
-            <label
-              for="yinFrameSize"
-              class="block mb-2 text-xs font-medium text-gray-300"
-              >Frame Size</label
-            >
-            <select
-              id="yinFrameSize"
-              class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
-            >
-              <option value="128">128</option>
-              <option value="256">256</option>
-              <option value="512">512</option>
-              <option value="1024">1024</option>
-              <option value="2048" selected>2048</option>
-              <option value="4096">4096</option>
-            </select>
-          </div>
-          <div>
-            <label
-              for="yinHopSize"
-              class="block mb-2 text-xs font-medium text-gray-300"
-              >Hop Size</label
-            >
-            <select
-              id="yinHopSize"
-              class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
-            >
-              <option value="16">16</option>
-              <option value="32">32</option>
-              <option value="64">64</option>
-              <option value="128" selected>128</option>
-              <option value="256">256</option>
-              <option value="512">512</option>
-              <option value="1024">1024</option>
-              <option value="2048">2048</option>
-              <option value="4096">4096</option>
-            </select>
-          </div>
-          <div>
-            <label
-              for="yinThreshold"
-              class="block mb-2 text-xs font-medium text-gray-300"
-              >Threshold</label
-            >
-            <input
-              type="range"
-              id="yinThresholdSlider"
-              min="0.05"
-              max="0.9"
-              value="0.30"
-              step="0.01"
-              class="w-full"
-            />
-            <div
-              class="text-xs text-gray-400 text-center mt-1"
-              id="yinThresholdValue"
-            >
-              0.30
+          >
+            <!---->
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="yinFft"
+                checked
+                class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label for="yinFft" class="ml-2 text-xs font-medium text-gray-300"
+                >Use faster FFT algorithm</label
+              >
             </div>
-          </div>
-          <div>
-            <label
-              for="yinMinFreq"
-              class="block mb-2 text-xs font-medium text-gray-300"
-              >Min Freq (Hz)</label
-            >
-            <input
-              type="range"
-              id="yinMinFreqSlider"
-              min="10"
-              max="200"
-              value="30"
-              step="5"
-              class="w-full"
-            />
-            <div
-              class="text-xs text-gray-400 text-center mt-1"
-              id="yinMinFreqValue"
-            >
-              30
+
+            <div>
+              <label
+                for="yinFrameSize"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Frame Size</label
+              >
+              <select
+                id="yinFrameSize"
+                class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+              >
+                <option value="128">128</option>
+                <option value="256">256</option>
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+                <option value="2048" selected>2048</option>
+                <option value="4096">4096</option>
+              </select>
             </div>
-          </div>
-          <div>
-            <label
-              for="yinMaxFreq"
-              class="block mb-2 text-xs font-medium text-gray-300"
-              >Max Freq (Hz)</label
-            >
-            <input
-              type="range"
-              id="yinMaxFreqSlider"
-              min="100"
-              max="1000"
-              value="300"
-              step="10"
-              class="w-full"
-            />
-            <div
-              class="text-xs text-gray-400 text-center mt-1"
-              id="yinMaxFreqValue"
-            >
-              300
+            <div>
+              <label
+                for="yinHopSize"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Hop Size</label
+              >
+              <select
+                id="yinHopSize"
+                class="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+              >
+                <option value="16">16</option>
+                <option value="32">32</option>
+                <option value="64">64</option>
+                <option value="128" selected>128</option>
+                <option value="256">256</option>
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+                <option value="2048">2048</option>
+                <option value="4096">4096</option>
+              </select>
             </div>
-          </div>
-          <div class="flex items-center">
-            <input
-              type="checkbox"
-              id="yinInterpolation"
-              checked
-              class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-            />
-            <label
-              for="yinInterpolation"
-              class="ml-2 text-xs font-medium text-gray-300"
-              >Parabolic Interpolation</label
-            >
+            <div>
+              <label
+                for="yinThreshold"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Threshold</label
+              >
+              <input
+                type="range"
+                id="yinThresholdSlider"
+                min="0.05"
+                max="0.9"
+                value="0.30"
+                step="0.01"
+                class="w-full"
+              />
+              <div
+                class="text-xs text-gray-400 text-center mt-1"
+                id="yinThresholdValue"
+              >
+                0.30
+              </div>
+            </div>
+            <div>
+              <label
+                for="yinMinFreq"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Min Freq (Hz)</label
+              >
+              <input
+                type="range"
+                id="yinMinFreqSlider"
+                min="10"
+                max="200"
+                value="30"
+                step="5"
+                class="w-full"
+              />
+              <div
+                class="text-xs text-gray-400 text-center mt-1"
+                id="yinMinFreqValue"
+              >
+                30
+              </div>
+            </div>
+            <div>
+              <label
+                for="yinMaxFreq"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Max Freq (Hz)</label
+              >
+              <input
+                type="range"
+                id="yinMaxFreqSlider"
+                min="100"
+                max="1000"
+                value="300"
+                step="10"
+                class="w-full"
+              />
+              <div
+                class="text-xs text-gray-400 text-center mt-1"
+                id="yinMaxFreqValue"
+              >
+                300
+              </div>
+            </div>
+
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="yinInterpolation"
+                checked
+                class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label
+                for="yinInterpolation"
+                class="ml-2 text-xs font-medium text-gray-300"
+                >Parabolic Interpolation</label
+              >
+            </div>
+
+            <!---->
           </div>
         </div>
       </div>
+      <!---->
     </div>
 
+    <!---->
     <script src="audio.js"></script>
     <script>
       // Preloaded audio data defined in public/tone_trainer/audio.js
@@ -371,7 +394,7 @@
       const brightnessSlider = document.getElementById("brightness");
       const contrastSlider = document.getElementById("contrast");
       const yinPitchLoadingOverlay = document.getElementById(
-        "yinPitchLoadingOverlay"
+        "yinPitchLoadingOverlay",
       );
       const yinControlsSection = document.getElementById("yinControlsSection");
 
@@ -401,6 +424,7 @@
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
+        fft: true, // use FFT algorithm
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -486,6 +510,60 @@
         return differenceFunction;
       }
 
+      /**
+       * Calculates the YIN difference function using an FFT-based approach
+       * for improved performance.
+       * @param buffer The audio frame buffer.
+       * @returns The difference function array.
+       */
+      function yinDifferenceFunctionFFT(buffer) {
+        const bufferSize = buffer.length;
+        const halfBufferSize = bufferSize / 2;
+        const differenceFunction = new Array(halfBufferSize).fill(0);
+
+        // 1. Pad buffer to next power of 2 for FFT
+        const fftSize = 1 << Math.ceil(Math.log2(bufferSize));
+        const fft = new FFTJS(fftSize);
+
+        const paddedBuffer = new Float32Array(fftSize);
+        paddedBuffer.set(buffer);
+
+        // 2. Compute FFT
+        const fftResult = fft.createComplexArray();
+        fft.realTransform(fftResult, paddedBuffer);
+
+        // 3. Calculate Power Spectral Density (PSD)
+        const psd = new Float32Array(fftSize);
+        for (let i = 0; i < fftSize; i += 2) {
+          const real = fftResult[i];
+          const imag = fftResult[i + 1];
+          psd[i / 2] = real * real + imag * imag;
+        }
+
+        // 4. Compute IFFT of PSD to get autocorrelation
+        const autocorrelationComplex = fft.createComplexArray();
+        // We need to transform the real-valued PSD into a complex format for IFFT
+        for (let i = 0; i < psd.length; i++) {
+          autocorrelationComplex[i * 2] = psd[i];
+          autocorrelationComplex[i * 2 + 1] = 0;
+        }
+        const autocorrelationResult = fft.createComplexArray();
+        fft.inverseTransform(autocorrelationResult, autocorrelationComplex);
+
+        // 5. Calculate the difference function from autocorrelation
+        // d(τ) ≈ 2 * (r(0) - r(τ))
+        // We only need the real part of the autocorrelation
+        const r0 = autocorrelationResult[0];
+        for (let tau = 1; tau < halfBufferSize; tau++) {
+          differenceFunction[tau] = r0 - autocorrelationResult[tau * 2];
+        }
+
+        // The difference function at tau=0 is 0
+        differenceFunction[0] = 0;
+
+        return differenceFunction;
+      }
+
       function yinCumulativeMeanNormalizedDifference(differenceFunction) {
         const cmndf = new Array(differenceFunction.length);
         cmndf[0] = 1;
@@ -545,12 +623,16 @@
         const analysisStartTime = performance.now();
         let frameCount = 0;
 
+        const useDifferenceFunction = yinParams.fft
+          ? yinDifferenceFunctionFFT
+          : yinDifferenceFunction;
+
         // Process audio in overlapping frames
         for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
           const frame = audioData.slice(i, i + frameSize);
 
           // Step 1: Difference function
-          const differenceFunction = yinDifferenceFunction(frame);
+          const differenceFunction = useDifferenceFunction(frame);
           frameCount++;
 
           // Step 2: Cumulative mean normalized difference function
@@ -590,7 +672,9 @@
 
         // Store performance data
         const totalTime = performance.now() - analysisStartTime;
-        console.log(`YIN Performance: Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`);
+        console.log(
+          `YIN Performance: Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`,
+        );
 
         return yinResults;
       }
@@ -610,7 +694,7 @@
         const {
           backgroundColor = null,
           isLoading = false,
-          spinnerColor = 'border-blue-300'
+          spinnerColor = "border-blue-300",
         } = options;
 
         // Update message text
@@ -621,8 +705,8 @@
           // Update spinner color
           replaceClasses(
             statusSpinner,
-            ['border-blue-300', 'border-purple-300', 'border-green-300'],
-            [spinnerColor]
+            ["border-blue-300", "border-purple-300", "border-green-300"],
+            [spinnerColor],
           );
           show(statusSpinner);
         } else {
@@ -680,7 +764,7 @@
         replaceClasses(
           playStopButton,
           ["bg-blue-600", "hover:bg-blue-500"],
-          ["bg-red-600", "hover:bg-red-500"]
+          ["bg-red-600", "hover:bg-red-500"],
         );
       }
 
@@ -691,7 +775,7 @@
         replaceClasses(
           playStopButton,
           ["bg-red-600", "hover:bg-red-500"],
-          ["bg-blue-600", "hover:bg-blue-500"]
+          ["bg-blue-600", "hover:bg-blue-500"],
         );
       }
 
@@ -849,6 +933,10 @@
         parser: (t) => t.checked,
       });
 
+      setupYinControl("yinFft", "fft", {
+        parser: (t) => t.checked,
+      });
+
       // --- CORE AUDIO FUNCTIONS ---
       async function startRecording() {
         if (isRecording) {
@@ -886,7 +974,7 @@
           console.error("Error accessing microphone:", err);
           setStatus(
             "Microphone access denied. Please allow access and try again.",
-            { backgroundColor: "#d97706" }
+            { backgroundColor: "#d97706" },
           );
           isRecording = false;
         }
@@ -917,7 +1005,7 @@
         reader.onload = async (e) => {
           try {
             const audioBuffer = await audioContext.decodeAudioData(
-              e.target.result
+              e.target.result,
             );
             // Initialize data arrays (will be filled during spectrogram analysis)
             yinData = [];
@@ -1038,7 +1126,7 @@
           setStatus("Processing preloaded audio...", {
             backgroundColor: "#3b82f6",
             isLoading: true,
-            spinnerColor: "border-blue-300"
+            spinnerColor: "border-blue-300",
           });
 
           // Initialize audio context if not already done
@@ -1063,7 +1151,7 @@
           // Update loading message for YIN analysis
           setStatus("Computing YIN pitch analysis...", {
             isLoading: true,
-            spinnerColor: "border-purple-300"
+            spinnerColor: "border-purple-300",
           });
 
           // Perform YIN analysis
@@ -1072,7 +1160,7 @@
           // Update loading message for spectrogram
           setStatus("Generating spectrogram...", {
             isLoading: true,
-            spinnerColor: "border-green-300"
+            spinnerColor: "border-green-300",
           });
 
           // Analyze and draw visualizations
@@ -1087,7 +1175,9 @@
           playLastRecording();
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
-          setStatus("Error loading preloaded audio.", { backgroundColor: "#d97706" });
+          setStatus("Error loading preloaded audio.", {
+            backgroundColor: "#d97706",
+          });
         }
       }
 
@@ -1095,7 +1185,7 @@
         const offlineCtx = new OfflineAudioContext(
           audioBuffer.numberOfChannels,
           audioBuffer.length,
-          audioBuffer.sampleRate
+          audioBuffer.sampleRate,
         );
         const source = offlineCtx.createBufferSource();
         source.buffer = audioBuffer;
@@ -1153,7 +1243,7 @@
 
         const imageData = canvasCtx.createImageData(
           canvas.width,
-          canvas.height
+          canvas.height,
         );
         const data = imageData.data;
 
@@ -1209,7 +1299,7 @@
         if (validPitches.length > 0) {
           const minPitch = Math.min(
             yinParams.minFreq,
-            ...validPitches.map((f) => f.pitch)
+            ...validPitches.map((f) => f.pitch),
           );
           const maxPitch = Math.max(...validPitches.map((f) => f.pitch));
           const pitchRange = Math.max(maxPitch - minPitch, 50);
@@ -1255,7 +1345,6 @@
                 }
               }
 
-
               ctx.beginPath();
               ctx.arc(x, y, 3, 0, 2 * Math.PI);
               ctx.fill();
@@ -1288,7 +1377,7 @@
           ctx.fillText("No pitch detected", width / 2, height / 2);
         }
       }
-
     </script>
+    <script src="fft.min.js"></script>
   </body>
 </html>
