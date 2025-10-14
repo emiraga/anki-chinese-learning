@@ -164,14 +164,12 @@
             id="brightness"
             min="-100"
             max="100"
-            value="-50"
             class="w-full"
           />
           <div
             class="text-xs text-gray-400 text-center mt-1"
             id="brightnessValue"
           >
-            -50
           </div>
         </div>
         <div>
@@ -185,7 +183,6 @@
             id="contrast"
             min="0.0"
             max="5.0"
-            value="1.5"
             step="0.1"
             class="w-full"
           />
@@ -193,7 +190,6 @@
             class="text-xs text-gray-400 text-center mt-1"
             id="contrastValue"
           >
-            1.5
           </div>
         </div>
         <div>
@@ -816,6 +812,17 @@
           formatter = (v) => v,
         } = config;
 
+        const initialValue = settings[settingsKey];
+
+        // Initialize the element with the value from settings
+        element.value = initialValue;
+
+        // Initialize display value if provided
+        if (displayElementId) {
+          setText(displayElementId, formatter(initialValue));
+        }
+
+        // Set up event listener for changes
         element.addEventListener(eventType, (e) => {
           const value = parser(e.target.value);
           settings[settingsKey] = value;
