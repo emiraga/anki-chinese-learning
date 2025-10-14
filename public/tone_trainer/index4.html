@@ -425,7 +425,7 @@
       // Visualization Settings
       let settings = {
         colorScheme: "viridis",
-        brightness: -50,
+        brightness: -75,
         contrast: 1.5,
       };
 
@@ -433,7 +433,7 @@
       let yinParams = {
         frameSize: 2048, // Window size for analysis
         hopSize: 128, // Step size between frames
-        threshold: 0.6, // Absolute threshold for period detection
+        threshold: 0.7, // Absolute threshold for period detection
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
@@ -652,7 +652,7 @@
         return cmndf;
       }
 
-      function yinAbsoluteThreshold_issues(cmndf, threshold) {
+      function yinAbsoluteThreshold(cmndf, threshold) {
         // Step 3: Absolute threshold
         // Find the first minimum below the threshold
         for (let tau = 2; tau < cmndf.length; tau++) {
@@ -674,7 +674,7 @@
        * @param threshold The YIN absolute threshold (e.g., 0.1 to 0.25).
        * @returns The index tau of the minimum below threshold, or -1.
        */
-      function yinAbsoluteThreshold(cmndf, threshold) {
+      function yinAbsoluteThreshold_issues(cmndf, threshold) {
         // Start search at tau=2, as tau=0 is always 0 and tau=1 is often too small
         for (let tau = 2; tau < cmndf.length - 1; tau++) {
           // 1. Check if the value is BELOW the absolute threshold
@@ -1099,8 +1099,9 @@
        */
       function ensureAudioContext() {
         if (!audioContext) {
-          audioContext = new (window.AudioContext ||
-            window.webkitAudioContext)({ sampleRate: RECORDING_SAMPLE_RATE });
+          audioContext = new (window.AudioContext || window.webkitAudioContext)(
+            { sampleRate: RECORDING_SAMPLE_RATE },
+          );
         }
         return audioContext;
       }
