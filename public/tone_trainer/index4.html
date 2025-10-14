@@ -1029,9 +1029,12 @@
       function recomputeYin() {
         if (lastAudioBuffer && yinData.length > 0) {
           showYinPitchLoadingOverlay();
-          yinData = performYinAnalysis(lastAudioBuffer);
-          drawYinPitchChart();
-          hideYinPitchLoadingOverlay();
+          // Use setTimeout to allow browser to repaint and show the overlay
+          setTimeout(() => {
+            yinData = performYinAnalysis(lastAudioBuffer);
+            drawYinPitchChart();
+            hideYinPitchLoadingOverlay();
+          }, 10);
         }
       }
 
