@@ -720,10 +720,12 @@
       document.addEventListener("keyup", (e) => {
         if (e.code === "Space") {
           e.preventDefault(); // Always prevent space bar scrolling
-          if (isRecording) {
-            stopRecording();
-          }
+          stopRecording();
         }
+      });
+
+      window.addEventListener("blur", () => {
+        stopRecording();
       });
 
       window.addEventListener("resize", () => {
@@ -849,11 +851,11 @@
 
       // --- CORE AUDIO FUNCTIONS ---
       async function startRecording() {
-        if (isRecording) return;
+        if (isRecording) {
+          return;
+        }
         isRecording = true;
         audioChunks = [];
-
-        setStatus("Recording...", { backgroundColor: "#ef4444" });
 
         try {
           // Ensure AudioContext is created by user gesture
@@ -864,7 +866,17 @@
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: true,
           });
+          if (!stream) {
+            return;
+          }
+          if (!isRecording) {
+            stream.getAudioTracks().forEach((track) => track.stop());
+            return;
+          }
           mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.onstart = (event) => {
+            setStatus("Recording...", { backgroundColor: "#ef4444" });
+          };
           mediaRecorder.ondataavailable = (event) => {
             audioChunks.push(event.data);
           };
@@ -881,7 +893,13 @@
       }
 
       function stopRecording() {
-        if (!isRecording || !mediaRecorder) return;
+        if (!isRecording) {
+          return;
+        }
+        isRecording = false;
+        if (!mediaRecorder) {
+          return;
+        }
         mediaRecorder.stop();
 
         // Clean up media stream tracks
@@ -889,7 +907,6 @@
           mediaRecorder.stream.getTracks().forEach((track) => track.stop());
         }
 
-        isRecording = false;
         setStatus("Analyzing...", { backgroundColor: "#3b82f6" });
         showYinPitchLoadingOverlay();
       }
