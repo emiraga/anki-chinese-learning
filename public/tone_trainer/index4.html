@@ -891,12 +891,9 @@
       function recomputeYin() {
         if (lastAudioBuffer && yinData.length > 0) {
           showYinPitchLoadingOverlay();
-          // Use setTimeout to allow overlay to show before heavy computation
-          setTimeout(() => {
-            yinData = performYinAnalysis(lastAudioBuffer);
-            drawYinPitchChart();
-            hideYinPitchLoadingOverlay();
-          }, 10);
+          yinData = performYinAnalysis(lastAudioBuffer);
+          drawYinPitchChart();
+          hideYinPitchLoadingOverlay();
         }
       }
 
