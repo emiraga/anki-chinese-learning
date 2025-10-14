@@ -597,6 +597,7 @@
         element.classList.add("hidden");
       }
 
+      // Status message helpers
       function setStatus(message, backgroundColor = null) {
         instructions.innerHTML = message;
         show(statusDiv);
@@ -610,12 +611,14 @@
         hide(statusDiv);
       }
 
+      // Controls visibility
       function showControls() {
         show(controls);
         show(playButton);
         show(document.getElementById("yinControlsSection"));
       }
 
+      // Progress line helpers
       function showProgressLine() {
         show(progressLine);
         progressLine.style.left = "0%";
@@ -627,6 +630,40 @@
 
       function updateProgressLine(percentage) {
         progressLine.style.left = percentage + "%";
+      }
+
+      // Text content helpers
+      function setText(elementId, text) {
+        document.getElementById(elementId).textContent = text;
+      }
+
+      // Button state helpers
+      function setButtonClasses(button, removeClasses, addClasses) {
+        button.classList.remove(...removeClasses);
+        button.classList.add(...addClasses);
+      }
+
+      // Play/Stop button state management
+      function showPlayingState() {
+        hide(playIcon);
+        show(stopIcon);
+        playStopButton.title = "Stop audio";
+        setButtonClasses(
+          playStopButton,
+          ["bg-blue-600", "hover:bg-blue-500"],
+          ["bg-red-600", "hover:bg-red-500"]
+        );
+      }
+
+      function showStoppedState() {
+        show(playIcon);
+        hide(stopIcon);
+        playStopButton.title = "Play audio";
+        setButtonClasses(
+          playStopButton,
+          ["bg-red-600", "hover:bg-red-500"],
+          ["bg-blue-600", "hover:bg-blue-500"]
+        );
       }
 
       // --- EVENT LISTENERS ---
@@ -681,7 +718,7 @@
           settings[settingsKey] = value;
 
           if (displayElementId) {
-            document.getElementById(displayElementId).textContent = formatter(value);
+            setText(displayElementId, formatter(value));
           }
 
           if (spectrogramData.length > 0) {
@@ -742,7 +779,7 @@
           yinParams[paramKey] = value;
 
           if (displayElementId) {
-            document.getElementById(displayElementId).textContent = formatter(value);
+            setText(displayElementId, formatter(value));
           }
 
           recomputeYin();
@@ -943,17 +980,9 @@
 
       function updatePlayStopButton() {
         if (isPlaying) {
-          hide(playIcon);
-          show(stopIcon);
-          playStopButton.title = "Stop audio";
-          playStopButton.classList.remove("bg-blue-600", "hover:bg-blue-500");
-          playStopButton.classList.add("bg-red-600", "hover:bg-red-500");
+          showPlayingState();
         } else {
-          show(playIcon);
-          hide(stopIcon);
-          playStopButton.title = "Play audio";
-          playStopButton.classList.remove("bg-red-600", "hover:bg-red-500");
-          playStopButton.classList.add("bg-blue-600", "hover:bg-blue-500");
+          showStoppedState();
         }
       }
 
