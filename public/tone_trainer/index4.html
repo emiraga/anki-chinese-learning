@@ -422,10 +422,30 @@
                 class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
               <label
-                for="yinInterpolation"
+                for="yinPowerConfidenceAdjust"
                 class="ml-2 text-xs font-medium text-gray-300"
                 >Power based confidence adjust</label
               >
+            </div>
+
+            <div>
+              <label
+                for="yinMinPowerThreshold"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Min Power Threshold</label
+              >
+              <input
+                type="range"
+                id="yinMinPowerThresholdSlider"
+                min="0.001"
+                max="0.1"
+                step="0.001"
+                class="w-full"
+              />
+              <div
+                class="text-xs text-gray-400 text-center mt-1"
+                id="yinMinPowerThresholdValue"
+              ></div>
             </div>
 
             <!---->
@@ -498,6 +518,7 @@
         differenceMethod: "fftZeroPadding", // Difference function method: "simple", "fftSimple", or "fftZeroPadding"
         thresholdMethod: "adaptive", // Threshold method: "simple", "adaptive"
         powerConfidenceAdjust: true,
+        minPowerThreshold: 0.02, // Power threshold below which confidence is reduced
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -599,21 +620,9 @@
        * @returns Adjusted confidence value
        */
       function adjustConfidenceByPower(confidence, power) {
-        // Power threshold below which we start reducing confidence
-        const MIN_POWER_THRESHOLD = 0.01; // Adjust this based on your audio levels
-        const POWER_SCALING_RANGE = 0.05; // Range over which we scale confidence
-
-        if (power < MIN_POWER_THRESHOLD) {
-          // Very low power - heavily reduce confidence
-          return confidence * (power / MIN_POWER_THRESHOLD) * 0.5;
-        } else if (power < MIN_POWER_THRESHOLD + POWER_SCALING_RANGE) {
-          // Medium power - gradually scale confidence
-          const powerRatio =
-            (power - MIN_POWER_THRESHOLD) / POWER_SCALING_RANGE;
-          return confidence * (0.5 + powerRatio * 0.5);
+        if (power < yinParams.minPowerThreshold) {
+          return 0;
         }
-
-        // High power - use original confidence
         return confidence;
       }
 
@@ -1282,6 +1291,19 @@
         },
       );
 
+      setupControl(
+        "yinMinPowerThresholdSlider",
+        yinParams,
+        "minPowerThreshold",
+        {
+          eventType: "input",
+          parser: (t) => parseFloat(t.value),
+          displayElementId: "yinMinPowerThresholdValue",
+          formatter: (v) => v.toFixed(3),
+          onChange: recomputeYin,
+        },
+      );
+
       // --- CORE AUDIO FUNCTIONS ---
 
       /**
@@ -1723,7 +1745,8 @@
               // Frame starts at sample: i * hopSize
               // YIN frames are centered at their midpoint: i * hopSize + frameSize/2
               const frameStartSample = i * yinParams.hopSize;
-              const frameCenterSample = frameStartSample + yinParams.frameSize / 2;
+              const frameCenterSample =
+                frameStartSample + yinParams.frameSize / 2;
 
               // Adjust for spectrogram's FFT delay to align properly
               const adjustedSample = frameCenterSample + spectrogramDelay;
@@ -1737,7 +1760,7 @@
               const y = height - pitchRatio * height;
 
               // Color based on confidence with bright, visible colors
-              const alpha = Math.max(0.1, frame.confidence);
+              const alpha = frame.confidence;
 
               ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
 
