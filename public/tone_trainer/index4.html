@@ -65,22 +65,6 @@
     class="bg-gray-800 text-gray-200 flex-col items-center justify-center min-h-screen p-4"
   >
     <div class="w-full max-w-4xl mx-auto">
-      <!-- Status Message -->
-      <div
-        id="status"
-        class="text-center mb-4 p-3 rounded-lg bg-gray-700 transition-all duration-300"
-      >
-        <div class="flex items-center justify-center">
-          <div
-            id="statusSpinner"
-            class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2 hidden"
-          ></div>
-          <p id="instructions" class="text-lg font-medium text-blue-300">
-            Loading...
-          </p>
-        </div>
-      </div>
-
       <!-- Spectrogram Canvas with YIN Pitch Overlay -->
       <div
         id="dropZone"
@@ -100,11 +84,11 @@
           ></div>
           <div
             id="dropOverlay"
-            class="absolute inset-0 bg-blue-500/20 border-4 border-dashed border-blue-400 flex items-center justify-center rounded-lg hidden"
+            class="absolute inset-0 bg-blue-500/60 border-4 border-dashed border-blue-400 flex items-center justify-center rounded-lg hidden"
           >
             <div class="text-center">
               <svg
-                class="w-16 h-16 mx-auto mb-4 text-blue-400"
+                class="w-16 h-16 mx-auto mb-4 text-blue-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -116,10 +100,10 @@
                   d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                 ></path>
               </svg>
-              <p class="text-blue-300 text-xl font-medium">
+              <p class="text-blue-100 text-xl font-medium">
                 Drop audio file here
               </p>
-              <p class="text-blue-400 text-sm mt-2">
+              <p class="text-blue-200 text-sm mt-2">
                 Supported formats: MP3, WAV, OGG, M4A
               </p>
             </div>
@@ -174,6 +158,22 @@
             >
             to record, or drag & drop an audio file.
           </div>
+        </div>
+      </div>
+
+      <!-- Status Message -->
+      <div
+        id="status"
+        class="text-center mb-4 p-3 rounded-lg bg-gray-700 transition-all duration-300"
+      >
+        <div class="flex items-center justify-center">
+          <div
+            id="statusSpinner"
+            class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2 hidden"
+          ></div>
+          <p id="instructions" class="text-lg font-medium text-blue-300">
+            Loading...
+          </p>
         </div>
       </div>
 
@@ -649,7 +649,7 @@
         return cmndf;
       }
 
-      function yinAbsoluteThreshold(cmndf, threshold) {
+      function yinAbsoluteThreshold_issues(cmndf, threshold) {
         // Step 3: Absolute threshold
         // Find the first minimum below the threshold
         for (let tau = 2; tau < cmndf.length; tau++) {
@@ -659,6 +659,34 @@
               tau++;
             }
             return tau;
+          }
+        }
+        return -1; // No period found
+      }
+
+      /**
+       * Finds the best pitch candidate (tau) by applying the absolute threshold
+       * and then searching for the true local minimum.
+       * @param cmndf The Cumulative Mean Normalized Difference Function.
+       * @param threshold The YIN absolute threshold (e.g., 0.1 to 0.25).
+       * @returns The index tau of the minimum below threshold, or -1.
+       */
+      function yinAbsoluteThreshold(cmndf, threshold) {
+        // Start search at tau=2, as tau=0 is always 0 and tau=1 is often too small
+        for (let tau = 2; tau < cmndf.length - 1; tau++) {
+          // 1. Check if the value is BELOW the absolute threshold
+          if (cmndf[tau] < threshold) {
+            // 2. Check if this is a local minimum, or if we need to search for one.
+            // The key is to find the minimum *within the valley* that crossed the threshold.
+            let minTau = tau; // Search forward while the difference function is still decreasing.
+            // This ensures we land on the true minimum point of the local dip.
+            while (
+              minTau + 1 < cmndf.length &&
+              cmndf[minTau + 1] < cmndf[minTau]
+            ) {
+              minTau++;
+            } // Return the index of the true local minimum found.
+            return minTau;
           }
         }
         return -1; // No period found
