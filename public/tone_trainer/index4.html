@@ -198,18 +198,6 @@
             to record.
           </div>
         </div>
-        <!-- <div
-          class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
-        >
-          <div class="text-center">
-            <div class="text-yellow-400 font-medium">Threshold</div>
-            <div id="yinThreshold">-</div>
-          </div>
-          <div class="text-center">
-            <div class="text-purple-400 font-medium">YIN Pitch</div>
-            <div id="yinPitchValue">-</div>
-          </div>
-        </div> -->
       </div>
 
       <!-- Algorithm Controls -->
@@ -257,8 +245,8 @@
               <option value="8">8</option>
               <option value="16">16</option>
               <option value="32">32</option>
-              <option value="64" selected>64</option>
-              <option value="128">128</option>
+              <option value="64">64</option>
+              <option value="128" selected>128</option>
               <option value="256">256</option>
               <option value="512">512</option>
               <option value="1024">1024</option>
@@ -347,34 +335,6 @@
           </div>
         </div>
       </div>
-
-      <!-- YIN Analysis Chart -->
-      <!-- <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">
-          YIN Analysis (Difference, CMND)
-        </h3>
-        <canvas id="yinCanvas"></canvas>
-        <div
-          class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-3 text-xs text-gray-400"
-        >
-          <div class="text-center">
-            <div class="text-blue-400 font-medium">Difference Function</div>
-            <div id="yinDiffValue">-</div>
-          </div>
-          <div class="text-center">
-            <div class="text-green-400 font-medium">CMND Function</div>
-            <div id="yinCmndValue">-</div>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- Audio Strength Chart -->
-      <!-- <div class="w-full bg-gray-900 rounded-lg shadow-lg p-2 mt-4">
-        <h3 class="text-white text-lg font-medium mb-2 px-2">
-          Audio Strength Over Time
-        </h3>
-        <canvas id="strengthCanvas"></canvas>
-      </div> -->
     </div>
 
     <script src="audio.js"></script>
@@ -388,10 +348,6 @@
       const canvas = document.getElementById("spectrogramCanvas");
       const canvasCtx = canvas.getContext("2d");
       const progressLine = document.getElementById("progressLine");
-      // const strengthCanvas = document.getElementById("strengthCanvas");
-      // const strengthCanvasCtx = strengthCanvas.getContext("2d");
-      // const yinCanvas = document.getElementById("yinCanvas");
-      // const yinCanvasCtx = yinCanvas.getContext("2d");
       const yinPitchCanvas = document.getElementById("yinPitchCanvas");
       const yinPitchCanvasCtx = yinPitchCanvas.getContext("2d");
       const controls = document.getElementById("controls");
@@ -410,8 +366,6 @@
       let isRecording = false;
       let audioChunks = [];
       let spectrogramData = [];
-      let pitchData = [];
-      let strengthData = [];
       let yinData = [];
       let lastAudioBuffer = null;
       let yinPerformanceData = { totalDiffTime: 0, totalTime: 0, frameCount: 0 };
@@ -429,7 +383,7 @@
       // YIN Algorithm Parameters
       let yinParams = {
         frameSize: 2048, // Window size for analysis
-        hopSize: 64, // Step size between frames
+        hopSize: 128, // Step size between frames
         threshold: 0.3, // Absolute threshold for period detection
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
@@ -499,82 +453,6 @@
           return map[map.length - 1];
         }
         return interpolateColor(map[colorIndex], map[colorIndex + 1], factor);
-      }
-
-      // --- PITCH DETECTION FROM SPECTROGRAM DATA ---
-      function computeWeightedAverageFreq(freqData, sampleRate) {
-        // Focus on vocal fundamental frequency range (80-400 Hz)
-        const minFreq = 30;
-        const maxFreq = MAX_FREQ_HZ;
-        const fftSize = FFT_SIZE;
-
-        const minBin = Math.floor((minFreq * fftSize) / sampleRate);
-        const maxBin = Math.floor((maxFreq * fftSize) / sampleRate);
-
-        let weightedSum = 0;
-        let totalWeight = 0;
-        let maxMagnitude = 0;
-
-        // Find maximum in range for thresholding
-        for (let i = minBin; i < maxBin && i < freqData.length; i++) {
-          if (freqData[i] > maxMagnitude) {
-            maxMagnitude = freqData[i];
-          }
-        }
-
-        // Only consider frequencies above threshold
-        const threshold = maxMagnitude * 0.3;
-
-        for (let i = minBin; i < maxBin && i < freqData.length; i++) {
-          if (freqData[i] > threshold) {
-            const freq = (i * sampleRate) / fftSize;
-            const magnitude = freqData[i];
-
-            weightedSum += freq * magnitude * magnitude; // Square for emphasis
-            totalWeight += magnitude * magnitude;
-          }
-        }
-
-        if (totalWeight > 0 && maxMagnitude > 20) {
-          // Minimum energy threshold
-          return weightedSum / totalWeight;
-        }
-
-        return 0; // No clear pitch
-      }
-
-      function analyzePitchTrends(pitches) {
-        const validPitches = pitches.filter((p) => p > 0);
-        if (validPitches.length < 5) return { avgPitch: 0, range: 0 };
-
-        const avgPitch =
-          validPitches.reduce((a, b) => a + b, 0) / validPitches.length;
-        const minPitch = Math.min(...validPitches);
-        const maxPitch = Math.max(...validPitches);
-        const range = maxPitch - minPitch;
-
-        // Calculate overall trend using linear regression
-        let sumX = 0,
-          sumY = 0,
-          sumXY = 0,
-          sumXX = 0;
-        let n = 0;
-
-        for (let i = 0; i < pitches.length; i++) {
-          if (pitches[i] > 0) {
-            sumX += i;
-            sumY += pitches[i];
-            sumXY += i * pitches[i];
-            sumXX += i * i;
-            n++;
-          }
-        }
-
-        if (n < 2) return { avgPitch, range };
-
-        const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-
-        return { avgPitch, range, slope };
       }
 
       // --- YIN ALGORITHM IMPLEMENTATION ---
@@ -754,8 +632,6 @@
         settings.colorScheme = e.target.value;
         if (spectrogramData.length > 0) {
           drawSpectrogram();
-          drawStrengthChart();
-          drawYinChart();
           drawYinPitchChart();
         }
       });
@@ -763,8 +639,6 @@
         settings.brightness = parseInt(e.target.value, 10);
         if (spectrogramData.length > 0) {
           drawSpectrogram();
-          drawStrengthChart();
-          drawYinChart();
           drawYinPitchChart();
         }
       });
@@ -772,8 +646,6 @@
         settings.contrast = parseFloat(e.target.value);
         if (spectrogramData.length > 0) {
           drawSpectrogram();
-          drawStrengthChart();
-          drawYinChart();
           drawYinPitchChart();
         }
       });
@@ -785,7 +657,6 @@
           // Use setTimeout to allow overlay to show before heavy computation
           setTimeout(() => {
             yinData = performYinAnalysis(lastAudioBuffer);
-            drawYinChart();
             drawYinPitchChart();
             hideYinPitchLoadingOverlay();
           }, 10);
@@ -915,8 +786,6 @@
               e.target.result
             );
             // Initialize data arrays (will be filled during spectrogram analysis)
-            pitchData = [];
-            strengthData = [];
             yinData = [];
             lastAudioBuffer = audioBuffer; // Store for replay
 
@@ -1027,8 +896,6 @@
           lastAudioBuffer = audioBuffer;
 
           // Initialize data arrays
-          pitchData = [];
-          strengthData = [];
           yinData = [];
 
           // Update loading message for YIN analysis
@@ -1087,21 +954,6 @@
         processor.onaudioprocess = (e) => {
           analyser.getByteFrequencyData(freqData);
           spectrogramData.push(new Uint8Array(freqData));
-
-          // Compute weighted average frequency for pitch
-          const pitch = computeWeightedAverageFreq(
-            freqData,
-            audioContext.sampleRate
-          );
-          pitchData.push(pitch);
-
-          // Compute RMS (audio strength) from time domain data
-          const inputData = e.inputBuffer.getChannelData(0);
-          const rms = Math.sqrt(
-            inputData.reduce((sum, val) => sum + val * val, 0) /
-              inputData.length
-          );
-          strengthData.push(rms);
         };
 
         source.connect(analyser);
@@ -1125,8 +977,6 @@
               .classList.remove("hidden");
 
             drawSpectrogram();
-            drawStrengthChart();
-            drawYinChart();
             drawYinPitchChart();
           })
           .catch((err) => {
@@ -1179,206 +1029,6 @@
           }
         }
         canvasCtx.putImageData(imageData, 0, 0);
-      }
-
-      function drawStrengthChart() {
-        return;
-        if (strengthData.length === 0) return;
-
-        // Set canvas size
-        strengthCanvas.width = strengthCanvas.offsetWidth;
-        strengthCanvas.height = 120;
-
-        const ctx = strengthCanvasCtx;
-        const width = strengthCanvas.width;
-        const height = strengthCanvas.height;
-
-        // Clear canvas
-        ctx.fillStyle = "#111827";
-        ctx.fillRect(0, 0, width, height);
-
-        // Analyze strength data
-        const maxStrength = Math.max(...strengthData);
-
-        if (maxStrength === 0) {
-          ctx.fillStyle = "#9CA3AF";
-          ctx.font = "16px Inter";
-          ctx.textAlign = "center";
-          ctx.fillText("No audio signal detected", width / 2, height / 2);
-          return;
-        }
-
-        // Draw grid lines
-        ctx.strokeStyle = "#374151";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let i = 1; i < 4; i++) {
-          const y = (height / 4) * i;
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-        }
-        ctx.stroke();
-
-        // Draw strength bars
-        const barWidth = width / strengthData.length;
-
-        for (let i = 0; i < strengthData.length; i++) {
-          const x = i * barWidth;
-          const barHeight = (strengthData[i] / maxStrength) * height;
-          const y = height - barHeight;
-
-          // Color based on strength level
-          const strengthRatio = strengthData[i] / maxStrength;
-          let color;
-          if (strengthRatio > 0.7) {
-            color = "#EF4444"; // Red for loud
-          } else if (strengthRatio > 0.3) {
-            color = "#F59E0B"; // Yellow for medium
-          } else {
-            color = "#10B981"; // Green for quiet
-          }
-
-          ctx.fillStyle = color;
-          ctx.fillRect(x, y, barWidth - 1, barHeight);
-        }
-      }
-
-      function drawYinChart() {
-        return;
-        if (yinData.length === 0) return;
-
-        // Set canvas size
-        yinCanvas.width = yinCanvas.offsetWidth;
-        yinCanvas.height = 200;
-
-        const ctx = yinCanvasCtx;
-        const width = yinCanvas.width;
-        const height = yinCanvas.height;
-
-        // Clear canvas
-        ctx.fillStyle = "#111827";
-        ctx.fillRect(0, 0, width, height);
-
-        // Calculate average YIN data for visualization
-        const avgFrame = yinData[Math.floor(yinData.length / 2)];
-        if (!avgFrame) return;
-
-        // Update UI indicators
-        const yinDiffValue = document.getElementById("yinDiffValue");
-        const yinCmndValue = document.getElementById("yinCmndValue");
-
-        yinDiffValue.textContent = `Min: ${Math.min(
-          ...avgFrame.differenceFunction
-        ).toFixed(2)}`;
-        yinCmndValue.textContent = `Min: ${Math.min(...avgFrame.cmndf).toFixed(
-          3
-        )}`;
-
-        // Draw two sections: Difference Function and CMNDF
-        const sectionHeight = height / 2;
-
-        // Section 1: Difference Function
-        ctx.fillStyle = "#1F2937";
-        ctx.fillRect(0, 0, width, sectionHeight);
-
-        ctx.fillStyle = "#3B82F6";
-        ctx.font = "12px Inter";
-        ctx.textAlign = "left";
-        ctx.fillText("Difference Function", 10, 20);
-
-        if (
-          avgFrame.differenceFunction &&
-          avgFrame.differenceFunction.length > 0
-        ) {
-          const maxDiff = Math.max(...avgFrame.differenceFunction);
-          ctx.strokeStyle = "#3B82F6";
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-
-          for (let i = 0; i < avgFrame.differenceFunction.length; i++) {
-            const x = (i / avgFrame.differenceFunction.length) * width;
-            const y =
-              sectionHeight -
-              (avgFrame.differenceFunction[i] / maxDiff) * (sectionHeight - 30);
-
-            if (i === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          }
-          ctx.stroke();
-        }
-
-        // Section 2: CMNDF
-        ctx.fillStyle = "#1F2937";
-        ctx.fillRect(0, sectionHeight, width, sectionHeight);
-
-        ctx.fillStyle = "#10B981";
-        ctx.font = "12px Inter";
-        ctx.textAlign = "left";
-        ctx.fillText(
-          "Cumulative Mean Normalized Difference Function",
-          10,
-          sectionHeight + 20
-        );
-
-        // Draw threshold line
-        const thresholdY =
-          sectionHeight +
-          sectionHeight -
-          avgFrame.threshold * (sectionHeight - 30);
-        ctx.strokeStyle = "#F59E0B";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(0, thresholdY);
-        ctx.lineTo(width, thresholdY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        if (avgFrame.cmndf && avgFrame.cmndf.length > 0) {
-          ctx.strokeStyle = "#10B981";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-
-          for (let i = 0; i < avgFrame.cmndf.length; i++) {
-            const x = (i / avgFrame.cmndf.length) * width;
-            const y =
-              sectionHeight +
-              sectionHeight -
-              Math.min(avgFrame.cmndf[i], 1) * (sectionHeight - 30);
-
-            if (i === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          }
-          ctx.stroke();
-
-          // Mark the detected period with a red dot
-          if (avgFrame.tau > 0 && avgFrame.tau < avgFrame.cmndf.length) {
-            const tauX = (avgFrame.tau / avgFrame.cmndf.length) * width;
-            const tauY =
-              sectionHeight +
-              sectionHeight -
-              Math.min(avgFrame.cmndf[avgFrame.tau], 1) * (sectionHeight - 30);
-
-            ctx.fillStyle = "#EF4444";
-            ctx.beginPath();
-            ctx.arc(tauX, tauY, 4, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-        }
-
-        // Draw section divider
-        ctx.strokeStyle = "#374151";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, sectionHeight);
-        ctx.lineTo(width, sectionHeight);
-        ctx.stroke();
       }
 
       function drawYinPitchChart() {
