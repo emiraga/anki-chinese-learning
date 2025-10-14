@@ -673,7 +673,7 @@
         // Store performance data
         const totalTime = performance.now() - analysisStartTime;
         console.log(
-          `YIN Performance: Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`,
+          `YIN Performance:${yinParams.fft ? " FFT" : ""} Total=${totalTime.toFixed(1)}ms, Frames=${frameCount}`,
         );
 
         return yinResults;
