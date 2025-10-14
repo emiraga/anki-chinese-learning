@@ -72,9 +72,15 @@
         id="status"
         class="text-center mb-4 p-3 rounded-lg bg-gray-700 transition-all duration-300"
       >
-        <p id="instructions" class="text-lg font-medium text-blue-300">
-          Loading...
-        </p>
+        <div class="flex items-center justify-center">
+          <div
+            id="statusSpinner"
+            class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2 hidden"
+          ></div>
+          <p id="instructions" class="text-lg font-medium text-blue-300">
+            Loading...
+          </p>
+        </div>
       </div>
 
       <!-- Spectrogram Canvas with YIN Pitch Overlay -->
@@ -350,6 +356,7 @@
       // DOM Elements
       const instructions = document.getElementById("instructions");
       const statusDiv = document.getElementById("status");
+      const statusSpinner = document.getElementById("statusSpinner");
       const canvas = document.getElementById("spectrogramCanvas");
       const canvasCtx = canvas.getContext("2d");
       const progressLine = document.getElementById("progressLine");
@@ -598,8 +605,27 @@
       }
 
       // Status message helpers
-      function setStatus(message, backgroundColor = null) {
-        instructions.innerHTML = message;
+      function setStatus(message, options = {}) {
+        const {
+          backgroundColor = null,
+          isLoading = false,
+          spinnerColor = 'border-blue-300'
+        } = options;
+
+        // Update message text
+        instructions.textContent = message;
+
+        // Show/hide spinner
+        if (isLoading) {
+          // Remove any existing border color classes
+          statusSpinner.classList.remove('border-blue-300', 'border-purple-300', 'border-green-300');
+          // Add the new spinner color
+          statusSpinner.classList.add(spinnerColor);
+          show(statusSpinner);
+        } else {
+          hide(statusSpinner);
+        }
+
         show(statusDiv);
 
         if (backgroundColor) {
@@ -824,7 +850,7 @@
         isRecording = true;
         audioChunks = [];
 
-        setStatus("Recording...", "#ef4444");
+        setStatus("Recording...", { backgroundColor: "#ef4444" });
 
         try {
           // Ensure AudioContext is created by user gesture
@@ -845,7 +871,7 @@
           console.error("Error accessing microphone:", err);
           setStatus(
             "Microphone access denied. Please allow access and try again.",
-            "#d97706"
+            { backgroundColor: "#d97706" }
           );
           isRecording = false;
         }
@@ -861,7 +887,7 @@
         }
 
         isRecording = false;
-        setStatus("Analyzing...", "#3b82f6");
+        setStatus("Analyzing...", { backgroundColor: "#3b82f6" });
         showYinPitchLoadingOverlay();
       }
 
@@ -888,7 +914,7 @@
             playLastRecording();
           } catch (err) {
             console.error("Error decoding audio data:", err);
-            setStatus("Could not process audio. Please try again.");
+            setStatus("Could not process audio. Please try again.", {});
           }
         };
         reader.readAsArrayBuffer(audioBlob);
@@ -989,10 +1015,11 @@
       async function loadPreloadedAudio() {
         try {
           // Show loading indicator
-          setStatus(
-            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-300 mr-2"></div>Processing preloaded audio...</div>',
-            "#3b82f6"
-          );
+          setStatus("Processing preloaded audio...", {
+            backgroundColor: "#3b82f6",
+            isLoading: true,
+            spinnerColor: "border-blue-300"
+          });
 
           // Initialize audio context if not already done
           if (!audioContext) {
@@ -1014,17 +1041,19 @@
           yinData = [];
 
           // Update loading message for YIN analysis
-          setStatus(
-            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-300 mr-2"></div>Computing YIN pitch analysis...</div>'
-          );
+          setStatus("Computing YIN pitch analysis...", {
+            isLoading: true,
+            spinnerColor: "border-purple-300"
+          });
 
           // Perform YIN analysis
           yinData = performYinAnalysis(audioBuffer);
 
           // Update loading message for spectrogram
-          setStatus(
-            '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-green-300 mr-2"></div>Generating spectrogram...</div>'
-          );
+          setStatus("Generating spectrogram...", {
+            isLoading: true,
+            spinnerColor: "border-green-300"
+          });
 
           // Analyze and draw visualizations
           analyzeAndDraw(audioBuffer);
@@ -1039,7 +1068,7 @@
           playLastRecording();
         } catch (err) {
           console.error("Error loading preloaded audio:", err);
-          setStatus("Error loading preloaded audio.", "#d97706");
+          setStatus("Error loading preloaded audio.", { backgroundColor: "#d97706" });
         }
       }
 
@@ -1085,7 +1114,7 @@
           })
           .catch((err) => {
             console.error("Offline rendering failed:", err);
-            setStatus("Error during analysis.");
+            setStatus("Error during analysis.", {});
           });
       }
 
