@@ -93,17 +93,6 @@
           ></div>
         </div>
         <div
-          id="loadingOverlay"
-          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
-        >
-          <div class="text-center">
-            <div
-              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"
-            ></div>
-            <p class="text-gray-300 text-sm">Computing charts...</p>
-          </div>
-        </div>
-        <div
           id="yinPitchLoadingOverlay"
           class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
         >
@@ -367,7 +356,6 @@
       const colorSchemeSelect = document.getElementById("colorScheme");
       const brightnessSlider = document.getElementById("brightness");
       const contrastSlider = document.getElementById("contrast");
-      const loadingOverlay = document.getElementById("loadingOverlay");
       const yinPitchLoadingOverlay = document.getElementById(
         "yinPitchLoadingOverlay"
       );
