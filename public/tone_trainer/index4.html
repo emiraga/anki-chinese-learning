@@ -419,6 +419,16 @@
       // is about how often we do the analysis. The system collects audio into a buffer, and every time the buffer is full, it runs the analysis.
       const BUFFER_SIZE = 256;
 
+      // --- UI CONSTANTS ---
+      // Progress line update interval in milliseconds
+      const PROGRESS_UPDATE_INTERVAL_MS = 50;
+      // Maximum vertical jump threshold as percentage of canvas height for YIN pitch chart
+      const YIN_MAX_JUMP_THRESHOLD_PERCENT = 0.1;
+      // Pitch point radius in pixels for YIN pitch visualization
+      const YIN_PITCH_POINT_RADIUS = 3;
+      // Line width for YIN pitch chart
+      const YIN_PITCH_LINE_WIDTH = 3;
+
       // --- COLOR MAPS ---
       const COLOR_MAPS = {
         viridis: [
@@ -1077,7 +1087,7 @@
               }
             }, 1000);
           }
-        }, 50); // Update every 50ms for smooth animation
+        }, PROGRESS_UPDATE_INTERVAL_MS);
 
         source.onended = () => {
           isPlaying = false;
@@ -1309,10 +1319,10 @@
           const pitchRange = Math.max(maxPitch - minPitch, 50);
 
           // Draw pitch line with confidence-based opacity
-          ctx.lineWidth = 3;
+          ctx.lineWidth = YIN_PITCH_LINE_WIDTH;
 
           // Maximum vertical jump threshold
-          const maxJumpThreshold = height * 0.1;
+          const maxJumpThreshold = height * YIN_MAX_JUMP_THRESHOLD_PERCENT;
 
           let lastValidX = -1;
           let lastValidY = -1;
@@ -1350,7 +1360,7 @@
               }
 
               ctx.beginPath();
-              ctx.arc(x, y, 3, 0, 2 * Math.PI);
+              ctx.arc(x, y, YIN_PITCH_POINT_RADIUS, 0, 2 * Math.PI);
               ctx.fill();
 
               // Reset shadow for next elements
