@@ -301,7 +301,7 @@
                 class="text-xs text-gray-400 text-center mt-1"
                 id="yinThresholdValue"
               >
-                0.30
+                0.60
               </div>
             </div>
             <div>
@@ -420,7 +420,7 @@
       let yinParams = {
         frameSize: 2048, // Window size for analysis
         hopSize: 128, // Step size between frames
-        threshold: 0.3, // Absolute threshold for period detection
+        threshold: 0.6, // Absolute threshold for period detection
         minFreq: 30, // Minimum frequency to consider (Hz)
         maxFreq: 300, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
@@ -1378,6 +1378,6 @@
         }
       }
     </script>
-    <script src="fft.min.js"></script>
+    <script src="fftjs.min.js"></script>
   </body>
 </html>
