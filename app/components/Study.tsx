@@ -51,25 +51,29 @@ export default function Study() {
       <LearnLink char={current || ""} />
 
       {cardInfo && (
-        <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-6 flex flex-col items-center">
           {cardInfo.fields["Audio"]?.value && (
             <div className="flex justify-center">
               <AnkiAudioPlayer audioField={cardInfo.fields["Audio"]?.value} />
             </div>
           )}
-          <div>
+          <div className="max-w-2xl w-full">
             <h2 className="text-xl font-semibold mb-2">Front:</h2>
-            <div
-              className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: cardInfo.question || "" }}
-            />
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
+              <div
+                className="prose prose-sm max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: cardInfo.question || "" }}
+              />
+            </div>
           </div>
-          <div>
+          <div className="max-w-2xl w-full">
             <h2 className="text-xl font-semibold mb-2">Back:</h2>
-            <AnkiContentRenderer
-              htmlContent={cardInfo.answer || ""}
-              className="prose prose-sm max-w-none"
-            />
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
+              <AnkiContentRenderer
+                htmlContent={cardInfo.answer || ""}
+                className="prose prose-sm max-w-none dark:prose-invert prose-img:mx-auto"
+              />
+            </div>
           </div>
         </div>
       )}
