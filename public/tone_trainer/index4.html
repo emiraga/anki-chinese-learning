@@ -1655,10 +1655,9 @@
         // Show progress line
         showProgressLine();
 
-        // Schedule audio start slightly in the future for better sync
-        const startTime = audioContext.currentTime + 0.01;
+        // Record exact start time for accurate synchronization
+        audioStartTime = audioContext.currentTime;
         audioDuration = audioBuffer.duration;
-        audioStartTime = startTime;
 
         currentAudioSource = source;
         isPlaying = true;
@@ -1671,8 +1670,8 @@
             return;
           }
 
-          // Use AudioContext timeline for accurate sync
-          const elapsed = audioContext.currentTime - audioStartTime;
+          // Use AudioContext timeline for accurate sync, clamped to non-negative values
+          const elapsed = Math.max(0, audioContext.currentTime - audioStartTime);
           const progress = Math.min((elapsed / audioDuration) * 100, 100);
 
           updateProgressLine(progress);
@@ -1705,8 +1704,8 @@
           hideProgressLine();
         };
 
-        // Start the audio at the scheduled time
-        source.start(startTime);
+        // Start the audio immediately - no delay needed
+        source.start(0);
 
         // Start the progress animation
         progressAnimationFrame = requestAnimationFrame(updateProgress);
