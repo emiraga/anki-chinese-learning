@@ -67,7 +67,7 @@
     <!-- Full-page drag and drop overlay -->
     <div
       id="dropOverlay"
-      class="fixed inset-0 bg-blue-800/80 border-4 border-dashed border-blue-400 flex items-center justify-center hidden"
+      class="fixed inset-0 bg-blue-800/80 border-4 border-dashed border-blue-400 items-center justify-center hidden"
       style="z-index: 9999"
     >
       <div class="text-center">
@@ -112,7 +112,7 @@
         </div>
         <div
           id="yinPitchLoadingOverlay"
-          class="absolute inset-0 bg-gray-900/80 flex items-center justify-center rounded-lg hidden"
+          class="absolute inset-0 bg-gray-900/80 items-center justify-center rounded-lg hidden"
         >
           <div class="text-center">
             <div
@@ -1238,6 +1238,17 @@
         element.classList.add("hidden");
       }
 
+      // Overlay-specific visibility helpers (need flex)
+      function showOverlay(element) {
+        element.classList.remove("hidden");
+        element.classList.add("flex");
+      }
+
+      function hideOverlay(element) {
+        element.classList.add("hidden");
+        element.classList.remove("flex");
+      }
+
       // Status message helpers
       function setStatus(message, options = {}) {
         const {
@@ -1433,7 +1444,7 @@
       document.body.addEventListener("dragenter", (e) => {
         e.preventDefault();
         dragCounter++;
-        show(dropOverlay);
+        showOverlay(dropOverlay);
       });
 
       document.body.addEventListener("dragover", (e) => {
@@ -1446,7 +1457,7 @@
         dragCounter--;
         // Only hide when all drag events have left
         if (dragCounter === 0) {
-          hide(dropOverlay);
+          hideOverlay(dropOverlay);
         }
       });
 
@@ -1454,7 +1465,7 @@
         e.preventDefault();
         e.stopPropagation();
         dragCounter = 0;
-        hide(dropOverlay);
+        hideOverlay(dropOverlay);
 
         const files = e.dataTransfer.files;
         if (files.length > 0) {
@@ -1594,11 +1605,11 @@
       }
 
       function showYinPitchLoadingOverlay() {
-        show(yinPitchLoadingOverlay);
+        showOverlay(yinPitchLoadingOverlay);
       }
 
       function hideYinPitchLoadingOverlay() {
-        hide(yinPitchLoadingOverlay);
+        hideOverlay(yinPitchLoadingOverlay);
       }
 
       // Setup all YIN parameter controls
