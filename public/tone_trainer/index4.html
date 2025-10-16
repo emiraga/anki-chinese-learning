@@ -179,76 +179,123 @@
       </div>
 
       <!-- Display Controls -->
-      <div
-        id="controls"
-        class="mt-6 mb-2 grid grid-cols-2 md:grid-cols-3 gap-6 bg-gray-700/50 p-6 rounded-lg"
-      >
-        <div>
-          <label
-            for="brightness"
-            class="block mb-2 text-sm font-medium text-gray-300"
-            >Brightness</label
+      <div id="controls" class="mt-6 mb-2 py-3 border-t border-gray-600">
+        <button
+          id="displayControlsToggle"
+          class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2 hover:text-gray-100 transition-colors cursor-pointer"
+          onclick="toggleDisplayControls()"
+          title="Click to expand/collapse"
+        >
+          <span>Display Settings:</span>
+          <svg
+            id="displayControlsChevron"
+            class="w-5 h-5 transform transition-transform duration-200"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-          <input
-            type="range"
-            id="brightness"
-            min="-150"
-            max="100"
-            class="w-full"
-          />
-          <div
-            class="text-xs text-gray-400 text-center mt-1"
-            id="brightnessValue"
-          ></div>
-        </div>
-        <div>
-          <label
-            for="contrast"
-            class="block mb-2 text-sm font-medium text-gray-300"
-            >Contrast</label
-          >
-          <input
-            type="range"
-            id="contrast"
-            min="0.0"
-            max="5.0"
-            step="0.1"
-            class="w-full"
-          />
-          <div
-            class="text-xs text-gray-400 text-center mt-1"
-            id="contrastValue"
-          ></div>
-        </div>
-        <div>
-          <label
-            for="colorScheme"
-            class="block mb-2 text-sm font-medium text-gray-300"
-            >Color Scheme</label
-          >
-          <select
-            id="colorScheme"
-            class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
-          >
-            <option value="viridis">Viridis</option>
-            <option value="plasma">Plasma</option>
-            <option value="hot">Hot</option>
-            <option value="grayscale">Grayscale</option>
-          </select>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        <div
+          id="displayControlsContent"
+          class="hidden grid-cols-2 md:grid-cols-3 gap-6 bg-gray-700/50 p-6 rounded-lg"
+        >
+          <div>
+            <label
+              for="brightness"
+              class="block mb-2 text-sm font-medium text-gray-300"
+              >Brightness</label
+            >
+            <input
+              type="range"
+              id="brightness"
+              min="-150"
+              max="100"
+              class="w-full"
+            />
+            <div
+              class="text-xs text-gray-400 text-center mt-1"
+              id="brightnessValue"
+            ></div>
+          </div>
+          <div>
+            <label
+              for="contrast"
+              class="block mb-2 text-sm font-medium text-gray-300"
+              >Contrast</label
+            >
+            <input
+              type="range"
+              id="contrast"
+              min="0.0"
+              max="5.0"
+              step="0.1"
+              class="w-full"
+            />
+            <div
+              class="text-xs text-gray-400 text-center mt-1"
+              id="contrastValue"
+            ></div>
+          </div>
+          <div>
+            <label
+              for="colorScheme"
+              class="block mb-2 text-sm font-medium text-gray-300"
+              >Color Scheme</label
+            >
+            <select
+              id="colorScheme"
+              class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+            >
+              <option value="viridis">Viridis</option>
+              <option value="plasma">Plasma</option>
+              <option value="hot">Hot</option>
+              <option value="grayscale">Grayscale</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <!-- Algorithm Controls -->
-      <div id="yinControlsSection" class="mt-4 hidden">
+      <div
+        id="yinControlsSection"
+        class="mt-4 hidden py-3 border-t border-b border-gray-600"
+      >
         <!-- YIN Controls -->
         <div class="mb-2">
-          <h4 class="text-yellow-400 text-sm font-medium mb-2">
-            YIN Algorithm parameters:
-          </h4>
+          <button
+            id="yinControlsToggle"
+            class="flex items-center gap-2 text-yellow-400 text-sm font-medium mb-2 hover:text-yellow-300 transition-colors cursor-pointer"
+            onclick="toggleYinControls()"
+            title="Click to expand/collapse"
+          >
+            <span>YIN Algorithm parameters:</span>
+            <svg
+              id="yinControlsChevron"
+              class="w-5 h-5 transform transition-transform duration-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
 
           <div
             id="yinControls"
-            class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-700/50 p-4 rounded-lg"
+            class="hidden grid-cols-2 md:grid-cols-3 gap-4 bg-gray-700/50 p-4 rounded-lg"
           >
             <!---->
             <div>
@@ -1149,6 +1196,44 @@
           ["bg-red-600", "hover:bg-red-500"],
           ["bg-blue-600", "hover:bg-blue-500"],
         );
+      }
+
+      // --- DISPLAY CONTROLS TOGGLE ---
+      function toggleDisplayControls() {
+        const displayControls = document.getElementById(
+          "displayControlsContent",
+        );
+        const chevron = document.getElementById("displayControlsChevron");
+
+        if (displayControls.classList.contains("hidden")) {
+          // Show controls
+          displayControls.classList.remove("hidden");
+          displayControls.classList.add("grid");
+          chevron.style.transform = "rotate(180deg)";
+        } else {
+          // Hide controls
+          displayControls.classList.remove("grid");
+          displayControls.classList.add("hidden");
+          chevron.style.transform = "rotate(0deg)";
+        }
+      }
+
+      // --- YIN CONTROLS TOGGLE ---
+      function toggleYinControls() {
+        const yinControls = document.getElementById("yinControls");
+        const chevron = document.getElementById("yinControlsChevron");
+
+        if (yinControls.classList.contains("hidden")) {
+          // Show controls
+          yinControls.classList.remove("hidden");
+          yinControls.classList.add("grid");
+          chevron.style.transform = "rotate(180deg)";
+        } else {
+          // Hide controls
+          yinControls.classList.remove("grid");
+          yinControls.classList.add("hidden");
+          chevron.style.transform = "rotate(0deg)";
+        }
       }
 
       // --- EVENT LISTENERS ---
