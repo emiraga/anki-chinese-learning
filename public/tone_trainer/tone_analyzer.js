@@ -71,6 +71,7 @@ let yinParams = {
   minPowerThreshold: 0.02, // Power threshold below which confidence is reduced
   octaveJumpCorrection: false, // Enable octave jump correction
   octaveRatioThreshold: 0.1, // Tolerance for octave detection (0-1)
+  medianFilterWindowSize: 5, // Median filter window size for smoothing pitch data (must be odd)
 };
 
 // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -950,6 +951,23 @@ setupControl("yinOctaveJumpCorrection", yinParams, "octaveJumpCorrection", {
 });
 
 setupControl(
+  "yinMedianFilterWindowSizeSlider",
+  yinParams,
+  "medianFilterWindowSize",
+  {
+    eventType: "input",
+    parser: (t) => parseInt(t.value, 10),
+    displayElementId: "yinMedianFilterWindowSizeValue",
+    onChange: () => {
+      // Only redraw, no need to recompute YIN
+      if (spectrogramData.length > 0) {
+        drawYinPitchChart();
+      }
+    },
+  },
+);
+
+setupControl(
   "yinOctaveRatioThresholdSlider",
   yinParams,
   "octaveRatioThreshold",
@@ -1491,6 +1509,45 @@ function drawSpectrogram() {
 }
 
 /**
+ * Applies a median filter to an array of pitch data.
+ * @param {Array<{pitch: number, confidence: number}>} data The input array of YIN frames.
+ * @param {number} windowSize The size of the filter window (must be an odd number, e.g., 3 or 5).
+ * @returns {Array<{pitch: number, confidence: number}>} The filtered data.
+ */
+function medianFilter(data, windowSize) {
+  if (windowSize % 2 === 0 || windowSize < 1) {
+    throw new Error("Window size must be an odd positive number.");
+  }
+  const halfWindow = Math.floor(windowSize / 2);
+  const filteredData = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const start = Math.max(0, i - halfWindow);
+    const end = Math.min(data.length, i + halfWindow + 1);
+
+    // Get the window of frames and filter out zero-pitch (unvoiced) frames
+    const window = data.slice(start, end).filter((frame) => frame.pitch > 0);
+
+    if (window.length === 0) {
+      // If no valid pitches in window, keep the original frame
+      filteredData.push(data[i]);
+      continue;
+    }
+
+    // Sort by pitch to find the median
+    window.sort((a, b) => a.pitch - b.pitch);
+    const medianFrame = window[Math.floor(window.length / 2)];
+
+    // Create a new frame using the median pitch but retaining the original's confidence
+    filteredData.push({
+      ...data[i],
+      pitch: medianFrame.pitch,
+    });
+  }
+  return filteredData;
+}
+
+/**
  * Helper function to detect octave jump between two pitches
  * Returns correction info if jump detected, null otherwise
  */
@@ -1535,11 +1592,15 @@ function correctOctaveJumps(pitchData) {
   const backwardCorrections = new Array(pitchData.length).fill(null);
 
   // Pass 1: Forward pass (left-to-right)
-  const forwardData = pitchData.map(f => ({ ...f }));
+  const forwardData = pitchData.map((f) => ({ ...f }));
   for (let i = 1; i < forwardData.length; i++) {
     if (forwardData[i].pitch === 0 || forwardData[i - 1].pitch === 0) continue;
 
-    const jump = detectOctaveJump(forwardData[i - 1].pitch, forwardData[i].pitch, octaveRatioThreshold);
+    const jump = detectOctaveJump(
+      forwardData[i - 1].pitch,
+      forwardData[i].pitch,
+      octaveRatioThreshold,
+    );
     if (jump) {
       forwardCorrections[i] = jump;
       forwardData[i].pitch = jump.pitch; // Apply correction for next comparison
@@ -1547,11 +1608,16 @@ function correctOctaveJumps(pitchData) {
   }
 
   // Pass 2: Backward pass (right-to-left)
-  const backwardData = pitchData.map(f => ({ ...f }));
+  const backwardData = pitchData.map((f) => ({ ...f }));
   for (let i = backwardData.length - 2; i >= 0; i--) {
-    if (backwardData[i].pitch === 0 || backwardData[i + 1].pitch === 0) continue;
+    if (backwardData[i].pitch === 0 || backwardData[i + 1].pitch === 0)
+      continue;
 
-    const jump = detectOctaveJump(backwardData[i + 1].pitch, backwardData[i].pitch, octaveRatioThreshold);
+    const jump = detectOctaveJump(
+      backwardData[i + 1].pitch,
+      backwardData[i].pitch,
+      octaveRatioThreshold,
+    );
     if (jump) {
       backwardCorrections[i] = jump;
       backwardData[i].pitch = jump.pitch; // Apply correction for next comparison
@@ -1634,10 +1700,16 @@ function drawYinPitchChart() {
   // Clear canvas with transparent background
   ctx.clearRect(0, 0, width, height);
 
+  // 1. Apply Median Filter first to smooth out single-frame outliers
+  const smoothedYinData = medianFilter(
+    yinData,
+    yinParams.medianFilterWindowSize,
+  );
+
   // Apply octave jump correction to the data if enabled
   const displayData = yinParams.octaveJumpCorrection
-    ? correctOctaveJumps(yinData)
-    : yinData;
+    ? correctOctaveJumps(smoothedYinData)
+    : smoothedYinData;
 
   const validPitches = displayData.filter((frame) => frame.pitch > 0);
   if (validPitches.length > 0) {

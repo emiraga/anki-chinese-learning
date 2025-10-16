@@ -442,12 +442,32 @@
               </div>
             </div>
 
-            <!-- Row 5: Octave jump correction -->
+            <!-- Row 5: Pitch smoothing and correction -->
             <div>
               <div class="text-xs font-semibold text-gray-600 mb-2">
-                Octave jump correction
+                Pitch smoothing and octave jump correction
               </div>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <label
+                    for="yinMedianFilterWindowSize"
+                    class="block mb-2 text-xs font-medium text-gray-300"
+                    >Median Filter Window</label
+                  >
+                  <input
+                    type="range"
+                    id="yinMedianFilterWindowSizeSlider"
+                    min="1"
+                    max="11"
+                    step="2"
+                    class="w-full"
+                  />
+                  <div
+                    class="text-xs text-gray-400 text-center mt-1"
+                    id="yinMedianFilterWindowSizeValue"
+                  ></div>
+                </div>
+
                 <div class="flex items-center">
                   <input
                     type="checkbox"
@@ -457,7 +477,7 @@
                   <label
                     for="yinOctaveJumpCorrection"
                     class="ml-2 text-xs font-medium text-gray-300"
-                    >Enable Octave Jump Correction</label
+                    >Octave Jump Correction</label
                   >
                 </div>
 
