@@ -387,6 +387,58 @@ function yinAbsoluteThresholdAdaptive(cmndf, threshold, sampleRate) {
   return bestTau;
 }
 
+/**
+ * An alternative YIN thresholding method that finds the *first* local minimum
+ * below the specified threshold. This is often more robust against octave-up errors
+ * for signals with strong harmonics.
+ *
+ * @param {number[]} cmndf The Cumulative Mean Normalized Difference Function.
+ * @param {number} threshold The primary threshold for accepting a pitch candidate (e.g., 0.1 to 0.3).
+ * @param {number} sampleRate The sample rate of the audio.
+ * @returns {number} The estimated period (tau), or -1 if no suitable period is found.
+ */
+function yinAbsoluteThresholdFirstDip(cmndf, threshold, sampleRate) {
+  const minTau = Math.floor(sampleRate / yinParams.maxFreq);
+  const maxTau = Math.floor(sampleRate / yinParams.minFreq);
+
+  // Clamp search range to valid indices, skipping the first two elements.
+  const startTau = Math.max(2, minTau);
+  const endTau = Math.min(cmndf.length - 1, maxTau);
+
+  // --- Strategy 1: Find the *first* local minimum that drops below the threshold. ---
+  // A local minimum is a point lower than its immediate neighbors.
+  for (let tau = startTau; tau < endTau; tau++) {
+    const isLocalMinimum =
+      cmndf[tau] < cmndf[tau - 1] && cmndf[tau] <= cmndf[tau + 1];
+
+    if (isLocalMinimum && cmndf[tau] < threshold) {
+      return tau; // Success! We found the first good candidate.
+    }
+  }
+
+  // --- Strategy 2 (Fallback): If no candidate was found above. ---
+  // The signal might be unvoiced or the fundamental is very weak.
+  // We'll find the single deepest dip in the entire range and accept it
+  // only if it's below a more lenient `fallbackThreshold`.
+  let globalMinTau = -1;
+  let globalMinValue = 1.0;
+
+  for (let tau = startTau; tau < endTau; tau++) {
+    if (cmndf[tau] < globalMinValue) {
+      globalMinValue = cmndf[tau];
+      globalMinTau = tau;
+    }
+  }
+
+  // Only accept the global minimum if it shows a reasonable amount of periodicity.
+  if (globalMinValue < yinParams.fallbackThreshold) {
+    return globalMinTau;
+  }
+
+  // If all else fails, report no pitch found.
+  return -1;
+}
+
 function yinParabolicInterpolation(cmndf, tauEstimate) {
   // Step 4: Parabolic interpolation for better accuracy
   if (tauEstimate < 1 || tauEstimate >= cmndf.length - 1) {
@@ -406,6 +458,7 @@ function yinParabolicInterpolation(cmndf, tauEstimate) {
 const yinThresholdMethods = {
   simple: yinAbsoluteThresholdSimple,
   adaptive: yinAbsoluteThresholdAdaptive,
+  firstDip: yinAbsoluteThresholdFirstDip,
 };
 
 // Mapping of difference function method names to functions
