@@ -1491,61 +1491,92 @@ function drawSpectrogram() {
 }
 
 /**
- * Correct octave jumps in pitch data
- * Detects when pitch suddenly doubles or halves and corrects it
- * Returns data with correction information for visualization
+ * Helper function to detect octave jump between two pitches
+ * Returns correction info if jump detected, null otherwise
+ */
+function detectOctaveJump(pitch1, pitch2, threshold) {
+  if (pitch1 === 0 || pitch2 === 0) return null;
+
+  const ratio = pitch2 / pitch1;
+
+  // Check for octave jump up (ratio ~2.0) - pitch2 was too high, should divide by 2
+  if (Math.abs(ratio - 2.0) < threshold) {
+    return { pitch: pitch2 / 2, correction: "down_2x" };
+  }
+  // Check for octave jump down (ratio ~0.5) - pitch2 was too low, should multiply by 2
+  if (Math.abs(ratio - 0.5) < threshold) {
+    return { pitch: pitch2 * 2, correction: "up_2x" };
+  }
+  // Check for double octave jump up (ratio ~4.0)
+  if (Math.abs(ratio - 4.0) < threshold) {
+    return { pitch: pitch2 / 4, correction: "down_4x" };
+  }
+  // Check for double octave jump down (ratio ~0.25)
+  if (Math.abs(ratio - 0.25) < threshold) {
+    return { pitch: pitch2 * 4, correction: "up_4x" };
+  }
+
+  return null;
+}
+
+/**
+ * Two-pass bidirectional octave jump correction
+ * Pass 1: Forward (left-to-right) - marks potential corrections
+ * Pass 2: Backward (right-to-left) - marks potential corrections
+ * Only apply corrections that both passes agree on
  */
 function correctOctaveJumps(pitchData) {
   if (pitchData.length === 0) return [];
 
-  const correctedData = pitchData.map((frame) => ({
-    ...frame,
-    correction: "none",
-  }));
   const octaveRatioThreshold = yinParams.octaveRatioThreshold;
 
-  for (let i = 1; i < correctedData.length; i++) {
-    const current = correctedData[i];
-    const prev = correctedData[i - 1];
+  // Initialize forward and backward correction arrays
+  const forwardCorrections = new Array(pitchData.length).fill(null);
+  const backwardCorrections = new Array(pitchData.length).fill(null);
 
-    // Skip if either frame has no pitch
-    if (current.pitch === 0 || prev.pitch === 0) continue;
+  // Pass 1: Forward pass (left-to-right)
+  const forwardData = pitchData.map(f => ({ ...f }));
+  for (let i = 1; i < forwardData.length; i++) {
+    if (forwardData[i].pitch === 0 || forwardData[i - 1].pitch === 0) continue;
 
-    const ratio = current.pitch / prev.pitch;
-
-    // Check for octave jump up (ratio ~2.0) - pitch was too high, divide by 2
-    if (Math.abs(ratio - 2.0) < octaveRatioThreshold) {
-      correctedData[i] = {
-        ...current,
-        pitch: current.pitch / 2,
-        correction: "down_2x", // Lowered the pitch
-      };
-    }
-    // Check for octave jump down (ratio ~0.5) - pitch was too low, multiply by 2
-    else if (Math.abs(ratio - 0.5) < octaveRatioThreshold) {
-      correctedData[i] = {
-        ...current,
-        pitch: current.pitch * 2,
-        correction: "up_2x", // Raised the pitch
-      };
-    }
-    // Check for double octave jump up (ratio ~4.0) - pitch was too high, divide by 4
-    else if (Math.abs(ratio - 4.0) < octaveRatioThreshold) {
-      correctedData[i] = {
-        ...current,
-        pitch: current.pitch / 4,
-        correction: "down_4x", // Lowered the pitch significantly
-      };
-    }
-    // Check for double octave jump down (ratio ~0.25) - pitch was too low, multiply by 4
-    else if (Math.abs(ratio - 0.25) < octaveRatioThreshold) {
-      correctedData[i] = {
-        ...current,
-        pitch: current.pitch * 4,
-        correction: "up_4x", // Raised the pitch significantly
-      };
+    const jump = detectOctaveJump(forwardData[i - 1].pitch, forwardData[i].pitch, octaveRatioThreshold);
+    if (jump) {
+      forwardCorrections[i] = jump;
+      forwardData[i].pitch = jump.pitch; // Apply correction for next comparison
     }
   }
+
+  // Pass 2: Backward pass (right-to-left)
+  const backwardData = pitchData.map(f => ({ ...f }));
+  for (let i = backwardData.length - 2; i >= 0; i--) {
+    if (backwardData[i].pitch === 0 || backwardData[i + 1].pitch === 0) continue;
+
+    const jump = detectOctaveJump(backwardData[i + 1].pitch, backwardData[i].pitch, octaveRatioThreshold);
+    if (jump) {
+      backwardCorrections[i] = jump;
+      backwardData[i].pitch = jump.pitch; // Apply correction for next comparison
+    }
+  }
+
+  // Pass 3: Apply only corrections that both passes agree on
+  const correctedData = pitchData.map((frame, i) => {
+    const fwd = forwardCorrections[i];
+    const bwd = backwardCorrections[i];
+
+    // Both passes must agree on the correction type
+    if (fwd && bwd && fwd.correction === bwd.correction) {
+      return {
+        ...frame,
+        pitch: fwd.pitch,
+        correction: fwd.correction,
+      };
+    }
+
+    return {
+      ...frame,
+      correction: "none",
+    };
+  });
 
   return correctedData;
 }
