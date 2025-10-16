@@ -525,7 +525,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/ai_高富帥_gao1_fu4_shuai4.mp3', 300)"
+              onclick="loadAudioFile('audio/ai_高富帥_gao1_fu4_shuai4.mp3', 400)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               ai_高富帥_gao1_fu4_shuai4.mp3
@@ -537,7 +537,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/ai_今天不用上班.mp3', 300)"
+              onclick="loadAudioFile('audio/ai_今天不用上班.mp3', 400)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               ai_今天不用上班.mp3
@@ -549,7 +549,7 @@
 
           <div class="flex items-center gap-3">
             <button
-              onclick="loadAudioFile('audio/367215_1847127-lq.mp3', 300)"
+              onclick="loadAudioFile('audio/367215_1847127-lq.mp3', 400)"
               class="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
             >
               367215_1847127-lq.mp3
@@ -658,7 +658,7 @@
         threshold: 0.3, // Absolute threshold for period detection
         fallbackThreshold: 0.8, // Fallback threshold for adaptive method
         minFreq: 30, // Minimum frequency to consider (Hz)
-        maxFreq: 300, // Maximum frequency to consider (Hz)
+        maxFreq: 400, // Maximum frequency to consider (Hz)
         interpolation: true, // Enable parabolic interpolation
         differenceMethod: "fftZeroPadding", // Difference function method: "simple", "fftSimple", or "fftZeroPadding"
         thresholdMethod: "adaptive", // Threshold method: "simple", "adaptive"
@@ -1655,13 +1655,14 @@
         // Show progress line
         showProgressLine();
 
-        // Record exact start time for accurate synchronization
-        audioStartTime = audioContext.currentTime;
         audioDuration = audioBuffer.duration;
 
         currentAudioSource = source;
         isPlaying = true;
         updatePlayStopButton();
+
+        // Use performance.now() for more accurate progress tracking
+        let playbackStartTime = null;
 
         // Start progress tracking using requestAnimationFrame for smooth updates
         function updateProgress() {
@@ -1670,8 +1671,13 @@
             return;
           }
 
-          // Use AudioContext timeline for accurate sync, clamped to non-negative values
-          const elapsed = Math.max(0, audioContext.currentTime - audioStartTime);
+          // Initialize start time on first frame (when audio has actually started)
+          if (playbackStartTime === null) {
+            playbackStartTime = performance.now();
+          }
+
+          // Calculate elapsed time in seconds using high-resolution timer
+          const elapsed = (performance.now() - playbackStartTime) / 1000;
           const progress = Math.min((elapsed / audioDuration) * 100, 100);
 
           updateProgressLine(progress);
@@ -1704,7 +1710,7 @@
           hideProgressLine();
         };
 
-        // Start the audio immediately - no delay needed
+        // Start the audio immediately
         source.start(0);
 
         // Start the progress animation
