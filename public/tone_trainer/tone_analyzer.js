@@ -1603,27 +1603,46 @@ function medianFilter(data, windowSize) {
 /**
  * Helper function to detect octave jump between two pitches
  * Returns correction info if jump detected, null otherwise
+ * Ensures corrected pitch stays within minFreq and maxFreq boundaries
  */
 function detectOctaveJump(pitch1, pitch2, threshold) {
   if (pitch1 === 0 || pitch2 === 0) return null;
 
   const ratio = pitch2 / pitch1;
+  const minFreq = yinParams.minFreq;
+  const maxFreq = yinParams.maxFreq;
 
   // Check for octave jump up (ratio ~2.0) - pitch2 was too high, should divide by 2
   if (Math.abs(ratio - 2.0) < threshold) {
-    return { pitch: pitch2 / 2, correction: "down_2x" };
+    const correctedPitch = pitch2 / 2;
+    // Only apply correction if it stays within valid frequency range
+    if (correctedPitch >= minFreq && correctedPitch <= maxFreq) {
+      return { pitch: correctedPitch, correction: "down_2x" };
+    }
   }
   // Check for octave jump down (ratio ~0.5) - pitch2 was too low, should multiply by 2
   if (Math.abs(ratio - 0.5) < threshold) {
-    return { pitch: pitch2 * 2, correction: "up_2x" };
+    const correctedPitch = pitch2 * 2;
+    // Only apply correction if it stays within valid frequency range
+    if (correctedPitch >= minFreq && correctedPitch <= maxFreq) {
+      return { pitch: correctedPitch, correction: "up_2x" };
+    }
   }
   // Check for double octave jump up (ratio ~4.0)
   if (Math.abs(ratio - 4.0) < threshold) {
-    return { pitch: pitch2 / 4, correction: "down_4x" };
+    const correctedPitch = pitch2 / 4;
+    // Only apply correction if it stays within valid frequency range
+    if (correctedPitch >= minFreq && correctedPitch <= maxFreq) {
+      return { pitch: correctedPitch, correction: "down_4x" };
+    }
   }
   // Check for double octave jump down (ratio ~0.25)
   if (Math.abs(ratio - 0.25) < threshold) {
-    return { pitch: pitch2 * 4, correction: "up_4x" };
+    const correctedPitch = pitch2 * 4;
+    // Only apply correction if it stays within valid frequency range
+    if (correctedPitch >= minFreq && correctedPitch <= maxFreq) {
+      return { pitch: correctedPitch, correction: "up_4x" };
+    }
   }
 
   return null;
