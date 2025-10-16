@@ -1586,8 +1586,13 @@
 
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
-              sampleRate: { ideal: RECORDING_SAMPLE_RATE },
               channelCount: { ideal: 1 },
+              // TODO: make this into settings
+              sampleRate: { ideal: RECORDING_SAMPLE_RATE },
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+              latency: 0, // Request lowest possible latency
             },
           });
           if (!stream) {
