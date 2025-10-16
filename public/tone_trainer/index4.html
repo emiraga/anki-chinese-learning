@@ -602,11 +602,7 @@
     </div>
 
     <!---->
-    <script src="audio.js"></script>
     <script>
-      // Preloaded audio data defined in public/tone_trainer/audio.js
-      const PRELOADED_AUDIO_DATA = window.PRELOADED_AUDIO_DATA;
-
       // DOM Elements
       const instructions = document.getElementById("instructions");
       const statusDiv = document.getElementById("status");
@@ -1241,7 +1237,7 @@
         hide(controls);
         hide(playButton);
         hideStatus();
-        loadPreloadedAudio();
+        loadAudioFile("audio/ai_讀書寫字.mp3");
       });
 
       document.addEventListener("keydown", (e) => {
@@ -1724,35 +1720,6 @@
           showPlayingState();
         } else {
           showStoppedState();
-        }
-      }
-
-      async function loadPreloadedAudio() {
-        try {
-          // Show loading indicator
-          setStatus("Processing preloaded audio...", {
-            backgroundColor: "#3b82f6",
-            isLoading: true,
-            spinnerColor: "border-blue-300",
-          });
-
-          // Initialize audio context
-          ensureAudioContext();
-
-          // Convert base64 data URL to array buffer
-          const response = await fetch(PRELOADED_AUDIO_DATA);
-          const arrayBuffer = await response.arrayBuffer();
-
-          // Decode audio data
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-          // Process the audio buffer (YIN analysis, spectrogram, UI updates, auto-play)
-          await processAudioBuffer(audioBuffer);
-        } catch (err) {
-          console.error("Error loading preloaded audio:", err);
-          setStatus("Error loading preloaded audio.", {
-            backgroundColor: "#d97706",
-          });
         }
       }
 
