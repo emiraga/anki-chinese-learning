@@ -637,6 +637,7 @@
       let lastAudioBuffer = null;
       let currentAudioSource = null;
       let isPlaying = false;
+      let progressInterval = null;
 
       // Audio recording sample rate (48000 Hz is high quality, standard for pro audio)
       const RECORDING_SAMPLE_RATE = 48000;
@@ -1629,9 +1630,18 @@
       }
 
       function playAudio(audioBuffer) {
-        // Stop any currently playing audio
+        // Stop any currently playing audio and clear existing interval
         if (currentAudioSource) {
           currentAudioSource.stop();
+        }
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+        }
+
+        // Resume AudioContext if suspended (required for some browsers)
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
         }
 
         const source = audioContext.createBufferSource();
@@ -1645,23 +1655,26 @@
         // Show progress line
         showProgressLine();
 
-        // Start progress tracking
+        // Start progress tracking using AudioContext time for accurate sync
         const duration = audioBuffer.duration;
-        const startTime = Date.now();
+        const audioStartTime = audioContext.currentTime;
 
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           if (!isPlaying) {
             clearInterval(progressInterval);
+            progressInterval = null;
             return;
           }
 
-          const elapsed = (Date.now() - startTime) / 1000; // Convert to seconds
+          // Use AudioContext timeline instead of wall-clock time for accurate sync
+          const elapsed = audioContext.currentTime - audioStartTime;
           const progress = Math.min((elapsed / duration) * 100, 100);
 
           updateProgressLine(progress);
 
           if (progress >= 100 || elapsed >= duration) {
             clearInterval(progressInterval);
+            progressInterval = null;
             isPlaying = false;
             currentAudioSource = null;
             updatePlayStopButton();
@@ -1676,16 +1689,14 @@
         }, PROGRESS_UPDATE_INTERVAL_MS);
 
         source.onended = () => {
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
           isPlaying = false;
           currentAudioSource = null;
           updatePlayStopButton();
-          // Hide progress line when playback ends
-          // Check if new audio hasn't started before hiding
-          setTimeout(() => {
-            if (!isPlaying) {
-              hideProgressLine();
-            }
-          }, 100);
+          hideProgressLine();
         };
 
         source.start(0);
@@ -1701,6 +1712,10 @@
         if (currentAudioSource) {
           currentAudioSource.stop();
           currentAudioSource = null;
+        }
+        if (progressInterval) {
+          clearInterval(progressInterval);
+          progressInterval = null;
         }
         isPlaying = false;
         hideProgressLine();
