@@ -417,7 +417,7 @@
       </div>
 
       <!-- Display Controls -->
-      <div id="controls" class="mb-2 py-3 border-t border-b border-gray-600">
+      <div id="controls" class="py-3 border-t border-b border-gray-600">
         <button
           id="displayControlsToggle"
           class="flex items-center gap-2 text-gray-300 text-sm font-medium hover:text-gray-100 transition-colors cursor-pointer"
@@ -500,11 +500,111 @@
           </div>
         </div>
       </div>
+
+      <!-- Recording Controls -->
+      <div id="recordingControls" class="py-3 border-b border-gray-600">
+        <button
+          id="recordingControlsToggle"
+          class="flex items-center gap-2 text-gray-300 text-sm font-medium hover:text-gray-100 transition-colors cursor-pointer"
+          onclick="toggleRecordingControls()"
+          title="Click to expand/collapse"
+        >
+          <span>Recording Settings:</span>
+          <svg
+            id="recordingControlsChevron"
+            class="w-5 h-5 transform transition-transform duration-200"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        <div
+          id="recordingControlsContent"
+          class="hidden grid-cols-2 md:grid-cols-3 mt-3 gap-6 bg-gray-700/50 p-6 rounded-lg"
+        >
+          <div>
+            <label
+              for="recordingSampleRate"
+              class="block mb-2 text-sm font-medium text-gray-300"
+              >Sample Rate (Hz)</label
+            >
+            <select
+              id="recordingSampleRate"
+              class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+            >
+              <option value="8000">8000</option>
+              <option value="16000">16000</option>
+              <option value="22050">22050</option>
+              <option value="44100">44100</option>
+              <option value="48000">48000</option>
+              <option value="96000">96000</option>
+            </select>
+          </div>
+          <div>
+            <label
+              for="recordingChannelCount"
+              class="block mb-2 text-sm font-medium text-gray-300"
+              >Channel Count</label
+            >
+            <select
+              id="recordingChannelCount"
+              class="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
+            >
+              <option value="1">Mono (1)</option>
+              <option value="2">Stereo (2)</option>
+            </select>
+          </div>
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              id="recordingEchoCancellation"
+              class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+            />
+            <label
+              for="recordingEchoCancellation"
+              class="ml-2 text-sm font-medium text-gray-300"
+              >Echo Cancellation</label
+            >
+          </div>
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              id="recordingNoiseSuppression"
+              class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+            />
+            <label
+              for="recordingNoiseSuppression"
+              class="ml-2 text-sm font-medium text-gray-300"
+              >Noise Suppression</label
+            >
+          </div>
+          <div class="flex items-center">
+            <input
+              type="checkbox"
+              id="recordingAutoGainControl"
+              class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+            />
+            <label
+              for="recordingAutoGainControl"
+              class="ml-2 text-sm font-medium text-gray-300"
+              >Auto Gain Control</label
+            >
+          </div>
+        </div>
+      </div>
       <!---->
     </div>
 
     <!-- Audio File Links -->
-    <div class="w-full max-w-4xl mx-auto mt-6">
+    <div class="w-full max-w-4xl mx-auto mt-3">
       <div class="bg-gray-700/50 p-4 rounded-lg">
         <h4 class="text-gray-300 text-sm font-medium mb-3">
           Load Sample Audio Files: (you can also drag-and-drop your own audio
@@ -673,6 +773,15 @@
         colorScheme: "viridis",
         brightness: -75,
         contrast: 1.5,
+      };
+
+      // Recording Settings
+      let recordingSettings = {
+        sampleRate: 48000,
+        channelCount: 1,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
       };
 
       // YIN Algorithm Parameters
@@ -1257,6 +1366,26 @@
         }
       }
 
+      // --- RECORDING CONTROLS TOGGLE ---
+      function toggleRecordingControls() {
+        const recordingControls = document.getElementById(
+          "recordingControlsContent",
+        );
+        const chevron = document.getElementById("recordingControlsChevron");
+
+        if (recordingControls.classList.contains("hidden")) {
+          // Show controls
+          recordingControls.classList.remove("hidden");
+          recordingControls.classList.add("grid");
+          chevron.style.transform = "rotate(180deg)";
+        } else {
+          // Hide controls
+          recordingControls.classList.remove("grid");
+          recordingControls.classList.add("hidden");
+          chevron.style.transform = "rotate(0deg)";
+        }
+      }
+
       // --- EVENT LISTENERS ---
       window.addEventListener("load", () => {
         hide(controls);
@@ -1414,6 +1543,42 @@
         formatter: (v) => v.toFixed(1),
         onChange: redrawIfDataExists,
       });
+
+      // --- RECORDING SETTINGS CONTROLS ---
+      setupControl("recordingSampleRate", recordingSettings, "sampleRate", {
+        parser: (t) => parseInt(t.value, 10),
+      });
+
+      setupControl("recordingChannelCount", recordingSettings, "channelCount", {
+        parser: (t) => parseInt(t.value, 10),
+      });
+
+      setupControl(
+        "recordingEchoCancellation",
+        recordingSettings,
+        "echoCancellation",
+        {
+          parser: (t) => t.checked,
+        },
+      );
+
+      setupControl(
+        "recordingNoiseSuppression",
+        recordingSettings,
+        "noiseSuppression",
+        {
+          parser: (t) => t.checked,
+        },
+      );
+
+      setupControl(
+        "recordingAutoGainControl",
+        recordingSettings,
+        "autoGainControl",
+        {
+          parser: (t) => t.checked,
+        },
+      );
 
       // --- YIN PARAMETER EVENT LISTENERS ---
       function recomputeYin() {
@@ -1586,12 +1751,11 @@
 
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
-              channelCount: { ideal: 1 },
-              // TODO: make this into settings
-              sampleRate: { ideal: RECORDING_SAMPLE_RATE },
-              echoCancellation: false,
-              noiseSuppression: false,
-              autoGainControl: false,
+              channelCount: { ideal: recordingSettings.channelCount },
+              sampleRate: { ideal: recordingSettings.sampleRate },
+              echoCancellation: recordingSettings.echoCancellation,
+              noiseSuppression: recordingSettings.noiseSuppression,
+              autoGainControl: recordingSettings.autoGainControl,
               latency: 0, // Request lowest possible latency
             },
           });
