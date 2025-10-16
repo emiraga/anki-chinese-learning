@@ -674,7 +674,7 @@
 
       // --- UI CONSTANTS ---
       // Progress line update interval in milliseconds
-      const PROGRESS_UPDATE_INTERVAL_MS = 50;
+      const PROGRESS_UPDATE_INTERVAL_MS = 20;
       // Maximum vertical jump threshold as percentage of canvas height for YIN pitch chart
       const YIN_MAX_JUMP_THRESHOLD_PERCENT = 0.1;
       // Pitch point radius in pixels for YIN pitch visualization
@@ -1629,10 +1629,14 @@
         reader.readAsArrayBuffer(audioBlob);
       }
 
-      function playAudio(audioBuffer) {
+      async function playAudio(audioBuffer) {
         // Stop any currently playing audio and clear existing interval
         if (currentAudioSource) {
-          currentAudioSource.stop();
+          try {
+            currentAudioSource.stop();
+          } catch (e) {
+            // Ignore errors if source already stopped
+          }
         }
         if (progressInterval) {
           clearInterval(progressInterval);
@@ -1640,8 +1644,8 @@
         }
 
         // Resume AudioContext if suspended (required for some browsers)
-        if (audioContext.state === 'suspended') {
-          audioContext.resume();
+        if (audioContext.state === "suspended") {
+          await audioContext.resume();
         }
 
         const source = audioContext.createBufferSource();
@@ -1710,7 +1714,11 @@
 
       function stopPlayback() {
         if (currentAudioSource) {
-          currentAudioSource.stop();
+          try {
+            currentAudioSource.stop();
+          } catch (e) {
+            // Ignore errors if source already stopped
+          }
           currentAudioSource = null;
         }
         if (progressInterval) {
