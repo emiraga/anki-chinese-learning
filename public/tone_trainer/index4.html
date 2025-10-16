@@ -411,6 +411,39 @@
               ></div>
             </div>
 
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="yinOctaveJumpCorrection"
+                class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label
+                for="yinOctaveJumpCorrection"
+                class="ml-2 text-xs font-medium text-gray-300"
+                >Octave Jump Correction</label
+              >
+            </div>
+
+            <div>
+              <label
+                for="yinOctaveRatioThreshold"
+                class="block mb-2 text-xs font-medium text-gray-300"
+                >Octave Ratio Threshold</label
+              >
+              <input
+                type="range"
+                id="yinOctaveRatioThresholdSlider"
+                min="0.05"
+                max="0.5"
+                step="0.01"
+                class="w-full"
+              />
+              <div
+                class="text-xs text-gray-400 text-center mt-1"
+                id="yinOctaveRatioThresholdValue"
+              ></div>
+            </div>
+
             <!---->
           </div>
         </div>
@@ -815,6 +848,8 @@
         thresholdMethod: "adaptive", // Threshold method: "simple", "adaptive"
         powerConfidenceAdjust: true,
         minPowerThreshold: 0.02, // Power threshold below which confidence is reduced
+        octaveJumpCorrection: false, // Enable octave jump correction
+        octaveRatioThreshold: 0.1, // Tolerance for octave detection (0-1)
       };
 
       // --- ANALYSIS CONSTANTS (EDITED FOR HIGHER RESOLUTION) ---
@@ -1712,6 +1747,39 @@
         },
       );
 
+      setupControl(
+        "yinOctaveJumpCorrection",
+        yinParams,
+        "octaveJumpCorrection",
+        {
+          parser: (t) => t.checked,
+          onChange: () => {
+            // Only redraw, no need to recompute YIN
+            if (spectrogramData.length > 0) {
+              drawYinPitchChart();
+            }
+          },
+        },
+      );
+
+      setupControl(
+        "yinOctaveRatioThresholdSlider",
+        yinParams,
+        "octaveRatioThreshold",
+        {
+          eventType: "input",
+          parser: (t) => parseFloat(t.value),
+          displayElementId: "yinOctaveRatioThresholdValue",
+          formatter: (v) => v.toFixed(2),
+          onChange: () => {
+            // Only redraw, no need to recompute YIN
+            if (spectrogramData.length > 0) {
+              drawYinPitchChart();
+            }
+          },
+        },
+      );
+
       // --- CORE AUDIO FUNCTIONS ---
 
       /**
@@ -2246,6 +2314,58 @@
         canvasCtx.putImageData(imageData, 0, 0);
       }
 
+      /**
+       * Correct octave jumps in pitch data
+       * Detects when pitch suddenly doubles or halves and corrects it
+       */
+      function correctOctaveJumps(pitchData) {
+        if (pitchData.length === 0) return [];
+
+        const correctedData = [...pitchData];
+        const octaveRatioThreshold = yinParams.octaveRatioThreshold;
+
+        for (let i = 1; i < correctedData.length; i++) {
+          const current = correctedData[i];
+          const prev = correctedData[i - 1];
+
+          // Skip if either frame has no pitch
+          if (current.pitch === 0 || prev.pitch === 0) continue;
+
+          const ratio = current.pitch / prev.pitch;
+
+          // Check for octave jump up (ratio ~2.0)
+          if (Math.abs(ratio - 2.0) < octaveRatioThreshold) {
+            correctedData[i] = {
+              ...current,
+              pitch: current.pitch / 2,
+            };
+          }
+          // Check for octave jump down (ratio ~0.5)
+          else if (Math.abs(ratio - 0.5) < octaveRatioThreshold) {
+            correctedData[i] = {
+              ...current,
+              pitch: current.pitch * 2,
+            };
+          }
+          // Check for double octave jump up (ratio ~4.0)
+          else if (Math.abs(ratio - 4.0) < octaveRatioThreshold) {
+            correctedData[i] = {
+              ...current,
+              pitch: current.pitch / 4,
+            };
+          }
+          // Check for double octave jump down (ratio ~0.25)
+          else if (Math.abs(ratio - 0.25) < octaveRatioThreshold) {
+            correctedData[i] = {
+              ...current,
+              pitch: current.pitch * 4,
+            };
+          }
+        }
+
+        return correctedData;
+      }
+
       function drawYinPitchChart() {
         if (yinData.length === 0) return;
         if (!lastAudioBuffer) return;
@@ -2269,7 +2389,12 @@
         // Clear canvas with transparent background
         ctx.clearRect(0, 0, width, height);
 
-        const validPitches = yinData.filter((frame) => frame.pitch > 0);
+        // Apply octave jump correction to the data if enabled
+        const displayData = yinParams.octaveJumpCorrection
+          ? correctOctaveJumps(yinData)
+          : yinData;
+
+        const validPitches = displayData.filter((frame) => frame.pitch > 0);
         if (validPitches.length > 0) {
           const minPitch = Math.min(
             yinParams.minFreq,
@@ -2296,8 +2421,8 @@
           let lastValidY = -1;
           let lastValidAlpha = -1;
 
-          for (let i = 0; i < yinData.length; i++) {
-            const frame = yinData[i];
+          for (let i = 0; i < displayData.length; i++) {
+            const frame = displayData[i];
             if (frame.pitch > 0) {
               // Calculate actual time position of this YIN frame
               // Frame starts at sample: i * hopSize
