@@ -637,7 +637,9 @@
       let lastAudioBuffer = null;
       let currentAudioSource = null;
       let isPlaying = false;
-      let progressInterval = null;
+      let progressAnimationFrame = null;
+      let audioStartTime = null;
+      let audioDuration = null;
 
       // Audio recording sample rate (48000 Hz is high quality, standard for pro audio)
       const RECORDING_SAMPLE_RATE = 48000;
@@ -673,8 +675,6 @@
       const BUFFER_SIZE = 256;
 
       // --- UI CONSTANTS ---
-      // Progress line update interval in milliseconds
-      const PROGRESS_UPDATE_INTERVAL_MS = 20;
       // Maximum vertical jump threshold as percentage of canvas height for YIN pitch chart
       const YIN_MAX_JUMP_THRESHOLD_PERCENT = 0.1;
       // Pitch point radius in pixels for YIN pitch visualization
@@ -1630,7 +1630,7 @@
       }
 
       async function playAudio(audioBuffer) {
-        // Stop any currently playing audio and clear existing interval
+        // Stop any currently playing audio and clear existing animation frame
         if (currentAudioSource) {
           try {
             currentAudioSource.stop();
@@ -1638,9 +1638,9 @@
             // Ignore errors if source already stopped
           }
         }
-        if (progressInterval) {
-          clearInterval(progressInterval);
-          progressInterval = null;
+        if (progressAnimationFrame) {
+          cancelAnimationFrame(progressAnimationFrame);
+          progressAnimationFrame = null;
         }
 
         // Resume AudioContext if suspended (required for some browsers)
@@ -1652,50 +1652,52 @@
         source.buffer = audioBuffer;
         source.connect(audioContext.destination);
 
+        // Show progress line
+        showProgressLine();
+
+        // Schedule audio start slightly in the future for better sync
+        const startTime = audioContext.currentTime + 0.01;
+        audioDuration = audioBuffer.duration;
+        audioStartTime = startTime;
+
         currentAudioSource = source;
         isPlaying = true;
         updatePlayStopButton();
 
-        // Show progress line
-        showProgressLine();
-
-        // Start progress tracking using AudioContext time for accurate sync
-        const duration = audioBuffer.duration;
-        const audioStartTime = audioContext.currentTime;
-
-        progressInterval = setInterval(() => {
+        // Start progress tracking using requestAnimationFrame for smooth updates
+        function updateProgress() {
           if (!isPlaying) {
-            clearInterval(progressInterval);
-            progressInterval = null;
+            progressAnimationFrame = null;
             return;
           }
 
-          // Use AudioContext timeline instead of wall-clock time for accurate sync
+          // Use AudioContext timeline for accurate sync
           const elapsed = audioContext.currentTime - audioStartTime;
-          const progress = Math.min((elapsed / duration) * 100, 100);
+          const progress = Math.min((elapsed / audioDuration) * 100, 100);
 
           updateProgressLine(progress);
 
-          if (progress >= 100 || elapsed >= duration) {
-            clearInterval(progressInterval);
-            progressInterval = null;
+          if (progress >= 100 || elapsed >= audioDuration) {
             isPlaying = false;
             currentAudioSource = null;
             updatePlayStopButton();
             updateProgressLine(100);
+            progressAnimationFrame = null;
             // Keep progress line visible briefly after completion
             setTimeout(() => {
               if (!isPlaying) {
                 hideProgressLine();
               }
             }, 1000);
+          } else {
+            progressAnimationFrame = requestAnimationFrame(updateProgress);
           }
-        }, PROGRESS_UPDATE_INTERVAL_MS);
+        }
 
         source.onended = () => {
-          if (progressInterval) {
-            clearInterval(progressInterval);
-            progressInterval = null;
+          if (progressAnimationFrame) {
+            cancelAnimationFrame(progressAnimationFrame);
+            progressAnimationFrame = null;
           }
           isPlaying = false;
           currentAudioSource = null;
@@ -1703,7 +1705,11 @@
           hideProgressLine();
         };
 
-        source.start(0);
+        // Start the audio at the scheduled time
+        source.start(startTime);
+
+        // Start the progress animation
+        progressAnimationFrame = requestAnimationFrame(updateProgress);
       }
 
       function playLastRecording() {
@@ -1721,9 +1727,9 @@
           }
           currentAudioSource = null;
         }
-        if (progressInterval) {
-          clearInterval(progressInterval);
-          progressInterval = null;
+        if (progressAnimationFrame) {
+          cancelAnimationFrame(progressAnimationFrame);
+          progressAnimationFrame = null;
         }
         isPlaying = false;
         hideProgressLine();
