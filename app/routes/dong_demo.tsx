@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DongCharacterDisplay } from "~/components/DongCharacterDisplay";
+import MainFrame from "~/toolbar/frame";
 import type { DongCharacter } from "~/types/dong_character";
 
 export default function DongDemo() {
@@ -28,31 +29,39 @@ export default function DongDemo() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-gray-600">Loading character data...</div>
-      </div>
+      <MainFrame>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-xl text-gray-600">Loading character data...</div>
+        </div>
+      </MainFrame>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-red-600">Error: {error}</div>
-      </div>
+      <MainFrame>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-xl text-red-600">Error: {error}</div>
+        </div>
+      </MainFrame>
     );
   }
 
   if (!character) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-gray-600">No character data found</div>
-      </div>
+      <MainFrame>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-xl text-gray-600">No character data found</div>
+        </div>
+      </MainFrame>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <DongCharacterDisplay character={character} />
-    </div>
+    <MainFrame>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <DongCharacterDisplay character={character} />
+      </div>
+    </MainFrame>
   );
 }
