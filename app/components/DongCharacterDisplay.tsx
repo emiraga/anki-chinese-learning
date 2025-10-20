@@ -125,9 +125,10 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             );
             const mainCharData =
               character.data || character.images.find((img) => img.data)?.data;
-            const componentData =
-              componentChar?.data ||
-              componentChar?.images.find((img) => img.data)?.data;
+
+            // Get the stroke indices for this component from fragments
+            const mainCharImage = character.images.find((img) => img.data);
+            const fragmentIndices = mainCharImage?.fragments?.[index] || [];
 
             // Get fill color based on component type
             const getFillColor = () => {
@@ -145,7 +146,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               >
                 {/* Component character with colored overlay */}
                 <div className="relative w-24 h-24 flex-shrink-0">
-                  {mainCharData && componentData ? (
+                  {mainCharData && fragmentIndices.length > 0 ? (
                     <svg
                       viewBox="0 0 1024 1024"
                       className="w-full h-full"
@@ -162,12 +163,12 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                           />
                         ))}
                       </g>
-                      {/* Foreground: component in color */}
+                      {/* Foreground: component strokes in color */}
                       <g transform="scale(1, -1) translate(0, -1024)">
-                        {componentData.strokes.map((stroke, strokeIndex) => (
+                        {fragmentIndices.map((strokeIndex) => (
                           <path
                             key={`fg-${strokeIndex}`}
-                            d={stroke}
+                            d={mainCharData.strokes[strokeIndex]}
                             fill={getFillColor()}
                             stroke="none"
                           />
