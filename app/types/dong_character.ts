@@ -123,4 +123,15 @@ export interface DongCharacter {
     strokes: string[];
     medians: number[][][];
   };
+  componentIn?: Array<{
+    char: string;
+    components: Array<{
+      character: string;
+      type: string[];
+    }>;
+    statistics?: {
+      bookCharCount?: number;
+    };
+    isVerified?: boolean;
+  }>;
 }

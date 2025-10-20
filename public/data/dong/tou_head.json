@@ -1,0 +1,1792 @@
+{
+  "_id": { "_str": "5f523affde54193ed8734ba3" },
+  "char": "頭",
+  "codepoint": "U+982D",
+  "strokeCount": 16,
+  "pinyinFrequencies": [
+    { "pinyin": "tóu", "count": 3058 },
+    { "pinyin": "tou", "count": 715 }
+  ],
+  "simpVariants": ["头"],
+  "sources": [
+    "academia-sinica",
+    "makemeahanzi",
+    "unicode",
+    "baxter-sagart",
+    "dong-chinese",
+    "cedict"
+  ],
+  "components": [
+    {
+      "character": "頁",
+      "type": ["iconic"],
+      "hint": "Depicts a head on top of a person."
+    },
+    { "character": "豆", "type": ["sound"], "hint": "" }
+  ],
+  "images": [
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_0.png",
+      "source": "academia-sinica",
+      "description": "蔡侯殘鼎蓋(金)春秋晚期",
+      "type": "Bronze",
+      "era": "Late Spring and Autumn (~500 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_1.png",
+      "source": "academia-sinica",
+      "description": "望2.49(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_2.png",
+      "source": "academia-sinica",
+      "description": "說文‧頁部",
+      "type": "Seal",
+      "era": "Shuowen (~100 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_3.png",
+      "source": "academia-sinica",
+      "description": "睡.日甲72背(隸)秦",
+      "type": "Clerical",
+      "era": "Qin dynasty (221-206 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_4.png",
+      "source": "academia-sinica",
+      "description": "居延簡甲132(隸)西漢",
+      "type": "Clerical",
+      "era": "Western Han dynasty (202 BC-9 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_5.png",
+      "source": "academia-sinica",
+      "description": "禮器碑陰(隸)東漢",
+      "type": "Clerical",
+      "era": "Eastern Han dynasty (25-220 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_6.png",
+      "source": "academia-sinica",
+      "description": "武威醫簡66(隸)東漢",
+      "type": "Clerical",
+      "era": "Eastern Han dynasty (25-220 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%AD_7.png",
+      "source": "academia-sinica",
+      "description": "吳太平二年鏡(隸)孫吳",
+      "type": "Clerical",
+      "era": "Wu (Three Kingdoms: 222-280 AD)"
+    },
+    {
+      "data": {
+        "strokes": [
+          "M 228 727 Q 191 718 218 703 Q 263 679 319 697 Q 374 710 431 724 Q 456 731 460 735 Q 469 744 464 752 Q 457 764 426 770 Q 395 774 365 760 Q 335 750 304 741 Q 270 732 228 727 Z",
+          "M 212 562 Q 202 566 181 566 Q 169 567 167 563 Q 161 556 171 542 Q 199 499 223 422 Q 227 400 244 385 Q 263 366 266 382 Q 267 392 267 405 L 260 438 Q 241 513 237 536 C 233 556 233 556 212 562 Z",
+          "M 424 461 Q 449 527 477 547 Q 493 563 479 580 Q 406 634 359 603 Q 296 582 212 562 C 183 555 208 527 237 536 Q 243 539 371 569 Q 386 573 392 567 Q 399 560 397 546 Q 388 504 377 470 C 368 441 413 433 424 461 Z",
+          "M 267 405 Q 277 415 430 435 Q 440 436 441 445 Q 441 451 424 461 L 377 470 Q 371 470 368 468 Q 308 449 260 438 C 231 431 241 391 267 405 Z",
+          "M 198 318 Q 223 264 249 246 Q 261 240 272 250 Q 279 259 281 274 Q 278 317 216 348 Q 203 355 195 355 Q 189 355 189 344 Q 188 334 198 318 Z",
+          "M 364 225 Q 392 273 408 302 Q 415 317 430 337 Q 443 347 435 357 Q 426 372 399 389 Q 386 398 371 392 Q 362 388 368 378 Q 378 348 339 240 Q 332 227 331 215 C 327 185 349 199 364 225 Z",
+          "M 331 215 Q 252 196 162 172 Q 143 166 108 168 Q 95 167 92 157 Q 89 144 99 134 Q 121 118 155 96 Q 165 93 179 101 Q 215 128 412 206 Q 440 216 460 231 Q 473 238 474 248 Q 470 254 456 252 Q 413 239 364 225 L 331 215 Z",
+          "M 680 723 Q 767 741 857 757 Q 906 767 914 774 Q 923 781 919 789 Q 912 799 886 807 Q 864 813 761 782 Q 662 758 565 750 Q 531 746 555 729 Q 591 705 645 717 L 680 723 Z",
+          "M 643 593 Q 647 599 651 604 Q 667 620 684 644 Q 691 654 704 666 Q 719 676 712 686 Q 705 702 680 723 C 657 743 640 747 645 717 Q 652 693 616 608 Q 609 598 606 588 C 596 560 626 568 643 593 Z",
+          "M 574 585 Q 574 586 573 586 Q 564 593 552 597 Q 543 601 533 597 Q 527 593 532 582 Q 563 495 548 335 Q 529 263 563 220 Q 573 210 582 220 Q 588 229 590 239 L 593 270 Q 594 286 594 308 Q 593 339 593 365 L 593 383 Q 593 428 593 459 L 593 480 Q 593 519 595 559 C 596 570 596 570 574 585 Z",
+          "M 789 257 Q 789 244 798 230 Q 813 202 822 202 Q 837 203 852 237 Q 868 262 865 284 Q 837 506 875 563 Q 885 578 877 587 Q 852 609 807 629 Q 792 635 771 627 Q 737 612 643 593 L 606 588 Q 590 588 574 585 C 544 581 565 556 595 559 Q 602 559 610 560 Q 694 579 754 589 Q 776 593 782 582 Q 798 563 798 498 Q 801 321 792 280 L 789 257 Z",
+          "M 593 459 Q 623 452 717 474 Q 720 475 726 476 Q 742 480 744 483 Q 751 489 747 495 Q 741 504 719 508 Q 697 511 674 501 Q 641 486 593 480 C 563 476 563 464 593 459 Z",
+          "M 593 365 Q 621 353 696 371 Q 712 375 733 380 Q 749 384 752 387 Q 759 393 755 399 Q 749 408 727 412 Q 705 416 682 405 Q 664 398 644 393 Q 622 387 596 384 Q 593 384 593 383 C 564 376 565 375 593 365 Z",
+          "M 590 239 Q 651 251 789 257 C 811 258 811 258 792 280 Q 788 286 778 292 Q 765 299 738 294 Q 657 278 593 270 C 563 266 561 233 590 239 Z",
+          "M 602 199 Q 584 126 394 0 Q 372 -13 399 -12 Q 475 -12 613 108 Q 616 115 670 159 Q 680 169 679 179 Q 678 192 653 202 Q 626 215 614 213 Q 607 212 602 199 Z",
+          "M 752 159 Q 801 98 856 10 Q 869 -12 883 -20 Q 892 -23 901 -14 Q 916 -2 911 44 Q 908 99 759 190 Q 750 197 746 184 Q 743 171 752 159 Z"
+        ],
+        "medians": [
+          [
+            [220, 716],
+            [279, 712],
+            [394, 743],
+            [453, 746]
+          ],
+          [
+            [176, 556],
+            [212, 524],
+            [255, 385]
+          ],
+          [
+            [221, 562],
+            [246, 554],
+            [383, 592],
+            [413, 585],
+            [436, 562],
+            [408, 489],
+            [386, 475]
+          ],
+          [
+            [271, 413],
+            [282, 428],
+            [351, 444],
+            [377, 449],
+            [432, 444]
+          ],
+          [
+            [198, 346],
+            [242, 295],
+            [258, 263]
+          ],
+          [
+            [380, 383],
+            [401, 348],
+            [354, 237],
+            [335, 220]
+          ],
+          [
+            [107, 152],
+            [163, 135],
+            [468, 245]
+          ],
+          [
+            [557, 741],
+            [580, 734],
+            [618, 734],
+            [855, 782],
+            [908, 784]
+          ],
+          [
+            [651, 714],
+            [676, 682],
+            [634, 609],
+            [612, 591]
+          ],
+          [
+            [540, 589],
+            [560, 567],
+            [570, 536],
+            [574, 409],
+            [567, 292],
+            [573, 227]
+          ],
+          [
+            [580, 583],
+            [602, 573],
+            [615, 574],
+            [783, 608],
+            [803, 601],
+            [823, 581],
+            [831, 556],
+            [825, 486],
+            [830, 292],
+            [823, 213]
+          ],
+          [
+            [598, 464],
+            [687, 487],
+            [736, 491]
+          ],
+          [
+            [596, 379],
+            [609, 373],
+            [630, 375],
+            [708, 394],
+            [744, 395]
+          ],
+          [
+            [594, 246],
+            [606, 257],
+            [749, 276],
+            [772, 274],
+            [778, 264]
+          ],
+          [
+            [662, 177],
+            [631, 173],
+            [593, 127],
+            [527, 68],
+            [463, 24],
+            [403, -3]
+          ],
+          [
+            [757, 178],
+            [860, 70],
+            [881, 32],
+            [888, -4]
+          ]
+        ]
+      },
+      "fragments": [
+        [7, 8, 9, 10, 11, 12, 13, 14, 15],
+        [0, 1, 2, 3, 4, 5, 6]
+      ],
+      "source": "makemeahanzi",
+      "description": "楷書",
+      "type": "Regular",
+      "era": "Modern"
+    }
+  ],
+  "shuowen": "《說文》：“頭，首也。从頁，豆聲。”",
+  "variants": [{ "char": "頭", "parts": "豆頁", "source": "academia-sinica" }],
+  "gloss": "head",
+  "oldPronunciations": [
+    {
+      "pinyin": "tóu",
+      "MC": "duw",
+      "OC": "*[m-t]ˤo ",
+      "gloss": "head",
+      "source": "baxter-sagart"
+    }
+  ],
+  "hint": "Phonosemantic compound. 頁 represents the meaning and 豆 represents the sound. ",
+  "statistics": {
+    "hskLevel": 10,
+    "movieWordCount": 11582,
+    "movieWordCountPercent": 0.00034525194807114994,
+    "movieWordRank": 307,
+    "movieWordContexts": 4379,
+    "movieWordContextsPercent": 0.7014255966682684,
+    "bookWordCount": 5670592,
+    "bookWordCountPercent": 0.0003424258213790004,
+    "bookWordRank": 343,
+    "movieCharCount": 49069,
+    "movieCharCountPercent": 0.0010475629979374737,
+    "movieCharRank": 168,
+    "movieCharContexts": 6092,
+    "movieCharContextsPercent": 0.9758129104597149,
+    "bookCharCount": 274911,
+    "bookCharCountPercent": 0.0014206991815539458,
+    "bookCharRank": 147,
+    "topWords": [
+      {
+        "word": "头",
+        "share": 0.22648535311938187,
+        "trad": "頭",
+        "gloss": "head"
+      },
+      {
+        "word": "头发",
+        "share": 0.06046581736311958,
+        "trad": "頭髮",
+        "gloss": "hair (on the head)"
+      },
+      {
+        "word": "回头",
+        "share": 0.02752061768303903,
+        "trad": "回頭",
+        "gloss": "to turn round"
+      },
+      {
+        "word": "镜头",
+        "share": 0.026727520810456942,
+        "trad": "鏡頭",
+        "gloss": "camera lens"
+      },
+      {
+        "word": "石头",
+        "share": 0.02344180946773985,
+        "trad": "石頭",
+        "gloss": "stone"
+      },
+      {
+        "word": "头儿",
+        "share": 0.02121504642160428,
+        "trad": "頭兒",
+        "gloss": "leader"
+      },
+      {
+        "word": "头脑",
+        "share": 0.015595522561022989,
+        "trad": "頭腦",
+        "gloss": "brains"
+      },
+      {
+        "word": "街头",
+        "share": 0.014739687911640136,
+        "trad": "街頭",
+        "gloss": "street"
+      },
+      {
+        "word": "码头",
+        "share": 0.014580489195783928,
+        "trad": "碼頭",
+        "gloss": "dock"
+      },
+      {
+        "word": "骨头",
+        "share": 0.014264337272213165,
+        "trad": "骨頭",
+        "gloss": "bone"
+      },
+      {
+        "word": "点头",
+        "share": 0.013980505636074152,
+        "trad": "點頭",
+        "gloss": "to nod"
+      },
+      {
+        "word": "老头",
+        "share": 0.011725266599624373,
+        "trad": "老頭",
+        "gloss": "old fellow"
+      },
+      {
+        "word": "头痛",
+        "share": 0.010639485559743391,
+        "trad": "頭痛",
+        "gloss": "to have a headache"
+      },
+      {
+        "word": "舌头",
+        "share": 0.010082096480708264,
+        "trad": "舌頭",
+        "gloss": "tongue"
+      },
+      {
+        "word": "摇头",
+        "share": 0.009797827194457046,
+        "trad": "搖頭",
+        "gloss": "to shake one's head"
+      },
+      {
+        "word": "龙头",
+        "share": 0.009499120336400931,
+        "trad": "龍頭",
+        "gloss": "faucet"
+      },
+      {
+        "word": "念头",
+        "share": 0.009006046351598416,
+        "trad": "念頭",
+        "gloss": "thought"
+      },
+      {
+        "word": "一头",
+        "share": 0.008887387787037996,
+        "trad": "一頭",
+        "gloss": "one head"
+      },
+      {
+        "word": "头疼",
+        "share": 0.008870640650935341,
+        "trad": "頭疼",
+        "gloss": "headache"
+      },
+      {
+        "word": "势头",
+        "share": 0.008621684637288424,
+        "trad": "勢頭",
+        "gloss": "power"
+      },
+      {
+        "word": "抬头",
+        "share": 0.008477196984715751,
+        "trad": "抬頭",
+        "gloss": "to gain ground"
+      },
+      {
+        "word": "开头",
+        "share": 0.008286454069520038,
+        "trad": "開頭",
+        "gloss": "beginning"
+      },
+      {
+        "word": "丫头",
+        "share": 0.008077678552474517,
+        "trad": "丫頭",
+        "gloss": "girl"
+      },
+      {
+        "word": "枕头",
+        "share": 0.007914842936965117,
+        "trad": "枕頭",
+        "gloss": "pillow"
+      },
+      {
+        "word": "尽头",
+        "share": 0.007784727666945334,
+        "trad": "盡頭",
+        "gloss": "end"
+      }
+    ],
+    "pinyinFrequency": 3058
+  },
+  "customSources": [
+    "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E9%A0%AD"
+  ],
+  "isVerified": true,
+  "chars": [
+    {
+      "_id": { "_str": "5f523affde54193ed8733fbc" },
+      "char": "豆",
+      "codepoint": "U+8C46",
+      "strokeCount": 7,
+      "pinyinFrequencies": [{ "pinyin": "dòu", "count": 127 }],
+      "sources": [
+        "academia-sinica",
+        "makemeahanzi",
+        "unicode",
+        "baxter-sagart",
+        "dong-chinese"
+      ],
+      "components": [],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_0.png",
+          "source": "academia-sinica",
+          "description": "乙7978反(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_1.png",
+          "source": "academia-sinica",
+          "description": "後1.6.4(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_2.png",
+          "source": "academia-sinica",
+          "description": "甲1613(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_3.png",
+          "source": "academia-sinica",
+          "description": "宰甫卣(金)商代晚期",
+          "type": "Bronze",
+          "era": "Late Shang dynasty (~1100 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_4.png",
+          "source": "academia-sinica",
+          "description": "豆閉簋(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_5.png",
+          "source": "academia-sinica",
+          "description": "周生豆(金)西周晚期",
+          "type": "Bronze",
+          "era": "Late Western Zhou (~800 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_6.png",
+          "source": "academia-sinica",
+          "description": "散氏盤(金)西周晚期",
+          "type": "Bronze",
+          "era": "Late Western Zhou (~800 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_7.png",
+          "source": "academia-sinica",
+          "description": "信2.012(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_8.png",
+          "source": "academia-sinica",
+          "description": "說文古文",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_9.png",
+          "source": "academia-sinica",
+          "description": "說文‧豆部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_10.png",
+          "source": "academia-sinica",
+          "description": "睡虎地簡33.27(隸)秦",
+          "type": "Clerical",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_11.png",
+          "source": "academia-sinica",
+          "description": "武威簡.有司9(隸)西漢",
+          "type": "Clerical",
+          "era": "Western Han dynasty (202 BC-9 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E8%B1%86_12.png",
+          "source": "academia-sinica",
+          "description": "熹.儀禮.公食(隸)東漢",
+          "type": "Clerical",
+          "era": "Eastern Han dynasty (25-220 AD)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 357 744 Q 309 735 344 714 Q 401 683 471 702 Q 559 720 651 739 Q 693 749 699 755 Q 711 765 704 777 Q 694 792 657 801 Q 623 807 534 778 Q 444 753 357 744 Z",
+              "M 330 555 Q 314 558 294 558 Q 281 561 277 554 Q 271 547 282 530 Q 315 484 341 402 Q 348 377 365 363 Q 387 341 391 359 Q 392 365 392 373 L 387 412 Q 366 488 360 518 C 354 547 353 551 330 555 Z",
+              "M 673 442 Q 709 511 741 528 Q 762 547 746 569 Q 728 585 671 616 Q 650 628 557 594 Q 388 557 330 555 C 300 553 330 513 360 518 Q 366 518 603 564 Q 628 570 639 559 Q 646 550 642 534 Q 629 491 615 456 C 604 428 659 416 673 442 Z",
+              "M 392 373 Q 393 374 398 374 Q 486 393 678 410 Q 690 411 691 421 Q 691 428 673 442 L 615 456 Q 609 457 604 455 Q 486 427 387 412 C 357 407 362 368 392 373 Z",
+              "M 346 238 Q 362 211 379 181 Q 389 163 405 160 Q 415 157 425 169 Q 434 182 433 215 Q 432 234 409 255 Q 384 271 354 288 Q 341 295 333 295 Q 326 292 324 279 Q 325 266 346 238 Z",
+              "M 562 122 Q 644 239 689 287 Q 708 300 699 311 Q 686 327 657 341 Q 629 354 602 349 Q 586 343 593 321 Q 600 306 596 285 Q 577 221 532 118 C 520 90 545 97 562 122 Z",
+              "M 532 118 Q 528 119 523 118 Q 339 99 123 78 Q 98 77 116 55 Q 152 19 198 29 Q 513 108 937 87 Q 961 87 967 97 Q 974 110 954 127 Q 882 182 834 163 Q 728 147 562 122 L 532 118 Z"
+            ],
+            "medians": [
+              [
+                [343, 727],
+                [427, 724],
+                [633, 769],
+                [691, 768]
+              ],
+              [
+                [287, 547],
+                [311, 533],
+                [332, 506],
+                [378, 364]
+              ],
+              [
+                [343, 550],
+                [371, 539],
+                [558, 572],
+                [595, 586],
+                [652, 588],
+                [664, 582],
+                [691, 550],
+                [661, 485],
+                [624, 460]
+              ],
+              [
+                [394, 380],
+                [411, 397],
+                [601, 429],
+                [662, 427],
+                [681, 421]
+              ],
+              [
+                [336, 286],
+                [392, 226],
+                [409, 179]
+              ],
+              [
+                [609, 331],
+                [629, 316],
+                [640, 295],
+                [556, 138],
+                [539, 125]
+              ],
+              [
+                [120, 66],
+                [177, 55],
+                [460, 94],
+                [851, 129],
+                [883, 127],
+                [954, 104]
+              ]
+            ]
+          },
+          "fragments": [],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "hint": "Pictograph of a stemmed bowl. Based on the original meaning \"vessel with a neck\". The current meaning is a phonetic loan.",
+      "shuowen": "《說文》：“豆，古食肉器也。从口，象形。，古文豆。”",
+      "variants": [
+        { "char": "豆", "parts": "豆", "source": "academia-sinica" }
+      ],
+      "gloss": "bean",
+      "oldPronunciations": [
+        {
+          "pinyin": "dòu",
+          "MC": "duwH",
+          "OC": "*[N.t]ˤo-s ",
+          "gloss": "bean",
+          "source": "baxter-sagart"
+        },
+        {
+          "pinyin": "dòu",
+          "MC": "duwH",
+          "OC": "*[d]ˤok-s ",
+          "gloss": "vessel with a neck",
+          "source": "baxter-sagart"
+        }
+      ],
+      "statistics": {
+        "hskLevel": 4,
+        "movieWordCount": 409,
+        "movieWordCountPercent": 0.000012192026140657945,
+        "movieWordRank": 4660,
+        "movieWordContexts": 228,
+        "movieWordContextsPercent": 0.03652090341182124,
+        "bookWordCount": 853536,
+        "bookWordCountPercent": 0.00005154184358115457,
+        "bookWordRank": 2678,
+        "movieCharCount": 2056,
+        "movieCharCountPercent": 0.00004389307961766993,
+        "movieCharRank": 1489,
+        "movieCharContexts": 984,
+        "movieCharContextsPercent": 0.15761653051417587,
+        "bookCharCount": 9179,
+        "bookCharCountPercent": 0.000047435707510735,
+        "bookCharRank": 1793,
+        "topWords": [
+          {
+            "word": "豆",
+            "share": 0.23173375823252035,
+            "trad": "豆",
+            "gloss": "bean"
+          },
+          {
+            "word": "土豆",
+            "share": 0.14343765842311823,
+            "trad": "土豆",
+            "gloss": "potato"
+          },
+          {
+            "word": "豆腐",
+            "share": 0.10765993220475675,
+            "trad": "豆腐",
+            "gloss": "tofu"
+          },
+          {
+            "word": "大豆",
+            "share": 0.09124372175985355,
+            "trad": "大豆",
+            "gloss": "soybean"
+          },
+          {
+            "word": "豆子",
+            "share": 0.0798458368489794,
+            "trad": "豆子",
+            "gloss": "bean"
+          },
+          {
+            "word": "豌豆",
+            "share": 0.033126666150695976,
+            "trad": "豌豆",
+            "gloss": "pea (Pisum sativum)"
+          },
+          {
+            "word": "豆浆",
+            "share": 0.025794891739520737,
+            "trad": "豆漿",
+            "gloss": "soy milk"
+          },
+          {
+            "word": "红豆",
+            "share": 0.022051522815052578,
+            "trad": "紅豆",
+            "gloss": "azuki bean"
+          },
+          {
+            "word": "豆瓣",
+            "share": 0.021810633552344583,
+            "trad": "豆瓣",
+            "gloss": "Douban, PRC social networking website"
+          },
+          {
+            "word": "绿豆",
+            "share": 0.021522020036207797,
+            "trad": "綠豆",
+            "gloss": "mung bean"
+          },
+          {
+            "word": "土豆泥",
+            "share": 0.02108959036696241,
+            "trad": "土豆泥",
+            "gloss": "mashed potato"
+          },
+          {
+            "word": "黄豆",
+            "share": 0.017435154700384405,
+            "trad": "黃豆",
+            "gloss": "soybean"
+          },
+          {
+            "word": "咖啡豆",
+            "share": 0.013286528108524173,
+            "trad": "咖啡豆",
+            "gloss": "coffee beans"
+          },
+          {
+            "word": "豆油",
+            "share": 0.013210174422394211,
+            "trad": "豆油",
+            "gloss": "soy bean oil"
+          },
+          {
+            "word": "豆奶",
+            "share": 0.012483140155744633,
+            "trad": "豆奶",
+            "gloss": "soy milk"
+          },
+          {
+            "word": "豆芽",
+            "share": 0.010193588100653968,
+            "trad": "豆芽",
+            "gloss": "bean sprout"
+          },
+          {
+            "word": "豆类",
+            "share": 0.009840212162595462,
+            "trad": "豆類",
+            "gloss": "bean"
+          },
+          {
+            "word": "豆沙",
+            "share": 0.008031491325521702,
+            "trad": "豆沙",
+            "gloss": "sweetened bean paste"
+          },
+          {
+            "word": "豆角",
+            "share": 0.006458777033136676,
+            "trad": "豆角",
+            "gloss": "string bean"
+          },
+          {
+            "word": "扁豆",
+            "share": 0.005414631274861146,
+            "trad": "扁豆",
+            "gloss": "haricot"
+          },
+          {
+            "word": "臭豆腐",
+            "share": 0.005382110753988655,
+            "trad": "臭豆腐",
+            "gloss": "stinky tofu"
+          },
+          {
+            "word": "青豆",
+            "share": 0.005115351149897052,
+            "trad": "青豆",
+            "gloss": "green soybean"
+          },
+          {
+            "word": "肉豆蔻",
+            "share": 0.004983912512546733,
+            "trad": "肉豆蔻",
+            "gloss": "mace"
+          },
+          {
+            "word": "小豆",
+            "share": 0.004921537462324718,
+            "trad": "小豆",
+            "gloss": "azuki bean"
+          }
+        ],
+        "pinyinFrequency": 127
+      },
+      "customSources": [
+        "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E8%B1%86"
+      ],
+      "isVerified": true,
+      "originalMeaning": "vessel with a neck"
+    },
+    {
+      "_id": { "_str": "5f523affde54193ed8734b77" },
+      "char": "頁",
+      "codepoint": "U+9801",
+      "strokeCount": 9,
+      "pinyinFrequencies": [{ "pinyin": "yè", "count": 35 }],
+      "simpVariants": ["页"],
+      "sources": ["academia-sinica", "makemeahanzi", "unicode", "dong-chinese"],
+      "components": [
+        {
+          "character": "首",
+          "type": ["iconic"],
+          "hint": null,
+          "isGlyphChanged": true
+        },
+        { "character": "卩", "type": ["iconic"], "hint": null }
+      ],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_0.png",
+          "source": "academia-sinica",
+          "description": "乙8780(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_1.png",
+          "source": "academia-sinica",
+          "description": "坊間2.198(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_2.png",
+          "source": "academia-sinica",
+          "description": "卯簋蓋(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_3.png",
+          "source": "academia-sinica",
+          "description": "包牘1(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_4.png",
+          "source": "academia-sinica",
+          "description": "信2.017(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_5.png",
+          "source": "academia-sinica",
+          "description": "仰25.22(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_6.png",
+          "source": "academia-sinica",
+          "description": "說文‧頁部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_7.png",
+          "source": "academia-sinica",
+          "description": "曹全碑陰(隸)東漢",
+          "type": "Clerical",
+          "era": "Eastern Han dynasty (25-220 AD)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 486 755 Q 501 764 639 768 Q 673 769 877 770 Q 898 770 903 779 Q 909 791 892 805 Q 828 856 786 835 Q 591 802 209 759 Q 187 758 203 739 Q 218 724 236 719 Q 258 712 275 717 Q 354 739 445 750 L 486 755 Z",
+              "M 431 603 Q 450 625 464 641 Q 516 704 526 710 Q 542 725 528 737 Q 512 749 486 755 C 457 762 441 766 445 750 Q 444 747 448 741 Q 457 717 403 600 C 390 573 411 580 431 603 Z",
+              "M 358 597 Q 349 604 337 608 Q 327 612 315 608 Q 308 604 313 590 Q 346 497 329 317 Q 314 230 331 198 Q 337 188 345 177 Q 355 164 367 177 Q 376 190 378 205 L 381 240 Q 381 250 382 330 L 382 356 Q 382 411 383 450 L 383 476 Q 384 537 385 544 Q 386 557 386 566 C 386 580 384 581 358 597 Z",
+              "M 662 230 Q 663 220 672 209 Q 688 176 698 178 Q 714 179 731 216 Q 747 244 746 268 Q 733 359 734 503 Q 733 545 756 580 Q 766 596 758 608 Q 728 633 677 656 Q 661 662 635 652 Q 560 622 431 603 L 403 600 Q 378 599 358 597 C 328 595 357 560 386 566 Q 390 566 394 567 Q 520 597 611 611 Q 642 617 653 600 Q 669 579 670 506 Q 674 299 664 259 Q 663 258 663 256 L 662 230 Z",
+              "M 383 450 Q 393 447 410 449 Q 522 468 605 479 Q 630 482 621 496 Q 611 512 583 517 Q 562 520 383 476 C 354 469 354 456 383 450 Z",
+              "M 382 330 Q 392 327 410 329 Q 525 345 609 355 Q 634 358 625 372 Q 615 388 588 393 Q 563 397 519 387 Q 446 371 382 356 C 353 349 353 336 382 330 Z",
+              "M 378 205 Q 468 220 662 230 C 692 232 686 237 663 256 Q 656 262 646 269 Q 630 279 600 273 Q 479 251 381 240 C 351 237 348 200 378 205 Z",
+              "M 399 159 Q 384 89 199 -39 Q 174 -54 204 -52 Q 276 -55 419 63 Q 420 69 476 113 Q 489 125 487 136 Q 486 151 457 162 Q 426 177 412 174 Q 403 173 399 159 Z",
+              "M 615 132 Q 672 65 738 -29 Q 754 -54 770 -61 Q 780 -64 789 -53 Q 805 -40 797 11 Q 793 77 621 167 Q 611 174 607 160 Q 604 145 615 132 Z"
+            ],
+            "medians": [
+              [
+                [206, 749],
+                [258, 740],
+                [546, 783],
+                [804, 805],
+                [851, 799],
+                [891, 785]
+              ],
+              [
+                [452, 747],
+                [483, 718],
+                [426, 616],
+                [409, 611]
+              ],
+              [
+                [323, 599],
+                [341, 580],
+                [355, 552],
+                [359, 415],
+                [351, 250],
+                [356, 183]
+              ],
+              [
+                [365, 594],
+                [400, 583],
+                [637, 632],
+                [661, 631],
+                [698, 600],
+                [707, 580],
+                [701, 518],
+                [706, 262],
+                [698, 190]
+              ],
+              [
+                [390, 457],
+                [401, 466],
+                [563, 495],
+                [610, 490]
+              ],
+              [
+                [389, 337],
+                [407, 346],
+                [559, 371],
+                [591, 373],
+                [614, 366]
+              ],
+              [
+                [382, 210],
+                [396, 225],
+                [595, 250],
+                [639, 250],
+                [651, 237]
+              ],
+              [
+                [467, 133],
+                [432, 130],
+                [360, 51],
+                [303, 7],
+                [209, -43]
+              ],
+              [
+                [619, 153],
+                [704, 77],
+                [747, 29],
+                [774, -44]
+              ]
+            ]
+          },
+          "fragments": [
+            [0, 1, 2, 3, 4, 5, 6],
+            [7, 8]
+          ],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "hint": "Pictograph of a head (首) on top of a person (卩). Means \"head\" when pronounced xié. Has unrelated meaning \"leaf\" when pronounced yè, due to this character being adopted as a variant form of 葉.",
+      "shuowen": "《說文》：“頁，頭也。从，从儿。古文如此。者首字也。”",
+      "comments": [
+        {
+          "source": "academia-sinica",
+          "text": "李孝定《甲骨文字集釋》：“古文頁𦣻首當為一字，頁象頭及身，𦣻但象頭，首象頭及其上髮小異耳。”按：清嚴可均等認為“𦣻者䭫首字也”六字是後人所贅入的校語。"
+        }
+      ],
+      "variants": [
+        { "char": "頁", "parts": "頁", "source": "academia-sinica" }
+      ],
+      "gloss": "(head), page",
+      "statistics": {
+        "hskLevel": 10,
+        "movieWordCount": 1114,
+        "movieWordCountPercent": 0.000033207621321987657,
+        "movieWordRank": 2217,
+        "movieWordContexts": 679,
+        "movieWordContextsPercent": 0.10876181323081852,
+        "bookWordCount": 903856,
+        "bookWordCountPercent": 0.000054580479993682803,
+        "bookWordRank": 2515,
+        "movieCharCount": 1442,
+        "movieCharCountPercent": 0.00003078493229994165,
+        "movieCharRank": 1722,
+        "movieCharContexts": 854,
+        "movieCharContextsPercent": 0.13679320839340062,
+        "bookCharCount": 24861,
+        "bookCharCountPercent": 0.0001284779523286178,
+        "bookCharRank": 1128,
+        "topWords": [
+          {
+            "word": "页",
+            "share": 0.7599809617890505,
+            "trad": "頁",
+            "gloss": "page"
+          },
+          {
+            "word": "页面",
+            "share": 0.07536254032916485,
+            "trad": "頁面",
+            "gloss": "page"
+          },
+          {
+            "word": "首页",
+            "share": 0.045659822355519665,
+            "trad": "首頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "网页",
+            "share": 0.04558107167710508,
+            "trad": "網頁",
+            "gloss": "web page"
+          },
+          {
+            "word": "主页",
+            "share": 0.021572720946416143,
+            "trad": "主頁",
+            "gloss": "home page"
+          },
+          {
+            "word": "书页",
+            "share": 0.012372450116122466,
+            "trad": "書頁",
+            "gloss": "page of a book"
+          },
+          {
+            "word": "页码",
+            "share": 0.0067689339781894274,
+            "trad": "頁碼",
+            "gloss": "page number"
+          },
+          {
+            "word": "页岩",
+            "share": 0.00672229370993065,
+            "trad": "頁岩",
+            "gloss": "shale"
+          },
+          {
+            "word": "扉页",
+            "share": 0.006175079890567443,
+            "trad": "扉頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "油页岩",
+            "share": 0.001208328526935056,
+            "trad": "油頁岩",
+            "gloss": "oil shale"
+          },
+          {
+            "word": "库页岛",
+            "share": 0.001018407132145741,
+            "trad": "庫頁島",
+            "gloss": "Sakhalin"
+          },
+          {
+            "word": "页首",
+            "share": 0.00015655125817774334,
+            "trad": "頁首",
+            "gloss": "page heading"
+          },
+          {
+            "word": "代码页",
+            "share": 0.000023482688726661504,
+            "trad": "代碼頁",
+            "gloss": "code page"
+          }
+        ],
+        "pinyinFrequency": 35
+      },
+      "customSources": [
+        "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E9%A0%81"
+      ],
+      "isVerified": true,
+      "originalMeaning": "head"
+    }
+  ],
+  "words": [
+    {
+      "_id": { "_str": "5f523074a8a5594704b755d1" },
+      "simp": "豆",
+      "trad": "豆",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "dòu",
+          "simpTrad": "both",
+          "definitions": ["beans, peas", "bean-shaped"],
+          "tang": ["dhòu"]
+        },
+        {
+          "source": "cedict",
+          "pinyin": "dòu",
+          "definitions": [
+            "bean",
+            "pea",
+            "CL:棵[kē],粒[lì]",
+            "sacrificial vessel"
+          ]
+        }
+      ],
+      "gloss": "bean",
+      "statistics": {
+        "hskLevel": 4,
+        "movieWordCount": 409,
+        "movieWordCountPercent": 0.000012192026140657945,
+        "movieWordRank": 4660,
+        "movieWordContexts": 228,
+        "movieWordContextsPercent": 0.03652090341182124,
+        "bookWordCount": 853536,
+        "bookWordCountPercent": 0.00005154184358115457,
+        "bookWordRank": 2678,
+        "movieCharCount": 2056,
+        "movieCharCountPercent": 0.00004389307961766993,
+        "movieCharRank": 1489,
+        "movieCharContexts": 984,
+        "movieCharContextsPercent": 0.15761653051417587,
+        "bookCharCount": 9179,
+        "bookCharCountPercent": 0.000047435707510735,
+        "bookCharRank": 1793,
+        "topWords": [
+          {
+            "word": "豆",
+            "share": 0.23173375823252035,
+            "trad": "豆",
+            "gloss": "bean"
+          },
+          {
+            "word": "土豆",
+            "share": 0.14343765842311823,
+            "trad": "土豆",
+            "gloss": "potato"
+          },
+          {
+            "word": "豆腐",
+            "share": 0.10765993220475675,
+            "trad": "豆腐",
+            "gloss": "tofu"
+          },
+          {
+            "word": "大豆",
+            "share": 0.09124372175985355,
+            "trad": "大豆",
+            "gloss": "soybean"
+          },
+          {
+            "word": "豆子",
+            "share": 0.0798458368489794,
+            "trad": "豆子",
+            "gloss": "bean"
+          },
+          {
+            "word": "豌豆",
+            "share": 0.033126666150695976,
+            "trad": "豌豆",
+            "gloss": "pea (Pisum sativum)"
+          },
+          {
+            "word": "豆浆",
+            "share": 0.025794891739520737,
+            "trad": "豆漿",
+            "gloss": "soy milk"
+          },
+          {
+            "word": "红豆",
+            "share": 0.022051522815052578,
+            "trad": "紅豆",
+            "gloss": "azuki bean"
+          },
+          {
+            "word": "豆瓣",
+            "share": 0.021810633552344583,
+            "trad": "豆瓣",
+            "gloss": "Douban, PRC social networking website"
+          },
+          {
+            "word": "绿豆",
+            "share": 0.021522020036207797,
+            "trad": "綠豆",
+            "gloss": "mung bean"
+          },
+          {
+            "word": "土豆泥",
+            "share": 0.02108959036696241,
+            "trad": "土豆泥",
+            "gloss": "mashed potato"
+          },
+          {
+            "word": "黄豆",
+            "share": 0.017435154700384405,
+            "trad": "黃豆",
+            "gloss": "soybean"
+          },
+          {
+            "word": "咖啡豆",
+            "share": 0.013286528108524173,
+            "trad": "咖啡豆",
+            "gloss": "coffee beans"
+          },
+          {
+            "word": "豆油",
+            "share": 0.013210174422394211,
+            "trad": "豆油",
+            "gloss": "soy bean oil"
+          },
+          {
+            "word": "豆奶",
+            "share": 0.012483140155744633,
+            "trad": "豆奶",
+            "gloss": "soy milk"
+          },
+          {
+            "word": "豆芽",
+            "share": 0.010193588100653968,
+            "trad": "豆芽",
+            "gloss": "bean sprout"
+          },
+          {
+            "word": "豆类",
+            "share": 0.009840212162595462,
+            "trad": "豆類",
+            "gloss": "bean"
+          },
+          {
+            "word": "豆沙",
+            "share": 0.008031491325521702,
+            "trad": "豆沙",
+            "gloss": "sweetened bean paste"
+          },
+          {
+            "word": "豆角",
+            "share": 0.006458777033136676,
+            "trad": "豆角",
+            "gloss": "string bean"
+          },
+          {
+            "word": "扁豆",
+            "share": 0.005414631274861146,
+            "trad": "扁豆",
+            "gloss": "haricot"
+          },
+          {
+            "word": "臭豆腐",
+            "share": 0.005382110753988655,
+            "trad": "臭豆腐",
+            "gloss": "stinky tofu"
+          },
+          {
+            "word": "青豆",
+            "share": 0.005115351149897052,
+            "trad": "青豆",
+            "gloss": "green soybean"
+          },
+          {
+            "word": "肉豆蔻",
+            "share": 0.004983912512546733,
+            "trad": "肉豆蔻",
+            "gloss": "mace"
+          },
+          {
+            "word": "小豆",
+            "share": 0.004921537462324718,
+            "trad": "小豆",
+            "gloss": "azuki bean"
+          }
+        ],
+        "pinyinFrequency": 127
+      },
+      "pinyinSearchString": "dòu dou4 dou"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b75f4d" },
+      "simp": "页",
+      "trad": "頁",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "yè",
+          "simpTrad": "trad",
+          "definitions": ["page, sheet, leaf", "rad. no. 181"]
+        },
+        { "source": "unicode", "pinyin": "xié", "simpTrad": "trad" },
+        {
+          "source": "unicode",
+          "pinyin": "yè",
+          "simpTrad": "simp",
+          "definitions": ["page, sheet, leaf", "rad. no. 181"]
+        },
+        { "source": "cedict", "pinyin": "xié", "definitions": ["head"] },
+        { "source": "cedict", "pinyin": "yè", "definitions": ["page", "leaf"] }
+      ],
+      "gloss": "page",
+      "statistics": {
+        "hskLevel": 1,
+        "movieWordCount": 1114,
+        "movieWordCountPercent": 0.000033207621321987657,
+        "movieWordRank": 2217,
+        "movieWordContexts": 679,
+        "movieWordContextsPercent": 0.10876181323081852,
+        "bookWordCount": 903856,
+        "bookWordCountPercent": 0.000054580479993682803,
+        "bookWordRank": 2515,
+        "movieCharCount": 1442,
+        "movieCharCountPercent": 0.00003078493229994165,
+        "movieCharRank": 1722,
+        "movieCharContexts": 854,
+        "movieCharContextsPercent": 0.13679320839340062,
+        "bookCharCount": 24861,
+        "bookCharCountPercent": 0.0001284779523286178,
+        "bookCharRank": 1128,
+        "topWords": [
+          {
+            "word": "页",
+            "share": 0.7599809617890505,
+            "trad": "頁",
+            "gloss": "page"
+          },
+          {
+            "word": "页面",
+            "share": 0.07536254032916485,
+            "trad": "頁面",
+            "gloss": "page"
+          },
+          {
+            "word": "首页",
+            "share": 0.045659822355519665,
+            "trad": "首頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "网页",
+            "share": 0.04558107167710508,
+            "trad": "網頁",
+            "gloss": "web page"
+          },
+          {
+            "word": "主页",
+            "share": 0.021572720946416143,
+            "trad": "主頁",
+            "gloss": "home page"
+          },
+          {
+            "word": "书页",
+            "share": 0.012372450116122466,
+            "trad": "書頁",
+            "gloss": "page of a book"
+          },
+          {
+            "word": "页码",
+            "share": 0.0067689339781894274,
+            "trad": "頁碼",
+            "gloss": "page number"
+          },
+          {
+            "word": "页岩",
+            "share": 0.00672229370993065,
+            "trad": "頁岩",
+            "gloss": "shale"
+          },
+          {
+            "word": "扉页",
+            "share": 0.006175079890567443,
+            "trad": "扉頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "油页岩",
+            "share": 0.001208328526935056,
+            "trad": "油頁岩",
+            "gloss": "oil shale"
+          },
+          {
+            "word": "库页岛",
+            "share": 0.001018407132145741,
+            "trad": "庫頁島",
+            "gloss": "Sakhalin"
+          },
+          {
+            "word": "页首",
+            "share": 0.00015655125817774334,
+            "trad": "頁首",
+            "gloss": "page heading"
+          },
+          {
+            "word": "代码页",
+            "share": 0.000023482688726661504,
+            "trad": "代碼頁",
+            "gloss": "code page"
+          }
+        ],
+        "pinyinFrequency": 35
+      },
+      "pinyinSearchString": "yè ye4 ye xié xie2 xie"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b72813" },
+      "simp": "头",
+      "trad": "頭",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "tóu",
+          "simpTrad": "simp",
+          "definitions": ["head", "top", "chief, first", "boss"]
+        },
+        {
+          "source": "unicode",
+          "pinyin": "tóu",
+          "simpTrad": "trad",
+          "definitions": ["head", "top", "chief, first", "boss"],
+          "tang": ["*dhou"]
+        },
+        { "source": "unicode", "pinyin": "tou", "simpTrad": "trad" },
+        {
+          "source": "cedict",
+          "pinyin": "tóu",
+          "definitions": [
+            "head",
+            "hair style",
+            "the top",
+            "end",
+            "beginning or end",
+            "a stub",
+            "remnant",
+            "chief",
+            "boss",
+            "side",
+            "aspect",
+            "first",
+            "leading",
+            "classifier for pigs or livestock",
+            "CL:個|个[gè]"
+          ]
+        },
+        {
+          "source": "cedict",
+          "pinyin": "tou",
+          "definitions": ["suffix for nouns"]
+        }
+      ],
+      "gloss": "head",
+      "statistics": {
+        "hskLevel": 2,
+        "movieWordCount": 11582,
+        "movieWordCountPercent": 0.00034525194807114994,
+        "movieWordRank": 307,
+        "movieWordContexts": 4379,
+        "movieWordContextsPercent": 0.7014255966682684,
+        "bookWordCount": 5670592,
+        "bookWordCountPercent": 0.0003424258213790004,
+        "bookWordRank": 343,
+        "movieCharCount": 49069,
+        "movieCharCountPercent": 0.0010475629979374737,
+        "movieCharRank": 168,
+        "movieCharContexts": 6092,
+        "movieCharContextsPercent": 0.9758129104597149,
+        "bookCharCount": 274911,
+        "bookCharCountPercent": 0.0014206991815539458,
+        "bookCharRank": 147,
+        "topWords": [
+          {
+            "word": "头",
+            "share": 0.22648535311938187,
+            "trad": "頭",
+            "gloss": "head"
+          },
+          {
+            "word": "头发",
+            "share": 0.06046581736311958,
+            "trad": "頭髮",
+            "gloss": "hair (on the head)"
+          },
+          {
+            "word": "回头",
+            "share": 0.02752061768303903,
+            "trad": "回頭",
+            "gloss": "to turn round"
+          },
+          {
+            "word": "镜头",
+            "share": 0.026727520810456942,
+            "trad": "鏡頭",
+            "gloss": "camera lens"
+          },
+          {
+            "word": "石头",
+            "share": 0.02344180946773985,
+            "trad": "石頭",
+            "gloss": "stone"
+          },
+          {
+            "word": "头儿",
+            "share": 0.02121504642160428,
+            "trad": "頭兒",
+            "gloss": "leader"
+          },
+          {
+            "word": "头脑",
+            "share": 0.015595522561022989,
+            "trad": "頭腦",
+            "gloss": "brains"
+          },
+          {
+            "word": "街头",
+            "share": 0.014739687911640136,
+            "trad": "街頭",
+            "gloss": "street"
+          },
+          {
+            "word": "码头",
+            "share": 0.014580489195783928,
+            "trad": "碼頭",
+            "gloss": "dock"
+          },
+          {
+            "word": "骨头",
+            "share": 0.014264337272213165,
+            "trad": "骨頭",
+            "gloss": "bone"
+          },
+          {
+            "word": "点头",
+            "share": 0.013980505636074152,
+            "trad": "點頭",
+            "gloss": "to nod"
+          },
+          {
+            "word": "老头",
+            "share": 0.011725266599624373,
+            "trad": "老頭",
+            "gloss": "old fellow"
+          },
+          {
+            "word": "头痛",
+            "share": 0.010639485559743391,
+            "trad": "頭痛",
+            "gloss": "to have a headache"
+          },
+          {
+            "word": "舌头",
+            "share": 0.010082096480708264,
+            "trad": "舌頭",
+            "gloss": "tongue"
+          },
+          {
+            "word": "摇头",
+            "share": 0.009797827194457046,
+            "trad": "搖頭",
+            "gloss": "to shake one's head"
+          },
+          {
+            "word": "龙头",
+            "share": 0.009499120336400931,
+            "trad": "龍頭",
+            "gloss": "faucet"
+          },
+          {
+            "word": "念头",
+            "share": 0.009006046351598416,
+            "trad": "念頭",
+            "gloss": "thought"
+          },
+          {
+            "word": "一头",
+            "share": 0.008887387787037996,
+            "trad": "一頭",
+            "gloss": "one head"
+          },
+          {
+            "word": "头疼",
+            "share": 0.008870640650935341,
+            "trad": "頭疼",
+            "gloss": "headache"
+          },
+          {
+            "word": "势头",
+            "share": 0.008621684637288424,
+            "trad": "勢頭",
+            "gloss": "power"
+          },
+          {
+            "word": "抬头",
+            "share": 0.008477196984715751,
+            "trad": "抬頭",
+            "gloss": "to gain ground"
+          },
+          {
+            "word": "开头",
+            "share": 0.008286454069520038,
+            "trad": "開頭",
+            "gloss": "beginning"
+          },
+          {
+            "word": "丫头",
+            "share": 0.008077678552474517,
+            "trad": "丫頭",
+            "gloss": "girl"
+          },
+          {
+            "word": "枕头",
+            "share": 0.007914842936965117,
+            "trad": "枕頭",
+            "gloss": "pillow"
+          },
+          {
+            "word": "尽头",
+            "share": 0.007784727666945334,
+            "trad": "盡頭",
+            "gloss": "end"
+          }
+        ],
+        "pinyinFrequency": 3058
+      },
+      "pinyinSearchString": "tóu tou2 tou"
+    },
+    {
+      "_id": { "_str": "5f523076a8a5594704b8d97c" },
+      "simp": "豆",
+      "trad": "荳",
+      "items": [
+        {
+          "source": "cedict",
+          "pinyin": "dòu",
+          "definitions": ["variant of 豆[dòu]"]
+        }
+      ],
+      "gloss": "bean",
+      "statistics": {
+        "hskLevel": 4,
+        "movieWordCount": 409,
+        "movieWordCountPercent": 0.000012192026140657945,
+        "movieWordRank": 4660,
+        "movieWordContexts": 228,
+        "movieWordContextsPercent": 0.03652090341182124,
+        "bookWordCount": 853536,
+        "bookWordCountPercent": 0.00005154184358115457,
+        "bookWordRank": 2678,
+        "movieCharCount": 2056,
+        "movieCharCountPercent": 0.00004389307961766993,
+        "movieCharRank": 1489,
+        "movieCharContexts": 984,
+        "movieCharContextsPercent": 0.15761653051417587,
+        "bookCharCount": 9179,
+        "bookCharCountPercent": 0.000047435707510735,
+        "bookCharRank": 1793,
+        "topWords": [
+          {
+            "word": "豆",
+            "share": 0.23173375823252035,
+            "trad": "豆",
+            "gloss": "bean"
+          },
+          {
+            "word": "土豆",
+            "share": 0.14343765842311823,
+            "trad": "土豆",
+            "gloss": "potato"
+          },
+          {
+            "word": "豆腐",
+            "share": 0.10765993220475675,
+            "trad": "豆腐",
+            "gloss": "tofu"
+          },
+          {
+            "word": "大豆",
+            "share": 0.09124372175985355,
+            "trad": "大豆",
+            "gloss": "soybean"
+          },
+          {
+            "word": "豆子",
+            "share": 0.0798458368489794,
+            "trad": "豆子",
+            "gloss": "bean"
+          },
+          {
+            "word": "豌豆",
+            "share": 0.033126666150695976,
+            "trad": "豌豆",
+            "gloss": "pea (Pisum sativum)"
+          },
+          {
+            "word": "豆浆",
+            "share": 0.025794891739520737,
+            "trad": "豆漿",
+            "gloss": "soy milk"
+          },
+          {
+            "word": "红豆",
+            "share": 0.022051522815052578,
+            "trad": "紅豆",
+            "gloss": "azuki bean"
+          },
+          {
+            "word": "豆瓣",
+            "share": 0.021810633552344583,
+            "trad": "豆瓣",
+            "gloss": "Douban, PRC social networking website"
+          },
+          {
+            "word": "绿豆",
+            "share": 0.021522020036207797,
+            "trad": "綠豆",
+            "gloss": "mung bean"
+          },
+          {
+            "word": "土豆泥",
+            "share": 0.02108959036696241,
+            "trad": "土豆泥",
+            "gloss": "mashed potato"
+          },
+          {
+            "word": "黄豆",
+            "share": 0.017435154700384405,
+            "trad": "黃豆",
+            "gloss": "soybean"
+          },
+          {
+            "word": "咖啡豆",
+            "share": 0.013286528108524173,
+            "trad": "咖啡豆",
+            "gloss": "coffee beans"
+          },
+          {
+            "word": "豆油",
+            "share": 0.013210174422394211,
+            "trad": "豆油",
+            "gloss": "soy bean oil"
+          },
+          {
+            "word": "豆奶",
+            "share": 0.012483140155744633,
+            "trad": "豆奶",
+            "gloss": "soy milk"
+          },
+          {
+            "word": "豆芽",
+            "share": 0.010193588100653968,
+            "trad": "豆芽",
+            "gloss": "bean sprout"
+          },
+          {
+            "word": "豆类",
+            "share": 0.009840212162595462,
+            "trad": "豆類",
+            "gloss": "bean"
+          },
+          {
+            "word": "豆沙",
+            "share": 0.008031491325521702,
+            "trad": "豆沙",
+            "gloss": "sweetened bean paste"
+          },
+          {
+            "word": "豆角",
+            "share": 0.006458777033136676,
+            "trad": "豆角",
+            "gloss": "string bean"
+          },
+          {
+            "word": "扁豆",
+            "share": 0.005414631274861146,
+            "trad": "扁豆",
+            "gloss": "haricot"
+          },
+          {
+            "word": "臭豆腐",
+            "share": 0.005382110753988655,
+            "trad": "臭豆腐",
+            "gloss": "stinky tofu"
+          },
+          {
+            "word": "青豆",
+            "share": 0.005115351149897052,
+            "trad": "青豆",
+            "gloss": "green soybean"
+          },
+          {
+            "word": "肉豆蔻",
+            "share": 0.004983912512546733,
+            "trad": "肉豆蔻",
+            "gloss": "mace"
+          },
+          {
+            "word": "小豆",
+            "share": 0.004921537462324718,
+            "trad": "小豆",
+            "gloss": "azuki bean"
+          }
+        ],
+        "pinyinFrequency": 127
+      },
+      "pinyinSearchString": "dòu dou4 dou"
+    }
+  ],
+  "componentIn": []
+}

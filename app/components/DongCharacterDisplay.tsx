@@ -146,11 +146,16 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   const [activeComponent, setActiveComponent] = useState<string | null>(null);
 
-  // Get the primary pinyin
-  const primaryPinyin =
+  console.log(character);
+
+  // Get all pronunciations
+  const allPinyins =
     character.pinyinFrequencies && character.pinyinFrequencies.length > 0
-      ? character.pinyinFrequencies[0].pinyin
-      : "";
+      ? character.pinyinFrequencies.map((freq) => freq.pinyin)
+      : [];
+
+  // Generate Dong Chinese dictionary URL
+  const dongChineseUrl = `https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(character.char)}`;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
@@ -159,7 +164,13 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-8">
             {/* Main Character Display - Colored and Black versions */}
-            <div className="flex items-center gap-4">
+            <a
+              href={dongChineseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+              title="View on Dong Chinese"
+            >
               {(() => {
                 const strokeData = getStrokeData(character);
                 const mainCharImage = character.images.find((img) => img.data);
@@ -204,13 +215,13 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                   </>
                 );
               })()}
-            </div>
+            </a>
 
             {/* Character Metadata */}
             <div className="space-y-2">
-              {/* Pinyin */}
+              {/* Pinyin - show all pronunciations */}
               <div className="text-2xl font-medium text-gray-700">
-                {primaryPinyin}
+                {allPinyins.join(", ")}
               </div>
 
               {/* Translation */}
@@ -379,6 +390,52 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             </div>
           </div>
         )}
+
+      {/* Component In - Characters that use this character as a component */}
+      {character.componentIn && character.componentIn.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <SectionHeader>
+            {character.componentIn[0].components.find(
+              (c) => c.character === character.char,
+            )?.type.includes("sound") && "Sound component in "}
+            {character.componentIn[0].components.find(
+              (c) => c.character === character.char,
+            )?.type.includes("meaning") && "Meaning component in "}
+            {character.componentIn[0].components.find(
+              (c) => c.character === character.char,
+            )?.type.includes("iconic") && "Iconic component in "}
+            {character.componentIn.length} character
+            {character.componentIn.length !== 1 ? "s" : ""} (
+            {
+              character.componentIn.filter((item) => item.isVerified === true)
+                .length
+            }{" "}
+            verified)
+          </SectionHeader>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {character.componentIn.map((item, index) => (
+              <a
+                key={index}
+                href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                title={`${item.char} - View on Dong Chinese`}
+              >
+                <div className="text-5xl font-serif mb-2">{item.char}</div>
+                {item.statistics?.bookCharCount && (
+                  <div className="text-xs text-gray-500 text-center">
+                    {item.statistics.bookCharCount.toLocaleString()} book uses
+                  </div>
+                )}
+                {item.isVerified && (
+                  <div className="text-xs text-green-600 mt-1">✓ Verified</div>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
