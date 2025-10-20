@@ -55,7 +55,7 @@ function getComponentTextColor(type: string[]): string {
 
 // Helper to get stroke data from character
 function getStrokeData(
-  character: DongCharacter
+  character: DongCharacter,
 ): { strokes: string[]; medians: number[][][] } | undefined {
   return character.data || character.images.find((img) => img.data)?.data;
 }
@@ -116,7 +116,7 @@ function LayeredCharacter({
         <CharacterSVG
           strokes={fragmentIndices.map((i) => strokeData.strokes[i])}
           strokeColors={Object.fromEntries(
-            fragmentIndices.map((_, i) => [i, fillColor])
+            fragmentIndices.map((_, i) => [i, fillColor]),
           )}
         />
       </div>
@@ -172,7 +172,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
   // Get the primary pinyin
   const primaryPinyin =
-    character.pinyinFrequencies.length > 0
+    character.pinyinFrequencies && character.pinyinFrequencies.length > 0
       ? character.pinyinFrequencies[0].pinyin
       : "";
 
@@ -267,7 +267,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {character.components.map((component, index) => {
             const componentChar = character.chars?.find(
-              (c) => c.char === component.character
+              (c) => c.char === component.character,
             );
             const strokeData = getStrokeData(character);
             const mainCharImage = character.images.find((img) => img.data);
@@ -296,7 +296,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       </div>
                       <div
                         className={`absolute inset-0 text-6xl font-serif leading-none ${getComponentTextColor(
-                          component.type
+                          component.type,
                         )} flex items-center justify-center`}
                       >
                         {component.character}
@@ -313,7 +313,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                     </span>
                     <span
                       className={`text-sm font-medium ${getComponentTextColor(
-                        component.type
+                        component.type,
                       )}`}
                     >
                       {component.type.includes("sound") && "Sound "}
@@ -343,7 +343,10 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           <SectionHeader>Evolution</SectionHeader>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {character.images.map((img, index) => (
-              <div key={index} className="flex flex-col items-center text-center">
+              <div
+                key={index}
+                className="flex flex-col items-center text-center"
+              >
                 {/* Historical character image or SVG */}
                 <div className="w-32 h-32 flex items-center justify-center mb-2 bg-gray-50 rounded p-2">
                   {img.url ? (
@@ -391,21 +394,22 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       )}
 
       {/* Pronunciation variants */}
-      {character.pinyinFrequencies.length > 1 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <SectionHeader>Pronunciations</SectionHeader>
-          <div className="space-y-2">
-            {character.pinyinFrequencies.map((freq, index) => (
-              <div key={index} className="flex items-baseline gap-3">
-                <span className="font-medium text-lg">{freq.pinyin}</span>
-                <span className="text-gray-500 text-sm">
-                  ({freq.count} occurrences)
-                </span>
-              </div>
-            ))}
+      {character.pinyinFrequencies &&
+        character.pinyinFrequencies.length > 1 && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <SectionHeader>Pronunciations</SectionHeader>
+            <div className="space-y-2">
+              {character.pinyinFrequencies.map((freq, index) => (
+                <div key={index} className="flex items-baseline gap-3">
+                  <span className="font-medium text-lg">{freq.pinyin}</span>
+                  <span className="text-gray-500 text-sm">
+                    ({freq.count} occurrences)
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

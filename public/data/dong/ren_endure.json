@@ -1,0 +1,1511 @@
+{
+  "_id": { "_str": "5f523afdde54193ed8731343" },
+  "char": "忍",
+  "codepoint": "U+5FCD",
+  "strokeCount": 7,
+  "pinyinFrequencies": [{ "pinyin": "rěn", "count": 189 }],
+  "sources": [
+    "academia-sinica",
+    "makemeahanzi",
+    "unicode",
+    "baxter-sagart",
+    "dong-chinese",
+    "cedict"
+  ],
+  "components": [
+    { "character": "心", "type": ["meaning"], "hint": null },
+    { "character": "刃", "type": ["sound"], "hint": "" }
+  ],
+  "images": [
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%8D_0.png",
+      "source": "academia-sinica",
+      "description": "中山王昔壺(金)戰國晚期",
+      "type": "Bronze",
+      "era": "Late Warring States (~250 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%8D_1.png",
+      "source": "academia-sinica",
+      "description": "郭.語2.51(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%8D_2.png",
+      "source": "academia-sinica",
+      "description": "說文‧心部",
+      "type": "Seal",
+      "era": "Shuowen (~100 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%8D_3.png",
+      "source": "academia-sinica",
+      "description": "睡.為36(隸)秦",
+      "type": "Clerical",
+      "era": "Qin dynasty (221-206 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%8D_4.png",
+      "source": "academia-sinica",
+      "description": "孫子170(隸)西漢",
+      "type": "Clerical",
+      "era": "Western Han dynasty (202 BC-9 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%8D_5.png",
+      "source": "academia-sinica",
+      "description": "曹全碑(隸)東漢",
+      "type": "Clerical",
+      "era": "Eastern Han dynasty (25-220 AD)"
+    },
+    {
+      "data": {
+        "strokes": [
+          "M 503 699 Q 582 715 650 723 Q 677 724 681 717 Q 693 698 682 649 Q 660 516 623 458 Q 604 427 577 433 Q 552 443 528 455 Q 503 467 519 439 Q 562 388 581 350 Q 603 325 625 345 Q 661 369 687 414 Q 717 466 741 629 Q 750 687 771 714 Q 786 729 779 740 Q 769 753 712 781 Q 690 791 667 778 Q 637 762 524 741 Q 410 717 315 714 Q 294 714 291 704 Q 288 694 316 680 Q 344 661 368 668 Q 413 680 458 689 L 503 699 Z",
+          "M 458 689 Q 476 527 251 334 Q 244 327 250 323 Q 257 322 269 326 Q 326 351 373 391 Q 457 458 512 607 Q 522 632 536 655 Q 543 665 537 674 Q 531 684 503 699 C 477 714 456 719 458 689 Z",
+          "M 348 608 Q 323 574 294 545 Q 270 521 280 485 Q 284 469 305 476 Q 347 497 362 551 Q 372 579 370 604 Q 367 611 362 614 Q 353 614 348 608 Z",
+          "M 193 254 Q 168 188 132 130 Q 111 93 131 58 Q 140 39 163 53 Q 217 98 222 192 Q 226 228 219 254 Q 213 264 207 264 Q 197 263 193 254 Z",
+          "M 316 235 Q 334 117 420 56 Q 534 -23 755 -9 Q 791 -5 824 8 Q 852 18 855 36 Q 859 46 820 77 Q 762 135 718 193 Q 706 212 700 205 Q 696 198 699 181 Q 709 144 717 105 Q 723 80 716 70 Q 706 57 660 57 Q 482 57 409 130 Q 375 161 362 214 Q 355 241 343 247 Q 328 256 320 251 Q 313 250 316 235 Z",
+          "M 474 298 Q 526 229 552 218 Q 565 214 575 225 Q 582 235 581 252 Q 575 288 489 332 Q 476 338 466 335 Q 460 335 461 323 Q 462 313 474 298 Z",
+          "M 752 342 Q 815 297 891 230 Q 909 211 925 208 Q 934 208 941 219 Q 951 234 934 277 Q 916 332 750 374 Q 740 378 740 365 Q 740 352 752 342 Z"
+        ],
+        "medians": [
+          [
+            [300, 702],
+            [358, 691],
+            [676, 751],
+            [695, 750],
+            [726, 725],
+            [702, 580],
+            [680, 495],
+            [663, 450],
+            [641, 416],
+            [610, 391],
+            [577, 406],
+            [520, 449]
+          ],
+          [
+            [467, 683],
+            [496, 660],
+            [495, 654],
+            [471, 575],
+            [437, 504],
+            [397, 448],
+            [354, 402],
+            [254, 328]
+          ],
+          [
+            [358, 603],
+            [349, 575],
+            [296, 489]
+          ],
+          [
+            [207, 251],
+            [190, 169],
+            [146, 63]
+          ],
+          [
+            [325, 241],
+            [337, 226],
+            [362, 155],
+            [388, 118],
+            [418, 89],
+            [494, 49],
+            [604, 26],
+            [706, 25],
+            [743, 34],
+            [768, 50],
+            [762, 78],
+            [704, 199]
+          ],
+          [
+            [472, 325],
+            [547, 257],
+            [559, 238]
+          ],
+          [
+            [752, 361],
+            [878, 289],
+            [909, 257],
+            [924, 224]
+          ]
+        ]
+      },
+      "fragments": [
+        [3, 4, 5, 6],
+        [0, 1, 2]
+      ],
+      "source": "makemeahanzi",
+      "description": "楷書",
+      "type": "Regular",
+      "era": "Modern"
+    }
+  ],
+  "hint": "Phonosemantic compound. 心 represents the meaning and 刃 represents the sound. ",
+  "shuowen": "《說文》：“忍，能也。从心，刃聲。”",
+  "variants": [{ "char": "忍", "parts": "刃心", "source": "academia-sinica" }],
+  "gloss": "endure",
+  "oldPronunciations": [
+    {
+      "pinyin": "rěn",
+      "MC": "nyinX",
+      "OC": "*nə[n]ʔ ",
+      "gloss": "cruel",
+      "source": "baxter-sagart"
+    },
+    {
+      "pinyin": "rěn",
+      "MC": "nyinX",
+      "OC": "*nə[n]ʔ ",
+      "gloss": "endure",
+      "source": "baxter-sagart"
+    }
+  ],
+  "statistics": {
+    "hskLevel": 5,
+    "movieWordCount": 1043,
+    "movieWordCountPercent": 0.00003109115712642112,
+    "movieWordRank": 2335,
+    "movieWordContexts": 606,
+    "movieWordContextsPercent": 0.09706871696299856,
+    "bookWordCount": 758620,
+    "bookWordCountPercent": 0.00004581022168664881,
+    "bookWordRank": 2997,
+    "movieCharCount": 4557,
+    "movieCharCountPercent": 0.00009728636372457288,
+    "movieCharRank": 1036,
+    "movieCharContexts": 2538,
+    "movieCharContextsPercent": 0.40653531955790484,
+    "bookCharCount": 24862,
+    "bookCharCountPercent": 0.00012848312017996443,
+    "bookCharRank": 1127,
+    "topWords": [
+      {
+        "word": "忍",
+        "share": 0.25352378328206326,
+        "trad": "忍",
+        "gloss": "to bear"
+      },
+      {
+        "word": "忍受",
+        "share": 0.18165393987609021,
+        "trad": "忍受",
+        "gloss": "to bear"
+      },
+      {
+        "word": "忍不住",
+        "share": 0.1597505229387834,
+        "trad": "忍不住",
+        "gloss": "cannot help"
+      },
+      {
+        "word": "残忍",
+        "share": 0.12288366347993508,
+        "trad": "殘忍",
+        "gloss": "cruel"
+      },
+      {
+        "word": "容忍",
+        "share": 0.08398980329800962,
+        "trad": "容忍",
+        "gloss": "to put up with"
+      },
+      {
+        "word": "忍耐",
+        "share": 0.04800571216690358,
+        "trad": "忍耐",
+        "gloss": "to endure"
+      },
+      {
+        "word": "忍心",
+        "share": 0.03536299983510186,
+        "trad": "忍心",
+        "gloss": "to have the heart to do sth"
+      },
+      {
+        "word": "不忍",
+        "share": 0.017179720453040333,
+        "trad": "不忍",
+        "gloss": "disturbed"
+      },
+      {
+        "word": "忍无可忍",
+        "share": 0.016182711502519334,
+        "trad": "忍無可忍",
+        "gloss": "the last straw"
+      },
+      {
+        "word": "惨不忍睹",
+        "share": 0.014749772932303958,
+        "trad": "慘不忍睹",
+        "gloss": "appalling scenes of devastation"
+      },
+      {
+        "word": "难以忍受",
+        "share": 0.014506265735255198,
+        "trad": "難以忍受",
+        "gloss": "hard to endure"
+      },
+      {
+        "word": "隐忍",
+        "share": 0.008827224073484045,
+        "trad": "隱忍",
+        "gloss": "to bear patiently"
+      },
+      {
+        "word": "忍让",
+        "share": 0.008551269126815699,
+        "trad": "忍讓",
+        "gloss": "to exercise forbearance"
+      },
+      {
+        "word": "忍痛",
+        "share": 0.007120815581973189,
+        "trad": "忍痛",
+        "gloss": "to suffer"
+      },
+      {
+        "word": "忍气吞声",
+        "share": 0.006933049087958686,
+        "trad": "忍氣吞聲",
+        "gloss": "to swallow one's anger"
+      },
+      {
+        "word": "坚忍",
+        "share": 0.003847358342692575,
+        "trad": "堅忍",
+        "gloss": "persevering"
+      },
+      {
+        "word": "忍俊不禁",
+        "share": 0.0037618106454430007,
+        "trad": "忍俊不禁",
+        "gloss": "cannot help laughing"
+      },
+      {
+        "word": "忍辱负重",
+        "share": 0.0032983633960974876,
+        "trad": "忍辱負重",
+        "gloss": "to endure humiliation as part of an important mission (idiom); to suffer in silence"
+      },
+      {
+        "word": "忍耐力",
+        "share": 0.001893939393939394,
+        "trad": "忍耐力",
+        "gloss": "patience"
+      },
+      {
+        "word": "忍痛割爱",
+        "share": 0.0017254780997149667,
+        "trad": "忍痛割愛",
+        "gloss": "to resign oneself to part with what one treasures"
+      },
+      {
+        "word": "坚忍不拔",
+        "share": 0.0016353117425597407,
+        "trad": "堅忍不拔",
+        "gloss": "fortitude"
+      },
+      {
+        "word": "于心不忍",
+        "share": 0.001626460420262167,
+        "trad": "於心不忍",
+        "gloss": "can't bear to"
+      },
+      {
+        "word": "忍冬",
+        "share": 0.0015722796795937394,
+        "trad": "忍冬",
+        "gloss": "honeysuckle"
+      },
+      {
+        "word": "忍饥挨饿",
+        "share": 0.0007038039080667006,
+        "trad": "忍飢挨餓",
+        "gloss": "starving"
+      },
+      {
+        "word": "隐忍不发",
+        "share": 0.00024890184505959705,
+        "trad": "隱忍不發",
+        "gloss": "to restrain one's emotions"
+      }
+    ],
+    "pinyinFrequency": 189
+  },
+  "customSources": [
+    "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E5%BF%8D"
+  ],
+  "isVerified": true,
+  "chars": [
+    {
+      "_id": { "_str": "5f523afdde54193ed8730579" },
+      "char": "刃",
+      "codepoint": "U+5203",
+      "strokeCount": 3,
+      "sources": [
+        "academia-sinica",
+        "makemeahanzi",
+        "unicode",
+        "baxter-sagart",
+        "dong-chinese"
+      ],
+      "components": [
+        { "character": "刀", "type": ["iconic"] },
+        {
+          "character": "◎",
+          "type": ["iconic"],
+          "hint": "Depicts where the knife blade is."
+        }
+      ],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%88%83_0.png",
+          "source": "academia-sinica",
+          "description": "前4.51.1(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%88%83_1.png",
+          "source": "academia-sinica",
+          "description": "郭.成.35(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%88%83_2.png",
+          "source": "academia-sinica",
+          "description": "上(2).容.18(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%88%83_3.png",
+          "source": "academia-sinica",
+          "description": "說文‧刃部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%88%83_4.png",
+          "source": "academia-sinica",
+          "description": "睡.法90(隸)秦",
+          "type": "Clerical",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 528 650 Q 613 668 699 676 Q 724 677 729 665 Q 739 643 735 586 Q 719 378 679 266 Q 658 196 635 175 Q 622 163 597 171 Q 560 186 525 200 Q 500 209 517 184 Q 566 126 594 80 Q 604 55 628 61 Q 653 65 682 100 Q 766 190 792 535 Q 798 611 825 658 Q 844 683 834 695 Q 815 717 774 735 Q 744 750 713 735 Q 617 698 472 676 Q 345 657 272 659 Q 250 662 248 649 Q 247 637 272 620 Q 303 598 333 607 Q 414 629 493 643 L 528 650 Z",
+              "M 493 643 Q 492 639 493 633 Q 514 473 369 279 Q 282 177 171 79 Q 164 72 170 68 Q 179 65 191 71 Q 377 167 458 316 Q 506 392 547 520 Q 562 557 580 594 Q 587 606 581 616 Q 569 637 528 650 C 500 661 492 664 493 643 Z",
+              "M 331 483 Q 304 441 271 404 Q 247 376 259 342 Q 263 323 285 333 Q 333 357 347 424 Q 357 455 354 479 Q 350 488 345 490 Q 336 490 331 483 Z"
+            ],
+            "medians": [
+              [
+                [259, 647],
+                [291, 635],
+                [321, 632],
+                [732, 706],
+                [752, 700],
+                [778, 675],
+                [740, 360],
+                [721, 277],
+                [682, 170],
+                [662, 142],
+                [630, 119],
+                [518, 194]
+              ],
+              [
+                [500, 638],
+                [528, 615],
+                [536, 592],
+                [502, 468],
+                [446, 346],
+                [392, 264],
+                [344, 210],
+                [262, 136],
+                [175, 73]
+              ],
+              [
+                [342, 478],
+                [313, 407],
+                [274, 344]
+              ]
+            ]
+          },
+          "fragments": [[0, 1], [2]],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "hint": "Pictograph of a knife. Similar to 刀 (knife), with an added dot marking where the blade is.",
+      "shuowen": "《說文》：“刃，刀堅也。象刀有刃之形。”",
+      "comments": [
+        {
+          "source": "academia-sinica",
+          "text": "王筠釋例：“顧刀之為字，有柄有脊有刃矣。欲別作刃字，不能不從刀，而以、指其處，謂刃在是而已。”"
+        }
+      ],
+      "variants": [
+        { "char": "刃", "parts": "刀丶", "source": "academia-sinica" },
+        { "char": "釰", "parts": "金刃", "source": "academia-sinica" }
+      ],
+      "gloss": "knife edge",
+      "oldPronunciations": [
+        {
+          "pinyin": "rèn",
+          "MC": "nyinH",
+          "OC": "*nə[n]-s ",
+          "gloss": "edge of a blade",
+          "source": "baxter-sagart"
+        }
+      ],
+      "statistics": {
+        "hskLevel": 10,
+        "movieWordCount": 100,
+        "movieWordCountPercent": 0.000002980935486713434,
+        "movieWordRank": 11476,
+        "movieWordContexts": 66,
+        "movieWordContextsPercent": 0.010571840461316675,
+        "bookWordCount": 129232,
+        "bookWordCountPercent": 0.000007803836662636102,
+        "bookWordRank": 10602,
+        "movieCharCount": 265,
+        "movieCharCountPercent": 0.000005657425145273605,
+        "movieCharRank": 2737,
+        "movieCharContexts": 195,
+        "movieCharContextsPercent": 0.0312349831811629,
+        "bookCharCount": 2858,
+        "bookCharCountPercent": 0.000014769719148674215,
+        "bookCharRank": 2700,
+        "topWords": [
+          {
+            "word": "刃",
+            "share": 0.3761221783700204,
+            "trad": "刃",
+            "gloss": "edge of blade"
+          },
+          {
+            "word": "刀刃",
+            "share": 0.163124542500805,
+            "trad": "刀刃",
+            "gloss": "knife blade"
+          },
+          {
+            "word": "游刃有余",
+            "share": 0.10607428889333162,
+            "trad": "遊刃有餘",
+            "gloss": "handling a butcher's cleaver with ease (idiom); to do sth skillfully and easily"
+          },
+          {
+            "word": "迎刃而解",
+            "share": 0.10243278904995079,
+            "trad": "迎刃而解",
+            "gloss": "fig. easily solved"
+          },
+          {
+            "word": "利刃",
+            "share": 0.09051163745721214,
+            "trad": "利刃",
+            "gloss": "sharp blade"
+          },
+          {
+            "word": "兵刃",
+            "share": 0.0669122045526134,
+            "trad": "兵刃",
+            "gloss": "(bladed) weapons"
+          },
+          {
+            "word": "双刃剑",
+            "share": 0.05793699421135173,
+            "trad": "雙刃劍",
+            "gloss": "double-edged sword (both lit. and fig.)"
+          },
+          {
+            "word": "兵不血刃",
+            "share": 0.00998719812277665,
+            "trad": "兵不血刃",
+            "gloss": "lit. no blood on the men's swords (idiom); fig. an effortless victory"
+          },
+          {
+            "word": "白刃",
+            "share": 0.008202737810040949,
+            "trad": "白刃",
+            "gloss": "naked sword"
+          },
+          {
+            "word": "白刃战",
+            "share": 0.007806165532589705,
+            "trad": "白刃戰",
+            "gloss": "hand-to-hand fighting"
+          },
+          {
+            "word": "血刃",
+            "share": 0.0037004071748308735,
+            "trad": "血刃",
+            "gloss": "bloodshed"
+          },
+          {
+            "word": "开刃",
+            "share": 0.0015070381426585714,
+            "trad": "開刃",
+            "gloss": "to edge a knife, scissor, sword etc"
+          }
+        ]
+      },
+      "customSources": [
+        "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E5%88%83"
+      ],
+      "isVerified": true,
+      "fragments": [[0, 1, 2]]
+    },
+    {
+      "_id": { "_str": "5f523afdde54193ed8731339" },
+      "char": "心",
+      "codepoint": "U+5FC3",
+      "strokeCount": 4,
+      "pinyinFrequencies": [
+        { "pinyin": "xīn", "count": 3357 },
+        { "pinyin": "xin", "count": 11 }
+      ],
+      "sources": [
+        "academia-sinica",
+        "makemeahanzi",
+        "unicode",
+        "baxter-sagart",
+        "dong-chinese"
+      ],
+      "components": [],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_0.png",
+          "source": "academia-sinica",
+          "description": "甲3510(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_1.png",
+          "source": "academia-sinica",
+          "description": "拾7.11(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_2.png",
+          "source": "academia-sinica",
+          "description": "戈冬方鼎(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_3.png",
+          "source": "academia-sinica",
+          "description": "師望鼎(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_4.png",
+          "source": "academia-sinica",
+          "description": "師𩛥鼎(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_5.png",
+          "source": "academia-sinica",
+          "description": "史墻盤(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_6.png",
+          "source": "academia-sinica",
+          "description": "㝬簋(金)西周晚期",
+          "type": "Bronze",
+          "era": "Late Western Zhou (~800 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_7.png",
+          "source": "academia-sinica",
+          "description": "秦公鎛(金)春秋早期",
+          "type": "Bronze",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_8.png",
+          "source": "academia-sinica",
+          "description": "羕伯受簠(金)春秋中期或晚期",
+          "type": "Bronze",
+          "era": "Mid Spring and Autumn (~600 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_9.png",
+          "source": "academia-sinica",
+          "description": "王孫遺者鐘(金)春秋晚期",
+          "type": "Bronze",
+          "era": "Late Spring and Autumn (~500 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_10.png",
+          "source": "academia-sinica",
+          "description": "蔡侯紐鐘(金)春秋晚期",
+          "type": "Bronze",
+          "era": "Late Spring and Autumn (~500 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_11.png",
+          "source": "academia-sinica",
+          "description": "中山王昔壺(金)戰國晚期",
+          "type": "Bronze",
+          "era": "Late Warring States (~250 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_12.png",
+          "source": "academia-sinica",
+          "description": "包2.218(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_13.png",
+          "source": "academia-sinica",
+          "description": "望1.13(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_14.png",
+          "source": "academia-sinica",
+          "description": "說文‧心部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_15.png",
+          "source": "academia-sinica",
+          "description": "睡.語9(隸)秦",
+          "type": "Clerical",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_16.png",
+          "source": "academia-sinica",
+          "description": "足臂灸經14(隸)秦",
+          "type": "Clerical",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_17.png",
+          "source": "academia-sinica",
+          "description": "老子甲24(隸)西漢",
+          "type": "Clerical",
+          "era": "Western Han dynasty (202 BC-9 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_18.png",
+          "source": "academia-sinica",
+          "description": "定縣竹簡55(隸)西漢",
+          "type": "Clerical",
+          "era": "Western Han dynasty (202 BC-9 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_19.png",
+          "source": "academia-sinica",
+          "description": "春秋事語40(隸)西漢",
+          "type": "Clerical",
+          "era": "Western Han dynasty (202 BC-9 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_20.png",
+          "source": "academia-sinica",
+          "description": "北海相景君銘(隸)東漢",
+          "type": "Clerical",
+          "era": "Eastern Han dynasty (25-220 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_21.png",
+          "source": "academia-sinica",
+          "description": "魏王基殘碑(隸)曹魏",
+          "type": "Clerical",
+          "era": "Cao Wei (Three Kingdoms: 222-280 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%BF%83_22.png",
+          "source": "academia-sinica",
+          "description": "熹.易.益(隸)東漢",
+          "type": "Clerical",
+          "era": "Eastern Han dynasty (25-220 AD)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 171 459 Q 147 381 112 311 Q 91 269 117 230 Q 129 209 152 227 Q 177 249 190 289 Q 211 344 208 392 Q 211 432 199 462 Q 192 472 185 472 Q 175 469 171 459 Z",
+              "M 863 228 Q 859 243 834 262 Q 797 290 698 391 Q 691 398 685 398 Q 682 397 684 389 Q 708 338 732 281 Q 742 257 728 241 Q 689 208 550 226 Q 441 244 397 323 Q 370 377 355 435 Q 348 463 324 476 Q 306 486 299 478 Q 295 474 302 454 Q 312 429 335 363 Q 372 224 476 178 Q 495 171 521 163 Q 710 115 851 212 Q 866 221 863 228 Z",
+              "M 441 617 Q 475 578 511 531 Q 524 515 541 513 Q 553 512 561 525 Q 568 541 564 574 Q 560 619 444 670 Q 428 677 420 675 Q 414 672 414 658 Q 415 645 441 617 Z",
+              "M 760 585 Q 814 536 877 465 Q 896 441 914 437 Q 924 436 933 447 Q 948 463 932 514 Q 922 563 840 592 Q 789 613 761 621 Q 751 627 748 612 Q 747 596 760 585 Z"
+            ],
+            "medians": [
+              [
+                [185, 462],
+                [176, 372],
+                [133, 236]
+              ],
+              [
+                [306, 473],
+                [333, 435],
+                [369, 327],
+                [400, 274],
+                [429, 244],
+                [471, 215],
+                [538, 193],
+                [634, 183],
+                [693, 187],
+                [748, 205],
+                [784, 234],
+                [773, 267],
+                [691, 393]
+              ],
+              [
+                [425, 667],
+                [520, 581],
+                [542, 534]
+              ],
+              [
+                [761, 607],
+                [838, 558],
+                [886, 518],
+                [915, 457]
+              ]
+            ]
+          },
+          "fragments": [],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "hint": "Depicts a heart.",
+      "shuowen": "《說文》：“心，人心。土藏，在身之中。象形。博士說以為火藏。”",
+      "variants": [
+        { "char": "心", "parts": "心", "source": "academia-sinica" }
+      ],
+      "gloss": "heart",
+      "oldPronunciations": [
+        {
+          "pinyin": "xīn",
+          "MC": "sim",
+          "OC": "*səm ",
+          "gloss": "heart",
+          "source": "baxter-sagart"
+        }
+      ],
+      "statistics": {
+        "hskLevel": 3,
+        "movieWordCount": 8955,
+        "movieWordCountPercent": 0.00026694277283518804,
+        "movieWordRank": 385,
+        "movieWordContexts": 3795,
+        "movieWordContextsPercent": 0.6078808265257087,
+        "bookWordCount": 8813238,
+        "bookWordCountPercent": 0.0005321984479148947,
+        "bookWordRank": 191,
+        "movieCharCount": 83418,
+        "movieCharCountPercent": 0.0017808720406355984,
+        "movieCharRank": 89,
+        "movieCharContexts": 6225,
+        "movieCharContextsPercent": 0.9971167707832773,
+        "bookCharCount": 392228,
+        "bookCharCountPercent": 0.0020269759979867704,
+        "bookCharRank": 90,
+        "topWords": [
+          {
+            "word": "心",
+            "share": 0.12715167040176456,
+            "trad": "心",
+            "gloss": "heart"
+          },
+          {
+            "word": "担心",
+            "share": 0.07945406093198569,
+            "trad": "擔心",
+            "gloss": "anxious"
+          },
+          {
+            "word": "中心",
+            "share": 0.0648281715665568,
+            "trad": "中心",
+            "gloss": "center"
+          },
+          {
+            "word": "开心",
+            "share": 0.062284920114637016,
+            "trad": "開心",
+            "gloss": "to feel happy"
+          },
+          {
+            "word": "小心",
+            "share": 0.05057787389600081,
+            "trad": "小心",
+            "gloss": "to be careful"
+          },
+          {
+            "word": "关心",
+            "share": 0.03672205367103542,
+            "trad": "關心",
+            "gloss": "to care about"
+          },
+          {
+            "word": "心理",
+            "share": 0.03313669223434661,
+            "trad": "心理",
+            "gloss": "mental"
+          },
+          {
+            "word": "心里",
+            "share": 0.03311146974596105,
+            "trad": "心裡",
+            "gloss": "chest"
+          },
+          {
+            "word": "心情",
+            "share": 0.03127116714087934,
+            "trad": "心情",
+            "gloss": "mood"
+          },
+          {
+            "word": "恶心",
+            "share": 0.021837386544779964,
+            "trad": "惡心",
+            "gloss": "nausea"
+          },
+          {
+            "word": "心中",
+            "share": 0.021081956607252105,
+            "trad": "心中",
+            "gloss": "central point"
+          },
+          {
+            "word": "内心",
+            "share": 0.018106840568243743,
+            "trad": "內心",
+            "gloss": "heart"
+          },
+          {
+            "word": "核心",
+            "share": 0.016835900442832112,
+            "trad": "核心",
+            "gloss": "core"
+          },
+          {
+            "word": "心脏",
+            "share": 0.01580235242426642,
+            "trad": "心臟",
+            "gloss": "heart"
+          },
+          {
+            "word": "伤心",
+            "share": 0.015710324079776124,
+            "trad": "傷心",
+            "gloss": "to grieve"
+          },
+          {
+            "word": "信心",
+            "share": 0.01418995972638584,
+            "trad": "信心",
+            "gloss": "confidence"
+          },
+          {
+            "word": "真心",
+            "share": 0.01412174387718609,
+            "trad": "真心",
+            "gloss": "sincere"
+          },
+          {
+            "word": "放心",
+            "share": 0.014027329679919976,
+            "trad": "放心",
+            "gloss": "to feel relieved"
+          },
+          {
+            "word": "心灵",
+            "share": 0.010247586273452534,
+            "trad": "心靈",
+            "gloss": "bright"
+          },
+          {
+            "word": "耐心",
+            "share": 0.00879487939271565,
+            "trad": "耐心",
+            "gloss": "patience"
+          },
+          {
+            "word": "决心",
+            "share": 0.007923372057020848,
+            "trad": "決心",
+            "gloss": "determination"
+          },
+          {
+            "word": "心态",
+            "share": 0.00763973270090761,
+            "trad": "心態",
+            "gloss": "mentality"
+          },
+          {
+            "word": "爱心",
+            "share": 0.006703536761872115,
+            "trad": "愛心",
+            "gloss": "compassion"
+          },
+          {
+            "word": "心脏病",
+            "share": 0.006638002687083543,
+            "trad": "心臟病",
+            "gloss": "heart disease"
+          },
+          {
+            "word": "精心",
+            "share": 0.005823313704881351,
+            "trad": "精心",
+            "gloss": "fine"
+          }
+        ],
+        "pinyinFrequency": 3357
+      },
+      "customSources": ["季旭昇《說文新證》p.787"],
+      "isVerified": true
+    }
+  ],
+  "words": [
+    {
+      "_id": { "_str": "5f523074a8a5594704b72170" },
+      "simp": "刃",
+      "trad": "刃",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "rèn",
+          "simpTrad": "both",
+          "definitions": ["edged tool, cutlery, knife edge"],
+          "tang": ["njìn"]
+        },
+        {
+          "source": "cedict",
+          "pinyin": "rèn",
+          "definitions": ["edge of blade"]
+        }
+      ],
+      "gloss": "edge of blade",
+      "statistics": {
+        "hskLevel": 10,
+        "movieWordCount": 100,
+        "movieWordCountPercent": 0.000002980935486713434,
+        "movieWordRank": 11476,
+        "movieWordContexts": 66,
+        "movieWordContextsPercent": 0.010571840461316675,
+        "bookWordCount": 129232,
+        "bookWordCountPercent": 0.000007803836662636102,
+        "bookWordRank": 10602,
+        "movieCharCount": 265,
+        "movieCharCountPercent": 0.000005657425145273605,
+        "movieCharRank": 2737,
+        "movieCharContexts": 195,
+        "movieCharContextsPercent": 0.0312349831811629,
+        "bookCharCount": 2858,
+        "bookCharCountPercent": 0.000014769719148674215,
+        "bookCharRank": 2700,
+        "topWords": [
+          {
+            "word": "刃",
+            "share": 0.3761221783700204,
+            "trad": "刃",
+            "gloss": "edge of blade"
+          },
+          {
+            "word": "刀刃",
+            "share": 0.163124542500805,
+            "trad": "刀刃",
+            "gloss": "knife blade"
+          },
+          {
+            "word": "游刃有余",
+            "share": 0.10607428889333162,
+            "trad": "遊刃有餘",
+            "gloss": "handling a butcher's cleaver with ease (idiom); to do sth skillfully and easily"
+          },
+          {
+            "word": "迎刃而解",
+            "share": 0.10243278904995079,
+            "trad": "迎刃而解",
+            "gloss": "fig. easily solved"
+          },
+          {
+            "word": "利刃",
+            "share": 0.09051163745721214,
+            "trad": "利刃",
+            "gloss": "sharp blade"
+          },
+          {
+            "word": "兵刃",
+            "share": 0.0669122045526134,
+            "trad": "兵刃",
+            "gloss": "(bladed) weapons"
+          },
+          {
+            "word": "双刃剑",
+            "share": 0.05793699421135173,
+            "trad": "雙刃劍",
+            "gloss": "double-edged sword (both lit. and fig.)"
+          },
+          {
+            "word": "兵不血刃",
+            "share": 0.00998719812277665,
+            "trad": "兵不血刃",
+            "gloss": "lit. no blood on the men's swords (idiom); fig. an effortless victory"
+          },
+          {
+            "word": "白刃",
+            "share": 0.008202737810040949,
+            "trad": "白刃",
+            "gloss": "naked sword"
+          },
+          {
+            "word": "白刃战",
+            "share": 0.007806165532589705,
+            "trad": "白刃戰",
+            "gloss": "hand-to-hand fighting"
+          },
+          {
+            "word": "血刃",
+            "share": 0.0037004071748308735,
+            "trad": "血刃",
+            "gloss": "bloodshed"
+          },
+          {
+            "word": "开刃",
+            "share": 0.0015070381426585714,
+            "trad": "開刃",
+            "gloss": "to edge a knife, scissor, sword etc"
+          }
+        ]
+      },
+      "pinyinSearchString": "rèn ren4 ren"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b72e13" },
+      "simp": "心",
+      "trad": "心",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "xīn",
+          "simpTrad": "both",
+          "definitions": ["heart", "mind, intelligence", "soul"],
+          "tang": ["*sim"]
+        },
+        {
+          "source": "cedict",
+          "pinyin": "xīn",
+          "definitions": [
+            "heart",
+            "mind",
+            "intention",
+            "center",
+            "core",
+            "CL:顆|颗[kē],個|个[gè]"
+          ]
+        }
+      ],
+      "gloss": "heart",
+      "statistics": {
+        "hskLevel": 3,
+        "movieWordCount": 8955,
+        "movieWordCountPercent": 0.00026694277283518804,
+        "movieWordRank": 385,
+        "movieWordContexts": 3795,
+        "movieWordContextsPercent": 0.6078808265257087,
+        "bookWordCount": 8813238,
+        "bookWordCountPercent": 0.0005321984479148947,
+        "bookWordRank": 191,
+        "movieCharCount": 83418,
+        "movieCharCountPercent": 0.0017808720406355984,
+        "movieCharRank": 89,
+        "movieCharContexts": 6225,
+        "movieCharContextsPercent": 0.9971167707832773,
+        "bookCharCount": 392228,
+        "bookCharCountPercent": 0.0020269759979867704,
+        "bookCharRank": 90,
+        "topWords": [
+          {
+            "word": "心",
+            "share": 0.12715167040176456,
+            "trad": "心",
+            "gloss": "heart"
+          },
+          {
+            "word": "担心",
+            "share": 0.07945406093198569,
+            "trad": "擔心",
+            "gloss": "anxious"
+          },
+          {
+            "word": "中心",
+            "share": 0.0648281715665568,
+            "trad": "中心",
+            "gloss": "center"
+          },
+          {
+            "word": "开心",
+            "share": 0.062284920114637016,
+            "trad": "開心",
+            "gloss": "to feel happy"
+          },
+          {
+            "word": "小心",
+            "share": 0.05057787389600081,
+            "trad": "小心",
+            "gloss": "to be careful"
+          },
+          {
+            "word": "关心",
+            "share": 0.03672205367103542,
+            "trad": "關心",
+            "gloss": "to care about"
+          },
+          {
+            "word": "心理",
+            "share": 0.03313669223434661,
+            "trad": "心理",
+            "gloss": "mental"
+          },
+          {
+            "word": "心里",
+            "share": 0.03311146974596105,
+            "trad": "心裡",
+            "gloss": "chest"
+          },
+          {
+            "word": "心情",
+            "share": 0.03127116714087934,
+            "trad": "心情",
+            "gloss": "mood"
+          },
+          {
+            "word": "恶心",
+            "share": 0.021837386544779964,
+            "trad": "惡心",
+            "gloss": "nausea"
+          },
+          {
+            "word": "心中",
+            "share": 0.021081956607252105,
+            "trad": "心中",
+            "gloss": "central point"
+          },
+          {
+            "word": "内心",
+            "share": 0.018106840568243743,
+            "trad": "內心",
+            "gloss": "heart"
+          },
+          {
+            "word": "核心",
+            "share": 0.016835900442832112,
+            "trad": "核心",
+            "gloss": "core"
+          },
+          {
+            "word": "心脏",
+            "share": 0.01580235242426642,
+            "trad": "心臟",
+            "gloss": "heart"
+          },
+          {
+            "word": "伤心",
+            "share": 0.015710324079776124,
+            "trad": "傷心",
+            "gloss": "to grieve"
+          },
+          {
+            "word": "信心",
+            "share": 0.01418995972638584,
+            "trad": "信心",
+            "gloss": "confidence"
+          },
+          {
+            "word": "真心",
+            "share": 0.01412174387718609,
+            "trad": "真心",
+            "gloss": "sincere"
+          },
+          {
+            "word": "放心",
+            "share": 0.014027329679919976,
+            "trad": "放心",
+            "gloss": "to feel relieved"
+          },
+          {
+            "word": "心灵",
+            "share": 0.010247586273452534,
+            "trad": "心靈",
+            "gloss": "bright"
+          },
+          {
+            "word": "耐心",
+            "share": 0.00879487939271565,
+            "trad": "耐心",
+            "gloss": "patience"
+          },
+          {
+            "word": "决心",
+            "share": 0.007923372057020848,
+            "trad": "決心",
+            "gloss": "determination"
+          },
+          {
+            "word": "心态",
+            "share": 0.00763973270090761,
+            "trad": "心態",
+            "gloss": "mentality"
+          },
+          {
+            "word": "爱心",
+            "share": 0.006703536761872115,
+            "trad": "愛心",
+            "gloss": "compassion"
+          },
+          {
+            "word": "心脏病",
+            "share": 0.006638002687083543,
+            "trad": "心臟病",
+            "gloss": "heart disease"
+          },
+          {
+            "word": "精心",
+            "share": 0.005823313704881351,
+            "trad": "精心",
+            "gloss": "fine"
+          }
+        ],
+        "pinyinFrequency": 3357
+      },
+      "pinyinSearchString": "xīn xin1 xin"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b72e1d" },
+      "simp": "忍",
+      "trad": "忍",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "rěn",
+          "simpTrad": "both",
+          "definitions": ["endure, bear, suffer", "forbear"],
+          "tang": ["*njǐn"]
+        },
+        { "source": "unicode", "pinyin": "rèn", "simpTrad": "both" },
+        {
+          "source": "cedict",
+          "pinyin": "rěn",
+          "definitions": [
+            "to bear",
+            "to endure",
+            "to tolerate",
+            "to restrain oneself"
+          ]
+        }
+      ],
+      "gloss": "to bear",
+      "statistics": {
+        "hskLevel": 5,
+        "movieWordCount": 1043,
+        "movieWordCountPercent": 0.00003109115712642112,
+        "movieWordRank": 2335,
+        "movieWordContexts": 606,
+        "movieWordContextsPercent": 0.09706871696299856,
+        "bookWordCount": 758620,
+        "bookWordCountPercent": 0.00004581022168664881,
+        "bookWordRank": 2997,
+        "movieCharCount": 4557,
+        "movieCharCountPercent": 0.00009728636372457288,
+        "movieCharRank": 1036,
+        "movieCharContexts": 2538,
+        "movieCharContextsPercent": 0.40653531955790484,
+        "bookCharCount": 24862,
+        "bookCharCountPercent": 0.00012848312017996443,
+        "bookCharRank": 1127,
+        "topWords": [
+          {
+            "word": "忍",
+            "share": 0.25352378328206326,
+            "trad": "忍",
+            "gloss": "to bear"
+          },
+          {
+            "word": "忍受",
+            "share": 0.18165393987609021,
+            "trad": "忍受",
+            "gloss": "to bear"
+          },
+          {
+            "word": "忍不住",
+            "share": 0.1597505229387834,
+            "trad": "忍不住",
+            "gloss": "cannot help"
+          },
+          {
+            "word": "残忍",
+            "share": 0.12288366347993508,
+            "trad": "殘忍",
+            "gloss": "cruel"
+          },
+          {
+            "word": "容忍",
+            "share": 0.08398980329800962,
+            "trad": "容忍",
+            "gloss": "to put up with"
+          },
+          {
+            "word": "忍耐",
+            "share": 0.04800571216690358,
+            "trad": "忍耐",
+            "gloss": "to endure"
+          },
+          {
+            "word": "忍心",
+            "share": 0.03536299983510186,
+            "trad": "忍心",
+            "gloss": "to have the heart to do sth"
+          },
+          {
+            "word": "不忍",
+            "share": 0.017179720453040333,
+            "trad": "不忍",
+            "gloss": "disturbed"
+          },
+          {
+            "word": "忍无可忍",
+            "share": 0.016182711502519334,
+            "trad": "忍無可忍",
+            "gloss": "the last straw"
+          },
+          {
+            "word": "惨不忍睹",
+            "share": 0.014749772932303958,
+            "trad": "慘不忍睹",
+            "gloss": "appalling scenes of devastation"
+          },
+          {
+            "word": "难以忍受",
+            "share": 0.014506265735255198,
+            "trad": "難以忍受",
+            "gloss": "hard to endure"
+          },
+          {
+            "word": "隐忍",
+            "share": 0.008827224073484045,
+            "trad": "隱忍",
+            "gloss": "to bear patiently"
+          },
+          {
+            "word": "忍让",
+            "share": 0.008551269126815699,
+            "trad": "忍讓",
+            "gloss": "to exercise forbearance"
+          },
+          {
+            "word": "忍痛",
+            "share": 0.007120815581973189,
+            "trad": "忍痛",
+            "gloss": "to suffer"
+          },
+          {
+            "word": "忍气吞声",
+            "share": 0.006933049087958686,
+            "trad": "忍氣吞聲",
+            "gloss": "to swallow one's anger"
+          },
+          {
+            "word": "坚忍",
+            "share": 0.003847358342692575,
+            "trad": "堅忍",
+            "gloss": "persevering"
+          },
+          {
+            "word": "忍俊不禁",
+            "share": 0.0037618106454430007,
+            "trad": "忍俊不禁",
+            "gloss": "cannot help laughing"
+          },
+          {
+            "word": "忍辱负重",
+            "share": 0.0032983633960974876,
+            "trad": "忍辱負重",
+            "gloss": "to endure humiliation as part of an important mission (idiom); to suffer in silence"
+          },
+          {
+            "word": "忍耐力",
+            "share": 0.001893939393939394,
+            "trad": "忍耐力",
+            "gloss": "patience"
+          },
+          {
+            "word": "忍痛割爱",
+            "share": 0.0017254780997149667,
+            "trad": "忍痛割愛",
+            "gloss": "to resign oneself to part with what one treasures"
+          },
+          {
+            "word": "坚忍不拔",
+            "share": 0.0016353117425597407,
+            "trad": "堅忍不拔",
+            "gloss": "fortitude"
+          },
+          {
+            "word": "于心不忍",
+            "share": 0.001626460420262167,
+            "trad": "於心不忍",
+            "gloss": "can't bear to"
+          },
+          {
+            "word": "忍冬",
+            "share": 0.0015722796795937394,
+            "trad": "忍冬",
+            "gloss": "honeysuckle"
+          },
+          {
+            "word": "忍饥挨饿",
+            "share": 0.0007038039080667006,
+            "trad": "忍飢挨餓",
+            "gloss": "starving"
+          },
+          {
+            "word": "隐忍不发",
+            "share": 0.00024890184505959705,
+            "trad": "隱忍不發",
+            "gloss": "to restrain one's emotions"
+          }
+        ],
+        "pinyinFrequency": 189
+      },
+      "pinyinSearchString": "rěn ren3 ren"
+    }
+  ],
+  "componentIn": [
+    {
+      "char": "認",
+      "components": [
+        { "character": "言", "type": ["meaning"] },
+        { "character": "忍", "type": ["sound"] }
+      ],
+      "statistics": { "bookCharCount": 191866 },
+      "isVerified": true
+    }
+  ]
+}

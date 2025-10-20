@@ -3,27 +3,33 @@ import { DongCharacterDisplay } from "~/components/DongCharacterDisplay";
 import MainFrame from "~/toolbar/frame";
 import type { DongCharacter } from "~/types/dong_character";
 
+// List of character files to load
+const CHARACTER_FILES = [
+  "wang_look_at.json",
+  "xi_hope.json",
+  "ren_endure.json",
+  "wei_do.json",
+];
+
 export default function DongDemo() {
-  const [wangCharacter, setWangCharacter] = useState<DongCharacter | null>(null);
-  const [xiCharacter, setXiCharacter] = useState<DongCharacter | null>(null);
+  const [characters, setCharacters] = useState<DongCharacter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load both character data files
-    Promise.all([
-      fetch("/data/dong/wang_look_at.json").then((res) => {
-        if (!res.ok) throw new Error("Failed to load wang character");
-        return res.json();
-      }),
-      fetch("/data/dong/xi_hope.json").then((res) => {
-        if (!res.ok) throw new Error("Failed to load xi character");
-        return res.json();
-      }),
-    ])
-      .then(([wangData, xiData]) => {
-        setWangCharacter(wangData);
-        setXiCharacter(xiData);
+    // Load all character data files
+    Promise.all(
+      CHARACTER_FILES.map((filename) =>
+        fetch(`/data/dong/${filename}`).then((res) => {
+          if (!res.ok) {
+            throw new Error(`Failed to load ${filename}`);
+          }
+          return res.json();
+        }),
+      ),
+    )
+      .then((charactersData) => {
+        setCharacters(charactersData);
         setLoading(false);
       })
       .catch((err) => {
@@ -52,7 +58,7 @@ export default function DongDemo() {
     );
   }
 
-  if (!wangCharacter || !xiCharacter) {
+  if (characters.length === 0) {
     return (
       <MainFrame>
         <div className="flex items-center justify-center min-h-screen">
@@ -65,9 +71,12 @@ export default function DongDemo() {
   return (
     <MainFrame>
       <div className="min-h-screen bg-gray-50 py-8">
-        <DongCharacterDisplay character={wangCharacter} />
-        <div className="my-16" />
-        <DongCharacterDisplay character={xiCharacter} />
+        {characters.map((character, index) => (
+          <div key={character.char}>
+            <DongCharacterDisplay character={character} />
+            {index < characters.length - 1 && <div className="my-16" />}
+          </div>
+        ))}
       </div>
     </MainFrame>
   );
