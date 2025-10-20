@@ -58,6 +58,113 @@ function getStrokeData(
   return character.data || character.images.find((img) => img.data)?.data;
 }
 
+// Component for rendering character (SVG or fallback text)
+interface CharacterDisplayProps {
+  strokeData?: { strokes: string[]; medians: number[][][] };
+  fallbackChar: string;
+  strokeColors?: { [key: number]: string };
+  className?: string;
+  fallbackClassName?: string;
+}
+
+function CharacterDisplay({
+  strokeData,
+  fallbackChar,
+  strokeColors,
+  className = "w-full h-full",
+  fallbackClassName = "text-9xl font-serif leading-none",
+}: CharacterDisplayProps) {
+  return strokeData ? (
+    <CharacterSVG
+      strokes={strokeData.strokes}
+      strokeColors={strokeColors}
+      className={className}
+    />
+  ) : (
+    <div className={fallbackClassName}>{fallbackChar}</div>
+  );
+}
+
+// Component for layered character display (background + highlighted strokes)
+interface LayeredCharacterProps {
+  strokeData: { strokes: string[]; medians: number[][][] };
+  fragmentIndices: number[];
+  fillColor: string;
+}
+
+function LayeredCharacter({
+  strokeData,
+  fragmentIndices,
+  fillColor,
+}: LayeredCharacterProps) {
+  const backgroundColors: { [key: number]: string } = {};
+  strokeData.strokes.forEach((_, strokeIndex) => {
+    backgroundColors[strokeIndex] = "#e5e7eb";
+  });
+
+  return (
+    <div className="relative w-full h-full">
+      {/* Background layer */}
+      <CharacterSVG
+        strokes={strokeData.strokes}
+        strokeColors={backgroundColors}
+      />
+      {/* Foreground layer - highlighted component */}
+      <div className="absolute inset-0">
+        <CharacterSVG
+          strokes={fragmentIndices.map((i) => strokeData.strokes[i])}
+          strokeColors={Object.fromEntries(
+            fragmentIndices.map((_, i) => [i, fillColor])
+          )}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Audio button component
+function AudioButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+      onClick={onClick}
+    >
+      <svg
+        className="w-6 h-6 text-gray-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m0-7.072a5 5 0 00-1.414 1.414M12 8v8m0 0l-3-3m3 3l3-3"
+        />
+      </svg>
+    </button>
+  );
+}
+
+// HSK Badge component
+function HskBadge({ level }: { level: number }) {
+  if (level > 9) return null;
+  return (
+    <span className="bg-black text-white px-3 py-1 rounded text-sm font-medium">
+      HSK {level}
+    </span>
+  );
+}
+
+// Section header component
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
+      {children}
+    </h2>
+  );
+}
+
 export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   const [activeComponent, setActiveComponent] = useState<string | null>(null);
 
@@ -66,17 +173,6 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
     character.pinyinFrequencies.length > 0
       ? character.pinyinFrequencies[0].pinyin
       : "";
-
-  // Get HSK level badge
-  const getHskBadge = () => {
-    const level = character.statistics.hskLevel;
-    if (level > 9) return null;
-    return (
-      <span className="bg-black text-white px-3 py-1 rounded text-sm font-medium">
-        HSK {level}
-      </span>
-    );
-  };
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
@@ -107,27 +203,19 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                   <>
                     {/* Colored version showing components */}
                     <div className="relative w-48 h-48">
-                      {strokeData ? (
-                        <CharacterSVG
-                          strokes={strokeData.strokes}
-                          strokeColors={strokeColors}
-                        />
-                      ) : (
-                        <div className="text-9xl font-serif leading-none">
-                          {character.char}
-                        </div>
-                      )}
+                      <CharacterDisplay
+                        strokeData={strokeData}
+                        fallbackChar={character.char}
+                        strokeColors={strokeColors}
+                      />
                     </div>
 
                     {/* Black version */}
                     <div className="relative w-48 h-48">
-                      {strokeData ? (
-                        <CharacterSVG strokes={strokeData.strokes} />
-                      ) : (
-                        <div className="text-9xl font-serif leading-none">
-                          {character.char}
-                        </div>
-                      )}
+                      <CharacterDisplay
+                        strokeData={strokeData}
+                        fallbackChar={character.char}
+                      />
                       {/* Show components overlay when hovering */}
                       {activeComponent && (
                         <div className="absolute inset-0 pointer-events-none">
@@ -142,28 +230,12 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
             {/* Character Metadata */}
             <div className="space-y-2">
-              {/* Audio Button */}
-              <button
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              <AudioButton
                 onClick={() => {
                   // Audio playback would go here
                   console.log("Play audio for:", character.char);
                 }}
-              >
-                <svg
-                  className="w-6 h-6 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m0-7.072a5 5 0 00-1.414 1.414M12 8v8m0 0l-3-3m3 3l3-3"
-                  />
-                </svg>
-              </button>
+              />
 
               {/* Pinyin */}
               <div className="text-2xl font-medium text-gray-700">
@@ -176,7 +248,9 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           </div>
 
           {/* HSK Badge */}
-          <div>{getHskBadge()}</div>
+          <div>
+            <HskBadge level={character.statistics.hskLevel} />
+          </div>
         </div>
 
         {/* Etymology/Hint */}
@@ -187,9 +261,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
       {/* Components Section */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-          Components
-        </h2>
+        <SectionHeader>Components</SectionHeader>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {character.components.map((component, index) => {
             const componentChar = character.chars?.find(
@@ -199,19 +271,6 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             const mainCharImage = character.images.find((img) => img.data);
             const fragmentIndices = mainCharImage?.fragments?.[index] || [];
             const fillColor = getComponentFillColor(component.type);
-
-            // Create stroke colors for background (gray) and highlighted component
-            const backgroundColors: { [key: number]: string } = {};
-            const highlightColors: { [key: number]: string } = {};
-
-            if (strokeData) {
-              strokeData.strokes.forEach((_, strokeIndex) => {
-                backgroundColors[strokeIndex] = "#e5e7eb";
-              });
-              fragmentIndices.forEach((strokeIndex) => {
-                highlightColors[strokeIndex] = fillColor;
-              });
-            }
 
             return (
               <div
@@ -223,24 +282,11 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                 {/* Component character with colored overlay */}
                 <div className="relative w-24 h-24 flex-shrink-0">
                   {strokeData && fragmentIndices.length > 0 ? (
-                    <div className="relative w-full h-full">
-                      {/* Background layer */}
-                      <CharacterSVG
-                        strokes={strokeData.strokes}
-                        strokeColors={backgroundColors}
-                      />
-                      {/* Foreground layer - highlighted component */}
-                      <div className="absolute inset-0">
-                        <CharacterSVG
-                          strokes={fragmentIndices.map(
-                            (i) => strokeData.strokes[i]
-                          )}
-                          strokeColors={Object.fromEntries(
-                            fragmentIndices.map((_, i) => [i, fillColor])
-                          )}
-                        />
-                      </div>
-                    </div>
+                    <LayeredCharacter
+                      strokeData={strokeData}
+                      fragmentIndices={fragmentIndices}
+                      fillColor={fillColor}
+                    />
                   ) : (
                     <>
                       <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
@@ -291,9 +337,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {/* Evolution Section */}
       {character.images.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-6 text-gray-800 border-b pb-2">
-            Evolution
-          </h2>
+          <SectionHeader>Evolution</SectionHeader>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {character.images.map((img, index) => (
               <div key={index} className="flex flex-col items-center text-center">
@@ -328,9 +372,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {/* Additional Information */}
       {character.statistics.topWords && (
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-            Common Words
-          </h2>
+          <SectionHeader>Common Words</SectionHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {character.statistics.topWords.slice(0, 12).map((word, index) => (
               <div
@@ -348,9 +390,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {/* Pronunciation variants */}
       {character.pinyinFrequencies.length > 1 && (
         <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-            Pronunciations
-          </h2>
+          <SectionHeader>Pronunciations</SectionHeader>
           <div className="space-y-2">
             {character.pinyinFrequencies.map((freq, index) => (
               <div key={index} className="flex items-baseline gap-3">
