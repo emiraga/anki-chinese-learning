@@ -124,30 +124,6 @@ function LayeredCharacter({
   );
 }
 
-// Audio button component
-function AudioButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-      onClick={onClick}
-    >
-      <svg
-        className="w-6 h-6 text-gray-600"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m0-7.072a5 5 0 00-1.414 1.414M12 8v8m0 0l-3-3m3 3l3-3"
-        />
-      </svg>
-    </button>
-  );
-}
-
 // HSK Badge component
 function HskBadge({ level }: { level: number }) {
   if (level > 9) return null;
@@ -232,13 +208,6 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
             {/* Character Metadata */}
             <div className="space-y-2">
-              <AudioButton
-                onClick={() => {
-                  // Audio playback would go here
-                  console.log("Play audio for:", character.char);
-                }}
-              />
-
               {/* Pinyin */}
               <div className="text-2xl font-medium text-gray-700">
                 {primaryPinyin}
