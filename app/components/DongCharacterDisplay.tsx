@@ -268,73 +268,73 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           <SectionHeader>Components</SectionHeader>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {character.components.map((component, index) => {
-            const componentChar = character.chars?.find(
-              (c) => c.char === component.character,
-            );
-            const strokeData = getStrokeData(character);
-            const mainCharImage = character.images.find((img) => img.data);
-            const fragmentIndices = mainCharImage?.fragments?.[index] || [];
-            const fillColor = getComponentFillColor(component.type);
+              const componentChar = character.chars?.find(
+                (c) => c.char === component.character,
+              );
+              const strokeData = getStrokeData(character);
+              const mainCharImage = character.images.find((img) => img.data);
+              const fragmentIndices = mainCharImage?.fragments?.[index] || [];
+              const fillColor = getComponentFillColor(component.type);
 
-            return (
-              <div
-                key={index}
-                className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                onMouseEnter={() => setActiveComponent(component.character)}
-                onMouseLeave={() => setActiveComponent(null)}
-              >
-                {/* Component character with colored overlay */}
-                <div className="relative w-24 h-24 flex-shrink-0">
-                  {strokeData && fragmentIndices.length > 0 ? (
-                    <LayeredCharacter
-                      strokeData={strokeData}
-                      fragmentIndices={fragmentIndices}
-                      fillColor={fillColor}
-                    />
-                  ) : (
-                    <>
-                      <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
-                        {character.char}
-                      </div>
-                      {/*<div
+              return (
+                <div
+                  key={index}
+                  className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  onMouseEnter={() => setActiveComponent(component.character)}
+                  onMouseLeave={() => setActiveComponent(null)}
+                >
+                  {/* Component character with colored overlay */}
+                  <div className="relative w-24 h-24 flex-shrink-0">
+                    {strokeData && fragmentIndices.length > 0 ? (
+                      <LayeredCharacter
+                        strokeData={strokeData}
+                        fragmentIndices={fragmentIndices}
+                        fillColor={fillColor}
+                      />
+                    ) : (
+                      <>
+                        <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
+                          {character.char}
+                        </div>
+                        {/*<div
                         className={`absolute inset-0 text-6xl font-serif leading-none ${getComponentTextColor(
                           component.type,
                         )} flex items-center justify-center`}
                       >
                         {component.character}
                       </div>*/}
-                    </>
-                  )}
-                </div>
-
-                {/* Component info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-3xl font-serif">
-                      {component.character}
-                    </span>
-                    <span
-                      className={`text-sm font-medium ${getComponentTextColor(
-                        component.type,
-                      )}`}
-                    >
-                      {getComponentTypeLabel(component.type)}{" "}
-                      {component.type.includes("deleted") ? "" : "component"}
-                    </span>
-                  </div>
-                  <div className="text-gray-600">
-                    {componentChar?.pinyinFrequencies?.[0]?.pinyin && (
-                      <span className="mr-2">
-                        {componentChar.pinyinFrequencies[0].pinyin}
-                      </span>
+                      </>
                     )}
-                    <span>{componentChar?.gloss || component.hint}</span>
+                  </div>
+
+                  {/* Component info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-3xl font-serif">
+                        {component.character}
+                      </span>
+                      <span
+                        className={`text-sm font-medium ${getComponentTextColor(
+                          component.type,
+                        )}`}
+                      >
+                        {getComponentTypeLabel(component.type)}{" "}
+                        {component.type.includes("deleted") ? "" : "component"}
+                      </span>
+                    </div>
+                    <div className="text-gray-600">
+                      {componentChar?.pinyinFrequencies?.[0]?.pinyin && (
+                        <span className="mr-2">
+                          {componentChar.pinyinFrequencies[0].pinyin}
+                        </span>
+                      )}
+                      <span>{componentChar?.gloss || component.hint}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -416,50 +416,90 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         )}
 
       {/* Component In - Characters that use this character as a component */}
-      {character.componentIn && character.componentIn.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <SectionHeader>
-            {character.componentIn[0].components
+      {character.componentIn &&
+        character.componentIn.length > 0 &&
+        (() => {
+          // Group componentIn by type
+          const meaningComponents = character.componentIn.filter((item) =>
+            item.components
               .find((c) => c.character === character.char)
-              ?.type.includes("sound") && "Sound component in "}
-            {character.componentIn[0].components
+              ?.type.includes("meaning"),
+          );
+          const soundComponents = character.componentIn.filter((item) =>
+            item.components
               .find((c) => c.character === character.char)
-              ?.type.includes("meaning") && "Meaning component in "}
-            {character.componentIn[0].components
+              ?.type.includes("sound"),
+          );
+          const iconicComponents = character.componentIn.filter((item) =>
+            item.components
               .find((c) => c.character === character.char)
-              ?.type.includes("iconic") && "Iconic component in "}
-            {character.componentIn.length} character
-            {character.componentIn.length !== 1 ? "s" : ""} (
-            {
-              character.componentIn.filter((item) => item.isVerified === true)
-                .length
-            }{" "}
-            verified)
-          </SectionHeader>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {character.componentIn.map((item, index) => (
-              <a
-                key={index}
-                href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                title={`${item.char} - View on Dong Chinese`}
-              >
-                <div className="text-5xl font-serif mb-2">{item.char}</div>
-                {item.statistics?.bookCharCount && (
-                  <div className="text-xs text-gray-500 text-center">
-                    {item.statistics.bookCharCount.toLocaleString()} book uses
-                  </div>
-                )}
-                {item.isVerified && (
-                  <div className="text-xs text-green-600 mt-1">✓ Verified</div>
-                )}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+              ?.type.includes("iconic"),
+          );
+
+          const renderComponentSection = (
+            items: typeof character.componentIn,
+            title: string,
+          ) => {
+            if (!items || items.length === 0) return null;
+
+            const verifiedCount = items.filter(
+              (item) => item.isVerified === true,
+            ).length;
+
+            // Sort by bookCharCount in descending order
+            const sortedItems = [...items].sort((a, b) => {
+              const aCount = a.statistics?.bookCharCount || 0;
+              const bCount = b.statistics?.bookCharCount || 0;
+              return bCount - aCount;
+            });
+
+            return (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <SectionHeader>
+                  {title} {items.length} character
+                  {items.length !== 1 ? "s" : ""} ({verifiedCount} verified)
+                </SectionHeader>
+                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
+                  {sortedItems.map((item, index) => (
+                    <a
+                      key={index}
+                      href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center p-0 hover:bg-gray-50 transition-colors"
+                      title={`${item.char} - View on Dong Chinese`}
+                    >
+                      <div className="text-5xl font-serif mb-2">
+                        {item.char}
+                      </div>
+                      {item.statistics?.bookCharCount && (
+                        <div className="text-xs text-gray-500 text-center">
+                          {item.statistics.bookCharCount.toLocaleString()} uses
+                        </div>
+                      )}
+                      {item.isVerified && (
+                        <div className="text-xs text-green-600 mt-1">
+                          ✓ Verified
+                        </div>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <>
+              {renderComponentSection(
+                meaningComponents,
+                "Meaning component in",
+              )}
+              {renderComponentSection(soundComponents, "Sound component in")}
+              {renderComponentSection(iconicComponents, "Iconic component in")}
+            </>
+          );
+        })()}
     </div>
   );
 }
