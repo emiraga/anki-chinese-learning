@@ -41,6 +41,7 @@ function CharacterSVG({
 function getComponentFillColor(type: string[]): string {
   if (type.includes("sound")) return "#2563eb"; // blue-600
   if (type.includes("iconic")) return "#16a34a"; // green-600
+  if (type.includes("meaning")) return "#dc2626"; // red-600
   return "#4b5563"; // gray-600
 }
 
@@ -48,6 +49,7 @@ function getComponentFillColor(type: string[]): string {
 function getComponentTextColor(type: string[]): string {
   if (type.includes("sound")) return "text-blue-600";
   if (type.includes("iconic")) return "text-green-600";
+  if (type.includes("meaning")) return "text-red-600";
   return "text-gray-600";
 }
 
@@ -316,6 +318,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                     >
                       {component.type.includes("sound") && "Sound "}
                       {component.type.includes("iconic") && "Iconic "}
+                      {component.type.includes("meaning") && "Meaning "}
                       component
                     </span>
                   </div>

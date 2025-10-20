@@ -4,21 +4,26 @@ import MainFrame from "~/toolbar/frame";
 import type { DongCharacter } from "~/types/dong_character";
 
 export default function DongDemo() {
-  const [character, setCharacter] = useState<DongCharacter | null>(null);
+  const [wangCharacter, setWangCharacter] = useState<DongCharacter | null>(null);
+  const [xiCharacter, setXiCharacter] = useState<DongCharacter | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load the character data
-    fetch("/data/dong/wang_look_at.json")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to load character data");
-        }
+    // Load both character data files
+    Promise.all([
+      fetch("/data/dong/wang_look_at.json").then((res) => {
+        if (!res.ok) throw new Error("Failed to load wang character");
         return res.json();
-      })
-      .then((data) => {
-        setCharacter(data);
+      }),
+      fetch("/data/dong/xi_hope.json").then((res) => {
+        if (!res.ok) throw new Error("Failed to load xi character");
+        return res.json();
+      }),
+    ])
+      .then(([wangData, xiData]) => {
+        setWangCharacter(wangData);
+        setXiCharacter(xiData);
         setLoading(false);
       })
       .catch((err) => {
@@ -47,7 +52,7 @@ export default function DongDemo() {
     );
   }
 
-  if (!character) {
+  if (!wangCharacter || !xiCharacter) {
     return (
       <MainFrame>
         <div className="flex items-center justify-center min-h-screen">
@@ -60,7 +65,9 @@ export default function DongDemo() {
   return (
     <MainFrame>
       <div className="min-h-screen bg-gray-50 py-8">
-        <DongCharacterDisplay character={character} />
+        <DongCharacterDisplay character={wangCharacter} />
+        <div className="my-16" />
+        <DongCharacterDisplay character={xiCharacter} />
       </div>
     </MainFrame>
   );
