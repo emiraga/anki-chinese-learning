@@ -322,7 +322,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                         {component.type.includes("deleted") ? "" : "component"}
                       </span>
                     </div>
-                    <div className="text-gray-600">
+                    <div className="text-gray-600 mb-2">
                       {componentChar?.pinyinFrequencies?.[0]?.pinyin && (
                         <span className="mr-2">
                           {componentChar.pinyinFrequencies[0].pinyin}
@@ -330,6 +330,18 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       )}
                       <span>{componentChar?.gloss || component.hint}</span>
                     </div>
+                    {component.isGlyphChanged && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-gray-700">
+                        <div className="flex gap-2">
+                          <span className="text-blue-600 flex-shrink-0">ⓘ</span>
+                          <span>
+                            Due to historical stylistic changes, this component is
+                            less similar to {component.character} than it was in
+                            ancient scripts.
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -435,6 +447,11 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               .find((c) => c.character === character.char)
               ?.type.includes("iconic"),
           );
+          const unknownComponents = character.componentIn.filter((item) =>
+            item.components
+              .find((c) => c.character === character.char)
+              ?.type.includes("unknown"),
+          );
 
           const renderComponentSection = (
             items: typeof character.componentIn,
@@ -497,6 +514,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               )}
               {renderComponentSection(soundComponents, "Sound component in")}
               {renderComponentSection(iconicComponents, "Iconic component in")}
+              {renderComponentSection(unknownComponents, "Unknown component in")}
             </>
           );
         })()}
