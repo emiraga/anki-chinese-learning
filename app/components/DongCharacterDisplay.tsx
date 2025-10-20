@@ -38,34 +38,95 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-8">
-            {/* Main Character Display */}
-            <div className="relative w-48 h-48">
-              {character.data || character.images.find((img) => img.data) ? (
-                <svg
-                  viewBox="0 0 1024 1024"
-                  className="w-full h-full"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g transform="scale(1, -1) translate(0, -1024)">
-                    {(character.data?.strokes ||
-                      character.images.find((img) => img.data)?.data?.strokes ||
-                      []
-                    ).map((stroke, index) => (
-                      <path key={index} d={stroke} fill="black" stroke="none" />
-                    ))}
-                  </g>
-                </svg>
-              ) : (
-                <div className="text-9xl font-serif leading-none">
-                  {character.char}
-                </div>
-              )}
-              {/* Show components overlay when hovering */}
-              {activeComponent && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {/* This would show the highlighted component */}
-                </div>
-              )}
+            {/* Main Character Display - Colored and Black versions */}
+            <div className="flex items-center gap-4">
+              {/* Colored version showing components */}
+              <div className="relative w-48 h-48">
+                {character.data || character.images.find((img) => img.data) ? (
+                  <svg
+                    viewBox="0 0 1024 1024"
+                    className="w-full h-full"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g transform="scale(1, -1) translate(0, -1024)">
+                      {(() => {
+                        const mainCharData =
+                          character.data ||
+                          character.images.find((img) => img.data)?.data;
+                        const mainCharImage = character.images.find(
+                          (img) => img.data
+                        );
+                        const fragments = mainCharImage?.fragments || [];
+
+                        if (!mainCharData) return null;
+
+                        // Create a map of stroke index to color
+                        const strokeColors: { [key: number]: string } = {};
+                        fragments.forEach((fragmentIndices, componentIndex) => {
+                          const component = character.components[componentIndex];
+                          const color = component?.type.includes("sound")
+                            ? "#2563eb"
+                            : component?.type.includes("iconic")
+                              ? "#16a34a"
+                              : "#000000";
+                          fragmentIndices.forEach((strokeIndex) => {
+                            strokeColors[strokeIndex] = color;
+                          });
+                        });
+
+                        return mainCharData.strokes.map((stroke, index) => (
+                          <path
+                            key={index}
+                            d={stroke}
+                            fill={strokeColors[index] || "#000000"}
+                            stroke="none"
+                          />
+                        ));
+                      })()}
+                    </g>
+                  </svg>
+                ) : (
+                  <div className="text-9xl font-serif leading-none">
+                    {character.char}
+                  </div>
+                )}
+              </div>
+
+              {/* Black version */}
+              <div className="relative w-48 h-48">
+                {character.data || character.images.find((img) => img.data) ? (
+                  <svg
+                    viewBox="0 0 1024 1024"
+                    className="w-full h-full"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g transform="scale(1, -1) translate(0, -1024)">
+                      {(character.data?.strokes ||
+                        character.images.find((img) => img.data)?.data
+                          ?.strokes ||
+                        []
+                      ).map((stroke, index) => (
+                        <path
+                          key={index}
+                          d={stroke}
+                          fill="black"
+                          stroke="none"
+                        />
+                      ))}
+                    </g>
+                  </svg>
+                ) : (
+                  <div className="text-9xl font-serif leading-none">
+                    {character.char}
+                  </div>
+                )}
+                {/* Show components overlay when hovering */}
+                {activeComponent && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    {/* This would show the highlighted component */}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Character Metadata */}
