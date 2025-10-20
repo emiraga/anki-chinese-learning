@@ -39,6 +39,7 @@ function CharacterSVG({
 
 // Helper to get component fill color
 function getComponentFillColor(type: string[]): string {
+  if (type.includes("deleted")) return "#9ca3af"; // gray-400 (lighter for deleted)
   if (type.includes("sound")) return "#2563eb"; // blue-600
   if (type.includes("iconic")) return "#16a34a"; // green-600
   if (type.includes("meaning")) return "#dc2626"; // red-600
@@ -47,10 +48,20 @@ function getComponentFillColor(type: string[]): string {
 
 // Helper to get component text color class
 function getComponentTextColor(type: string[]): string {
+  if (type.includes("deleted")) return "text-gray-400";
   if (type.includes("sound")) return "text-blue-600";
   if (type.includes("iconic")) return "text-green-600";
   if (type.includes("meaning")) return "text-red-600";
   return "text-gray-600";
+}
+
+// Helper to get component type label
+function getComponentTypeLabel(type: string[]): string {
+  if (type.includes("deleted")) return "Deleted";
+  if (type.includes("sound")) return "Sound";
+  if (type.includes("iconic")) return "Iconic";
+  if (type.includes("meaning")) return "Meaning";
+  return "";
 }
 
 // Helper to get stroke data from character
@@ -274,13 +285,13 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
                         {character.char}
                       </div>
-                      <div
+                      {/*<div
                         className={`absolute inset-0 text-6xl font-serif leading-none ${getComponentTextColor(
                           component.type,
                         )} flex items-center justify-center`}
                       >
                         {component.character}
-                      </div>
+                      </div>*/}
                     </>
                   )}
                 </div>
@@ -296,10 +307,8 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                         component.type,
                       )}`}
                     >
-                      {component.type.includes("sound") && "Sound "}
-                      {component.type.includes("iconic") && "Iconic "}
-                      {component.type.includes("meaning") && "Meaning "}
-                      component
+                      {getComponentTypeLabel(component.type)}{" "}
+                      {component.type.includes("deleted") ? "" : "component"}
                     </span>
                   </div>
                   <div className="text-gray-600">
@@ -365,8 +374,11 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                 key={index}
                 className="flex items-baseline gap-2 p-2 hover:bg-gray-50 rounded transition-colors"
               >
-                <span className="font-medium text-lg">{word.word}</span>
+                <span className="font-medium text-lg">{word.trad}</span>
                 <span className="text-gray-600 text-sm">{word.gloss}</span>
+                <span className="text-gray-400 text-xs ml-auto">
+                  {(word.share * 100).toFixed(1)}%
+                </span>
               </div>
             ))}
           </div>
@@ -395,15 +407,15 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {character.componentIn && character.componentIn.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm p-6">
           <SectionHeader>
-            {character.componentIn[0].components.find(
-              (c) => c.character === character.char,
-            )?.type.includes("sound") && "Sound component in "}
-            {character.componentIn[0].components.find(
-              (c) => c.character === character.char,
-            )?.type.includes("meaning") && "Meaning component in "}
-            {character.componentIn[0].components.find(
-              (c) => c.character === character.char,
-            )?.type.includes("iconic") && "Iconic component in "}
+            {character.componentIn[0].components
+              .find((c) => c.character === character.char)
+              ?.type.includes("sound") && "Sound component in "}
+            {character.componentIn[0].components
+              .find((c) => c.character === character.char)
+              ?.type.includes("meaning") && "Meaning component in "}
+            {character.componentIn[0].components
+              .find((c) => c.character === character.char)
+              ?.type.includes("iconic") && "Iconic component in "}
             {character.componentIn.length} character
             {character.componentIn.length !== 1 ? "s" : ""} (
             {

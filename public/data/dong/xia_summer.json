@@ -1,0 +1,1774 @@
+{
+  "_id": { "_str": "5f523afdde54193ed8730c85" },
+  "char": "夏",
+  "codepoint": "U+590F",
+  "strokeCount": 10,
+  "pinyinFrequencies": [{ "pinyin": "xià", "count": 197 }],
+  "sources": [
+    "academia-sinica",
+    "makemeahanzi",
+    "unicode",
+    "baxter-sagart",
+    "dong-chinese",
+    "cedict"
+  ],
+  "components": [
+    {
+      "character": "日",
+      "type": ["deleted"],
+      "hint": "The sun (日) component began to be omitted for brevity during the Warring States period."
+    },
+    { "character": "頁", "type": ["iconic"], "hint": "Depicts a head." },
+    { "character": "夂", "type": ["iconic"], "hint": "Depicts a foot." }
+  ],
+  "images": [
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_0.png",
+      "source": "academia-sinica",
+      "description": "戩5.13(甲)",
+      "type": "Oracle",
+      "era": "(~1250-1000 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_1.png",
+      "source": "academia-sinica",
+      "description": "林2.26.7(甲)",
+      "type": "Oracle",
+      "era": "(~1250-1000 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_2.png",
+      "source": "academia-sinica",
+      "description": "伯夏父鼎(金)西周晚期",
+      "type": "Bronze",
+      "era": "Late Western Zhou (~800 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_3.png",
+      "source": "academia-sinica",
+      "description": "秦公簋(金)春秋中期",
+      "type": "Bronze",
+      "era": "Qin dynasty (221-206 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_4.png",
+      "source": "academia-sinica",
+      "description": "邳伯缶(金)戰國早期",
+      "type": "Bronze",
+      "era": "Early Warring States (~400 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_5.png",
+      "source": "academia-sinica",
+      "description": "鄂君啟舟節(金)戰國中期",
+      "type": "Bronze",
+      "era": "Mid Warring States (~300 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_6.png",
+      "source": "academia-sinica",
+      "description": "鄂君啟車節(金)戰國中期",
+      "type": "Bronze",
+      "era": "Mid Warring States (~300 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_7.png",
+      "source": "academia-sinica",
+      "description": "帛乙1.14(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_8.png",
+      "source": "academia-sinica",
+      "description": "上(1).孔.2(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_9.png",
+      "source": "academia-sinica",
+      "description": "天卜(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_10.png",
+      "source": "academia-sinica",
+      "description": "天卜(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_11.png",
+      "source": "academia-sinica",
+      "description": "天卜(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_12.png",
+      "source": "academia-sinica",
+      "description": "包2.224(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_13.png",
+      "source": "academia-sinica",
+      "description": "包2.225(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_14.png",
+      "source": "academia-sinica",
+      "description": "郭.唐.13(楚)",
+      "type": "Seal",
+      "era": "Chu (Warring States: 475-221 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_15.png",
+      "source": "academia-sinica",
+      "description": "說文古文",
+      "type": "Seal",
+      "era": "Shuowen (~100 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_16.png",
+      "source": "academia-sinica",
+      "description": "說文‧夊部",
+      "type": "Seal",
+      "era": "Shuowen (~100 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_17.png",
+      "source": "academia-sinica",
+      "description": "睡虎地簡10.4(隸)秦",
+      "type": "Clerical",
+      "era": "Qin dynasty (221-206 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_18.png",
+      "source": "academia-sinica",
+      "description": "五十二病方252(隸)秦",
+      "type": "Clerical",
+      "era": "Qin dynasty (221-206 BC)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_19.png",
+      "source": "academia-sinica",
+      "description": "老子甲後218(隸)西漢",
+      "type": "Clerical",
+      "era": "Western Han dynasty (202 BC-9 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_20.png",
+      "source": "academia-sinica",
+      "description": "西陲簡51.18(隸)西漢",
+      "type": "Clerical",
+      "era": "Western Han dynasty (202 BC-9 AD)"
+    },
+    {
+      "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%8F_21.png",
+      "source": "academia-sinica",
+      "description": "熹.春秋.僖廿一年(隸)東漢",
+      "type": "Clerical",
+      "era": "Eastern Han dynasty (25-220 AD)"
+    },
+    {
+      "data": {
+        "strokes": [
+          "M 479 766 Q 489 776 678 777 Q 738 780 812 774 Q 833 774 838 783 Q 844 795 827 809 Q 773 851 735 843 Q 593 816 229 779 Q 207 778 223 759 Q 238 744 256 738 Q 278 732 295 737 Q 362 753 437 762 L 479 766 Z",
+          "M 440 665 Q 470 704 490 720 Q 503 729 498 739 Q 494 752 479 766 C 458 787 439 792 437 762 Q 437 740 395 655 C 382 628 422 641 440 665 Z",
+          "M 362 650 Q 349 657 325 663 Q 313 667 309 662 Q 302 658 309 640 Q 334 564 340 443 Q 340 407 357 381 Q 373 357 379 372 Q 382 379 384 388 L 388 415 Q 388 452 385 467 L 383 487 Q 380 520 379 543 L 378 564 Q 375 601 375 618 C 375 644 375 644 362 650 Z",
+          "M 598 409 Q 620 381 637 373 Q 649 366 661 388 Q 676 419 695 585 Q 702 616 723 641 Q 735 654 723 667 Q 707 682 665 705 Q 646 711 565 691 L 442 666 Q 439 666 440 665 L 395 655 Q 379 654 362 650 C 333 644 346 610 375 618 Q 451 640 587 662 Q 618 666 627 657 Q 645 639 643 621 Q 627 450 611 434 C 599 408 597 410 598 409 Z",
+          "M 379 543 Q 389 542 400 543 Q 488 559 552 568 Q 571 571 565 582 Q 556 594 535 598 Q 511 601 378 564 C 349 556 349 545 379 543 Z",
+          "M 385 467 Q 392 466 404 467 Q 494 480 560 488 Q 579 491 573 502 Q 564 514 543 518 Q 518 524 383 487 C 354 479 355 469 385 467 Z",
+          "M 384 388 Q 391 387 402 388 Q 514 401 598 409 C 628 412 636 417 611 434 Q 602 441 588 445 Q 566 449 526 442 Q 453 427 388 415 C 359 410 354 390 384 388 Z",
+          "M 427 302 Q 443 321 455 330 Q 465 340 463 349 Q 460 362 437 370 Q 410 380 399 378 Q 392 377 389 365 Q 362 257 81 59 Q 60 46 86 48 Q 194 60 379 249 Q 386 261 407 281 L 427 302 Z",
+          "M 581 116 Q 620 164 656 234 Q 672 262 694 278 Q 715 291 703 307 Q 691 320 661 336 Q 637 346 608 336 Q 575 326 532 315 Q 492 308 427 302 C 397 299 379 291 407 281 Q 408 281 411 279 Q 448 263 499 275 Q 572 294 586 293 Q 607 289 599 267 Q 577 197 540 146 L 516 118 Q 435 37 262 0 Q 247 -4 258 -13 Q 265 -17 316 -15 Q 380 -11 455 22 Q 509 46 551 83 L 581 116 Z",
+          "M 551 83 Q 686 -52 732 -50 Q 817 -46 884 -31 Q 920 -24 916 -14 Q 915 -10 879 0 Q 693 40 612 94 Q 596 106 581 116 L 540 146 Q 509 173 475 203 Q 438 237 404 236 Q 388 236 385 230 Q 384 224 399 215 Q 441 194 516 118 L 551 83 Z"
+        ],
+        "medians": [
+          [
+            [226, 769],
+            [277, 759],
+            [499, 791],
+            [750, 811],
+            [826, 789]
+          ],
+          [
+            [444, 758],
+            [461, 737],
+            [458, 727],
+            [429, 681],
+            [401, 665]
+          ],
+          [
+            [316, 654],
+            [338, 633],
+            [347, 613],
+            [369, 379]
+          ],
+          [
+            [369, 646],
+            [385, 638],
+            [401, 640],
+            [618, 683],
+            [653, 675],
+            [669, 662],
+            [679, 650],
+            [678, 639],
+            [647, 444],
+            [635, 414],
+            [612, 410]
+          ],
+          [
+            [384, 549],
+            [393, 557],
+            [520, 581],
+            [556, 578]
+          ],
+          [
+            [389, 472],
+            [420, 485],
+            [518, 501],
+            [564, 498]
+          ],
+          [
+            [388, 394],
+            [401, 403],
+            [602, 431]
+          ],
+          [
+            [447, 346],
+            [417, 341],
+            [355, 257],
+            [253, 161],
+            [167, 97],
+            [90, 56]
+          ],
+          [
+            [412, 286],
+            [507, 292],
+            [592, 312],
+            [623, 307],
+            [644, 294],
+            [618, 226],
+            [589, 172],
+            [538, 105],
+            [510, 80],
+            [453, 44],
+            [393, 18],
+            [304, -5],
+            [263, -7]
+          ],
+          [
+            [391, 229],
+            [421, 220],
+            [457, 197],
+            [612, 61],
+            [708, 3],
+            [754, -10],
+            [911, -16]
+          ]
+        ]
+      },
+      "fragments": [[], [0, 1, 2, 3, 4, 5, 6], [7, 8, 9]],
+      "source": "makemeahanzi",
+      "description": "楷書",
+      "type": "Regular",
+      "era": "Modern"
+    }
+  ],
+  "shuowen": "《說文》：“夏，中國之人也。从夊、从頁、从。，兩手；夊，兩足也。，古文（夏）。”",
+  "variants": [
+    { "char": "夏", "parts": "𦣻夊", "source": "academia-sinica" },
+    { "char": "暊", "parts": "日頁", "source": "academia-sinica" },
+    { "char": "", "parts": "日止頁", "source": "academia-sinica" },
+    { "char": "", "parts": "日正頁", "source": "academia-sinica" },
+    { "char": "", "parts": "日虫頁", "source": "academia-sinica" },
+    { "char": "", "parts": "日虫", "source": "academia-sinica" }
+  ],
+  "gloss": "summer",
+  "oldPronunciations": [
+    {
+      "pinyin": "xià",
+      "MC": "haeX",
+      "OC": "*[ɢ]ˤraʔ ",
+      "gloss": "great",
+      "source": "baxter-sagart"
+    },
+    {
+      "pinyin": "xià",
+      "MC": "haeH",
+      "OC": "*[g]ˤraʔ (~ *[g]ˤraʔ-s)",
+      "gloss": "summer",
+      "source": "baxter-sagart"
+    }
+  ],
+  "hint": "Pictograph of a person, represented by their head (頁) and feet (夂), being heated underneath the sun (日). The sun component was later omitted for brevity during the Warring States period.",
+  "statistics": {
+    "hskLevel": 2,
+    "movieWordCount": 359,
+    "movieWordCountPercent": 0.000010701558397301229,
+    "movieWordRank": 5082,
+    "movieWordContexts": 134,
+    "movieWordContextsPercent": 0.02146403972449143,
+    "bookWordCount": 910767,
+    "bookWordCountPercent": 0.00005499780941035575,
+    "bookWordRank": 2502,
+    "movieCharCount": 3691,
+    "movieCharCountPercent": 0.0000787983253253014,
+    "movieCharRank": 1144,
+    "movieCharContexts": 1369,
+    "movieCharContextsPercent": 0.21928559987185647,
+    "bookCharCount": 24888,
+    "bookCharCountPercent": 0.00012861748431497685,
+    "bookCharRank": 1126,
+    "topWords": [
+      {
+        "word": "夏天",
+        "share": 0.2532245267476373,
+        "trad": "夏天",
+        "gloss": "summer"
+      },
+      {
+        "word": "夏",
+        "share": 0.1997225121871473,
+        "trad": "夏",
+        "gloss": "summer"
+      },
+      {
+        "word": "夏威夷",
+        "share": 0.08825928088363076,
+        "trad": "夏威夷",
+        "gloss": "Hawaii, US state"
+      },
+      {
+        "word": "夏季",
+        "share": 0.0778412823578475,
+        "trad": "夏季",
+        "gloss": "summer"
+      },
+      {
+        "word": "夏日",
+        "share": 0.04075649989944005,
+        "trad": "夏日",
+        "gloss": "summertime"
+      },
+      {
+        "word": "华夏",
+        "share": 0.03600707210366451,
+        "trad": "華夏",
+        "gloss": "Cathay"
+      },
+      {
+        "word": "夏洛特",
+        "share": 0.03517306577359667,
+        "trad": "夏洛特",
+        "gloss": "Charlotte (name)"
+      },
+      {
+        "word": "夏令营",
+        "share": 0.03330746866990337,
+        "trad": "夏令營",
+        "gloss": "summer camp"
+      },
+      {
+        "word": "宁夏",
+        "share": 0.02772381144523612,
+        "trad": "寧夏",
+        "gloss": "Ningxia Hui Autonomous Region, abbr. 寧|宁[Níng], capital Yinchuan 銀川|银川[Yín​chuān]"
+      },
+      {
+        "word": "夏普",
+        "share": 0.0191535601065147,
+        "trad": "夏普",
+        "gloss": "Sharp Corporation"
+      },
+      {
+        "word": "夏利",
+        "share": 0.01440568829022575,
+        "trad": "夏利",
+        "gloss": "Xiali, car brand by Tianjin FAW Xiali Motor Company"
+      },
+      {
+        "word": "夏娃",
+        "share": 0.013373514452713838,
+        "trad": "夏娃",
+        "gloss": "Eve (in Protestant versions of the Bible) (from Hebrew Ḥawwāh, probably via Cantonese 夏娃 {Haa6waa1})"
+      },
+      {
+        "word": "盛夏",
+        "share": 0.010589689430714248,
+        "trad": "盛夏",
+        "gloss": "midsummer"
+      },
+      {
+        "word": "夏洛克",
+        "share": 0.0089400266259919,
+        "trad": "夏洛克",
+        "gloss": "Sherlock (name)"
+      },
+      {
+        "word": "西夏",
+        "share": 0.007173801357746485,
+        "trad": "西夏",
+        "gloss": "Western Xia dynasty 1038-1227 of Tangut people 黨項|党项 occupying modern Ningxia and parts of Gansu and Shaanxi, overthrown by Mongols"
+      },
+      {
+        "word": "初夏",
+        "share": 0.005510575360106748,
+        "trad": "初夏",
+        "gloss": "early summer"
+      },
+      {
+        "word": "春夏秋冬",
+        "share": 0.005162721245964593,
+        "trad": "春夏秋冬",
+        "gloss": "the four seasons"
+      },
+      {
+        "word": "仲夏",
+        "share": 0.00503497674219027,
+        "trad": "仲夏",
+        "gloss": "midsummer"
+      },
+      {
+        "word": "华夏银行",
+        "share": 0.004814019932089637,
+        "trad": "華夏銀行",
+        "gloss": "Huaxia Bank"
+      },
+      {
+        "word": "夏河",
+        "share": 0.0031146152749935247,
+        "trad": "夏河",
+        "gloss": "Xiahe county in Gannan Tibetan autonomous prefecture 甘南藏族自治州[Gān​nán​Zàng​zú​zì​zhì​zhōu], Gansu, formerly Amdo province of Tibet"
+      },
+      {
+        "word": "江夏",
+        "share": 0.0028082191098666087,
+        "trad": "江夏",
+        "gloss": "Jiangxia district of Wuhan city 武漢市|武汉市[Wǔ​hàn​shì], Hubei"
+      }
+    ],
+    "pinyinFrequency": 197
+  },
+  "customSources": [
+    "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E5%A4%8F"
+  ],
+  "isVerified": true,
+  "chars": [
+    {
+      "_id": { "_str": "5f523afdde54193ed8730c78" },
+      "char": "夂",
+      "codepoint": "U+5902",
+      "strokeCount": 3,
+      "sources": ["academia-sinica", "makemeahanzi", "unicode", "dong-chinese"],
+      "components": [],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E5%A4%82_0.png",
+          "source": "academia-sinica",
+          "description": "說文‧夂部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 429 712 Q 453 746 483 766 Q 493 773 491 787 Q 490 800 467 825 Q 445 846 427 849 Q 409 850 414 829 Q 421 805 410 788 Q 376 730 328 676 Q 283 625 223 571 Q 213 564 209 558 Q 205 548 217 548 Q 250 552 336 624 Q 340 628 347 633 L 365 649 Q 381 665 402 684 L 429 712 Z",
+              "M 532 526 Q 575 575 625 643 Q 644 670 672 686 Q 688 693 689 702 Q 689 715 662 734 Q 628 761 613 762 Q 601 762 589 755 Q 526 733 429 712 C 400 705 372 689 402 684 Q 447 668 548 704 Q 567 708 574 701 Q 578 697 557 655 Q 529 606 486 556 L 463 531 Q 334 402 152 348 Q 142 345 142 340 Q 142 336 150 334 Q 297 319 471 467 Q 474 471 503 497 L 532 526 Z",
+              "M 503 497 Q 692 337 735 329 Q 822 329 907 352 Q 926 356 928 362 Q 929 369 914 374 Q 847 396 768 417 Q 666 447 532 526 L 486 556 Q 467 571 447 585 Q 392 631 365 649 C 341 666 325 654 347 633 Q 375 605 463 531 L 503 497 Z"
+            ],
+            "medians": [
+              [
+                [425, 836],
+                [444, 812],
+                [450, 788],
+                [433, 764],
+                [315, 630],
+                [256, 580],
+                [217, 556]
+              ],
+              [
+                [408, 687],
+                [564, 726],
+                [610, 720],
+                [621, 707],
+                [586, 641],
+                [542, 580],
+                [499, 530],
+                [432, 467],
+                [316, 390],
+                [222, 353],
+                [149, 341]
+              ],
+              [
+                [354, 634],
+                [371, 630],
+                [447, 563],
+                [547, 488],
+                [718, 386],
+                [743, 376],
+                [787, 370],
+                [922, 363]
+              ]
+            ]
+          },
+          "fragments": [],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "shuowen": "《說文》：“夂，从後至也。象人兩脛後有致之者。讀若黹。”",
+      "variants": [
+        { "char": "夂", "parts": "夂", "source": "academia-sinica" }
+      ],
+      "gloss": "go",
+      "hint": "夂 is a component form of 止, which is a pictograph of a foot.",
+      "statistics": {
+        "hskLevel": 10,
+        "bookWordCount": 9620,
+        "bookWordCountPercent": 5.809157847480445e-7,
+        "bookWordRank": 39011,
+        "topWords": [
+          {
+            "word": "夂",
+            "share": 0.5,
+            "trad": "夂",
+            "gloss": "see also 冬字頭|冬字头[dōng​zì​tóu]"
+          }
+        ]
+      },
+      "isVerified": true,
+      "variantOf": "止"
+    },
+    {
+      "_id": { "_str": "5f523afede54193ed873195b" },
+      "char": "日",
+      "codepoint": "U+65E5",
+      "strokeCount": 4,
+      "pinyinFrequencies": [{ "pinyin": "rì", "count": 1276 }],
+      "sources": [
+        "academia-sinica",
+        "makemeahanzi",
+        "unicode",
+        "baxter-sagart",
+        "dong-chinese"
+      ],
+      "components": [],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_0.png",
+          "source": "academia-sinica",
+          "description": "鐵180.2(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_1.png",
+          "source": "academia-sinica",
+          "description": "鐵62.4(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_2.png",
+          "source": "academia-sinica",
+          "description": "京津4090(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_3.png",
+          "source": "academia-sinica",
+          "description": "佚374(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_4.png",
+          "source": "academia-sinica",
+          "description": "後2.3.18(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_5.png",
+          "source": "academia-sinica",
+          "description": "佚425(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_6.png",
+          "source": "academia-sinica",
+          "description": "ˍ婦簋(金)西周早期",
+          "type": "Bronze",
+          "era": "Early Western Zhou (~1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_7.png",
+          "source": "academia-sinica",
+          "description": "作冊䰧卣(金)西周早期",
+          "type": "Bronze",
+          "era": "Early Western Zhou (~1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_8.png",
+          "source": "academia-sinica",
+          "description": "𤼈鐘(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_9.png",
+          "source": "academia-sinica",
+          "description": "少虡劍(金)春秋晚期",
+          "type": "Bronze",
+          "era": "Late Spring and Autumn (~500 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_10.png",
+          "source": "academia-sinica",
+          "description": "妾子𧊒壺(金)戰國晚期",
+          "type": "Bronze",
+          "era": "Late Warring States (~250 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_11.png",
+          "source": "academia-sinica",
+          "description": "包2.19(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_12.png",
+          "source": "academia-sinica",
+          "description": "說文古文",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_13.png",
+          "source": "academia-sinica",
+          "description": "說文‧日部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_14.png",
+          "source": "academia-sinica",
+          "description": "繹山碑(篆)秦",
+          "type": "Seal",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_15.png",
+          "source": "academia-sinica",
+          "description": "睡.日甲107背(隸)秦",
+          "type": "Clerical",
+          "era": "Qin dynasty (221-206 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_16.png",
+          "source": "academia-sinica",
+          "description": "春秋事語74(隸)西漢",
+          "type": "Clerical",
+          "era": "Western Han dynasty (202 BC-9 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E6%97%A5_17.png",
+          "source": "academia-sinica",
+          "description": "熹.易.乾文言(隸)東漢",
+          "type": "Clerical",
+          "era": "Eastern Han dynasty (25-220 AD)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 349 664 Q 348 665 347 666 Q 322 687 292 696 Q 282 697 274 689 Q 270 682 279 670 Q 331 531 294 261 Q 287 216 271 169 Q 262 141 267 118 Q 277 81 291 65 Q 304 50 314 66 Q 324 79 332 102 L 339 137 Q 349 186 350 238 Q 350 316 351 391 L 352 420 Q 353 576 361 626 C 364 652 364 652 349 664 Z",
+              "M 608 120 Q 641 78 665 39 Q 675 18 688 19 Q 707 20 724 59 Q 745 104 740 157 Q 728 310 721 593 Q 720 629 738 654 Q 748 669 738 681 Q 716 703 656 730 Q 635 740 617 729 Q 512 684 349 664 C 319 660 332 620 361 626 Q 410 635 590 672 Q 624 679 640 666 Q 691 615 658 164 Q 657 163 657 159 Q 653 143 640 144 C 621 121 602 128 608 120 Z",
+              "M 351 391 Q 390 378 433 387 Q 493 399 554 411 Q 582 417 587 421 Q 596 428 591 437 Q 584 447 556 455 Q 531 461 450 435 Q 375 423 352 420 C 322 416 322 400 351 391 Z",
+              "M 332 102 Q 345 98 361 100 Q 440 115 608 120 C 638 121 661 122 640 144 Q 633 153 614 166 Q 596 178 561 170 Q 438 146 339 137 C 309 134 303 108 332 102 Z"
+            ],
+            "medians": [
+              [
+                [284, 684],
+                [321, 646],
+                [328, 617],
+                [332, 516],
+                [323, 261],
+                [302, 136],
+                [302, 70]
+              ],
+              [
+                [359, 660],
+                [374, 648],
+                [388, 650],
+                [635, 703],
+                [668, 687],
+                [690, 665],
+                [699, 450],
+                [699, 159],
+                [685, 105],
+                [688, 37]
+              ],
+              [
+                [357, 413],
+                [369, 404],
+                [398, 404],
+                [534, 432],
+                [581, 431]
+              ],
+              [
+                [340, 106],
+                [355, 119],
+                [432, 130],
+                [585, 147],
+                [632, 143]
+              ]
+            ]
+          },
+          "fragments": [],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "hint": "Pictograph of the sun.",
+      "shuowen": "《說文》：“日，實也，太陽之精不虧。从囗、一，象形。日說文古文，古文，象形。”",
+      "variants": [
+        { "char": "日", "parts": "日", "source": "academia-sinica" }
+      ],
+      "gloss": "sun",
+      "oldPronunciations": [
+        {
+          "pinyin": "rì",
+          "MC": "nyit",
+          "OC": "*C.nik ",
+          "gloss": "sun; day",
+          "source": "baxter-sagart"
+        }
+      ],
+      "statistics": {
+        "hskLevel": 1,
+        "movieWordCount": 4114,
+        "movieWordCountPercent": 0.00012263568592339069,
+        "movieWordRank": 761,
+        "movieWordContexts": 1859,
+        "movieWordContextsPercent": 0.2977735063270863,
+        "bookWordCount": 42260866,
+        "bookWordCountPercent": 0.002551975481966939,
+        "bookWordRank": 28,
+        "movieCharCount": 23151,
+        "movieCharCountPercent": 0.000494245469955582,
+        "movieCharRank": 317,
+        "movieCharContexts": 5161,
+        "movieCharContextsPercent": 0.8266858881947782,
+        "bookCharCount": 363763,
+        "bookCharCountPercent": 0.001879873109404891,
+        "bookCharRank": 101,
+        "topWords": [
+          {
+            "word": "日",
+            "share": 0.3763310413787034,
+            "trad": "日",
+            "gloss": "sun"
+          },
+          {
+            "word": "生日",
+            "share": 0.09024201999398244,
+            "trad": "生日",
+            "gloss": "birthday"
+          },
+          {
+            "word": "日子",
+            "share": 0.08015355777605811,
+            "trad": "日子",
+            "gloss": "day"
+          },
+          {
+            "word": "日本",
+            "share": 0.07579795430969116,
+            "trad": "日本",
+            "gloss": "Japan"
+          },
+          {
+            "word": "昨日",
+            "share": 0.024139682553779053,
+            "trad": "昨日",
+            "gloss": "yesterday"
+          },
+          {
+            "word": "今日",
+            "share": 0.0231442528027793,
+            "trad": "今日",
+            "gloss": "today"
+          },
+          {
+            "word": "节日",
+            "share": 0.017170434891840933,
+            "trad": "節日",
+            "gloss": "holiday"
+          },
+          {
+            "word": "日记",
+            "share": 0.0169751154076627,
+            "trad": "日記",
+            "gloss": "diary"
+          },
+          {
+            "word": "日期",
+            "share": 0.01515697317278898,
+            "trad": "日期",
+            "gloss": "date"
+          },
+          {
+            "word": "近日",
+            "share": 0.01313822148069021,
+            "trad": "近日",
+            "gloss": "recently"
+          },
+          {
+            "word": "末日",
+            "share": 0.013045833386123928,
+            "trad": "末日",
+            "gloss": "end"
+          },
+          {
+            "word": "周日",
+            "share": 0.012046148100214494,
+            "trad": "週日",
+            "gloss": "Sunday"
+          },
+          {
+            "word": "日常",
+            "share": 0.00968004665883784,
+            "trad": "日常",
+            "gloss": "daily"
+          },
+          {
+            "word": "每日",
+            "share": 0.009196813741067962,
+            "trad": "每日",
+            "gloss": "daily"
+          },
+          {
+            "word": "日落",
+            "share": 0.007959444083172215,
+            "trad": "日落",
+            "gloss": "sundown"
+          },
+          {
+            "word": "纪念日",
+            "share": 0.0073718539619296525,
+            "trad": "紀念日",
+            "gloss": "memorial day"
+          },
+          {
+            "word": "日程",
+            "share": 0.006774659369418584,
+            "trad": "日程",
+            "gloss": "schedule"
+          },
+          {
+            "word": "日益",
+            "share": 0.0064874131528124025,
+            "trad": "日益",
+            "gloss": "day by day"
+          },
+          {
+            "word": "生日快乐",
+            "share": 0.006167503673618954,
+            "trad": "生日快樂",
+            "gloss": "Happy birthday"
+          },
+          {
+            "word": "当日",
+            "share": 0.006151233695785228,
+            "trad": "當日",
+            "gloss": "that very day"
+          },
+          {
+            "word": "日志",
+            "share": 0.005328216553548608,
+            "trad": "日誌",
+            "gloss": "journal"
+          },
+          {
+            "word": "假日",
+            "share": 0.004919078464488411,
+            "trad": "假日",
+            "gloss": "holiday"
+          },
+          {
+            "word": "早日",
+            "share": 0.004830184291443449,
+            "trad": "早日",
+            "gloss": "soon"
+          },
+          {
+            "word": "过日子",
+            "share": 0.004500503414643801,
+            "trad": "過日子",
+            "gloss": "to live one's life"
+          }
+        ],
+        "pinyinFrequency": 1276
+      },
+      "isVerified": true,
+      "customSources": [
+        "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E6%97%A5"
+      ]
+    },
+    {
+      "_id": { "_str": "5f523affde54193ed8734b77" },
+      "char": "頁",
+      "codepoint": "U+9801",
+      "strokeCount": 9,
+      "pinyinFrequencies": [{ "pinyin": "yè", "count": 35 }],
+      "simpVariants": ["页"],
+      "sources": ["academia-sinica", "makemeahanzi", "unicode", "dong-chinese"],
+      "components": [
+        {
+          "character": "首",
+          "type": ["iconic"],
+          "hint": null,
+          "isGlyphChanged": true
+        },
+        { "character": "卩", "type": ["iconic"], "hint": null }
+      ],
+      "images": [
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_0.png",
+          "source": "academia-sinica",
+          "description": "乙8780(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_1.png",
+          "source": "academia-sinica",
+          "description": "坊間2.198(甲)",
+          "type": "Oracle",
+          "era": "(~1250-1000 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_2.png",
+          "source": "academia-sinica",
+          "description": "卯簋蓋(金)西周中期",
+          "type": "Bronze",
+          "era": "Mid Western Zhou (~900 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_3.png",
+          "source": "academia-sinica",
+          "description": "包牘1(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_4.png",
+          "source": "academia-sinica",
+          "description": "信2.017(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_5.png",
+          "source": "academia-sinica",
+          "description": "仰25.22(楚)",
+          "type": "Seal",
+          "era": "Chu (Warring States: 475-221 BC)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_6.png",
+          "source": "academia-sinica",
+          "description": "說文‧頁部",
+          "type": "Seal",
+          "era": "Shuowen (~100 AD)"
+        },
+        {
+          "url": "https://data.dong-chinese.com/img/sinica/%E9%A0%81_7.png",
+          "source": "academia-sinica",
+          "description": "曹全碑陰(隸)東漢",
+          "type": "Clerical",
+          "era": "Eastern Han dynasty (25-220 AD)"
+        },
+        {
+          "data": {
+            "strokes": [
+              "M 486 755 Q 501 764 639 768 Q 673 769 877 770 Q 898 770 903 779 Q 909 791 892 805 Q 828 856 786 835 Q 591 802 209 759 Q 187 758 203 739 Q 218 724 236 719 Q 258 712 275 717 Q 354 739 445 750 L 486 755 Z",
+              "M 431 603 Q 450 625 464 641 Q 516 704 526 710 Q 542 725 528 737 Q 512 749 486 755 C 457 762 441 766 445 750 Q 444 747 448 741 Q 457 717 403 600 C 390 573 411 580 431 603 Z",
+              "M 358 597 Q 349 604 337 608 Q 327 612 315 608 Q 308 604 313 590 Q 346 497 329 317 Q 314 230 331 198 Q 337 188 345 177 Q 355 164 367 177 Q 376 190 378 205 L 381 240 Q 381 250 382 330 L 382 356 Q 382 411 383 450 L 383 476 Q 384 537 385 544 Q 386 557 386 566 C 386 580 384 581 358 597 Z",
+              "M 662 230 Q 663 220 672 209 Q 688 176 698 178 Q 714 179 731 216 Q 747 244 746 268 Q 733 359 734 503 Q 733 545 756 580 Q 766 596 758 608 Q 728 633 677 656 Q 661 662 635 652 Q 560 622 431 603 L 403 600 Q 378 599 358 597 C 328 595 357 560 386 566 Q 390 566 394 567 Q 520 597 611 611 Q 642 617 653 600 Q 669 579 670 506 Q 674 299 664 259 Q 663 258 663 256 L 662 230 Z",
+              "M 383 450 Q 393 447 410 449 Q 522 468 605 479 Q 630 482 621 496 Q 611 512 583 517 Q 562 520 383 476 C 354 469 354 456 383 450 Z",
+              "M 382 330 Q 392 327 410 329 Q 525 345 609 355 Q 634 358 625 372 Q 615 388 588 393 Q 563 397 519 387 Q 446 371 382 356 C 353 349 353 336 382 330 Z",
+              "M 378 205 Q 468 220 662 230 C 692 232 686 237 663 256 Q 656 262 646 269 Q 630 279 600 273 Q 479 251 381 240 C 351 237 348 200 378 205 Z",
+              "M 399 159 Q 384 89 199 -39 Q 174 -54 204 -52 Q 276 -55 419 63 Q 420 69 476 113 Q 489 125 487 136 Q 486 151 457 162 Q 426 177 412 174 Q 403 173 399 159 Z",
+              "M 615 132 Q 672 65 738 -29 Q 754 -54 770 -61 Q 780 -64 789 -53 Q 805 -40 797 11 Q 793 77 621 167 Q 611 174 607 160 Q 604 145 615 132 Z"
+            ],
+            "medians": [
+              [
+                [206, 749],
+                [258, 740],
+                [546, 783],
+                [804, 805],
+                [851, 799],
+                [891, 785]
+              ],
+              [
+                [452, 747],
+                [483, 718],
+                [426, 616],
+                [409, 611]
+              ],
+              [
+                [323, 599],
+                [341, 580],
+                [355, 552],
+                [359, 415],
+                [351, 250],
+                [356, 183]
+              ],
+              [
+                [365, 594],
+                [400, 583],
+                [637, 632],
+                [661, 631],
+                [698, 600],
+                [707, 580],
+                [701, 518],
+                [706, 262],
+                [698, 190]
+              ],
+              [
+                [390, 457],
+                [401, 466],
+                [563, 495],
+                [610, 490]
+              ],
+              [
+                [389, 337],
+                [407, 346],
+                [559, 371],
+                [591, 373],
+                [614, 366]
+              ],
+              [
+                [382, 210],
+                [396, 225],
+                [595, 250],
+                [639, 250],
+                [651, 237]
+              ],
+              [
+                [467, 133],
+                [432, 130],
+                [360, 51],
+                [303, 7],
+                [209, -43]
+              ],
+              [
+                [619, 153],
+                [704, 77],
+                [747, 29],
+                [774, -44]
+              ]
+            ]
+          },
+          "fragments": [
+            [0, 1, 2, 3, 4, 5, 6],
+            [7, 8]
+          ],
+          "source": "makemeahanzi",
+          "description": "楷書",
+          "type": "Regular",
+          "era": "Modern"
+        }
+      ],
+      "hint": "Pictograph of a head (首) on top of a person (卩). Means \"head\" when pronounced xié. Has unrelated meaning \"leaf\" when pronounced yè, due to this character being adopted as a variant form of 葉.",
+      "shuowen": "《說文》：“頁，頭也。从，从儿。古文如此。者首字也。”",
+      "comments": [
+        {
+          "source": "academia-sinica",
+          "text": "李孝定《甲骨文字集釋》：“古文頁𦣻首當為一字，頁象頭及身，𦣻但象頭，首象頭及其上髮小異耳。”按：清嚴可均等認為“𦣻者䭫首字也”六字是後人所贅入的校語。"
+        }
+      ],
+      "variants": [
+        { "char": "頁", "parts": "頁", "source": "academia-sinica" }
+      ],
+      "gloss": "(head), page",
+      "statistics": {
+        "hskLevel": 10,
+        "movieWordCount": 1114,
+        "movieWordCountPercent": 0.000033207621321987657,
+        "movieWordRank": 2217,
+        "movieWordContexts": 679,
+        "movieWordContextsPercent": 0.10876181323081852,
+        "bookWordCount": 903856,
+        "bookWordCountPercent": 0.000054580479993682803,
+        "bookWordRank": 2515,
+        "movieCharCount": 1442,
+        "movieCharCountPercent": 0.00003078493229994165,
+        "movieCharRank": 1722,
+        "movieCharContexts": 854,
+        "movieCharContextsPercent": 0.13679320839340062,
+        "bookCharCount": 24861,
+        "bookCharCountPercent": 0.0001284779523286178,
+        "bookCharRank": 1128,
+        "topWords": [
+          {
+            "word": "页",
+            "share": 0.7599809617890505,
+            "trad": "頁",
+            "gloss": "page"
+          },
+          {
+            "word": "页面",
+            "share": 0.07536254032916485,
+            "trad": "頁面",
+            "gloss": "page"
+          },
+          {
+            "word": "首页",
+            "share": 0.045659822355519665,
+            "trad": "首頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "网页",
+            "share": 0.04558107167710508,
+            "trad": "網頁",
+            "gloss": "web page"
+          },
+          {
+            "word": "主页",
+            "share": 0.021572720946416143,
+            "trad": "主頁",
+            "gloss": "home page"
+          },
+          {
+            "word": "书页",
+            "share": 0.012372450116122466,
+            "trad": "書頁",
+            "gloss": "page of a book"
+          },
+          {
+            "word": "页码",
+            "share": 0.0067689339781894274,
+            "trad": "頁碼",
+            "gloss": "page number"
+          },
+          {
+            "word": "页岩",
+            "share": 0.00672229370993065,
+            "trad": "頁岩",
+            "gloss": "shale"
+          },
+          {
+            "word": "扉页",
+            "share": 0.006175079890567443,
+            "trad": "扉頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "油页岩",
+            "share": 0.001208328526935056,
+            "trad": "油頁岩",
+            "gloss": "oil shale"
+          },
+          {
+            "word": "库页岛",
+            "share": 0.001018407132145741,
+            "trad": "庫頁島",
+            "gloss": "Sakhalin"
+          },
+          {
+            "word": "页首",
+            "share": 0.00015655125817774334,
+            "trad": "頁首",
+            "gloss": "page heading"
+          },
+          {
+            "word": "代码页",
+            "share": 0.000023482688726661504,
+            "trad": "代碼頁",
+            "gloss": "code page"
+          }
+        ],
+        "pinyinFrequency": 35
+      },
+      "customSources": [
+        "漢語多功能字庫|http://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=%E9%A0%81"
+      ],
+      "isVerified": true,
+      "originalMeaning": "head"
+    }
+  ],
+  "words": [
+    {
+      "_id": { "_str": "5f523074a8a5594704b727e1" },
+      "simp": "夂",
+      "trad": "夂",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "zhǐ",
+          "simpTrad": "both",
+          "definitions": ["go", "KangXi radical 34"]
+        },
+        { "source": "unicode", "pinyin": "zhōng", "simpTrad": "both" },
+        {
+          "source": "cedict",
+          "pinyin": "zhǐ",
+          "definitions": [
+            "\"walk slowly\" component in Chinese characters",
+            "see also 冬字頭|冬字头[dōng​zì​tóu]"
+          ]
+        }
+      ],
+      "gloss": "see also 冬字頭|冬字头[dōng​zì​tóu]",
+      "statistics": {
+        "hskLevel": 10,
+        "bookWordCount": 9620,
+        "bookWordCountPercent": 5.809157847480445e-7,
+        "bookWordRank": 39011,
+        "topWords": [
+          {
+            "word": "夂",
+            "share": 0.5,
+            "trad": "夂",
+            "gloss": "see also 冬字頭|冬字头[dōng​zì​tóu]"
+          }
+        ]
+      },
+      "pinyinSearchString": "zhǐ zhi3 zhi"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b727ef" },
+      "simp": "夏",
+      "trad": "夏",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "xià",
+          "simpTrad": "both",
+          "definitions": ["summer", "great, grand, big"],
+          "tang": ["*hǎ"]
+        },
+        { "source": "unicode", "pinyin": "jiǎ", "simpTrad": "both" },
+        {
+          "source": "cedict",
+          "pinyin": "Xià",
+          "definitions": [
+            "the Xia or Hsia dynasty c. 2000 BC",
+            "Xia of the Sixteen Kingdoms (407-432)",
+            "surname Xia"
+          ]
+        },
+        { "source": "cedict", "pinyin": "xià", "definitions": ["summer"] }
+      ],
+      "gloss": "summer",
+      "statistics": {
+        "hskLevel": 2,
+        "movieWordCount": 359,
+        "movieWordCountPercent": 0.000010701558397301229,
+        "movieWordRank": 5082,
+        "movieWordContexts": 134,
+        "movieWordContextsPercent": 0.02146403972449143,
+        "bookWordCount": 910767,
+        "bookWordCountPercent": 0.00005499780941035575,
+        "bookWordRank": 2502,
+        "movieCharCount": 3691,
+        "movieCharCountPercent": 0.0000787983253253014,
+        "movieCharRank": 1144,
+        "movieCharContexts": 1369,
+        "movieCharContextsPercent": 0.21928559987185647,
+        "bookCharCount": 24888,
+        "bookCharCountPercent": 0.00012861748431497685,
+        "bookCharRank": 1126,
+        "topWords": [
+          {
+            "word": "夏天",
+            "share": 0.2532245267476373,
+            "trad": "夏天",
+            "gloss": "summer"
+          },
+          {
+            "word": "夏",
+            "share": 0.1997225121871473,
+            "trad": "夏",
+            "gloss": "summer"
+          },
+          {
+            "word": "夏威夷",
+            "share": 0.08825928088363076,
+            "trad": "夏威夷",
+            "gloss": "Hawaii, US state"
+          },
+          {
+            "word": "夏季",
+            "share": 0.0778412823578475,
+            "trad": "夏季",
+            "gloss": "summer"
+          },
+          {
+            "word": "夏日",
+            "share": 0.04075649989944005,
+            "trad": "夏日",
+            "gloss": "summertime"
+          },
+          {
+            "word": "华夏",
+            "share": 0.03600707210366451,
+            "trad": "華夏",
+            "gloss": "Cathay"
+          },
+          {
+            "word": "夏洛特",
+            "share": 0.03517306577359667,
+            "trad": "夏洛特",
+            "gloss": "Charlotte (name)"
+          },
+          {
+            "word": "夏令营",
+            "share": 0.03330746866990337,
+            "trad": "夏令營",
+            "gloss": "summer camp"
+          },
+          {
+            "word": "宁夏",
+            "share": 0.02772381144523612,
+            "trad": "寧夏",
+            "gloss": "Ningxia Hui Autonomous Region, abbr. 寧|宁[Níng], capital Yinchuan 銀川|银川[Yín​chuān]"
+          },
+          {
+            "word": "夏普",
+            "share": 0.0191535601065147,
+            "trad": "夏普",
+            "gloss": "Sharp Corporation"
+          },
+          {
+            "word": "夏利",
+            "share": 0.01440568829022575,
+            "trad": "夏利",
+            "gloss": "Xiali, car brand by Tianjin FAW Xiali Motor Company"
+          },
+          {
+            "word": "夏娃",
+            "share": 0.013373514452713838,
+            "trad": "夏娃",
+            "gloss": "Eve (in Protestant versions of the Bible) (from Hebrew Ḥawwāh, probably via Cantonese 夏娃 {Haa6waa1})"
+          },
+          {
+            "word": "盛夏",
+            "share": 0.010589689430714248,
+            "trad": "盛夏",
+            "gloss": "midsummer"
+          },
+          {
+            "word": "夏洛克",
+            "share": 0.0089400266259919,
+            "trad": "夏洛克",
+            "gloss": "Sherlock (name)"
+          },
+          {
+            "word": "西夏",
+            "share": 0.007173801357746485,
+            "trad": "西夏",
+            "gloss": "Western Xia dynasty 1038-1227 of Tangut people 黨項|党项 occupying modern Ningxia and parts of Gansu and Shaanxi, overthrown by Mongols"
+          },
+          {
+            "word": "初夏",
+            "share": 0.005510575360106748,
+            "trad": "初夏",
+            "gloss": "early summer"
+          },
+          {
+            "word": "春夏秋冬",
+            "share": 0.005162721245964593,
+            "trad": "春夏秋冬",
+            "gloss": "the four seasons"
+          },
+          {
+            "word": "仲夏",
+            "share": 0.00503497674219027,
+            "trad": "仲夏",
+            "gloss": "midsummer"
+          },
+          {
+            "word": "华夏银行",
+            "share": 0.004814019932089637,
+            "trad": "華夏銀行",
+            "gloss": "Huaxia Bank"
+          },
+          {
+            "word": "夏河",
+            "share": 0.0031146152749935247,
+            "trad": "夏河",
+            "gloss": "Xiahe county in Gannan Tibetan autonomous prefecture 甘南藏族自治州[Gān​nán​Zàng​zú​zì​zhì​zhōu], Gansu, formerly Amdo province of Tibet"
+          },
+          {
+            "word": "江夏",
+            "share": 0.0028082191098666087,
+            "trad": "江夏",
+            "gloss": "Jiangxia district of Wuhan city 武漢市|武汉市[Wǔ​hàn​shì], Hubei"
+          }
+        ],
+        "pinyinFrequency": 197
+      },
+      "pinyinSearchString": "xià xia4 xia"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b733a2" },
+      "simp": "日",
+      "trad": "日",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "rì",
+          "simpTrad": "both",
+          "definitions": ["sun", "day", "daytime"],
+          "tang": ["*njit"]
+        },
+        {
+          "source": "cedict",
+          "pinyin": "Rì",
+          "definitions": ["abbr. for 日本[Rì​běn], Japan"]
+        },
+        {
+          "source": "cedict",
+          "pinyin": "rì",
+          "definitions": ["sun", "day", "date, day of the month"]
+        }
+      ],
+      "gloss": "sun",
+      "statistics": {
+        "hskLevel": 1,
+        "movieWordCount": 4114,
+        "movieWordCountPercent": 0.00012263568592339069,
+        "movieWordRank": 761,
+        "movieWordContexts": 1859,
+        "movieWordContextsPercent": 0.2977735063270863,
+        "bookWordCount": 42260866,
+        "bookWordCountPercent": 0.002551975481966939,
+        "bookWordRank": 28,
+        "movieCharCount": 23151,
+        "movieCharCountPercent": 0.000494245469955582,
+        "movieCharRank": 317,
+        "movieCharContexts": 5161,
+        "movieCharContextsPercent": 0.8266858881947782,
+        "bookCharCount": 363763,
+        "bookCharCountPercent": 0.001879873109404891,
+        "bookCharRank": 101,
+        "topWords": [
+          {
+            "word": "日",
+            "share": 0.3763310413787034,
+            "trad": "日",
+            "gloss": "sun"
+          },
+          {
+            "word": "生日",
+            "share": 0.09024201999398244,
+            "trad": "生日",
+            "gloss": "birthday"
+          },
+          {
+            "word": "日子",
+            "share": 0.08015355777605811,
+            "trad": "日子",
+            "gloss": "day"
+          },
+          {
+            "word": "日本",
+            "share": 0.07579795430969116,
+            "trad": "日本",
+            "gloss": "Japan"
+          },
+          {
+            "word": "昨日",
+            "share": 0.024139682553779053,
+            "trad": "昨日",
+            "gloss": "yesterday"
+          },
+          {
+            "word": "今日",
+            "share": 0.0231442528027793,
+            "trad": "今日",
+            "gloss": "today"
+          },
+          {
+            "word": "节日",
+            "share": 0.017170434891840933,
+            "trad": "節日",
+            "gloss": "holiday"
+          },
+          {
+            "word": "日记",
+            "share": 0.0169751154076627,
+            "trad": "日記",
+            "gloss": "diary"
+          },
+          {
+            "word": "日期",
+            "share": 0.01515697317278898,
+            "trad": "日期",
+            "gloss": "date"
+          },
+          {
+            "word": "近日",
+            "share": 0.01313822148069021,
+            "trad": "近日",
+            "gloss": "recently"
+          },
+          {
+            "word": "末日",
+            "share": 0.013045833386123928,
+            "trad": "末日",
+            "gloss": "end"
+          },
+          {
+            "word": "周日",
+            "share": 0.012046148100214494,
+            "trad": "週日",
+            "gloss": "Sunday"
+          },
+          {
+            "word": "日常",
+            "share": 0.00968004665883784,
+            "trad": "日常",
+            "gloss": "daily"
+          },
+          {
+            "word": "每日",
+            "share": 0.009196813741067962,
+            "trad": "每日",
+            "gloss": "daily"
+          },
+          {
+            "word": "日落",
+            "share": 0.007959444083172215,
+            "trad": "日落",
+            "gloss": "sundown"
+          },
+          {
+            "word": "纪念日",
+            "share": 0.0073718539619296525,
+            "trad": "紀念日",
+            "gloss": "memorial day"
+          },
+          {
+            "word": "日程",
+            "share": 0.006774659369418584,
+            "trad": "日程",
+            "gloss": "schedule"
+          },
+          {
+            "word": "日益",
+            "share": 0.0064874131528124025,
+            "trad": "日益",
+            "gloss": "day by day"
+          },
+          {
+            "word": "生日快乐",
+            "share": 0.006167503673618954,
+            "trad": "生日快樂",
+            "gloss": "Happy birthday"
+          },
+          {
+            "word": "当日",
+            "share": 0.006151233695785228,
+            "trad": "當日",
+            "gloss": "that very day"
+          },
+          {
+            "word": "日志",
+            "share": 0.005328216553548608,
+            "trad": "日誌",
+            "gloss": "journal"
+          },
+          {
+            "word": "假日",
+            "share": 0.004919078464488411,
+            "trad": "假日",
+            "gloss": "holiday"
+          },
+          {
+            "word": "早日",
+            "share": 0.004830184291443449,
+            "trad": "早日",
+            "gloss": "soon"
+          },
+          {
+            "word": "过日子",
+            "share": 0.004500503414643801,
+            "trad": "過日子",
+            "gloss": "to live one's life"
+          }
+        ],
+        "pinyinFrequency": 1276
+      },
+      "pinyinSearchString": "rì ri4 ri"
+    },
+    {
+      "_id": { "_str": "5f523074a8a5594704b75f4d" },
+      "simp": "页",
+      "trad": "頁",
+      "items": [
+        {
+          "source": "unicode",
+          "pinyin": "yè",
+          "simpTrad": "trad",
+          "definitions": ["page, sheet, leaf", "rad. no. 181"]
+        },
+        { "source": "unicode", "pinyin": "xié", "simpTrad": "trad" },
+        {
+          "source": "unicode",
+          "pinyin": "yè",
+          "simpTrad": "simp",
+          "definitions": ["page, sheet, leaf", "rad. no. 181"]
+        },
+        { "source": "cedict", "pinyin": "xié", "definitions": ["head"] },
+        { "source": "cedict", "pinyin": "yè", "definitions": ["page", "leaf"] }
+      ],
+      "gloss": "page",
+      "statistics": {
+        "hskLevel": 1,
+        "movieWordCount": 1114,
+        "movieWordCountPercent": 0.000033207621321987657,
+        "movieWordRank": 2217,
+        "movieWordContexts": 679,
+        "movieWordContextsPercent": 0.10876181323081852,
+        "bookWordCount": 903856,
+        "bookWordCountPercent": 0.000054580479993682803,
+        "bookWordRank": 2515,
+        "movieCharCount": 1442,
+        "movieCharCountPercent": 0.00003078493229994165,
+        "movieCharRank": 1722,
+        "movieCharContexts": 854,
+        "movieCharContextsPercent": 0.13679320839340062,
+        "bookCharCount": 24861,
+        "bookCharCountPercent": 0.0001284779523286178,
+        "bookCharRank": 1128,
+        "topWords": [
+          {
+            "word": "页",
+            "share": 0.7599809617890505,
+            "trad": "頁",
+            "gloss": "page"
+          },
+          {
+            "word": "页面",
+            "share": 0.07536254032916485,
+            "trad": "頁面",
+            "gloss": "page"
+          },
+          {
+            "word": "首页",
+            "share": 0.045659822355519665,
+            "trad": "首頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "网页",
+            "share": 0.04558107167710508,
+            "trad": "網頁",
+            "gloss": "web page"
+          },
+          {
+            "word": "主页",
+            "share": 0.021572720946416143,
+            "trad": "主頁",
+            "gloss": "home page"
+          },
+          {
+            "word": "书页",
+            "share": 0.012372450116122466,
+            "trad": "書頁",
+            "gloss": "page of a book"
+          },
+          {
+            "word": "页码",
+            "share": 0.0067689339781894274,
+            "trad": "頁碼",
+            "gloss": "page number"
+          },
+          {
+            "word": "页岩",
+            "share": 0.00672229370993065,
+            "trad": "頁岩",
+            "gloss": "shale"
+          },
+          {
+            "word": "扉页",
+            "share": 0.006175079890567443,
+            "trad": "扉頁",
+            "gloss": "title page"
+          },
+          {
+            "word": "油页岩",
+            "share": 0.001208328526935056,
+            "trad": "油頁岩",
+            "gloss": "oil shale"
+          },
+          {
+            "word": "库页岛",
+            "share": 0.001018407132145741,
+            "trad": "庫頁島",
+            "gloss": "Sakhalin"
+          },
+          {
+            "word": "页首",
+            "share": 0.00015655125817774334,
+            "trad": "頁首",
+            "gloss": "page heading"
+          },
+          {
+            "word": "代码页",
+            "share": 0.000023482688726661504,
+            "trad": "代碼頁",
+            "gloss": "code page"
+          }
+        ],
+        "pinyinFrequency": 35
+      },
+      "pinyinSearchString": "yè ye4 ye xié xie2 xie"
+    }
+  ],
+  "componentIn": [
+    {
+      "char": "厦",
+      "components": [
+        { "character": "厂", "type": ["meaning"] },
+        { "character": "夏", "type": ["sound"] }
+      ],
+      "statistics": { "bookCharCount": 5083 }
+    },
+    {
+      "char": "嗄",
+      "components": [
+        { "character": "口", "type": ["meaning"] },
+        { "character": "夏", "type": ["sound"] }
+      ],
+      "statistics": { "bookCharCount": 178 }
+    },
+    {
+      "char": "廈",
+      "components": [
+        { "character": "广", "type": ["meaning"] },
+        { "character": "夏", "type": ["sound"] }
+      ],
+      "statistics": { "bookCharCount": 5083 }
+    }
+  ]
+}

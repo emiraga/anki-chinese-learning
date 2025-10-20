@@ -10,6 +10,7 @@ const CHARACTER_FILES = [
   "ren_endure.json",
   "wei_do.json",
   "tou_head.json",
+  "xia_summer.json",
 ];
 
 export default function DongDemo() {
