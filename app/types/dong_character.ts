@@ -16,6 +16,7 @@ export interface DongCharacter {
     type: string[];
     hint?: string | null;
     isGlyphChanged?: boolean;
+    isFromOriginalMeaning?: boolean;
   }>;
   images: Array<{
     url?: string;

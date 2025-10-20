@@ -43,6 +43,7 @@ function getComponentFillColor(type: string[]): string {
   if (type.includes("sound")) return "#2563eb"; // blue-600
   if (type.includes("iconic")) return "#16a34a"; // green-600
   if (type.includes("meaning")) return "#dc2626"; // red-600
+  if (type.includes("remnant")) return "#9333ea"; // purple-600
   return "#4b5563"; // gray-600
 }
 
@@ -52,6 +53,7 @@ function getComponentTextColor(type: string[]): string {
   if (type.includes("sound")) return "text-blue-600";
   if (type.includes("iconic")) return "text-green-600";
   if (type.includes("meaning")) return "text-red-600";
+  if (type.includes("remnant")) return "text-purple-600";
   return "text-gray-600";
 }
 
@@ -61,6 +63,7 @@ function getComponentTypeLabel(type: string[]): string {
   if (type.includes("sound")) return "Sound";
   if (type.includes("iconic")) return "Iconic";
   if (type.includes("meaning")) return "Meaning";
+  if (type.includes("remnant")) return "Remnant";
   return "";
 }
 
@@ -342,6 +345,19 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                         </div>
                       </div>
                     )}
+                    {component.isFromOriginalMeaning && character.originalMeaning && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-gray-700">
+                        <div className="flex gap-2">
+                          <span className="text-blue-600 flex-shrink-0">ⓘ</span>
+                          <span>
+                            {component.character} hints at the original meaning of{" "}
+                            {character.char}, &quot;{character.originalMeaning}&quot;, which is
+                            no longer the most common meaning of {character.char} in
+                            modern Mandarin.
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -351,11 +367,20 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       )}
 
       {/* Evolution Section */}
-      {character.images.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <SectionHeader>Evolution</SectionHeader>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-            {character.images.map((img, index) => (
+      {character.images.length > 0 && (() => {
+        // Don't show evolution if there's only one modern image
+        if (character.images.length === 1) {
+          const singleImage = character.images[0];
+          if (singleImage.type === "Regular" && singleImage.era === "Modern") {
+            return null;
+          }
+        }
+
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <SectionHeader>Evolution</SectionHeader>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {character.images.map((img, index) => (
               <div
                 key={index}
                 className="flex flex-col items-center text-center"
@@ -385,8 +410,9 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* Additional Information */}
       {character.statistics.topWords && (
@@ -452,6 +478,11 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               .find((c) => c.character === character.char)
               ?.type.includes("unknown"),
           );
+          const remnantComponents = character.componentIn.filter((item) =>
+            item.components
+              .find((c) => c.character === character.char)
+              ?.type.includes("remnant"),
+          );
 
           const renderComponentSection = (
             items: typeof character.componentIn,
@@ -515,6 +546,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               {renderComponentSection(soundComponents, "Sound component in")}
               {renderComponentSection(iconicComponents, "Iconic component in")}
               {renderComponentSection(unknownComponents, "Unknown component in")}
+              {renderComponentSection(remnantComponents, "Remnant component in")}
             </>
           );
         })()}
