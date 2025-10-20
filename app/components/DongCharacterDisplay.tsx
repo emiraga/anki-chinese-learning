@@ -5,6 +5,59 @@ interface DongCharacterDisplayProps {
   character: DongCharacter;
 }
 
+// Helper component for rendering SVG character
+interface CharacterSVGProps {
+  strokes: string[];
+  strokeColors?: { [key: number]: string };
+  className?: string;
+}
+
+function CharacterSVG({
+  strokes,
+  strokeColors,
+  className = "w-full h-full",
+}: CharacterSVGProps) {
+  return (
+    <svg
+      viewBox="0 0 1024 1024"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g transform="scale(1, -1) translate(0, -1024)">
+        {strokes.map((stroke, index) => (
+          <path
+            key={index}
+            d={stroke}
+            fill={strokeColors?.[index] || "black"}
+            stroke="none"
+          />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+// Helper to get component fill color
+function getComponentFillColor(type: string[]): string {
+  if (type.includes("sound")) return "#2563eb"; // blue-600
+  if (type.includes("iconic")) return "#16a34a"; // green-600
+  return "#4b5563"; // gray-600
+}
+
+// Helper to get component text color class
+function getComponentTextColor(type: string[]): string {
+  if (type.includes("sound")) return "text-blue-600";
+  if (type.includes("iconic")) return "text-green-600";
+  return "text-gray-600";
+}
+
+// Helper to get stroke data from character
+function getStrokeData(
+  character: DongCharacter
+): { strokes: string[]; medians: number[][][] } | undefined {
+  return character.data || character.images.find((img) => img.data)?.data;
+}
+
 export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   const [activeComponent, setActiveComponent] = useState<string | null>(null);
 
@@ -25,13 +78,6 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
     );
   };
 
-  // Get component color based on type
-  const getComponentColor = (type: string[]) => {
-    if (type.includes("sound")) return "text-blue-600";
-    if (type.includes("iconic")) return "text-green-600";
-    return "text-gray-600";
-  };
-
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header Section */}
@@ -40,93 +86,58 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           <div className="flex items-center gap-8">
             {/* Main Character Display - Colored and Black versions */}
             <div className="flex items-center gap-4">
-              {/* Colored version showing components */}
-              <div className="relative w-48 h-48">
-                {character.data || character.images.find((img) => img.data) ? (
-                  <svg
-                    viewBox="0 0 1024 1024"
-                    className="w-full h-full"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g transform="scale(1, -1) translate(0, -1024)">
-                      {(() => {
-                        const mainCharData =
-                          character.data ||
-                          character.images.find((img) => img.data)?.data;
-                        const mainCharImage = character.images.find(
-                          (img) => img.data
-                        );
-                        const fragments = mainCharImage?.fragments || [];
+              {(() => {
+                const strokeData = getStrokeData(character);
+                const mainCharImage = character.images.find((img) => img.data);
+                const fragments = mainCharImage?.fragments || [];
 
-                        if (!mainCharData) return null;
+                // Create a map of stroke index to color for colored version
+                const strokeColors: { [key: number]: string } = {};
+                fragments.forEach((fragmentIndices, componentIndex) => {
+                  const component = character.components[componentIndex];
+                  if (component) {
+                    const color = getComponentFillColor(component.type);
+                    fragmentIndices.forEach((strokeIndex) => {
+                      strokeColors[strokeIndex] = color;
+                    });
+                  }
+                });
 
-                        // Create a map of stroke index to color
-                        const strokeColors: { [key: number]: string } = {};
-                        fragments.forEach((fragmentIndices, componentIndex) => {
-                          const component = character.components[componentIndex];
-                          const color = component?.type.includes("sound")
-                            ? "#2563eb"
-                            : component?.type.includes("iconic")
-                              ? "#16a34a"
-                              : "#000000";
-                          fragmentIndices.forEach((strokeIndex) => {
-                            strokeColors[strokeIndex] = color;
-                          });
-                        });
-
-                        return mainCharData.strokes.map((stroke, index) => (
-                          <path
-                            key={index}
-                            d={stroke}
-                            fill={strokeColors[index] || "#000000"}
-                            stroke="none"
-                          />
-                        ));
-                      })()}
-                    </g>
-                  </svg>
-                ) : (
-                  <div className="text-9xl font-serif leading-none">
-                    {character.char}
-                  </div>
-                )}
-              </div>
-
-              {/* Black version */}
-              <div className="relative w-48 h-48">
-                {character.data || character.images.find((img) => img.data) ? (
-                  <svg
-                    viewBox="0 0 1024 1024"
-                    className="w-full h-full"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g transform="scale(1, -1) translate(0, -1024)">
-                      {(character.data?.strokes ||
-                        character.images.find((img) => img.data)?.data
-                          ?.strokes ||
-                        []
-                      ).map((stroke, index) => (
-                        <path
-                          key={index}
-                          d={stroke}
-                          fill="black"
-                          stroke="none"
+                return (
+                  <>
+                    {/* Colored version showing components */}
+                    <div className="relative w-48 h-48">
+                      {strokeData ? (
+                        <CharacterSVG
+                          strokes={strokeData.strokes}
+                          strokeColors={strokeColors}
                         />
-                      ))}
-                    </g>
-                  </svg>
-                ) : (
-                  <div className="text-9xl font-serif leading-none">
-                    {character.char}
-                  </div>
-                )}
-                {/* Show components overlay when hovering */}
-                {activeComponent && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    {/* This would show the highlighted component */}
-                  </div>
-                )}
-              </div>
+                      ) : (
+                        <div className="text-9xl font-serif leading-none">
+                          {character.char}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Black version */}
+                    <div className="relative w-48 h-48">
+                      {strokeData ? (
+                        <CharacterSVG strokes={strokeData.strokes} />
+                      ) : (
+                        <div className="text-9xl font-serif leading-none">
+                          {character.char}
+                        </div>
+                      )}
+                      {/* Show components overlay when hovering */}
+                      {activeComponent && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          {/* This would show the highlighted component */}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Character Metadata */}
@@ -184,19 +195,23 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             const componentChar = character.chars?.find(
               (c) => c.char === component.character
             );
-            const mainCharData =
-              character.data || character.images.find((img) => img.data)?.data;
-
-            // Get the stroke indices for this component from fragments
+            const strokeData = getStrokeData(character);
             const mainCharImage = character.images.find((img) => img.data);
             const fragmentIndices = mainCharImage?.fragments?.[index] || [];
+            const fillColor = getComponentFillColor(component.type);
 
-            // Get fill color based on component type
-            const getFillColor = () => {
-              if (component.type.includes("sound")) return "#2563eb"; // blue-600
-              if (component.type.includes("iconic")) return "#16a34a"; // green-600
-              return "#4b5563"; // gray-600
-            };
+            // Create stroke colors for background (gray) and highlighted component
+            const backgroundColors: { [key: number]: string } = {};
+            const highlightColors: { [key: number]: string } = {};
+
+            if (strokeData) {
+              strokeData.strokes.forEach((_, strokeIndex) => {
+                backgroundColors[strokeIndex] = "#e5e7eb";
+              });
+              fragmentIndices.forEach((strokeIndex) => {
+                highlightColors[strokeIndex] = fillColor;
+              });
+            }
 
             return (
               <div
@@ -207,42 +222,32 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               >
                 {/* Component character with colored overlay */}
                 <div className="relative w-24 h-24 flex-shrink-0">
-                  {mainCharData && fragmentIndices.length > 0 ? (
-                    <svg
-                      viewBox="0 0 1024 1024"
-                      className="w-full h-full"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      {/* Background: full character in light gray */}
-                      <g transform="scale(1, -1) translate(0, -1024)">
-                        {mainCharData.strokes.map((stroke, strokeIndex) => (
-                          <path
-                            key={`bg-${strokeIndex}`}
-                            d={stroke}
-                            fill="#e5e7eb"
-                            stroke="none"
-                          />
-                        ))}
-                      </g>
-                      {/* Foreground: component strokes in color */}
-                      <g transform="scale(1, -1) translate(0, -1024)">
-                        {fragmentIndices.map((strokeIndex) => (
-                          <path
-                            key={`fg-${strokeIndex}`}
-                            d={mainCharData.strokes[strokeIndex]}
-                            fill={getFillColor()}
-                            stroke="none"
-                          />
-                        ))}
-                      </g>
-                    </svg>
+                  {strokeData && fragmentIndices.length > 0 ? (
+                    <div className="relative w-full h-full">
+                      {/* Background layer */}
+                      <CharacterSVG
+                        strokes={strokeData.strokes}
+                        strokeColors={backgroundColors}
+                      />
+                      {/* Foreground layer - highlighted component */}
+                      <div className="absolute inset-0">
+                        <CharacterSVG
+                          strokes={fragmentIndices.map(
+                            (i) => strokeData.strokes[i]
+                          )}
+                          strokeColors={Object.fromEntries(
+                            fragmentIndices.map((_, i) => [i, fillColor])
+                          )}
+                        />
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
                         {character.char}
                       </div>
                       <div
-                        className={`absolute inset-0 text-6xl font-serif leading-none ${getComponentColor(
+                        className={`absolute inset-0 text-6xl font-serif leading-none ${getComponentTextColor(
                           component.type
                         )} flex items-center justify-center`}
                       >
@@ -259,7 +264,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       {component.character}
                     </span>
                     <span
-                      className={`text-sm font-medium ${getComponentColor(
+                      className={`text-sm font-medium ${getComponentTextColor(
                         component.type
                       )}`}
                     >
@@ -301,22 +306,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       className="max-w-full max-h-full object-contain"
                     />
                   ) : img.data ? (
-                    <svg
-                      viewBox="0 0 1024 1024"
-                      className="w-full h-full"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <g transform="scale(1, -1) translate(0, -1024)">
-                        {img.data.strokes.map((stroke, strokeIndex) => (
-                          <path
-                            key={strokeIndex}
-                            d={stroke}
-                            fill="black"
-                            stroke="none"
-                          />
-                        ))}
-                      </g>
-                    </svg>
+                    <CharacterSVG strokes={img.data.strokes} />
                   ) : (
                     <div className="text-4xl font-serif">{character.char}</div>
                   )}
