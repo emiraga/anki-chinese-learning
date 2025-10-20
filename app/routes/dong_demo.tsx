@@ -5,16 +5,17 @@ import type { DongCharacter } from "~/types/dong_character";
 
 // List of character files to load
 const CHARACTER_FILES = [
-  "wang_look_at.json",
-  "xi_hope.json",
-  "ren_endure.json",
-  "wei_do.json",
-  "tou_head.json",
-  "xia_summer.json",
-  "zhi_stop.json",
-  "mi_cover.json",
-  "na_which.json",
-  "yao_want.json",
+  "成.json",
+  "乞.json",
+  "幾.json",
+  "臣.json",
+  "城.json",
+  "帥.json",
+  "績.json",
+  "鹿.json",
+  "鼻.json",
+  "人.json",
+  "僉.json",
 ];
 
 export default function DongDemo() {
