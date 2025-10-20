@@ -246,17 +246,28 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           </div>
         </div>
 
+        {/* Original Meaning */}
+        {character.originalMeaning && (
+          <div className="mt-6">
+            <span className="text-gray-500">Original meaning: </span>
+            <span className="text-gray-700">{character.originalMeaning}</span>
+          </div>
+        )}
+
         {/* Etymology/Hint */}
-        <div className="mt-6 text-gray-700 leading-relaxed">
-          {character.hint}
-        </div>
+        {character.hint && (
+          <div className="mt-4 text-gray-700 leading-relaxed">
+            {character.hint}
+          </div>
+        )}
       </div>
 
       {/* Components Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <SectionHeader>Components</SectionHeader>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {character.components.map((component, index) => {
+      {character.components && character.components.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <SectionHeader>Components</SectionHeader>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {character.components.map((component, index) => {
             const componentChar = character.chars?.find(
               (c) => c.char === component.character,
             );
@@ -324,7 +335,8 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             );
           })}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Evolution Section */}
       {character.images.length > 0 && (
