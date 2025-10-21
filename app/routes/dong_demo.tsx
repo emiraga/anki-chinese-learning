@@ -3,7 +3,14 @@ import { DongCharacterLoader } from "~/components/DongCharacterLoader";
 import MainFrame from "~/toolbar/frame";
 
 // List of characters to display
-const CHARACTERS = ["成", "乞", "幾", "臣", "城", "帥", "績", "鹿", "鼻", "人", "僉"];
+const CHARACTERS = [
+  "成", "乞", "幾", "臣", "城", "帥", "績", "鹿", "鼻", "人", "僉",
+  "把", "憂", "冉", "郎", "波", "侯", "曾", "會", "己", "討",
+  "臭", "搬", "化", "軍", "妹", "奴", "古", "采", "調", "視",
+  "曼", "待", "術", "明", "旱", "抹", "孩", "彡", "狂", "務",
+  "益", "植", "片", "局", "綠", "景", "象", "寬", "切", "套",
+  "問", "千", "整", "雪", "支", "擔", "末", "惜"
+];
 
 export default function DongDemo() {
   const [currentIndex, setCurrentIndex] = useState(0);
