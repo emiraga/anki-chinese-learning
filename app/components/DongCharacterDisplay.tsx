@@ -497,6 +497,23 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                             (w) => w.simp === component.character || w.trad === component.character
                           )?.items?.[0]?.pinyin;
 
+                        // Extract descriptive part from hint (e.g., "Depicts an upside-down mouth." → "upside-down mouth")
+                        let hintDescription = "";
+                        if (component.hint) {
+                          const match = component.hint.match(/Depicts (?:an? )?(.*?)\.?$/);
+                          if (match) {
+                            hintDescription = match[1];
+                          }
+                        }
+
+                        // Combine hint and gloss
+                        let displayText = componentChar?.gloss || "";
+                        if (hintDescription && displayText) {
+                          displayText = `(${hintDescription}), ${displayText}`;
+                        } else if (hintDescription) {
+                          displayText = `(${hintDescription})`;
+                        }
+
                         return (
                           <>
                             {pinyin && (
@@ -504,7 +521,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                                 {pinyin}
                               </span>
                             )}
-                            <span>{componentChar?.gloss}</span>
+                            <span>{displayText}</span>
                           </>
                         );
                       })()}
