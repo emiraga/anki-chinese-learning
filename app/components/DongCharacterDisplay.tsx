@@ -39,6 +39,119 @@ function CharacterSVG({
   );
 }
 
+// Animated version that draws strokes one by one using median paths
+interface AnimatedCharacterSVGProps {
+  strokes: string[];
+  medians: number[][][];
+  className?: string;
+}
+
+function AnimatedCharacterSVG({
+  strokes,
+  medians,
+  className = "w-full h-full",
+}: AnimatedCharacterSVGProps) {
+  const { isDarkMode } = useDarkMode();
+  const fillColor = isDarkMode ? "#f3f4f6" : "#111827"; // gray-100 / gray-900
+  const strokeDuration = 0.5; // seconds per stroke
+  const strokeDelay = 0.15; // delay between strokes
+
+  // Convert median points to SVG path string
+  const medianToPath = (median: number[][]) => {
+    if (!median || median.length === 0) return "";
+    const start = median[0];
+    let path = `M ${start[0]} ${start[1]}`;
+    for (let i = 1; i < median.length; i++) {
+      path += ` L ${median[i][0]} ${median[i][1]}`;
+    }
+    return path;
+  };
+
+  // Calculate approximate path length for each median
+  const getPathLength = (median: number[][]) => {
+    let length = 0;
+    for (let i = 1; i < median.length; i++) {
+      const dx = median[i][0] - median[i - 1][0];
+      const dy = median[i][1] - median[i - 1][1];
+      length += Math.sqrt(dx * dx + dy * dy);
+    }
+    return length;
+  };
+
+  return (
+    <svg
+      viewBox="-64 -64 1152 1152"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <style>
+          {strokes.map((_, index) => {
+            const startTime = index * (strokeDuration + strokeDelay);
+            const fillTime = startTime + strokeDuration;
+            const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
+            return `
+              @keyframes animateStrokePath${index} {
+                0% {
+                  stroke-dashoffset: ${pathLength};
+                  opacity: 1;
+                }
+                100% {
+                  stroke-dashoffset: 0;
+                  opacity: 0;
+                }
+              }
+              @keyframes showFill${index} {
+                0% {
+                  opacity: 0;
+                }
+                100% {
+                  opacity: 1;
+                }
+              }
+              .median-path${index} {
+                stroke-dasharray: ${pathLength};
+                stroke-dashoffset: ${pathLength};
+                opacity: 0;
+                animation: animateStrokePath${index} ${strokeDuration}s linear ${startTime}s forwards;
+              }
+              .fill-shape${index} {
+                opacity: 0;
+                animation: showFill${index} 0.05s linear ${fillTime}s forwards;
+              }
+            `;
+          }).join('\n')}
+        </style>
+      </defs>
+      <g transform="scale(1, -1) translate(0, -1024)">
+        {/* Filled stroke shapes - appear after animation */}
+        {strokes.map((stroke, index) => (
+          <path
+            key={`fill-${index}`}
+            d={stroke}
+            fill={fillColor}
+            stroke="none"
+            className={`fill-shape${index}`}
+          />
+        ))}
+        {/* Animated median paths */}
+        {medians.map((median, index) => (
+          <path
+            key={`median-${index}`}
+            d={medianToPath(median)}
+            fill="none"
+            stroke={fillColor}
+            strokeWidth="100"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`median-path${index}`}
+          />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 // Component type configuration
 const COMPONENT_TYPE_CONFIG = {
   deleted: {
@@ -323,12 +436,18 @@ function CharacterHeader({
               />
             </div>
 
-            {/* Black version */}
+            {/* Black version - Animated */}
             <div className="relative w-48 h-48">
-              <CharacterDisplay
-                strokeData={strokeData}
-                fallbackChar={character.char}
-              />
+              {strokeData ? (
+                <AnimatedCharacterSVG
+                  strokes={strokeData.strokes}
+                  medians={strokeData.medians}
+                />
+              ) : (
+                <div className="text-9xl font-serif leading-none dark:text-gray-100">
+                  {character.char}
+                </div>
+              )}
             </div>
           </a>
 
