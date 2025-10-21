@@ -250,7 +250,7 @@ function HskBadge({ level }: { level: number }) {
 // Section header component
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
+    <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200 border-b dark:border-gray-700 pb-2">
       {children}
     </h2>
   );
@@ -265,7 +265,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <SectionHeader>{title}</SectionHeader>
       {children}
     </div>
@@ -279,15 +279,23 @@ interface InfoBoxProps {
 }
 
 function InfoBox({ type = "info", children }: InfoBoxProps) {
-  const bgColor = type === "warning" ? "bg-orange-50" : "bg-blue-50";
+  const bgColor =
+    type === "warning"
+      ? "bg-orange-50 dark:bg-orange-950"
+      : "bg-blue-50 dark:bg-blue-950";
   const borderColor =
-    type === "warning" ? "border-orange-200" : "border-blue-200";
-  const iconColor = type === "warning" ? "text-orange-600" : "text-blue-600";
+    type === "warning"
+      ? "border-orange-200 dark:border-orange-800"
+      : "border-blue-200 dark:border-blue-800";
+  const iconColor =
+    type === "warning"
+      ? "text-orange-600 dark:text-orange-400"
+      : "text-blue-600 dark:text-blue-400";
   const icon = type === "warning" ? "⚠" : "ⓘ";
 
   return (
     <div
-      className={`${bgColor} border ${borderColor} rounded p-2 text-sm text-gray-700`}
+      className={`${bgColor} border ${borderColor} rounded p-2 text-sm text-gray-700 dark:text-gray-300`}
     >
       <div className="flex gap-2">
         <span className={`${iconColor} flex-shrink-0`}>{icon}</span>
@@ -371,12 +379,14 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
         {groupsWithDefinitions.map((group, index) => (
           <div key={index}>
             <div className="flex items-baseline gap-3 mb-1">
-              <span className="text-4xl font-serif text-blue-700">
+              <span className="text-4xl font-serif text-blue-700 dark:text-blue-400">
                 {group.char}
               </span>
-              <span className="text-xl text-gray-600">{group.pinyin}</span>
+              <span className="text-xl text-gray-600 dark:text-gray-400">
+                {group.pinyin}
+              </span>
             </div>
-            <div className="text-gray-700 ml-2">
+            <div className="text-gray-700 dark:text-gray-300 ml-2">
               {group.definitions.join("; ")}
             </div>
           </div>
@@ -436,7 +446,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header Section */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-8">
             {/* Main Character Display - Colored and Black versions */}
@@ -504,25 +514,27 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               <div className="text-2xl font-medium flex flex-wrap gap-2">
                 <PinyinList
                   pinyins={bothPinyins}
-                  className="text-gray-800"
+                  className="text-gray-800 dark:text-gray-200"
                   hasMore={
                     onlyModernPinyins.length > 0 || onlyOldPinyins.length > 0
                   }
                 />
                 <PinyinList
                   pinyins={onlyModernPinyins}
-                  className="text-green-600"
+                  className="text-green-600 dark:text-green-400"
                   hasMore={onlyOldPinyins.length > 0}
                 />
                 <PinyinList
                   pinyins={onlyOldPinyins}
-                  className="text-amber-600"
+                  className="text-amber-600 dark:text-amber-400"
                   hasMore={false}
                 />
               </div>
 
               {/* Translation */}
-              <div className="text-lg text-gray-600">{character.gloss}</div>
+              <div className="text-lg text-gray-600 dark:text-gray-400">
+                {character.gloss}
+              </div>
             </div>
           </div>
 
@@ -535,14 +547,18 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         {/* Original Meaning */}
         {character.originalMeaning && (
           <div className="mt-6">
-            <span className="text-gray-500">Original meaning: </span>
-            <span className="text-gray-700">{character.originalMeaning}</span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Original meaning:{" "}
+            </span>
+            <span className="text-gray-700 dark:text-gray-300">
+              {character.originalMeaning}
+            </span>
           </div>
         )}
 
         {/* Etymology/Hint */}
         {character.hint && (
-          <div className="mt-4 text-gray-700 leading-relaxed">
+          <div className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed">
             {character.hint}
           </div>
         )}
@@ -568,7 +584,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               return (
                 <div
                   key={index}
-                  className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="flex items-start gap-4 p-4 transition-colors"
                   onMouseEnter={() => setActiveComponent(component.character)}
                   onMouseLeave={() => setActiveComponent(null)}
                 >
@@ -599,10 +615,10 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                   {/* Component info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-3xl font-serif">
+                      <span className="text-3xl font-serif dark:text-gray-100">
                         {component.character}
                       </span>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium dark:text-gray-300">
                         {getComponentTypeLabels(component.type).map(
                           (label, idx) => (
                             <span
@@ -616,7 +632,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                         {component.type.includes("deleted") ? "" : "component"}
                       </span>
                     </div>
-                    <div className="text-gray-600 mb-2">
+                    <div className="text-gray-600 dark:text-gray-400 mb-2">
                       {(() => {
                         // Try to get pinyin from multiple sources
                         const pinyin =
@@ -658,7 +674,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       })()}
                     </div>
                     {component.hint && (
-                      <div className="text-gray-600 text-sm mb-2">
+                      <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">
                         {component.hint}
                       </div>
                     )}
@@ -673,7 +689,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                           </div>
                           {character.oldPronunciations &&
                             character.oldPronunciations.length > 0 && (
-                              <div className="text-xs text-gray-600 space-y-1 mt-2">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
                                 <div>
                                   {character.char}{" "}
                                   {character.oldPronunciations
@@ -742,7 +758,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                     className="flex flex-col items-center text-center"
                   >
                     {/* Historical character image or SVG */}
-                    <div className="w-32 h-32 flex items-center justify-center mb-2 bg-gray-50 rounded p-2">
+                    <div className="w-32 h-32 flex items-center justify-center mb-2 bg-gray-50 dark:bg-gray-700 rounded p-2">
                       {img.url ? (
                         <img
                           src={img.url}
@@ -752,19 +768,21 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       ) : img.data ? (
                         <CharacterSVG strokes={img.data.strokes} />
                       ) : (
-                        <div className="text-4xl font-serif">
+                        <div className="text-4xl font-serif dark:text-gray-100">
                           {character.char}
                         </div>
                       )}
                     </div>
 
                     {/* Script type */}
-                    <div className="font-medium text-sm text-gray-800">
+                    <div className="font-medium text-sm text-gray-800 dark:text-gray-200">
                       {img.type}
                     </div>
 
                     {/* Era */}
-                    <div className="text-xs text-gray-500 mt-1">{img.era}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {img.era}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -779,13 +797,15 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             {character.statistics.topWords.slice(0, 12).map((word, index) => (
               <div
                 key={index}
-                className="flex items-baseline gap-2 p-2 hover:bg-gray-50 rounded transition-colors"
+                className="flex items-baseline gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
               >
-                <span className="font-medium text-lg whitespace-nowrap">
+                <span className="font-medium text-lg whitespace-nowrap dark:text-gray-100">
                   {word.trad}
                 </span>
-                <span className="text-gray-600 text-sm">{word.gloss}</span>
-                <span className="text-gray-400 text-xs ml-auto whitespace-nowrap">
+                <span className="text-gray-600 dark:text-gray-400 text-sm">
+                  {word.gloss}
+                </span>
+                <span className="text-gray-400 dark:text-gray-500 text-xs ml-auto whitespace-nowrap">
                   {(word.share * 100).toFixed(1)}%
                 </span>
               </div>
@@ -844,19 +864,19 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                   return (
                     <div
                       key={index}
-                      className="border rounded-lg p-4 bg-gray-50"
+                      className="border dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-4xl font-serif">
+                        <span className="text-4xl font-serif dark:text-gray-100">
                           {componentChar.char}
                         </span>
                         <div>
-                          <div className="font-medium text-lg">
+                          <div className="font-medium text-lg dark:text-gray-200">
                             {componentChar.gloss}
                           </div>
                           {componentChar.pinyinFrequencies &&
                             componentChar.pinyinFrequencies[0] && (
-                              <div className="text-sm text-gray-600">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
                                 {componentChar.pinyinFrequencies[0].pinyin}
                               </div>
                             )}
@@ -865,10 +885,10 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
                       {hasShuowen && (
                         <div className="mb-3">
-                          <div className="text-sm font-semibold text-gray-700 mb-1">
+                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                             說文解字 (Shuowen Jiezi):
                           </div>
-                          <div className="text-sm text-gray-800 bg-white p-2 rounded border-l-2 border-amber-500">
+                          <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
                             {componentChar.shuowen}
                           </div>
                         </div>
@@ -876,7 +896,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
                       {hasVariants && (
                         <div className="mb-3">
-                          <div className="text-sm font-semibold text-gray-700 mb-1">
+                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                             Variants:
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -884,13 +904,13 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                               (variant, vIdx) => (
                                 <div
                                   key={vIdx}
-                                  className="bg-white px-3 py-1 rounded border text-sm"
+                                  className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
                                 >
-                                  <span className="font-serif text-lg mr-2">
+                                  <span className="font-serif text-lg mr-2 dark:text-gray-100">
                                     {variant.char}
                                   </span>
                                   {variant.parts && (
-                                    <span className="text-gray-600">
+                                    <span className="text-gray-600 dark:text-gray-400">
                                       ({variant.parts})
                                     </span>
                                   )}
@@ -903,7 +923,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
                       {hasComments && (
                         <div>
-                          <div className="text-sm font-semibold text-gray-700 mb-1">
+                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                             Scholarly Notes:
                           </div>
                           <div className="space-y-2">
@@ -911,12 +931,12 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                               (comment, cIdx) => (
                                 <div
                                   key={cIdx}
-                                  className="text-sm bg-white p-2 rounded border-l-2 border-green-500"
+                                  className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
                                 >
-                                  <div className="text-xs text-gray-500 mb-1">
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                                     {comment.source}
                                   </div>
-                                  <div className="text-gray-800">
+                                  <div className="text-gray-800 dark:text-gray-200">
                                     {comment.text}
                                   </div>
                                 </div>
