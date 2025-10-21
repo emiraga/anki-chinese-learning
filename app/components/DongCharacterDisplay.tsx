@@ -93,14 +93,12 @@ function AnimatedCharacterSVG({
           {strokes.map((_, index) => {
             const startTime = index * (strokeDuration + strokeDelay);
             const fillTime = startTime + strokeDuration;
-            const endTime = strokes.length * (strokeDuration + strokeDelay);
             const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
 
             // Convert times to percentages of total animation
             const startPercent = (startTime / totalAnimationTime) * 100;
             const drawEndPercent = (fillTime / totalAnimationTime) * 100;
             const fillShowPercent = drawEndPercent;
-            const fadeOutPercent = (endTime / totalAnimationTime) * 100;
 
             return `
               @keyframes animateStrokePath${index} {
