@@ -269,7 +269,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {character.components && character.components.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm p-6">
           <SectionHeader>Components</SectionHeader>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {character.components.map((component, index) => {
               const componentChar = character.chars?.find(
                 (c) => c.char === component.character,
@@ -351,18 +351,21 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                             {character.oldPronunciations &&
                               character.oldPronunciations.length > 0 && (
                                 <div className="text-xs text-gray-600 space-y-1 mt-2">
-                                  {character.oldPronunciations.map((op, idx) => (
-                                    <div key={idx}>
-                                      {character.char} {op.OC}
-                                    </div>
-                                  ))}
+                                  <div>
+                                    {character.char}{" "}
+                                    {character.oldPronunciations
+                                      .map((op) => op.OC)
+                                      .join(", ")}
+                                  </div>
                                   {componentChar?.oldPronunciations &&
-                                    componentChar.oldPronunciations.length > 0 &&
-                                    componentChar.oldPronunciations.map((op, idx) => (
-                                      <div key={idx}>
-                                        {component.character} {op.OC}
+                                    componentChar.oldPronunciations.length > 0 && (
+                                      <div>
+                                        {component.character}{" "}
+                                        {componentChar.oldPronunciations
+                                          .map((op) => op.OC)
+                                          .join(", ")}
                                       </div>
-                                    ))}
+                                    )}
                                 </div>
                               )}
                           </div>
