@@ -670,6 +670,11 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               .find((c) => c.character === character.char)
               ?.type.includes("remnant"),
           );
+          const simplifiedComponents = character.componentIn.filter((item) =>
+            item.components
+              .find((c) => c.character === character.char)
+              ?.type.includes("simplified"),
+          );
 
           const renderComponentSection = (
             items: typeof character.componentIn,
@@ -734,6 +739,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               {renderComponentSection(iconicComponents, "Iconic component in")}
               {renderComponentSection(unknownComponents, "Unknown component in")}
               {renderComponentSection(remnantComponents, "Remnant component in")}
+              {renderComponentSection(simplifiedComponents, "Simplified component in")}
             </>
           );
         })()}
