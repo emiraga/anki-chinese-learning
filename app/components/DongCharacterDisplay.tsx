@@ -19,7 +19,7 @@ function CharacterSVG({
 }: CharacterSVGProps) {
   return (
     <svg
-      viewBox="0 0 1024 1024"
+      viewBox="-64 -64 1152 1152"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -535,9 +535,9 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                 key={index}
                 className="flex items-baseline gap-2 p-2 hover:bg-gray-50 rounded transition-colors"
               >
-                <span className="font-medium text-lg">{word.trad}</span>
+                <span className="font-medium text-lg whitespace-nowrap">{word.trad}</span>
                 <span className="text-gray-600 text-sm">{word.gloss}</span>
-                <span className="text-gray-400 text-xs ml-auto">
+                <span className="text-gray-400 text-xs ml-auto whitespace-nowrap">
                   {(word.share * 100).toFixed(1)}%
                 </span>
               </div>
