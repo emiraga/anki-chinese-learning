@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import type { DongCharacter } from "~/types/dong_character";
+import { useDarkMode } from "./DarkModeToggle";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
@@ -211,24 +212,8 @@ function LayeredCharacter({
   fragmentIndices,
   fillColor,
 }: LayeredCharacterProps) {
-  // Track dark mode state reactively
-  const [isDarkMode, setIsDarkMode] = useState(() =>
-    document.documentElement.classList.contains('dark')
-  );
-
-  useEffect(() => {
-    // Watch for dark mode changes
-    const observer = new MutationObserver(() => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    return () => observer.disconnect();
-  }, []);
+  // Use centralized dark mode state
+  const { isDarkMode } = useDarkMode();
 
   // Use a color that adapts to dark mode
   const backgroundColor = isDarkMode
