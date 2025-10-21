@@ -39,7 +39,7 @@ function CharacterSVG({
   );
 }
 
-// Animated version that draws strokes one by one using median paths
+// Animated version that progressively reveals strokes using masks
 interface AnimatedCharacterSVGProps {
   strokes: string[];
   medians: number[][][];
@@ -89,83 +89,84 @@ function AnimatedCharacterSVG({
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
+        {/* Create a mask for each stroke */}
+        {strokes.map((_, index) => {
+          const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
+          return (
+            <mask key={`mask-${index}`} id={`stroke-mask-${index}`}>
+              <path
+                d={medianToPath(medians[index])}
+                stroke="white"
+                strokeWidth="120"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                strokeDasharray={pathLength}
+                strokeDashoffset={pathLength}
+                className={`mask-path${index}`}
+              />
+            </mask>
+          );
+        })}
         <style>
           {strokes.map((_, index) => {
             const startTime = index * (strokeDuration + strokeDelay);
-            const fillTime = startTime + strokeDuration;
+            const endTime = startTime + strokeDuration;
             const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
 
             // Convert times to percentages of total animation
             const startPercent = (startTime / totalAnimationTime) * 100;
-            const drawEndPercent = (fillTime / totalAnimationTime) * 100;
-            const fillShowPercent = drawEndPercent;
+            const endPercent = (endTime / totalAnimationTime) * 100;
 
             return `
-              @keyframes animateStrokePath${index} {
+              @keyframes revealStroke${index} {
                 0%, ${startPercent > 0 ? startPercent - 0.01 : 0}% {
                   stroke-dashoffset: ${pathLength};
-                  opacity: 0;
                 }
                 ${startPercent}% {
                   stroke-dashoffset: ${pathLength};
-                  opacity: 1;
                 }
-                ${drawEndPercent}% {
+                ${endPercent}% {
                   stroke-dashoffset: 0;
-                  opacity: 0;
+                }
+                98% {
+                  stroke-dashoffset: 0;
                 }
                 100% {
                   stroke-dashoffset: ${pathLength};
-                  opacity: 0;
                 }
               }
-              @keyframes showFill${index} {
-                0%, ${fillShowPercent > 0 ? fillShowPercent - 0.01 : 0}% {
+              @keyframes showStroke${index} {
+                0%, ${startPercent > 0 ? startPercent - 0.01 : 0}% {
                   opacity: 0;
                 }
-                ${fillShowPercent}%, 98% {
+                ${startPercent}%, 98% {
                   opacity: 1;
                 }
                 100% {
                   opacity: 0;
                 }
               }
-              .median-path${index} {
-                stroke-dasharray: ${pathLength};
-                stroke-dashoffset: ${pathLength};
-                opacity: 0;
-                animation: animateStrokePath${index} ${totalAnimationTime}s linear infinite;
+              .mask-path${index} {
+                animation: revealStroke${index} ${totalAnimationTime}s linear infinite;
               }
-              .fill-shape${index} {
-                opacity: 0;
-                animation: showFill${index} ${totalAnimationTime}s linear infinite;
+              .stroke-shape${index} {
+                animation: showStroke${index} ${totalAnimationTime}s linear infinite;
               }
             `;
           }).join('\n')}
         </style>
       </defs>
       <g transform="scale(1, -1) translate(0, -1024)">
-        {/* Filled stroke shapes - appear after animation */}
+        {/* Actual stroke shapes revealed through masks */}
         {strokes.map((stroke, index) => (
           <path
-            key={`fill-${index}`}
+            key={`stroke-${index}`}
             d={stroke}
             fill={fillColor}
             stroke="none"
-            className={`fill-shape${index}`}
-          />
-        ))}
-        {/* Animated median paths */}
-        {medians.map((median, index) => (
-          <path
-            key={`median-${index}`}
-            d={medianToPath(median)}
-            fill="none"
-            stroke={fillColor}
-            strokeWidth="100"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`median-path${index}`}
+            mask={`url(#stroke-mask-${index})`}
+            className={`stroke-shape${index}`}
           />
         ))}
       </g>
