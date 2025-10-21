@@ -141,6 +141,24 @@ function getComponentTypeLabels(type: string[]): string[] {
     .map(([, config]) => config.label);
 }
 
+// Helper to create stroke color map
+function createStrokeColorMap(
+  strokeCount: number,
+  color: string
+): { [key: number]: string } {
+  return Object.fromEntries(
+    Array.from({ length: strokeCount }, (_, i) => [i, color])
+  );
+}
+
+// Helper to create stroke color map from indices
+function createStrokeColorMapFromIndices(
+  indices: number[],
+  color: string
+): { [key: number]: string } {
+  return Object.fromEntries(indices.map((_, i) => [i, color]));
+}
+
 // Helper to get stroke data from character
 function getStrokeData(
   character: DongCharacter,
@@ -187,10 +205,8 @@ function LayeredCharacter({
   fragmentIndices,
   fillColor,
 }: LayeredCharacterProps) {
-  const backgroundColors: { [key: number]: string } = {};
-  strokeData.strokes.forEach((_, strokeIndex) => {
-    backgroundColors[strokeIndex] = "#e5e7eb";
-  });
+  const backgroundColors = createStrokeColorMap(strokeData.strokes.length, "#e5e7eb");
+  const foregroundColors = createStrokeColorMapFromIndices(fragmentIndices, fillColor);
 
   return (
     <div className="relative w-full h-full">
@@ -203,9 +219,7 @@ function LayeredCharacter({
       <div className="absolute inset-0">
         <CharacterSVG
           strokes={fragmentIndices.map((i) => strokeData.strokes[i])}
-          strokeColors={Object.fromEntries(
-            fragmentIndices.map((_, i) => [i, fillColor]),
-          )}
+          strokeColors={foregroundColors}
         />
       </div>
     </div>
@@ -228,6 +242,38 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
     <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
       {children}
     </h2>
+  );
+}
+
+// Section wrapper component
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <SectionHeader>{title}</SectionHeader>
+      {children}
+    </div>
+  );
+}
+
+// InfoBox component for warnings and information messages
+interface InfoBoxProps {
+  type?: "info" | "warning";
+  children: React.ReactNode;
+}
+
+function InfoBox({ type = "info", children }: InfoBoxProps) {
+  const bgColor = type === "warning" ? "bg-orange-50" : "bg-blue-50";
+  const borderColor = type === "warning" ? "border-orange-200" : "border-blue-200";
+  const iconColor = type === "warning" ? "text-orange-600" : "text-blue-600";
+  const icon = type === "warning" ? "⚠" : "ⓘ";
+
+  return (
+    <div className={`${bgColor} border ${borderColor} rounded p-2 text-sm text-gray-700`}>
+      <div className="flex gap-2">
+        <span className={`${iconColor} flex-shrink-0`}>{icon}</span>
+        <div>{children}</div>
+      </div>
+    </div>
   );
 }
 
@@ -294,8 +340,7 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
   if (groupsWithDefinitions.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <SectionHeader>{title}</SectionHeader>
+    <Section title={title}>
       <div className="space-y-4">
         {groupsWithDefinitions.map((group, index) => (
           <div key={index}>
@@ -311,7 +356,7 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
           </div>
         ))}
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -473,8 +518,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
       {/* Components Section */}
       {character.components && character.components.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <SectionHeader>Components</SectionHeader>
+        <Section title="Components">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {character.components.map((component, index) => {
               const componentChar = character.chars?.find(
@@ -580,71 +624,177 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       </div>
                     )}
                     {component.isOldPronunciation && (
-                      <div className="bg-orange-50 border border-orange-200 rounded p-2 text-sm text-gray-700 mb-2">
-                        <div className="flex gap-2">
-                          <span className="text-orange-600 flex-shrink-0">⚠</span>
-                          <div>
-                            <div className="mb-1">
-                              {character.char} and {component.character} don&apos;t sound
-                              similar in modern Mandarin due to historical phonetic
-                              changes. They were more similar in older Chinese.
-                            </div>
-                            {character.oldPronunciations &&
-                              character.oldPronunciations.length > 0 && (
-                                <div className="text-xs text-gray-600 space-y-1 mt-2">
-                                  <div>
-                                    {character.char}{" "}
-                                    {character.oldPronunciations
-                                      .map((op) => op.OC)
-                                      .join(", ")}
-                                  </div>
-                                  {componentChar?.oldPronunciations &&
-                                    componentChar.oldPronunciations.length > 0 && (
-                                      <div>
-                                        {component.character}{" "}
-                                        {componentChar.oldPronunciations
-                                          .map((op) => op.OC)
-                                          .join(", ")}
-                                      </div>
-                                    )}
-                                </div>
-                              )}
+                      <div className="mb-2">
+                        <InfoBox type="warning">
+                          <div className="mb-1">
+                            {character.char} and {component.character} don&apos;t sound
+                            similar in modern Mandarin due to historical phonetic
+                            changes. They were more similar in older Chinese.
                           </div>
-                        </div>
+                          {character.oldPronunciations &&
+                            character.oldPronunciations.length > 0 && (
+                              <div className="text-xs text-gray-600 space-y-1 mt-2">
+                                <div>
+                                  {character.char}{" "}
+                                  {character.oldPronunciations
+                                    .map((op) => op.OC)
+                                    .join(", ")}
+                                </div>
+                                {componentChar?.oldPronunciations &&
+                                  componentChar.oldPronunciations.length > 0 && (
+                                    <div>
+                                      {component.character}{" "}
+                                      {componentChar.oldPronunciations
+                                        .map((op) => op.OC)
+                                        .join(", ")}
+                                    </div>
+                                  )}
+                              </div>
+                            )}
+                        </InfoBox>
                       </div>
                     )}
                     {component.isGlyphChanged && (
-                      <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-gray-700">
-                        <div className="flex gap-2">
-                          <span className="text-blue-600 flex-shrink-0">ⓘ</span>
-                          <span>
-                            Due to historical stylistic changes, this component is
-                            less similar to {component.character} than it was in
-                            ancient scripts.
-                          </span>
-                        </div>
-                      </div>
+                      <InfoBox type="info">
+                        Due to historical stylistic changes, this component is
+                        less similar to {component.character} than it was in
+                        ancient scripts.
+                      </InfoBox>
                     )}
                     {component.isFromOriginalMeaning && character.originalMeaning && (
-                      <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-gray-700">
-                        <div className="flex gap-2">
-                          <span className="text-blue-600 flex-shrink-0">ⓘ</span>
-                          <span>
-                            {component.character} hints at the original meaning of{" "}
-                            {character.char}, &quot;{character.originalMeaning}&quot;, which is
-                            no longer the most common meaning of {character.char} in
-                            modern Mandarin.
-                          </span>
-                        </div>
-                      </div>
+                      <InfoBox type="info">
+                        {component.character} hints at the original meaning of{" "}
+                        {character.char}, &quot;{character.originalMeaning}&quot;, which is
+                        no longer the most common meaning of {character.char} in
+                        modern Mandarin.
+                      </InfoBox>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Section>
       )}
+
+      {/* Old Pronunciations Section */}
+      {character.oldPronunciations && character.oldPronunciations.length > 0 && (
+        <Section title="Historical Pronunciations">
+          <div className="space-y-4">
+            {character.oldPronunciations.map((op, index) => (
+              <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                <div className="flex items-baseline gap-3 mb-2">
+                  <span className="text-2xl font-medium text-blue-700">{op.pinyin}</span>
+                  {op.gloss && (
+                    <span className="text-gray-600">&quot;{op.gloss}&quot;</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  {op.MC && (
+                    <div>
+                      <span className="font-semibold text-gray-700">Middle Chinese: </span>
+                      <span className="font-mono text-gray-600">{op.MC}</span>
+                    </div>
+                  )}
+                  {op.OC && (
+                    <div>
+                      <span className="font-semibold text-gray-700">Old Chinese: </span>
+                      <span className="font-mono text-gray-600">{op.OC}</span>
+                    </div>
+                  )}
+                </div>
+                {op.source && (
+                  <div className="text-xs text-gray-500 mt-1">Source: {op.source}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Component Details Section */}
+      {character.chars && character.chars.length > 0 && (() => {
+        const hasDetails = character.chars.some(c =>
+          c.shuowen || (c.variants && c.variants.length > 0) || (c.comments && c.comments.length > 0)
+        );
+
+        if (!hasDetails) return null;
+
+        return (
+          <Section title="Component Details">
+            <div className="space-y-6">
+              {character.chars.map((componentChar, index) => {
+                const hasShuowen = componentChar.shuowen;
+                const hasVariants = componentChar.variants && componentChar.variants.length > 0;
+                const hasComments = componentChar.comments && componentChar.comments.length > 0;
+
+                if (!hasShuowen && !hasVariants && !hasComments) return null;
+
+                return (
+                  <div key={index} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-4xl font-serif">{componentChar.char}</span>
+                      <div>
+                        <div className="font-medium text-lg">{componentChar.gloss}</div>
+                        {componentChar.pinyinFrequencies && componentChar.pinyinFrequencies[0] && (
+                          <div className="text-sm text-gray-600">
+                            {componentChar.pinyinFrequencies[0].pinyin}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {hasShuowen && (
+                      <div className="mb-3">
+                        <div className="text-sm font-semibold text-gray-700 mb-1">
+                          說文解字 (Shuowen Jiezi):
+                        </div>
+                        <div className="text-sm text-gray-800 bg-white p-2 rounded border-l-2 border-amber-500">
+                          {componentChar.shuowen}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasVariants && (
+                      <div className="mb-3">
+                        <div className="text-sm font-semibold text-gray-700 mb-1">
+                          Variants:
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(componentChar.variants || []).map((variant, vIdx) => (
+                            <div key={vIdx} className="bg-white px-3 py-1 rounded border text-sm">
+                              <span className="font-serif text-lg mr-2">{variant.char}</span>
+                              {variant.parts && (
+                                <span className="text-gray-600">({variant.parts})</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {hasComments && (
+                      <div>
+                        <div className="text-sm font-semibold text-gray-700 mb-1">
+                          Scholarly Notes:
+                        </div>
+                        <div className="space-y-2">
+                          {(componentChar.comments || []).map((comment, cIdx) => (
+                            <div key={cIdx} className="text-sm bg-white p-2 rounded border-l-2 border-green-500">
+                              <div className="text-xs text-gray-500 mb-1">{comment.source}</div>
+                              <div className="text-gray-800">{comment.text}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+        );
+      })()}
 
       {/* Evolution Section */}
       {character.images.length > 0 && (() => {
@@ -657,8 +807,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         }
 
         return (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <SectionHeader>Evolution</SectionHeader>
+          <Section title="Evolution">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {character.images.map((img, index) => (
               <div
@@ -690,14 +839,13 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               </div>
             ))}
           </div>
-          </div>
+          </Section>
         );
       })()}
 
       {/* Additional Information */}
       {character.statistics.topWords && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <SectionHeader>Common Words</SectionHeader>
+        <Section title="Common Words">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {character.statistics.topWords.slice(0, 12).map((word, index) => (
               <div
@@ -712,7 +860,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               </div>
             ))}
           </div>
-        </div>
+        </Section>
       )}
 
       {/* Definitions Section - Only for main character */}
@@ -740,8 +888,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {/* Pronunciation variants */}
       {character.pinyinFrequencies &&
         character.pinyinFrequencies.length > 1 && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <SectionHeader>Pronunciations</SectionHeader>
+          <Section title="Pronunciations">
             <div className="space-y-2">
               {character.pinyinFrequencies.map((freq, index) => (
                 <div key={index} className="flex items-baseline gap-3">
@@ -752,7 +899,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                 </div>
               ))}
             </div>
-          </div>
+          </Section>
         )}
 
       {/* Component In - Characters that use this character as a component */}
@@ -795,11 +942,9 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             });
 
             return (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <SectionHeader>
-                  {title} {items.length} character
-                  {items.length !== 1 ? "s" : ""} ({verifiedCount} verified)
-                </SectionHeader>
+              <Section
+                title={`${title} ${items.length} character${items.length !== 1 ? "s" : ""} (${verifiedCount} verified)`}
+              >
                 <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
                   {sortedItems.map((item, index) => (
                     <a
@@ -826,7 +971,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                     </a>
                   ))}
                 </div>
-              </div>
+              </Section>
             );
           };
 
