@@ -47,6 +47,16 @@ function getComponentFillColor(type: string[]): string {
   return "#4b5563"; // gray-600
 }
 
+// Helper to get component text color class for a single type
+function getSingleTypeTextColor(typeLabel: string): string {
+  if (typeLabel === "Deleted") return "text-gray-400";
+  if (typeLabel === "Sound") return "text-blue-600";
+  if (typeLabel === "Iconic") return "text-green-600";
+  if (typeLabel === "Meaning") return "text-red-600";
+  if (typeLabel === "Remnant") return "text-purple-600";
+  return "text-gray-600";
+}
+
 // Helper to get component text color class
 function getComponentTextColor(type: string[]): string {
   if (type.includes("deleted")) return "text-gray-400";
@@ -57,14 +67,15 @@ function getComponentTextColor(type: string[]): string {
   return "text-gray-600";
 }
 
-// Helper to get component type label
-function getComponentTypeLabel(type: string[]): string {
-  if (type.includes("deleted")) return "Deleted";
-  if (type.includes("sound")) return "Sound";
-  if (type.includes("iconic")) return "Iconic";
-  if (type.includes("meaning")) return "Meaning";
-  if (type.includes("remnant")) return "Remnant";
-  return "";
+// Helper to get component type labels (can be multiple)
+function getComponentTypeLabels(type: string[]): string[] {
+  const labels: string[] = [];
+  if (type.includes("deleted")) labels.push("Deleted");
+  if (type.includes("sound")) labels.push("Sound");
+  if (type.includes("iconic")) labels.push("Iconic");
+  if (type.includes("meaning")) labels.push("Meaning");
+  if (type.includes("remnant")) labels.push("Remnant");
+  return labels;
 }
 
 // Helper to get stroke data from character
@@ -316,12 +327,15 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       <span className="text-3xl font-serif">
                         {component.character}
                       </span>
-                      <span
-                        className={`text-sm font-medium ${getComponentTextColor(
-                          component.type,
-                        )}`}
-                      >
-                        {getComponentTypeLabel(component.type)}{" "}
+                      <span className="text-sm font-medium">
+                        {getComponentTypeLabels(component.type).map((label, idx) => (
+                          <span
+                            key={idx}
+                            className={getSingleTypeTextColor(label)}
+                          >
+                            {label}{" "}
+                          </span>
+                        ))}
                         {component.type.includes("deleted") ? "" : "component"}
                       </span>
                     </div>
