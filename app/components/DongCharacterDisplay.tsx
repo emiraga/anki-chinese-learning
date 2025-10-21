@@ -57,16 +57,6 @@ function getSingleTypeTextColor(typeLabel: string): string {
   return "text-gray-600";
 }
 
-// Helper to get component text color class
-function getComponentTextColor(type: string[]): string {
-  if (type.includes("deleted")) return "text-gray-400";
-  if (type.includes("sound")) return "text-blue-600";
-  if (type.includes("iconic")) return "text-green-600";
-  if (type.includes("meaning")) return "text-red-600";
-  if (type.includes("remnant")) return "text-purple-600";
-  return "text-gray-600";
-}
-
 // Helper to get component type labels (can be multiple)
 function getComponentTypeLabels(type: string[]): string[] {
   const labels: string[] = [];
@@ -202,11 +192,19 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
     return acc;
   }, {} as Record<string, { char: string; pinyin: string; definitions: string[] }>);
 
+  // Filter out groups with no definitions
+  const groupsWithDefinitions = Object.values(grouped).filter(
+    (group) => group.definitions.length > 0
+  );
+
+  // Don't render the section if there are no groups with definitions
+  if (groupsWithDefinitions.length === 0) return null;
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <SectionHeader>{title}</SectionHeader>
       <div className="space-y-4">
-        {Object.values(grouped).map((group, index) => (
+        {groupsWithDefinitions.map((group, index) => (
           <div key={index}>
             <div className="flex items-baseline gap-3 mb-1">
               <span className="text-4xl font-serif text-blue-700">
@@ -214,11 +212,9 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
               </span>
               <span className="text-xl text-gray-600">{group.pinyin}</span>
             </div>
-            {group.definitions.length > 0 && (
-              <div className="text-gray-700 ml-2">
-                {group.definitions.join("; ")}
-              </div>
-            )}
+            <div className="text-gray-700 ml-2">
+              {group.definitions.join("; ")}
+            </div>
           </div>
         ))}
       </div>
@@ -474,7 +470,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                           <span className="text-orange-600 flex-shrink-0">⚠</span>
                           <div>
                             <div className="mb-1">
-                              {character.char} and {component.character} don't sound
+                              {character.char} and {component.character} don&apos;t sound
                               similar in modern Mandarin due to historical phonetic
                               changes. They were more similar in older Chinese.
                             </div>

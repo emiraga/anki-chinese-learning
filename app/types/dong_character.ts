@@ -17,6 +17,7 @@ export interface DongCharacter {
     hint?: string | null;
     isGlyphChanged?: boolean;
     isFromOriginalMeaning?: boolean;
+    isOldPronunciation?: boolean;
   }>;
   images: Array<{
     url?: string;
