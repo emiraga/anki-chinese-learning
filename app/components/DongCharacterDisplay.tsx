@@ -55,6 +55,10 @@ function AnimatedCharacterSVG({
   const fillColor = isDarkMode ? "#f3f4f6" : "#111827"; // gray-100 / gray-900
   const strokeDuration = 0.5; // seconds per stroke
   const strokeDelay = 0.15; // delay between strokes
+  const pauseBeforeLoop = 1.5; // pause at end before restarting (seconds)
+
+  // Calculate total animation duration
+  const totalAnimationTime = strokes.length * (strokeDuration + strokeDelay) + pauseBeforeLoop;
 
   // Convert median points to SVG path string
   const medianToPath = (median: number[][]) => {
@@ -89,35 +93,54 @@ function AnimatedCharacterSVG({
           {strokes.map((_, index) => {
             const startTime = index * (strokeDuration + strokeDelay);
             const fillTime = startTime + strokeDuration;
+            const endTime = strokes.length * (strokeDuration + strokeDelay);
             const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
+
+            // Convert times to percentages of total animation
+            const startPercent = (startTime / totalAnimationTime) * 100;
+            const drawEndPercent = (fillTime / totalAnimationTime) * 100;
+            const fillShowPercent = drawEndPercent;
+            const fadeOutPercent = (endTime / totalAnimationTime) * 100;
+
             return `
               @keyframes animateStrokePath${index} {
-                0% {
+                0%, ${startPercent > 0 ? startPercent - 0.01 : 0}% {
+                  stroke-dashoffset: ${pathLength};
+                  opacity: 0;
+                }
+                ${startPercent}% {
                   stroke-dashoffset: ${pathLength};
                   opacity: 1;
                 }
-                100% {
+                ${drawEndPercent}% {
                   stroke-dashoffset: 0;
+                  opacity: 0;
+                }
+                100% {
+                  stroke-dashoffset: ${pathLength};
                   opacity: 0;
                 }
               }
               @keyframes showFill${index} {
-                0% {
+                0%, ${fillShowPercent > 0 ? fillShowPercent - 0.01 : 0}% {
                   opacity: 0;
                 }
-                100% {
+                ${fillShowPercent}%, 98% {
                   opacity: 1;
+                }
+                100% {
+                  opacity: 0;
                 }
               }
               .median-path${index} {
                 stroke-dasharray: ${pathLength};
                 stroke-dashoffset: ${pathLength};
                 opacity: 0;
-                animation: animateStrokePath${index} ${strokeDuration}s linear ${startTime}s forwards;
+                animation: animateStrokePath${index} ${totalAnimationTime}s linear infinite;
               }
               .fill-shape${index} {
                 opacity: 0;
-                animation: showFill${index} 0.05s linear ${fillTime}s forwards;
+                animation: showFill${index} ${totalAnimationTime}s linear infinite;
               }
             `;
           }).join('\n')}
