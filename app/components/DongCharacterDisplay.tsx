@@ -63,6 +63,9 @@ function getComponentFillColor(type: string[], variationIndex: number = 0): stri
   else if (type.includes("iconic")) baseColor = "#16a34a"; // green-600
   else if (type.includes("meaning")) baseColor = "#dc2626"; // red-600
   else if (type.includes("remnant")) baseColor = "#9333ea"; // purple-600
+  else if (type.includes("distinguishing")) baseColor = "#0891b2"; // cyan-600
+  else if (type.includes("simplified")) baseColor = "#db2777"; // pink-600
+  else if (type.includes("unknown")) baseColor = "#4b5563"; // gray-600
   else baseColor = "#4b5563"; // gray-600
 
   // Apply variation if needed (each variation gets progressively lighter)
@@ -81,6 +84,9 @@ function getSingleTypeTextColor(typeLabel: string): string {
   if (typeLabel === "Iconic") return "text-green-600";
   if (typeLabel === "Meaning") return "text-red-600";
   if (typeLabel === "Remnant") return "text-purple-600";
+  if (typeLabel === "Distinguishing") return "text-cyan-600";
+  if (typeLabel === "Simplified") return "text-pink-600";
+  if (typeLabel === "Unknown") return "text-gray-600";
   return "text-gray-600";
 }
 
@@ -92,6 +98,9 @@ function getComponentTypeLabels(type: string[]): string[] {
   if (type.includes("iconic")) labels.push("Iconic");
   if (type.includes("meaning")) labels.push("Meaning");
   if (type.includes("remnant")) labels.push("Remnant");
+  if (type.includes("distinguishing")) labels.push("Distinguishing");
+  if (type.includes("simplified")) labels.push("Simplified");
+  if (type.includes("unknown")) labels.push("Unknown");
   return labels;
 }
 
@@ -716,6 +725,16 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               .find((c) => c.character === character.char)
               ?.type.includes("simplified"),
           );
+          const deletedComponents = character.componentIn.filter((item) =>
+            item.components
+              .find((c) => c.character === character.char)
+              ?.type.includes("deleted"),
+          );
+          const distinguishingComponents = character.componentIn.filter((item) =>
+            item.components
+              .find((c) => c.character === character.char)
+              ?.type.includes("distinguishing"),
+          );
 
           const renderComponentSection = (
             items: typeof character.componentIn,
@@ -781,6 +800,8 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               {renderComponentSection(unknownComponents, "Unknown component in")}
               {renderComponentSection(remnantComponents, "Remnant component in")}
               {renderComponentSection(simplifiedComponents, "Simplified component in")}
+              {renderComponentSection(deletedComponents, "Deleted component in")}
+              {renderComponentSection(distinguishingComponents, "Distinguishing component in")}
             </>
           );
         })()}
