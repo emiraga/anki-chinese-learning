@@ -37,14 +37,41 @@ function CharacterSVG({
   );
 }
 
-// Helper to get component fill color
-function getComponentFillColor(type: string[]): string {
-  if (type.includes("deleted")) return "#9ca3af"; // gray-400 (lighter for deleted)
-  if (type.includes("sound")) return "#2563eb"; // blue-600
-  if (type.includes("iconic")) return "#16a34a"; // green-600
-  if (type.includes("meaning")) return "#dc2626"; // red-600
-  if (type.includes("remnant")) return "#9333ea"; // purple-600
-  return "#4b5563"; // gray-600
+// Helper to adjust color brightness
+function adjustColorBrightness(hexColor: string, amount: number): string {
+  // Convert hex to RGB
+  const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  // Adjust brightness
+  const adjust = (val: number) => Math.max(0, Math.min(255, val + amount));
+  const newR = adjust(r);
+  const newG = adjust(g);
+  const newB = adjust(b);
+
+  // Convert back to hex
+  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+}
+
+// Helper to get component fill color with variation for duplicates
+function getComponentFillColor(type: string[], variationIndex: number = 0): string {
+  let baseColor: string;
+  if (type.includes("deleted")) baseColor = "#9ca3af"; // gray-400 (lighter for deleted)
+  else if (type.includes("sound")) baseColor = "#2563eb"; // blue-600
+  else if (type.includes("iconic")) baseColor = "#16a34a"; // green-600
+  else if (type.includes("meaning")) baseColor = "#dc2626"; // red-600
+  else if (type.includes("remnant")) baseColor = "#9333ea"; // purple-600
+  else baseColor = "#4b5563"; // gray-600
+
+  // Apply variation if needed (each variation gets progressively lighter)
+  if (variationIndex > 0) {
+    const brightnessAdjust = variationIndex * 35;
+    return adjustColorBrightness(baseColor, brightnessAdjust);
+  }
+
+  return baseColor;
 }
 
 // Helper to get component text color class for a single type
@@ -227,6 +254,18 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
   console.log(character);
 
+  // Create variation indices for components of the same type
+  const componentVariationIndices: number[] = [];
+  const typeCounters = new Map<string, number>();
+
+  character.components.forEach((component) => {
+    // Create a type key (sorted to ensure consistency)
+    const typeKey = [...component.type].sort().join(',');
+    const currentIndex = typeCounters.get(typeKey) || 0;
+    componentVariationIndices.push(currentIndex);
+    typeCounters.set(typeKey, currentIndex + 1);
+  });
+
   // Get all pronunciations with categorization
   const modernPinyins = new Set(
     character.pinyinFrequencies?.map((freq) => freq.pinyin) || []
@@ -281,7 +320,8 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                 fragments.forEach((fragmentIndices, componentIndex) => {
                   const component = character.components[componentIndex];
                   if (component) {
-                    const color = getComponentFillColor(component.type);
+                    const variationIndex = componentVariationIndices[componentIndex];
+                    const color = getComponentFillColor(component.type, variationIndex);
                     fragmentIndices.forEach((strokeIndex) => {
                       strokeColors[strokeIndex] = color;
                     });
@@ -386,7 +426,8 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               const strokeData = getStrokeData(character);
               const mainCharImage = character.images.find((img) => img.data);
               const fragmentIndices = mainCharImage?.fragments?.[index] || [];
-              const fillColor = getComponentFillColor(component.type);
+              const variationIndex = componentVariationIndices[index];
+              const fillColor = getComponentFillColor(component.type, variationIndex);
 
               return (
                 <div
