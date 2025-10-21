@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { DongCharacter } from "~/types/dong_character";
 
 interface DongCharacterDisplayProps {
@@ -28,8 +28,9 @@ function CharacterSVG({
           <path
             key={index}
             d={stroke}
-            fill={strokeColors?.[index] || "black"}
+            fill={strokeColors?.[index] || "currentColor"}
             stroke="none"
+            className={strokeColors?.[index] ? "" : "text-gray-900 dark:text-gray-100"}
           />
         ))}
       </g>
@@ -210,9 +211,33 @@ function LayeredCharacter({
   fragmentIndices,
   fillColor,
 }: LayeredCharacterProps) {
+  // Track dark mode state reactively
+  const [isDarkMode, setIsDarkMode] = useState(() =>
+    document.documentElement.classList.contains('dark')
+  );
+
+  useEffect(() => {
+    // Watch for dark mode changes
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Use a color that adapts to dark mode
+  const backgroundColor = isDarkMode
+    ? '#374151'  // gray-700 for dark mode
+    : '#e5e7eb'; // gray-200 for light mode
+
   const backgroundColors = createStrokeColorMap(
     strokeData.strokes.length,
-    "#e5e7eb",
+    backgroundColor,
   );
   const foregroundColors = createStrokeColorMapFromIndices(
     fragmentIndices,
@@ -241,7 +266,7 @@ function LayeredCharacter({
 function HskBadge({ level }: { level: number }) {
   if (level > 9) return null;
   return (
-    <span className="bg-black text-white px-3 py-1 rounded text-sm font-medium">
+    <span className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-1 rounded text-sm font-medium">
       HSK {level}
     </span>
   );
@@ -960,8 +985,8 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             <div className="space-y-2">
               {character.pinyinFrequencies.map((freq, index) => (
                 <div key={index} className="flex items-baseline gap-3">
-                  <span className="font-medium text-lg">{freq.pinyin}</span>
-                  <span className="text-gray-500 text-sm">
+                  <span className="font-medium text-lg dark:text-gray-100">{freq.pinyin}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
                     ({freq.count} occurrences)
                   </span>
                 </div>
@@ -978,14 +1003,14 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               {character.oldPronunciations.map((op, index) => (
                 <div
                   key={index}
-                  className="border-l-4 border-blue-500 pl-4 py-2"
+                  className="border-l-4 border-blue-500 dark:border-blue-400 pl-4 py-2"
                 >
                   <div className="flex items-baseline gap-3 mb-2">
-                    <span className="text-2xl font-medium text-blue-700">
+                    <span className="text-2xl font-medium text-blue-700 dark:text-blue-400">
                       {op.pinyin}
                     </span>
                     {op.gloss && (
-                      <span className="text-gray-600">
+                      <span className="text-gray-600 dark:text-gray-400">
                         &quot;{op.gloss}&quot;
                       </span>
                     )}
@@ -993,23 +1018,23 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                     {op.MC && (
                       <div>
-                        <span className="font-semibold text-gray-700">
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">
                           Middle Chinese:{" "}
                         </span>
-                        <span className="font-mono text-gray-600">{op.MC}</span>
+                        <span className="font-mono text-gray-600 dark:text-gray-400">{op.MC}</span>
                       </div>
                     )}
                     {op.OC && (
                       <div>
-                        <span className="font-semibold text-gray-700">
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">
                           Old Chinese:{" "}
                         </span>
-                        <span className="font-mono text-gray-600">{op.OC}</span>
+                        <span className="font-mono text-gray-600 dark:text-gray-400">{op.OC}</span>
                       </div>
                     )}
                   </div>
                   {op.source && (
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Source: {op.source}
                     </div>
                   )}
@@ -1070,19 +1095,19 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex flex-col items-center p-0 hover:bg-gray-50 transition-colors"
+                      className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       title={`${item.char} - View on Dong Chinese`}
                     >
-                      <div className="text-5xl font-serif mb-2">
+                      <div className="text-5xl font-serif mb-2 dark:text-gray-100">
                         {item.char}
                       </div>
                       {item.statistics?.bookCharCount && (
-                        <div className="text-xs text-gray-500 text-center">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
                           {item.statistics.bookCharCount.toLocaleString()} uses
                         </div>
                       )}
                       {item.isVerified && (
-                        <div className="text-xs text-green-600 mt-1">
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
                           ✓ Verified
                         </div>
                       )}
