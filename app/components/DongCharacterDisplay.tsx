@@ -331,8 +331,44 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                           {componentChar.pinyinFrequencies[0].pinyin}
                         </span>
                       )}
-                      <span>{componentChar?.gloss || component.hint}</span>
+                      <span>{componentChar?.gloss}</span>
                     </div>
+                    {component.hint && (
+                      <div className="text-gray-600 text-sm mb-2">
+                        {component.hint}
+                      </div>
+                    )}
+                    {component.isOldPronunciation && (
+                      <div className="bg-orange-50 border border-orange-200 rounded p-2 text-sm text-gray-700 mb-2">
+                        <div className="flex gap-2">
+                          <span className="text-orange-600 flex-shrink-0">⚠</span>
+                          <div>
+                            <div className="mb-1">
+                              {character.char} and {component.character} don't sound
+                              similar in modern Mandarin due to historical phonetic
+                              changes. They were more similar in older Chinese.
+                            </div>
+                            {character.oldPronunciations &&
+                              character.oldPronunciations.length > 0 && (
+                                <div className="text-xs text-gray-600 space-y-1 mt-2">
+                                  {character.oldPronunciations.map((op, idx) => (
+                                    <div key={idx}>
+                                      {character.char} {op.OC}
+                                    </div>
+                                  ))}
+                                  {componentChar?.oldPronunciations &&
+                                    componentChar.oldPronunciations.length > 0 &&
+                                    componentChar.oldPronunciations.map((op, idx) => (
+                                      <div key={idx}>
+                                        {component.character} {op.OC}
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {component.isGlyphChanged && (
                       <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-gray-700">
                         <div className="flex gap-2">
