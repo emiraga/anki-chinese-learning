@@ -10,6 +10,7 @@ import os
 import requests
 import webbrowser
 import time
+import json
 from pathlib import Path
 import urllib.parse
 from collections import Counter
@@ -75,7 +76,7 @@ def find_all_notes_with_traditional(note_type):
     Returns:
         list: List of note IDs
     """
-    search_query = f'note:{note_type} Traditional:_*' #  -is:suspended
+    search_query = f'note:{note_type} Traditional:_* -is:suspended'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -141,6 +142,47 @@ def get_existing_dong_chars(dong_data_dir):
     return existing_chars
 
 
+def get_component_chars_from_dong_files(dong_data_dir):
+    """
+    Extract all component characters referenced in existing dong JSON files
+
+    Args:
+        dong_data_dir (Path): Path to the dong data directory
+
+    Returns:
+        tuple: (set of component characters, Counter of component frequency)
+    """
+    component_chars = set()
+    component_frequency = Counter()
+
+    if not dong_data_dir.exists():
+        print(f"Warning: Dong data directory does not exist: {dong_data_dir}")
+        return component_chars, component_frequency
+
+    json_files = list(dong_data_dir.glob("*.json"))
+    print(f"\nScanning {len(json_files)} dong JSON files for component characters...")
+
+    for json_file in json_files:
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+                # Extract components array
+                components = data.get('components', [])
+                for component in components:
+                    char = component.get('character', '')
+                    if char:
+                        # Extract individual characters from the component
+                        chars = extract_all_characters(char)
+                        component_chars.update(chars)
+                        component_frequency.update(chars)
+        except Exception as e:
+            print(f"  Warning: Error reading {json_file.name}: {e}")
+
+    print(f"Found {len(component_chars)} unique component characters in dong files")
+    return component_chars, component_frequency
+
+
 def main():
     # Get the project root directory (two levels up from this script)
     script_dir = Path(__file__).parent
@@ -154,7 +196,7 @@ def main():
     existing_chars = get_existing_dong_chars(dong_data_dir)
 
     # Collect all characters from Anki
-    all_chars = set()
+    anki_chars = set()
     char_frequency = Counter()
 
     note_types = ["TOCFL", "MyWords", "Hanzi", "Dangdai"]
@@ -178,18 +220,32 @@ def main():
                     if traditional:
                         # Extract individual characters
                         chars = extract_all_characters(traditional)
-                        all_chars.update(chars)
+                        anki_chars.update(chars)
                         char_frequency.update(chars)
             except Exception as e:
                 print(f"  Error processing batch starting at note {i}: {e}")
 
+    # Get component characters from existing dong files
+    component_chars, component_frequency = get_component_chars_from_dong_files(dong_data_dir)
+
+    # Merge all characters and frequencies
+    all_chars = anki_chars | component_chars
+    char_frequency.update(component_frequency)
+
     print(f"\n{'='*60}")
-    print(f"Total unique characters in Anki: {len(all_chars)}")
+    print(f"Total unique characters in Anki: {len(anki_chars)}")
+    print(f"Component characters in dong files: {len(component_chars)}")
+    print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with dong data: {len(existing_chars)}")
 
     # Find missing characters
+    missing_anki_chars = anki_chars - existing_chars
+    missing_component_chars = component_chars - existing_chars
     missing_chars = all_chars - existing_chars
-    print(f"Missing characters: {len(missing_chars)}")
+
+    print(f"\nMissing from Anki: {len(missing_anki_chars)}")
+    print(f"Missing from components: {len(missing_component_chars)}")
+    print(f"Total missing characters: {len(missing_chars)}")
 
     if not missing_chars:
         print("\nAll characters have dong data! Nothing to do.")
@@ -201,7 +257,13 @@ def main():
     print(f"\n{'='*60}")
     print("Top 20 most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:20], 1):
-        print(f"  {i}. {char} (appears {char_frequency[char]} times)")
+        sources = []
+        if char in missing_anki_chars:
+            sources.append("Anki")
+        if char in missing_component_chars:
+            sources.append("Component")
+        source_str = "+".join(sources)
+        print(f"  {i}. {char} (appears {char_frequency[char]} times) [{source_str}]")
 
     # Ask user if they want to open browser tabs
     print(f"\n{'='*60}")
