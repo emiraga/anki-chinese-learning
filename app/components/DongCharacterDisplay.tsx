@@ -231,11 +231,32 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
   console.log(character);
 
-  // Get all pronunciations
-  const allPinyins =
-    character.pinyinFrequencies && character.pinyinFrequencies.length > 0
-      ? character.pinyinFrequencies.map((freq) => freq.pinyin)
-      : [];
+  // Get all pronunciations with categorization
+  const modernPinyins = new Set(
+    character.pinyinFrequencies?.map((freq) => freq.pinyin) || []
+  );
+  const oldPinyins = new Set(
+    character.oldPronunciations?.map((op) => op.pinyin) || []
+  );
+
+  // Categorize pronunciations
+  const bothPinyins: string[] = [];
+  const onlyModernPinyins: string[] = [];
+  const onlyOldPinyins: string[] = [];
+
+  modernPinyins.forEach((p) => {
+    if (oldPinyins.has(p)) {
+      bothPinyins.push(p);
+    } else {
+      onlyModernPinyins.push(p);
+    }
+  });
+
+  oldPinyins.forEach((p) => {
+    if (!modernPinyins.has(p)) {
+      onlyOldPinyins.push(p);
+    }
+  });
 
   // Generate Dong Chinese dictionary URL
   const dongChineseUrl = `https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(character.char)}`;
@@ -302,9 +323,32 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
             {/* Character Metadata */}
             <div className="space-y-2">
-              {/* Pinyin - show all pronunciations */}
-              <div className="text-2xl font-medium text-gray-700">
-                {allPinyins.join(", ")}
+              {/* Pinyin - show all pronunciations with color coding */}
+              <div className="text-2xl font-medium flex flex-wrap gap-2">
+                {bothPinyins.map((p, i) => (
+                  <span key={`both-${i}`} className="text-gray-800">
+                    {p}
+                    {i < bothPinyins.length - 1 ||
+                    onlyModernPinyins.length > 0 ||
+                    onlyOldPinyins.length > 0
+                      ? ","
+                      : ""}
+                  </span>
+                ))}
+                {onlyModernPinyins.map((p, i) => (
+                  <span key={`modern-${i}`} className="text-green-600">
+                    {p}
+                    {i < onlyModernPinyins.length - 1 || onlyOldPinyins.length > 0
+                      ? ","
+                      : ""}
+                  </span>
+                ))}
+                {onlyOldPinyins.map((p, i) => (
+                  <span key={`old-${i}`} className="text-amber-600">
+                    {p}
+                    {i < onlyOldPinyins.length - 1 ? "," : ""}
+                  </span>
+                ))}
               </div>
 
               {/* Translation */}
