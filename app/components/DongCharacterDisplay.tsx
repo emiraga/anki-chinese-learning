@@ -297,6 +297,340 @@ function Section({
   );
 }
 
+// CharacterHeader component - displays main character with metadata
+interface CharacterHeaderProps {
+  character: DongCharacter;
+  strokeData?: { strokes: string[]; medians: number[][][] };
+  strokeColors: { [key: number]: string };
+  bothPinyins: string[];
+  onlyModernPinyins: string[];
+  onlyOldPinyins: string[];
+  dongChineseUrl: string;
+}
+
+function CharacterHeader({
+  character,
+  strokeData,
+  strokeColors,
+  bothPinyins,
+  onlyModernPinyins,
+  onlyOldPinyins,
+  dongChineseUrl,
+}: CharacterHeaderProps) {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-8">
+          {/* Main Character Display - Colored and Black versions */}
+          <a
+            href={dongChineseUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+            title="View on Dong Chinese"
+          >
+            {/* Colored version showing components */}
+            <div className="relative w-48 h-48">
+              <CharacterDisplay
+                strokeData={strokeData}
+                fallbackChar={character.char}
+                strokeColors={strokeColors}
+              />
+            </div>
+
+            {/* Black version */}
+            <div className="relative w-48 h-48">
+              <CharacterDisplay
+                strokeData={strokeData}
+                fallbackChar={character.char}
+              />
+            </div>
+          </a>
+
+          {/* Character Metadata */}
+          <div className="space-y-2">
+            {/* Pinyin - show all pronunciations with color coding */}
+            <div className="text-2xl font-medium flex flex-wrap gap-2">
+              <PinyinList
+                pinyins={bothPinyins}
+                className="text-gray-800 dark:text-gray-200"
+                hasMore={
+                  onlyModernPinyins.length > 0 || onlyOldPinyins.length > 0
+                }
+              />
+              <PinyinList
+                pinyins={onlyModernPinyins}
+                className="text-green-600 dark:text-green-400"
+                hasMore={onlyOldPinyins.length > 0}
+              />
+              <PinyinList
+                pinyins={onlyOldPinyins}
+                className="text-amber-600 dark:text-amber-400"
+                hasMore={false}
+              />
+            </div>
+
+            {/* Translation */}
+            <div className="text-lg text-gray-600 dark:text-gray-400">
+              {character.gloss}
+            </div>
+          </div>
+        </div>
+
+        {/* HSK Badge */}
+        <div>
+          <HskBadge level={character.statistics.hskLevel} />
+        </div>
+      </div>
+
+      {/* Original Meaning */}
+      {character.originalMeaning && (
+        <div className="mt-6">
+          <span className="text-gray-500 dark:text-gray-400">
+            Original meaning:{" "}
+          </span>
+          <span className="text-gray-700 dark:text-gray-300">
+            {character.originalMeaning}
+          </span>
+        </div>
+      )}
+
+      {/* Etymology/Hint */}
+      {character.hint && (
+        <div className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+          {character.hint}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ComponentCard component - displays a single component with its info
+interface ComponentCardProps {
+  component: DongCharacter["components"][number];
+  componentChar?: DongCharacter;
+  character: DongCharacter;
+  strokeData?: { strokes: string[]; medians: number[][][] };
+  fragmentIndices: number[];
+  fillColor: string;
+}
+
+function ComponentCard({
+  component,
+  componentChar,
+  character,
+  strokeData,
+  fragmentIndices,
+  fillColor,
+}: ComponentCardProps) {
+  // Try to get pinyin from multiple sources
+  const pinyin =
+    componentChar?.pinyinFrequencies?.[0]?.pinyin ||
+    componentChar?.oldPronunciations?.[0]?.pinyin ||
+    character.words?.find(
+      (w) => w.simp === component.character || w.trad === component.character,
+    )?.items?.[0]?.pinyin;
+
+  // Extract descriptive part from hint
+  let hintDescription = "";
+  if (component.hint) {
+    const match = component.hint.match(/Depicts (?:an? )?(.*?)\.?$/);
+    if (match) {
+      hintDescription = match[1];
+    }
+  }
+
+  // Combine hint and gloss
+  let displayText = componentChar?.gloss || "";
+  if (hintDescription && displayText) {
+    displayText = `(${hintDescription}), ${displayText}`;
+  } else if (hintDescription) {
+    displayText = `(${hintDescription})`;
+  }
+
+  return (
+    <div className="flex items-start gap-4 p-4 transition-colors">
+      {/* Component character with colored overlay */}
+      <div className="relative w-24 h-24 flex-shrink-0">
+        {strokeData && fragmentIndices.length > 0 ? (
+          <LayeredCharacter
+            strokeData={strokeData}
+            fragmentIndices={fragmentIndices}
+            fillColor={fillColor}
+          />
+        ) : (
+          <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
+            {character.char}
+          </div>
+        )}
+      </div>
+
+      {/* Component info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="text-3xl font-serif dark:text-gray-100">
+            {component.character}
+          </span>
+          <span className="text-sm font-medium dark:text-gray-300">
+            {getComponentTypeLabels(component.type).map((label, idx) => (
+              <span key={idx} className={getSingleTypeTextColor(label)}>
+                {label}{" "}
+              </span>
+            ))}
+            {component.type.includes("deleted") ? "" : "component"}
+          </span>
+        </div>
+        <div className="text-gray-600 dark:text-gray-400 mb-2">
+          {pinyin && <span className="mr-2 font-medium">{pinyin}</span>}
+          <span>{displayText}</span>
+        </div>
+        {component.hint && (
+          <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+            {component.hint}
+          </div>
+        )}
+        {component.isOldPronunciation && (
+          <div className="mb-2">
+            <InfoBox type="warning">
+              <div className="mb-1">
+                {character.char} and {component.character} don&apos;t sound
+                similar in modern Mandarin due to historical phonetic changes.
+                They were more similar in older Chinese.
+              </div>
+              {character.oldPronunciations &&
+                character.oldPronunciations.length > 0 && (
+                  <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
+                    <div>
+                      {character.char}{" "}
+                      {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
+                      {character.oldPronunciations.map((op: { OC: string }) => op.OC).join(", ")}
+                    </div>
+                    {componentChar?.oldPronunciations &&
+                      componentChar.oldPronunciations.length > 0 && (
+                        <div>
+                          {component.character}{" "}
+                          {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
+                          {componentChar.oldPronunciations.map((op: { OC: string }) => op.OC).join(", ")}
+                        </div>
+                      )}
+                  </div>
+                )}
+            </InfoBox>
+          </div>
+        )}
+        {component.isGlyphChanged && (
+          <InfoBox type="info">
+            Due to historical stylistic changes, this component is less similar
+            to {component.character} than it was in ancient scripts.
+          </InfoBox>
+        )}
+        {component.isFromOriginalMeaning && character.originalMeaning && (
+          <InfoBox type="info">
+            {component.character} hints at the original meaning of{" "}
+            {character.char}, &quot;{character.originalMeaning}&quot;, which is
+            no longer the most common meaning of {character.char} in modern
+            Mandarin.
+          </InfoBox>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// CommonWordsSection component - displays common words containing the character
+interface CommonWordsSectionProps {
+  topWords?: DongCharacter["statistics"]["topWords"];
+}
+
+function CommonWordsSection({ topWords }: CommonWordsSectionProps) {
+  if (!topWords) return null;
+
+  return (
+    <Section title="Common Words">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {topWords.slice(0, 12).map((word, index) => (
+          <div
+            key={index}
+            className="flex items-baseline gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
+          >
+            <span className="font-medium text-lg whitespace-nowrap dark:text-gray-100">
+              {word.trad}
+            </span>
+            <span className="text-gray-600 dark:text-gray-400 text-sm">
+              {word.gloss}
+            </span>
+            <span className="text-gray-400 dark:text-gray-500 text-xs ml-auto whitespace-nowrap">
+              {(word.share * 100).toFixed(1)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+// HistoricalPronunciationsSection component - displays old pronunciations
+interface HistoricalPronunciationsSectionProps {
+  oldPronunciations?: DongCharacter["oldPronunciations"];
+}
+
+function HistoricalPronunciationsSection({
+  oldPronunciations,
+}: HistoricalPronunciationsSectionProps) {
+  if (!oldPronunciations || oldPronunciations.length === 0) return null;
+
+  return (
+    <Section title="Historical Pronunciations">
+      <div className="space-y-4">
+        {oldPronunciations.map((op, index) => (
+          <div
+            key={index}
+            className="border-l-4 border-blue-500 dark:border-blue-400 pl-4 py-2"
+          >
+            <div className="flex items-baseline gap-3 mb-2">
+              <span className="text-2xl font-medium text-blue-700 dark:text-blue-400">
+                {op.pinyin}
+              </span>
+              {op.gloss && (
+                <span className="text-gray-600 dark:text-gray-400">
+                  &quot;{op.gloss}&quot;
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+              {op.MC && (
+                <div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">
+                    Middle Chinese:{" "}
+                  </span>
+                  <span className="font-mono text-gray-600 dark:text-gray-400">
+                    {op.MC}
+                  </span>
+                </div>
+              )}
+              {op.OC && (
+                <div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">
+                    Old Chinese:{" "}
+                  </span>
+                  <span className="font-mono text-gray-600 dark:text-gray-400">
+                    {op.OC}
+                  </span>
+                </div>
+              )}
+            </div>
+            {op.source && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Source: {op.source}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 // InfoBox component for warnings and information messages
 interface InfoBoxProps {
   type?: "info" | "warning";
@@ -422,8 +756,6 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
 }
 
 export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
-  const [activeComponent, setActiveComponent] = useState<string | null>(null);
-
   console.log(character);
 
   // Create variation indices for components of the same type
@@ -468,126 +800,36 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   // Generate Dong Chinese dictionary URL
   const dongChineseUrl = `https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(character.char)}`;
 
+  // Prepare stroke colors for header
+  const strokeData = getStrokeData(character);
+  const mainCharImage = character.images.find((img) => img.data);
+  const fragments = mainCharImage?.fragments || [];
+
+  // Create a map of stroke index to color for colored version
+  const strokeColors: { [key: number]: string } = {};
+  fragments.forEach((fragmentIndices, componentIndex) => {
+    const component = character.components[componentIndex];
+    if (component) {
+      const variationIndex = componentVariationIndices[componentIndex];
+      const color = getComponentFillColor(component.type, variationIndex);
+      fragmentIndices.forEach((strokeIndex) => {
+        strokeColors[strokeIndex] = color;
+      });
+    }
+  });
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-8">
-            {/* Main Character Display - Colored and Black versions */}
-            <a
-              href={dongChineseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-4 hover:opacity-80 transition-opacity"
-              title="View on Dong Chinese"
-            >
-              {(() => {
-                const strokeData = getStrokeData(character);
-                const mainCharImage = character.images.find((img) => img.data);
-                const fragments = mainCharImage?.fragments || [];
-
-                // Create a map of stroke index to color for colored version
-                const strokeColors: { [key: number]: string } = {};
-                fragments.forEach((fragmentIndices, componentIndex) => {
-                  const component = character.components[componentIndex];
-                  if (component) {
-                    const variationIndex =
-                      componentVariationIndices[componentIndex];
-                    const color = getComponentFillColor(
-                      component.type,
-                      variationIndex,
-                    );
-                    fragmentIndices.forEach((strokeIndex) => {
-                      strokeColors[strokeIndex] = color;
-                    });
-                  }
-                });
-
-                return (
-                  <>
-                    {/* Colored version showing components */}
-                    <div className="relative w-48 h-48">
-                      <CharacterDisplay
-                        strokeData={strokeData}
-                        fallbackChar={character.char}
-                        strokeColors={strokeColors}
-                      />
-                    </div>
-
-                    {/* Black version */}
-                    <div className="relative w-48 h-48">
-                      <CharacterDisplay
-                        strokeData={strokeData}
-                        fallbackChar={character.char}
-                      />
-                      {/* Show components overlay when hovering */}
-                      {activeComponent && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          {/* This would show the highlighted component */}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
-            </a>
-
-            {/* Character Metadata */}
-            <div className="space-y-2">
-              {/* Pinyin - show all pronunciations with color coding */}
-              <div className="text-2xl font-medium flex flex-wrap gap-2">
-                <PinyinList
-                  pinyins={bothPinyins}
-                  className="text-gray-800 dark:text-gray-200"
-                  hasMore={
-                    onlyModernPinyins.length > 0 || onlyOldPinyins.length > 0
-                  }
-                />
-                <PinyinList
-                  pinyins={onlyModernPinyins}
-                  className="text-green-600 dark:text-green-400"
-                  hasMore={onlyOldPinyins.length > 0}
-                />
-                <PinyinList
-                  pinyins={onlyOldPinyins}
-                  className="text-amber-600 dark:text-amber-400"
-                  hasMore={false}
-                />
-              </div>
-
-              {/* Translation */}
-              <div className="text-lg text-gray-600 dark:text-gray-400">
-                {character.gloss}
-              </div>
-            </div>
-          </div>
-
-          {/* HSK Badge */}
-          <div>
-            <HskBadge level={character.statistics.hskLevel} />
-          </div>
-        </div>
-
-        {/* Original Meaning */}
-        {character.originalMeaning && (
-          <div className="mt-6">
-            <span className="text-gray-500 dark:text-gray-400">
-              Original meaning:{" "}
-            </span>
-            <span className="text-gray-700 dark:text-gray-300">
-              {character.originalMeaning}
-            </span>
-          </div>
-        )}
-
-        {/* Etymology/Hint */}
-        {character.hint && (
-          <div className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed">
-            {character.hint}
-          </div>
-        )}
-      </div>
+      <CharacterHeader
+        character={character}
+        strokeData={strokeData}
+        strokeColors={strokeColors}
+        bothPinyins={bothPinyins}
+        onlyModernPinyins={onlyModernPinyins}
+        onlyOldPinyins={onlyOldPinyins}
+        dongChineseUrl={dongChineseUrl}
+      />
 
       {/* Components Section */}
       {character.components && character.components.length > 0 && (
@@ -597,8 +839,6 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               const componentChar = character.chars?.find(
                 (c) => c.char === component.character,
               );
-              const strokeData = getStrokeData(character);
-              const mainCharImage = character.images.find((img) => img.data);
               const fragmentIndices = mainCharImage?.fragments?.[index] || [];
               const variationIndex = componentVariationIndices[index];
               const fillColor = getComponentFillColor(
@@ -607,153 +847,15 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
               );
 
               return (
-                <div
+                <ComponentCard
                   key={index}
-                  className="flex items-start gap-4 p-4 transition-colors"
-                  onMouseEnter={() => setActiveComponent(component.character)}
-                  onMouseLeave={() => setActiveComponent(null)}
-                >
-                  {/* Component character with colored overlay */}
-                  <div className="relative w-24 h-24 flex-shrink-0">
-                    {strokeData && fragmentIndices.length > 0 ? (
-                      <LayeredCharacter
-                        strokeData={strokeData}
-                        fragmentIndices={fragmentIndices}
-                        fillColor={fillColor}
-                      />
-                    ) : (
-                      <>
-                        <div className="text-6xl font-serif leading-none opacity-20 absolute inset-0 flex items-center justify-center">
-                          {character.char}
-                        </div>
-                        {/*<div
-                        className={`absolute inset-0 text-6xl font-serif leading-none ${getComponentTextColor(
-                          component.type,
-                        )} flex items-center justify-center`}
-                      >
-                        {component.character}
-                      </div>*/}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Component info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-3xl font-serif dark:text-gray-100">
-                        {component.character}
-                      </span>
-                      <span className="text-sm font-medium dark:text-gray-300">
-                        {getComponentTypeLabels(component.type).map(
-                          (label, idx) => (
-                            <span
-                              key={idx}
-                              className={getSingleTypeTextColor(label)}
-                            >
-                              {label}{" "}
-                            </span>
-                          ),
-                        )}
-                        {component.type.includes("deleted") ? "" : "component"}
-                      </span>
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400 mb-2">
-                      {(() => {
-                        // Try to get pinyin from multiple sources
-                        const pinyin =
-                          componentChar?.pinyinFrequencies?.[0]?.pinyin ||
-                          componentChar?.oldPronunciations?.[0]?.pinyin ||
-                          character.words?.find(
-                            (w) =>
-                              w.simp === component.character ||
-                              w.trad === component.character,
-                          )?.items?.[0]?.pinyin;
-
-                        // Extract descriptive part from hint (e.g., "Depicts an upside-down mouth." → "upside-down mouth")
-                        let hintDescription = "";
-                        if (component.hint) {
-                          const match = component.hint.match(
-                            /Depicts (?:an? )?(.*?)\.?$/,
-                          );
-                          if (match) {
-                            hintDescription = match[1];
-                          }
-                        }
-
-                        // Combine hint and gloss
-                        let displayText = componentChar?.gloss || "";
-                        if (hintDescription && displayText) {
-                          displayText = `(${hintDescription}), ${displayText}`;
-                        } else if (hintDescription) {
-                          displayText = `(${hintDescription})`;
-                        }
-
-                        return (
-                          <>
-                            {pinyin && (
-                              <span className="mr-2 font-medium">{pinyin}</span>
-                            )}
-                            <span>{displayText}</span>
-                          </>
-                        );
-                      })()}
-                    </div>
-                    {component.hint && (
-                      <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                        {component.hint}
-                      </div>
-                    )}
-                    {component.isOldPronunciation && (
-                      <div className="mb-2">
-                        <InfoBox type="warning">
-                          <div className="mb-1">
-                            {character.char} and {component.character}{" "}
-                            don&apos;t sound similar in modern Mandarin due to
-                            historical phonetic changes. They were more similar
-                            in older Chinese.
-                          </div>
-                          {character.oldPronunciations &&
-                            character.oldPronunciations.length > 0 && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
-                                <div>
-                                  {character.char}{" "}
-                                  {character.oldPronunciations
-                                    .map((op) => op.OC)
-                                    .join(", ")}
-                                </div>
-                                {componentChar?.oldPronunciations &&
-                                  componentChar.oldPronunciations.length >
-                                    0 && (
-                                    <div>
-                                      {component.character}{" "}
-                                      {componentChar.oldPronunciations
-                                        .map((op) => op.OC)
-                                        .join(", ")}
-                                    </div>
-                                  )}
-                              </div>
-                            )}
-                        </InfoBox>
-                      </div>
-                    )}
-                    {component.isGlyphChanged && (
-                      <InfoBox type="info">
-                        Due to historical stylistic changes, this component is
-                        less similar to {component.character} than it was in
-                        ancient scripts.
-                      </InfoBox>
-                    )}
-                    {component.isFromOriginalMeaning &&
-                      character.originalMeaning && (
-                        <InfoBox type="info">
-                          {component.character} hints at the original meaning of{" "}
-                          {character.char}, &quot;{character.originalMeaning}
-                          &quot;, which is no longer the most common meaning of{" "}
-                          {character.char} in modern Mandarin.
-                        </InfoBox>
-                      )}
-                  </div>
-                </div>
+                  component={component}
+                  componentChar={componentChar}
+                  character={character}
+                  strokeData={strokeData}
+                  fragmentIndices={fragmentIndices}
+                  fillColor={fillColor}
+                />
               );
             })}
           </div>
@@ -816,28 +918,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         })()}
 
       {/* Additional Information */}
-      {character.statistics.topWords && (
-        <Section title="Common Words">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {character.statistics.topWords.slice(0, 12).map((word, index) => (
-              <div
-                key={index}
-                className="flex items-baseline gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
-              >
-                <span className="font-medium text-lg whitespace-nowrap dark:text-gray-100">
-                  {word.trad}
-                </span>
-                <span className="text-gray-600 dark:text-gray-400 text-sm">
-                  {word.gloss}
-                </span>
-                <span className="text-gray-400 dark:text-gray-500 text-xs ml-auto whitespace-nowrap">
-                  {(word.share * 100).toFixed(1)}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
+      <CommonWordsSection topWords={character.statistics.topWords} />
 
       {/* Definitions Section - Only for main character */}
       <DefinitionsSection
@@ -996,53 +1077,9 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
         )}
 
       {/* Old Pronunciations Section */}
-      {character.oldPronunciations &&
-        character.oldPronunciations.length > 0 && (
-          <Section title="Historical Pronunciations">
-            <div className="space-y-4">
-              {character.oldPronunciations.map((op, index) => (
-                <div
-                  key={index}
-                  className="border-l-4 border-blue-500 dark:border-blue-400 pl-4 py-2"
-                >
-                  <div className="flex items-baseline gap-3 mb-2">
-                    <span className="text-2xl font-medium text-blue-700 dark:text-blue-400">
-                      {op.pinyin}
-                    </span>
-                    {op.gloss && (
-                      <span className="text-gray-600 dark:text-gray-400">
-                        &quot;{op.gloss}&quot;
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    {op.MC && (
-                      <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">
-                          Middle Chinese:{" "}
-                        </span>
-                        <span className="font-mono text-gray-600 dark:text-gray-400">{op.MC}</span>
-                      </div>
-                    )}
-                    {op.OC && (
-                      <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">
-                          Old Chinese:{" "}
-                        </span>
-                        <span className="font-mono text-gray-600 dark:text-gray-400">{op.OC}</span>
-                      </div>
-                    )}
-                  </div>
-                  {op.source && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Source: {op.source}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
+      <HistoricalPronunciationsSection
+        oldPronunciations={character.oldPronunciations}
+      />
 
       {/* Component In - Characters that use this character as a component */}
       {character.componentIn &&
