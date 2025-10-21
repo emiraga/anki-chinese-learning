@@ -442,12 +442,26 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                       </span>
                     </div>
                     <div className="text-gray-600 mb-2">
-                      {componentChar?.pinyinFrequencies?.[0]?.pinyin && (
-                        <span className="mr-2">
-                          {componentChar.pinyinFrequencies[0].pinyin}
-                        </span>
-                      )}
-                      <span>{componentChar?.gloss}</span>
+                      {(() => {
+                        // Try to get pinyin from multiple sources
+                        const pinyin =
+                          componentChar?.pinyinFrequencies?.[0]?.pinyin ||
+                          componentChar?.oldPronunciations?.[0]?.pinyin ||
+                          character.words?.find(
+                            (w) => w.simp === component.character || w.trad === component.character
+                          )?.items?.[0]?.pinyin;
+
+                        return (
+                          <>
+                            {pinyin && (
+                              <span className="mr-2 font-medium">
+                                {pinyin}
+                              </span>
+                            )}
+                            <span>{componentChar?.gloss}</span>
+                          </>
+                        );
+                      })()}
                     </div>
                     {component.hint && (
                       <div className="text-gray-600 text-sm mb-2">
