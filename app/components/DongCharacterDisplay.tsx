@@ -168,6 +168,64 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Definitions section component
+interface DefinitionsSectionProps {
+  title: string;
+  words: Array<{
+    simp: string;
+    trad: string;
+    items: Array<{
+      pinyin: string;
+      definitions?: string[];
+    }>;
+  }>;
+}
+
+function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
+  if (words.length === 0) return null;
+
+  // Group by character and pinyin
+  const grouped = words.reduce((acc, word) => {
+    word.items.forEach((item) => {
+      const key = `${word.trad}|${item.pinyin}`;
+      if (!acc[key]) {
+        acc[key] = {
+          char: word.trad,
+          pinyin: item.pinyin,
+          definitions: [],
+        };
+      }
+      if (item.definitions) {
+        acc[key].definitions.push(...item.definitions);
+      }
+    });
+    return acc;
+  }, {} as Record<string, { char: string; pinyin: string; definitions: string[] }>);
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-6">
+      <SectionHeader>{title}</SectionHeader>
+      <div className="space-y-4">
+        {Object.values(grouped).map((group, index) => (
+          <div key={index}>
+            <div className="flex items-baseline gap-3 mb-1">
+              <span className="text-4xl font-serif text-blue-700">
+                {group.char}
+              </span>
+              <span className="text-xl text-gray-600">{group.pinyin}</span>
+            </div>
+            {group.definitions.length > 0 && (
+              <div className="text-gray-700 ml-2">
+                {group.definitions.join("; ")}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   const [activeComponent, setActiveComponent] = useState<string | null>(null);
 
@@ -487,6 +545,28 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           </div>
         </div>
       )}
+
+      {/* Definitions Section - Only for main character */}
+      <DefinitionsSection
+        title="Definitions"
+        words={
+          character.words?.filter(
+            (word) =>
+              word.simp === character.char || word.trad === character.char,
+          ) || []
+        }
+      />
+
+      {/* Component Definitions Section */}
+      <DefinitionsSection
+        title="Component Definitions"
+        words={
+          character.words?.filter(
+            (word) =>
+              word.simp !== character.char && word.trad !== character.char,
+          ) || []
+        }
+      />
 
       {/* Pronunciation variants */}
       {character.pinyinFrequencies &&
