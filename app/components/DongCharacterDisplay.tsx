@@ -37,6 +37,56 @@ function CharacterSVG({
   );
 }
 
+// Component type configuration
+const COMPONENT_TYPE_CONFIG = {
+  deleted: {
+    color: "#9ca3af",
+    textClass: "text-gray-400",
+    label: "Deleted"
+  },
+  sound: {
+    color: "#2563eb",
+    textClass: "text-blue-600",
+    label: "Sound"
+  },
+  iconic: {
+    color: "#16a34a",
+    textClass: "text-green-600",
+    label: "Iconic"
+  },
+  meaning: {
+    color: "#dc2626",
+    textClass: "text-red-600",
+    label: "Meaning"
+  },
+  remnant: {
+    color: "#9333ea",
+    textClass: "text-purple-600",
+    label: "Remnant"
+  },
+  distinguishing: {
+    color: "#0891b2",
+    textClass: "text-cyan-600",
+    label: "Distinguishing"
+  },
+  simplified: {
+    color: "#db2777",
+    textClass: "text-pink-600",
+    label: "Simplified"
+  },
+  unknown: {
+    color: "#4b5563",
+    textClass: "text-gray-600",
+    label: "Unknown"
+  },
+} as const;
+
+const DEFAULT_TYPE_CONFIG = {
+  color: "#4b5563",
+  textClass: "text-gray-600",
+  label: "Unknown"
+};
+
 // Helper to adjust color brightness
 function adjustColorBrightness(hexColor: string, amount: number): string {
   // Convert hex to RGB
@@ -57,16 +107,14 @@ function adjustColorBrightness(hexColor: string, amount: number): string {
 
 // Helper to get component fill color with variation for duplicates
 function getComponentFillColor(type: string[], variationIndex: number = 0): string {
-  let baseColor: string;
-  if (type.includes("deleted")) baseColor = "#9ca3af"; // gray-400 (lighter for deleted)
-  else if (type.includes("sound")) baseColor = "#2563eb"; // blue-600
-  else if (type.includes("iconic")) baseColor = "#16a34a"; // green-600
-  else if (type.includes("meaning")) baseColor = "#dc2626"; // red-600
-  else if (type.includes("remnant")) baseColor = "#9333ea"; // purple-600
-  else if (type.includes("distinguishing")) baseColor = "#0891b2"; // cyan-600
-  else if (type.includes("simplified")) baseColor = "#db2777"; // pink-600
-  else if (type.includes("unknown")) baseColor = "#4b5563"; // gray-600
-  else baseColor = "#4b5563"; // gray-600
+  // Find the first matching type
+  const matchingType = Object.keys(COMPONENT_TYPE_CONFIG).find(key =>
+    type.includes(key)
+  ) as keyof typeof COMPONENT_TYPE_CONFIG | undefined;
+
+  const baseColor = matchingType
+    ? COMPONENT_TYPE_CONFIG[matchingType].color
+    : DEFAULT_TYPE_CONFIG.color;
 
   // Apply variation if needed (each variation gets progressively lighter)
   if (variationIndex > 0) {
@@ -79,29 +127,18 @@ function getComponentFillColor(type: string[], variationIndex: number = 0): stri
 
 // Helper to get component text color class for a single type
 function getSingleTypeTextColor(typeLabel: string): string {
-  if (typeLabel === "Deleted") return "text-gray-400";
-  if (typeLabel === "Sound") return "text-blue-600";
-  if (typeLabel === "Iconic") return "text-green-600";
-  if (typeLabel === "Meaning") return "text-red-600";
-  if (typeLabel === "Remnant") return "text-purple-600";
-  if (typeLabel === "Distinguishing") return "text-cyan-600";
-  if (typeLabel === "Simplified") return "text-pink-600";
-  if (typeLabel === "Unknown") return "text-gray-600";
-  return "text-gray-600";
+  const matchingType = Object.entries(COMPONENT_TYPE_CONFIG).find(
+    ([, config]) => config.label === typeLabel
+  );
+
+  return matchingType ? matchingType[1].textClass : DEFAULT_TYPE_CONFIG.textClass;
 }
 
 // Helper to get component type labels (can be multiple)
 function getComponentTypeLabels(type: string[]): string[] {
-  const labels: string[] = [];
-  if (type.includes("deleted")) labels.push("Deleted");
-  if (type.includes("sound")) labels.push("Sound");
-  if (type.includes("iconic")) labels.push("Iconic");
-  if (type.includes("meaning")) labels.push("Meaning");
-  if (type.includes("remnant")) labels.push("Remnant");
-  if (type.includes("distinguishing")) labels.push("Distinguishing");
-  if (type.includes("simplified")) labels.push("Simplified");
-  if (type.includes("unknown")) labels.push("Unknown");
-  return labels;
+  return Object.entries(COMPONENT_TYPE_CONFIG)
+    .filter(([key]) => type.includes(key))
+    .map(([, config]) => config.label);
 }
 
 // Helper to get stroke data from character
@@ -191,6 +228,26 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
     <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
       {children}
     </h2>
+  );
+}
+
+// Helper component for rendering pinyin lists with color coding
+interface PinyinListProps {
+  pinyins: string[];
+  className: string;
+  hasMore: boolean;
+}
+
+function PinyinList({ pinyins, className, hasMore }: PinyinListProps) {
+  return (
+    <>
+      {pinyins.map((p, i) => (
+        <span key={i} className={className}>
+          {p}
+          {i < pinyins.length - 1 || hasMore ? "," : ""}
+        </span>
+      ))}
+    </>
   );
 }
 
@@ -370,30 +427,21 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             <div className="space-y-2">
               {/* Pinyin - show all pronunciations with color coding */}
               <div className="text-2xl font-medium flex flex-wrap gap-2">
-                {bothPinyins.map((p, i) => (
-                  <span key={`both-${i}`} className="text-gray-800">
-                    {p}
-                    {i < bothPinyins.length - 1 ||
-                    onlyModernPinyins.length > 0 ||
-                    onlyOldPinyins.length > 0
-                      ? ","
-                      : ""}
-                  </span>
-                ))}
-                {onlyModernPinyins.map((p, i) => (
-                  <span key={`modern-${i}`} className="text-green-600">
-                    {p}
-                    {i < onlyModernPinyins.length - 1 || onlyOldPinyins.length > 0
-                      ? ","
-                      : ""}
-                  </span>
-                ))}
-                {onlyOldPinyins.map((p, i) => (
-                  <span key={`old-${i}`} className="text-amber-600">
-                    {p}
-                    {i < onlyOldPinyins.length - 1 ? "," : ""}
-                  </span>
-                ))}
+                <PinyinList
+                  pinyins={bothPinyins}
+                  className="text-gray-800"
+                  hasMore={onlyModernPinyins.length > 0 || onlyOldPinyins.length > 0}
+                />
+                <PinyinList
+                  pinyins={onlyModernPinyins}
+                  className="text-green-600"
+                  hasMore={onlyOldPinyins.length > 0}
+                />
+                <PinyinList
+                  pinyins={onlyOldPinyins}
+                  className="text-amber-600"
+                  hasMore={false}
+                />
               </div>
 
               {/* Translation */}
@@ -711,47 +759,23 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
       {character.componentIn &&
         character.componentIn.length > 0 &&
         (() => {
+          // Helper to filter components by type
+          const getComponentsByType = (typeToFind: string) =>
+            (character.componentIn || []).filter((item) =>
+              item.components
+                .find((c) => c.character === character.char)
+                ?.type.includes(typeToFind),
+            );
+
           // Group componentIn by type
-          const meaningComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("meaning"),
-          );
-          const soundComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("sound"),
-          );
-          const iconicComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("iconic"),
-          );
-          const unknownComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("unknown"),
-          );
-          const remnantComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("remnant"),
-          );
-          const simplifiedComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("simplified"),
-          );
-          const deletedComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("deleted"),
-          );
-          const distinguishingComponents = character.componentIn.filter((item) =>
-            item.components
-              .find((c) => c.character === character.char)
-              ?.type.includes("distinguishing"),
-          );
+          const meaningComponents = getComponentsByType("meaning");
+          const soundComponents = getComponentsByType("sound");
+          const iconicComponents = getComponentsByType("iconic");
+          const unknownComponents = getComponentsByType("unknown");
+          const remnantComponents = getComponentsByType("remnant");
+          const simplifiedComponents = getComponentsByType("simplified");
+          const deletedComponents = getComponentsByType("deleted");
+          const distinguishingComponents = getComponentsByType("distinguishing");
 
           const renderComponentSection = (
             items: typeof character.componentIn,
