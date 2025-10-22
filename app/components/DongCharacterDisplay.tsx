@@ -897,6 +897,234 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
   );
 }
 
+// Component Details section - displays detailed information about character components
+interface ComponentDetailsSectionProps {
+  chars?: DongCharacter["chars"];
+}
+
+function ComponentDetailsSection({ chars }: ComponentDetailsSectionProps) {
+  if (!chars || chars.length === 0) {
+    return null;
+  }
+
+  const hasDetails = chars.some(
+    (c) =>
+      c.shuowen ||
+      (c.variants && c.variants.length > 0) ||
+      (c.comments && c.comments.length > 0),
+  );
+
+  if (!hasDetails) return null;
+
+  return (
+    <Section title="Component Details">
+      <div className="space-y-6">
+        {chars.map((componentChar, index) => {
+          const hasShuowen = componentChar.shuowen;
+          const hasVariants =
+            componentChar.variants && componentChar.variants.length > 0;
+          const hasComments =
+            componentChar.comments && componentChar.comments.length > 0;
+
+          if (!hasShuowen && !hasVariants && !hasComments) return null;
+
+          return (
+            <div
+              key={index}
+              className="border dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-4xl font-serif dark:text-gray-100">
+                  {componentChar.char}
+                </span>
+                <div>
+                  <div className="font-medium text-lg dark:text-gray-200">
+                    {componentChar.gloss}
+                  </div>
+                  {componentChar.pinyinFrequencies &&
+                    componentChar.pinyinFrequencies[0] && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {componentChar.pinyinFrequencies[0].pinyin}
+                      </div>
+                    )}
+                </div>
+              </div>
+
+              {hasShuowen && (
+                <div className="mb-3">
+                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    說文解字 (Shuowen Jiezi):
+                  </div>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
+                    {componentChar.shuowen}
+                  </div>
+                </div>
+              )}
+
+              {hasVariants && (
+                <div className="mb-3">
+                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Variants:
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(componentChar.variants || []).map((variant, vIdx) => (
+                      <div
+                        key={vIdx}
+                        className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
+                      >
+                        <span className="font-serif text-lg mr-2 dark:text-gray-100">
+                          {variant.char}
+                        </span>
+                        {variant.parts && (
+                          <span className="text-gray-600 dark:text-gray-400">
+                            ({variant.parts})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {hasComments && (
+                <div>
+                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Scholarly Notes:
+                  </div>
+                  <div className="space-y-2">
+                    {(componentChar.comments || []).map((comment, cIdx) => (
+                      <div
+                        key={cIdx}
+                        className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
+                      >
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          {comment.source}
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-200">
+                          {comment.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
+// Component In section - displays characters that use this character as a component
+interface ComponentInSectionProps {
+  character: DongCharacter;
+  filterKnownChars: boolean;
+  characters: Record<string, unknown>;
+}
+
+function ComponentInSection({
+  character,
+  filterKnownChars,
+  characters,
+}: ComponentInSectionProps) {
+  if (!character.componentIn || character.componentIn.length === 0) {
+    return null;
+  }
+
+  // Helper to filter components by type
+  const getComponentsByType = (typeToFind: string) =>
+    (character.componentIn || []).filter((item) =>
+      item.components
+        .find((c) => c.character === character.char)
+        ?.type.includes(typeToFind),
+    );
+
+  // Group componentIn by type
+  const meaningComponents = getComponentsByType("meaning");
+  const soundComponents = getComponentsByType("sound");
+  const iconicComponents = getComponentsByType("iconic");
+  const unknownComponents = getComponentsByType("unknown");
+  const remnantComponents = getComponentsByType("remnant");
+  const simplifiedComponents = getComponentsByType("simplified");
+  const deletedComponents = getComponentsByType("deleted");
+  const distinguishingComponents = getComponentsByType("distinguishing");
+
+  const renderComponentSection = (
+    items: typeof character.componentIn,
+    title: string,
+  ) => {
+    if (!items || items.length === 0) return null;
+
+    // Filter by known characters if flag is set
+    const filteredItems = items.filter(
+      (item) => !filterKnownChars || characters[item.char],
+    );
+
+    if (filteredItems.length === 0) return null;
+
+    const verifiedCount = filteredItems.filter(
+      (item) => item.isVerified === true,
+    ).length;
+
+    // Sort by bookCharCount in descending order
+    const sortedItems = [...filteredItems].sort((a, b) => {
+      const aCount = a.statistics?.bookCharCount || 0;
+      const bCount = b.statistics?.bookCharCount || 0;
+      return bCount - aCount;
+    });
+
+    return (
+      <Section
+        title={`${title} ${filteredItems.length} character${filteredItems.length !== 1 ? "s" : ""} (${verifiedCount} verified)`}
+      >
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
+          {sortedItems.map((item, index) => (
+            <a
+              key={index}
+              href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              title={`${item.char} - View on Dong Chinese`}
+            >
+              <div className="text-5xl font-serif mb-2 dark:text-gray-100">
+                {item.char}
+              </div>
+              {item.statistics?.bookCharCount && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  {item.statistics.bookCharCount.toLocaleString()} uses
+                </div>
+              )}
+              {item.isVerified && (
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  ✓ Verified
+                </div>
+              )}
+            </a>
+          ))}
+        </div>
+      </Section>
+    );
+  };
+
+  return (
+    <>
+      {renderComponentSection(meaningComponents, "Meaning component in")}
+      {renderComponentSection(soundComponents, "Sound component in")}
+      {renderComponentSection(iconicComponents, "Iconic component in")}
+      {renderComponentSection(unknownComponents, "Unknown component in")}
+      {renderComponentSection(remnantComponents, "Remnant component in")}
+      {renderComponentSection(simplifiedComponents, "Simplified component in")}
+      {renderComponentSection(deletedComponents, "Deleted component in")}
+      {renderComponentSection(
+        distinguishingComponents,
+        "Distinguishing component in",
+      )}
+    </>
+  );
+}
+
 export function DongCharacterDisplay({
   character,
   filterKnownChars = false,
@@ -1091,121 +1319,7 @@ export function DongCharacterDisplay({
       />
 
       {/* Component Details Section */}
-      {character.chars &&
-        character.chars.length > 0 &&
-        (() => {
-          const hasDetails = character.chars.some(
-            (c) =>
-              c.shuowen ||
-              (c.variants && c.variants.length > 0) ||
-              (c.comments && c.comments.length > 0),
-          );
-
-          if (!hasDetails) return null;
-
-          return (
-            <Section title="Component Details">
-              <div className="space-y-6">
-                {character.chars.map((componentChar, index) => {
-                  const hasShuowen = componentChar.shuowen;
-                  const hasVariants =
-                    componentChar.variants && componentChar.variants.length > 0;
-                  const hasComments =
-                    componentChar.comments && componentChar.comments.length > 0;
-
-                  if (!hasShuowen && !hasVariants && !hasComments) return null;
-
-                  return (
-                    <div
-                      key={index}
-                      className="border dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700"
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-4xl font-serif dark:text-gray-100">
-                          {componentChar.char}
-                        </span>
-                        <div>
-                          <div className="font-medium text-lg dark:text-gray-200">
-                            {componentChar.gloss}
-                          </div>
-                          {componentChar.pinyinFrequencies &&
-                            componentChar.pinyinFrequencies[0] && (
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {componentChar.pinyinFrequencies[0].pinyin}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-
-                      {hasShuowen && (
-                        <div className="mb-3">
-                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            說文解字 (Shuowen Jiezi):
-                          </div>
-                          <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
-                            {componentChar.shuowen}
-                          </div>
-                        </div>
-                      )}
-
-                      {hasVariants && (
-                        <div className="mb-3">
-                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            Variants:
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {(componentChar.variants || []).map(
-                              (variant, vIdx) => (
-                                <div
-                                  key={vIdx}
-                                  className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
-                                >
-                                  <span className="font-serif text-lg mr-2 dark:text-gray-100">
-                                    {variant.char}
-                                  </span>
-                                  {variant.parts && (
-                                    <span className="text-gray-600 dark:text-gray-400">
-                                      ({variant.parts})
-                                    </span>
-                                  )}
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {hasComments && (
-                        <div>
-                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                            Scholarly Notes:
-                          </div>
-                          <div className="space-y-2">
-                            {(componentChar.comments || []).map(
-                              (comment, cIdx) => (
-                                <div
-                                  key={cIdx}
-                                  className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
-                                >
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                    {comment.source}
-                                  </div>
-                                  <div className="text-gray-800 dark:text-gray-200">
-                                    {comment.text}
-                                  </div>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </Section>
-          );
-        })()}
+      <ComponentDetailsSection chars={character.chars} />
 
       {/* Pronunciation variants */}
       {character.pinyinFrequencies &&
@@ -1232,117 +1346,11 @@ export function DongCharacterDisplay({
       />
 
       {/* Component In - Characters that use this character as a component */}
-      {character.componentIn &&
-        character.componentIn.length > 0 &&
-        (() => {
-          // Helper to filter components by type
-          const getComponentsByType = (typeToFind: string) =>
-            (character.componentIn || []).filter((item) =>
-              item.components
-                .find((c) => c.character === character.char)
-                ?.type.includes(typeToFind),
-            );
-
-          // Group componentIn by type
-          const meaningComponents = getComponentsByType("meaning");
-          const soundComponents = getComponentsByType("sound");
-          const iconicComponents = getComponentsByType("iconic");
-          const unknownComponents = getComponentsByType("unknown");
-          const remnantComponents = getComponentsByType("remnant");
-          const simplifiedComponents = getComponentsByType("simplified");
-          const deletedComponents = getComponentsByType("deleted");
-          const distinguishingComponents =
-            getComponentsByType("distinguishing");
-
-          const renderComponentSection = (
-            items: typeof character.componentIn,
-            title: string,
-          ) => {
-            if (!items || items.length === 0) return null;
-
-            // Filter by known characters if flag is set
-            const filteredItems = items.filter(
-              (item) => !filterKnownChars || characters[item.char]
-            );
-
-            if (filteredItems.length === 0) return null;
-
-            const verifiedCount = filteredItems.filter(
-              (item) => item.isVerified === true,
-            ).length;
-
-            // Sort by bookCharCount in descending order
-            const sortedItems = [...filteredItems].sort((a, b) => {
-              const aCount = a.statistics?.bookCharCount || 0;
-              const bCount = b.statistics?.bookCharCount || 0;
-              return bCount - aCount;
-            });
-
-            return (
-              <Section
-                title={`${title} ${filteredItems.length} character${filteredItems.length !== 1 ? "s" : ""} (${verifiedCount} verified)`}
-              >
-                <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
-                  {sortedItems.map((item, index) => (
-                    <a
-                      key={index}
-                      href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      title={`${item.char} - View on Dong Chinese`}
-                    >
-                      <div className="text-5xl font-serif mb-2 dark:text-gray-100">
-                        {item.char}
-                      </div>
-                      {item.statistics?.bookCharCount && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                          {item.statistics.bookCharCount.toLocaleString()} uses
-                        </div>
-                      )}
-                      {item.isVerified && (
-                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          ✓ Verified
-                        </div>
-                      )}
-                    </a>
-                  ))}
-                </div>
-              </Section>
-            );
-          };
-
-          return (
-            <>
-              {renderComponentSection(
-                meaningComponents,
-                "Meaning component in",
-              )}
-              {renderComponentSection(soundComponents, "Sound component in")}
-              {renderComponentSection(iconicComponents, "Iconic component in")}
-              {renderComponentSection(
-                unknownComponents,
-                "Unknown component in",
-              )}
-              {renderComponentSection(
-                remnantComponents,
-                "Remnant component in",
-              )}
-              {renderComponentSection(
-                simplifiedComponents,
-                "Simplified component in",
-              )}
-              {renderComponentSection(
-                deletedComponents,
-                "Deleted component in",
-              )}
-              {renderComponentSection(
-                distinguishingComponents,
-                "Distinguishing component in",
-              )}
-            </>
-          );
-        })()}
+      <ComponentInSection
+        character={character}
+        filterKnownChars={filterKnownChars}
+        characters={characters}
+      />
     </div>
   );
 }
