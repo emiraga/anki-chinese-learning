@@ -3,6 +3,7 @@ import type { DongCharacter } from "~/types/dong_character";
 import { useDarkMode } from "./DarkModeToggle";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
+import { CharLink } from "./CharCard";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
@@ -598,9 +599,10 @@ function ComponentCard({
       {/* Component info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-3xl font-serif dark:text-gray-100">
-            {component.character}
-          </span>
+          <CharLink
+            traditional={component.character}
+            className="text-3xl font-serif dark:text-gray-100 hover:underline"
+          />
           <span className="text-sm font-medium dark:text-gray-300">
             {getComponentTypeLabels(component.type).map((label, idx) => (
               <span key={idx} className={getSingleTypeTextColor(label)}>
@@ -1074,13 +1076,11 @@ function ComponentInSection({
           {sortedItems.map((item, index) => {
             const isKnown = characters[item.char];
             return (
-              <a
+              <CharLink
                 key={index}
-                href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                traditional={item.char}
                 className={`flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!isKnown ? "opacity-30" : ""}`}
-                title={`${item.char} - View on Dong Chinese${!isKnown ? " (Unknown)" : ""}`}
+                title={`${item.char}${!isKnown ? " (Unknown)" : ""}`}
               >
                 <div className="text-5xl font-serif mb-2 dark:text-gray-100">
                   {item.char}
@@ -1095,7 +1095,7 @@ function ComponentInSection({
                     ✓ Verified
                   </div>
                 )}
-              </a>
+              </CharLink>
             );
           })}
         </div>

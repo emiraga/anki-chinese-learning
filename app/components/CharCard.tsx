@@ -10,10 +10,12 @@ import AnkiContentRenderer from "./AnkiContentRenderer";
 export const CharLink: React.FC<{
   traditional: string;
   className?: string;
-}> = ({ traditional, className }) => {
+  children?: React.ReactNode;
+  title?: string;
+}> = ({ traditional, className, children, title }) => {
   return (
-    <Link to={`/char/${traditional}`} className={className}>
-      {traditional}
+    <Link to={`/char/${traditional}`} className={className} title={title}>
+      {children || traditional}
     </Link>
   );
 };
