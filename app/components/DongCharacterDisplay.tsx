@@ -4,6 +4,7 @@ import { useDarkMode } from "./DarkModeToggle";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharLink } from "./CharCard";
+import { HanziText } from "./HanziText";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
@@ -529,7 +530,7 @@ function CharacterHeader({
       {/* Etymology/Hint */}
       {character.hint && (
         <div className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed">
-          {character.hint}
+          <HanziText value={character.hint} />
         </div>
       )}
     </div>
@@ -601,7 +602,7 @@ function ComponentCard({
         <div className="flex items-baseline gap-2 mb-1">
           <CharLink
             traditional={component.character}
-            className="text-3xl font-serif dark:text-gray-100 hover:underline"
+            className="text-3xl font-serif dark:text-gray-100"
           />
           <span className="text-sm font-medium dark:text-gray-300">
             {getComponentTypeLabels(component.type).map((label, idx) => (
@@ -618,7 +619,7 @@ function ComponentCard({
         </div>
         {component.hint && (
           <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-            {component.hint}
+            <HanziText value={component.hint} />
           </div>
         )}
         {component.isOldPronunciation && (
