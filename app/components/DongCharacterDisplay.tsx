@@ -5,6 +5,7 @@ import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
+import { PhraseLink } from "./Phrase";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
@@ -691,7 +692,7 @@ function CommonWordsSection({ topWords }: CommonWordsSectionProps) {
             className="flex items-baseline gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors"
           >
             <span className="font-medium text-lg whitespace-nowrap dark:text-gray-100">
-              {word.trad}
+              <PhraseLink value={word.trad} />
             </span>
             <span className="text-gray-600 dark:text-gray-400 text-sm">
               {word.gloss}
