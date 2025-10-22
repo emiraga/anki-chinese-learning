@@ -31,7 +31,9 @@ function CharacterSVG({
             d={stroke}
             fill={strokeColors?.[index] || "currentColor"}
             stroke="none"
-            className={strokeColors?.[index] ? "" : "text-gray-900 dark:text-gray-100"}
+            className={
+              strokeColors?.[index] ? "" : "text-gray-900 dark:text-gray-100"
+            }
           />
         ))}
       </g>
@@ -58,7 +60,8 @@ function AnimatedCharacterSVG({
   const pauseBeforeLoop = 1.5; // pause at end before restarting (seconds)
 
   // Calculate total animation duration
-  const totalAnimationTime = strokes.length * (strokeDuration + strokeDelay) + pauseBeforeLoop;
+  const totalAnimationTime =
+    strokes.length * (strokeDuration + strokeDelay) + pauseBeforeLoop;
 
   // Convert median points to SVG path string
   const medianToPath = (median: number[][]) => {
@@ -91,7 +94,9 @@ function AnimatedCharacterSVG({
       <defs>
         {/* Create a mask for each stroke */}
         {strokes.map((_, index) => {
-          const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
+          const pathLength = medians[index]
+            ? getPathLength(medians[index])
+            : 1000;
           return (
             <mask key={`mask-${index}`} id={`stroke-mask-${index}`}>
               <path
@@ -109,16 +114,19 @@ function AnimatedCharacterSVG({
           );
         })}
         <style>
-          {strokes.map((_, index) => {
-            const startTime = index * (strokeDuration + strokeDelay);
-            const endTime = startTime + strokeDuration;
-            const pathLength = medians[index] ? getPathLength(medians[index]) : 1000;
+          {strokes
+            .map((_, index) => {
+              const startTime = index * (strokeDuration + strokeDelay);
+              const endTime = startTime + strokeDuration;
+              const pathLength = medians[index]
+                ? getPathLength(medians[index])
+                : 1000;
 
-            // Convert times to percentages of total animation
-            const startPercent = (startTime / totalAnimationTime) * 100;
-            const endPercent = (endTime / totalAnimationTime) * 100;
+              // Convert times to percentages of total animation
+              const startPercent = (startTime / totalAnimationTime) * 100;
+              const endPercent = (endTime / totalAnimationTime) * 100;
 
-            return `
+              return `
               @keyframes revealStroke${index} {
                 0%, ${startPercent > 0 ? startPercent - 0.01 : 0}% {
                   stroke-dashoffset: ${pathLength};
@@ -154,7 +162,8 @@ function AnimatedCharacterSVG({
                 animation: showStroke${index} ${totalAnimationTime}s linear infinite;
               }
             `;
-          }).join('\n')}
+            })
+            .join("\n")}
         </style>
       </defs>
       <g transform="scale(1, -1) translate(0, -1024)">
@@ -183,37 +192,37 @@ const COMPONENT_TYPE_CONFIG = {
   },
   sound: {
     color: "#2563eb",
-    textClass: "text-blue-600",
+    textClass: "text-blue-600 dark:text-blue-400",
     label: "Sound",
   },
   iconic: {
     color: "#16a34a",
-    textClass: "text-green-600",
+    textClass: "text-green-600 dark:text-green-400",
     label: "Iconic",
   },
   meaning: {
     color: "#dc2626",
-    textClass: "text-red-600",
+    textClass: "text-red-600 dark:text-red-400",
     label: "Meaning",
   },
   remnant: {
     color: "#9333ea",
-    textClass: "text-purple-600",
+    textClass: "text-purple-600 dark:text-purple-400",
     label: "Remnant",
   },
   distinguishing: {
     color: "#0891b2",
-    textClass: "text-cyan-600",
+    textClass: "text-cyan-600 dark:text-cyan-400",
     label: "Distinguishing",
   },
   simplified: {
     color: "#db2777",
-    textClass: "text-pink-600",
+    textClass: "text-pink-600 dark:text-pink-400",
     label: "Simplified",
   },
   unknown: {
     color: "#4b5563",
-    textClass: "text-gray-600",
+    textClass: "text-gray-600 dark:text-gray-400",
     label: "Unknown",
   },
 } as const;
@@ -352,8 +361,8 @@ function LayeredCharacter({
 
   // Use a color that adapts to dark mode
   const backgroundColor = isDarkMode
-    ? '#374151'  // gray-700 for dark mode
-    : '#e5e7eb'; // gray-200 for light mode
+    ? "#374151" // gray-700 for dark mode
+    : "#e5e7eb"; // gray-200 for light mode
 
   const backgroundColors = createStrokeColorMap(
     strokeData.strokes.length,
@@ -629,14 +638,18 @@ function ComponentCard({
                     <div>
                       {character.char}{" "}
                       {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
-                      {character.oldPronunciations.map((op: { OC: string }) => op.OC).join(", ")}
+                      {character.oldPronunciations
+                        .map((op: { OC: string }) => op.OC)
+                        .join(", ")}
                     </div>
                     {componentChar?.oldPronunciations &&
                       componentChar.oldPronunciations.length > 0 && (
                         <div>
                           {component.character}{" "}
                           {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
-                          {componentChar.oldPronunciations.map((op: { OC: string }) => op.OC).join(", ")}
+                          {componentChar.oldPronunciations
+                            .map((op: { OC: string }) => op.OC)
+                            .join(", ")}
                         </div>
                       )}
                   </div>
@@ -1016,7 +1029,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
                         <img
                           src={img.url}
                           alt={`${img.type} script`}
-                          className="max-w-full max-h-full object-contain"
+                          className="max-w-full max-h-full object-contain dark:invert"
                         />
                       ) : img.data ? (
                         <CharacterSVG strokes={img.data.strokes} />
@@ -1192,7 +1205,9 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
             <div className="space-y-2">
               {character.pinyinFrequencies.map((freq, index) => (
                 <div key={index} className="flex items-baseline gap-3">
-                  <span className="font-medium text-lg dark:text-gray-100">{freq.pinyin}</span>
+                  <span className="font-medium text-lg dark:text-gray-100">
+                    {freq.pinyin}
+                  </span>
                   <span className="text-gray-500 dark:text-gray-400 text-sm">
                     ({freq.count} occurrences)
                   </span>
