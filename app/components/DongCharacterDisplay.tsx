@@ -1,9 +1,12 @@
 import React from "react";
 import type { DongCharacter } from "~/types/dong_character";
 import { useDarkMode } from "./DarkModeToggle";
+import { useOutletContext } from "react-router";
+import type { OutletContext } from "~/data/types";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
+  filterKnownChars?: boolean;
 }
 
 // Helper component for rendering SVG character
@@ -894,8 +897,14 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
   );
 }
 
-export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
+export function DongCharacterDisplay({
+  character,
+  filterKnownChars = false,
+}: DongCharacterDisplayProps) {
   console.log(character);
+
+  // Get known characters from context
+  const { characters } = useOutletContext<OutletContext>();
 
   // Create variation indices for components of the same type
   const componentVariationIndices: number[] = [];
@@ -1251,12 +1260,19 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
           ) => {
             if (!items || items.length === 0) return null;
 
-            const verifiedCount = items.filter(
+            // Filter by known characters if flag is set
+            const filteredItems = items.filter(
+              (item) => !filterKnownChars || characters[item.char]
+            );
+
+            if (filteredItems.length === 0) return null;
+
+            const verifiedCount = filteredItems.filter(
               (item) => item.isVerified === true,
             ).length;
 
             // Sort by bookCharCount in descending order
-            const sortedItems = [...items].sort((a, b) => {
+            const sortedItems = [...filteredItems].sort((a, b) => {
               const aCount = a.statistics?.bookCharCount || 0;
               const bCount = b.statistics?.bookCharCount || 0;
               return bCount - aCount;
@@ -1264,7 +1280,7 @@ export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
 
             return (
               <Section
-                title={`${title} ${items.length} character${items.length !== 1 ? "s" : ""} (${verifiedCount} verified)`}
+                title={`${title} ${filteredItems.length} character${filteredItems.length !== 1 ? "s" : ""} (${verifiedCount} verified)`}
               >
                 <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
                   {sortedItems.map((item, index) => (

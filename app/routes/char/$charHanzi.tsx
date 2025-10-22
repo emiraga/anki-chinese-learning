@@ -12,6 +12,8 @@ import { SearchMorePhrases } from "~/components/MorePhrases";
 import { PinyinText } from "~/components/PinyinText";
 import { useSettings } from "~/settings/SettingsContext";
 import { comparePinyin } from "~/utils/pinyin";
+import { useDongCharacter } from "~/hooks/useDongCharacter";
+import { DongCharacterDisplay } from "~/components/DongCharacterDisplay";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -39,6 +41,9 @@ export default function CharDetail() {
   if (char === null) {
     throw new Error("Could not load character");
   }
+
+  // Load Dong Chinese character data
+  const { character: dongCharacter, loading: dongLoading, error: dongError } = useDongCharacter(char.traditional);
 
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional)
@@ -119,6 +124,29 @@ export default function CharDetail() {
           search={char.traditional}
           filterUnknownChars={true}
         />
+        <hr className="my-4" />
+        <h2 className="text-2xl">Character Etymology:</h2>
+        {dongLoading && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            Loading character data...
+          </div>
+        )}
+        {dongError && (
+          <div className="text-xl text-red-600 dark:text-red-400">
+            Error: {dongError}
+          </div>
+        )}
+        {!dongLoading && !dongError && !dongCharacter && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            No character data found
+          </div>
+        )}
+        {dongCharacter && (
+          <DongCharacterDisplay
+            character={dongCharacter}
+            filterKnownChars={true}
+          />
+        )}
       </div>
     </MainFrame>
   );
