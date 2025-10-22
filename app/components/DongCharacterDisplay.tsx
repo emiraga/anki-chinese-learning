@@ -454,13 +454,7 @@ function CharacterHeader({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-8">
           {/* Main Character Display - Colored and Black versions */}
-          <a
-            href={dongChineseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 hover:opacity-80 transition-opacity"
-            title="View on Dong Chinese"
-          >
+          <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
             {/* Colored version showing components */}
             <div className="relative w-48 h-48">
               <CharacterDisplay
@@ -483,7 +477,7 @@ function CharacterHeader({
                 </div>
               )}
             </div>
-          </a>
+          </div>
 
           {/* Character Metadata */}
           <div className="space-y-2">
@@ -1238,6 +1232,13 @@ export function DongCharacterDisplay({
         </Section>
       )}
 
+      {/* Component In - Characters that use this character as a component */}
+      <ComponentInSection
+        character={character}
+        filterKnownChars={filterKnownChars}
+        characters={characters}
+      />
+
       {/* Evolution Section */}
       {character.images.length > 0 &&
         (() => {
@@ -1343,13 +1344,6 @@ export function DongCharacterDisplay({
       {/* Old Pronunciations Section */}
       <HistoricalPronunciationsSection
         oldPronunciations={character.oldPronunciations}
-      />
-
-      {/* Component In - Characters that use this character as a component */}
-      <ComponentInSection
-        character={character}
-        filterKnownChars={filterKnownChars}
-        characters={characters}
       />
     </div>
   );
