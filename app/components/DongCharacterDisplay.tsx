@@ -637,8 +637,8 @@ function ComponentCard({
                   <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mt-2">
                     <div>
                       {character.char}{" "}
-                      {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
                       {character.oldPronunciations
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         .map((op: { OC: string }) => op.OC)
                         .join(", ")}
                     </div>
@@ -646,8 +646,8 @@ function ComponentCard({
                       componentChar.oldPronunciations.length > 0 && (
                         <div>
                           {component.character}{" "}
-                          {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
                           {componentChar.oldPronunciations
+                            // eslint-disable-next-line @typescript-eslint/naming-convention
                             .map((op: { OC: string }) => op.OC)
                             .join(", ")}
                         </div>

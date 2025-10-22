@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useAsync } from "react-async-hook";
 import type { DongCharacter } from "~/types/dong_character";
 
 interface UseDongCharacterResult {
@@ -13,37 +13,23 @@ interface UseDongCharacterResult {
  * @returns Object with character data, loading state, and error state
  */
 export function useDongCharacter(char: string): UseDongCharacterResult {
-  const [character, setCharacter] = useState<DongCharacter | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!char) {
-      setError("No character provided");
-      setLoading(false);
-      return;
+  const fetchCharacter = async (character: string): Promise<DongCharacter> => {
+    if (!character) {
+      throw new Error("No character provided");
     }
 
-    setLoading(true);
-    setError(null);
-    setCharacter(null);
+    const res = await fetch(`/data/dong/${character}.json`);
+    if (!res.ok) {
+      throw new Error(`Failed to load character "${character}": ${res.statusText}`);
+    }
+    return res.json();
+  };
 
-    fetch(`/data/dong/${char}.json`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load character "${char}": ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then((data: DongCharacter) => {
-        setCharacter(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [char]);
+  const { result, loading, error } = useAsync(fetchCharacter, [char]);
 
-  return { character, loading, error };
+  return {
+    character: result ?? null,
+    loading,
+    error: error?.message ?? null,
+  };
 }
