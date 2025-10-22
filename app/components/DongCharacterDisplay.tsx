@@ -512,7 +512,7 @@ function CharacterHeader({
 
         {/* HSK Badge */}
         <div>
-          <HskBadge level={character.statistics.hskLevel} />
+          <HskBadge level={character.statistics?.hskLevel} />
         </div>
       </div>
 
@@ -1135,7 +1135,7 @@ export function DongCharacterDisplay({
   const componentVariationIndices: number[] = [];
   const typeCounters = new Map<string, number>();
 
-  character.components.forEach((component) => {
+  character?.components?.forEach((component) => {
     // Create a type key (sorted to ensure consistency)
     const typeKey = [...component.type].sort().join(",");
     const currentIndex = typeCounters.get(typeKey) || 0;
@@ -1294,7 +1294,7 @@ export function DongCharacterDisplay({
         })()}
 
       {/* Additional Information */}
-      <CommonWordsSection topWords={character.statistics.topWords} />
+      <CommonWordsSection topWords={character.statistics?.topWords} />
 
       {/* Definitions Section - Only for main character */}
       <DefinitionsSection

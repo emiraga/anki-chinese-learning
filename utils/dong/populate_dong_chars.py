@@ -1,4 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+# ]
+# ///
 """
 Script to populate individual character JSON files from a bulk JSON input file.
 Filters out invalid entries and creates one file per character in public/data/dong/
