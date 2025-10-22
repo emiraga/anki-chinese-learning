@@ -437,7 +437,6 @@ interface CharacterHeaderProps {
   bothPinyins: string[];
   onlyModernPinyins: string[];
   onlyOldPinyins: string[];
-  dongChineseUrl: string;
 }
 
 function CharacterHeader({
@@ -447,7 +446,6 @@ function CharacterHeader({
   bothPinyins,
   onlyModernPinyins,
   onlyOldPinyins,
-  dongChineseUrl,
 }: CharacterHeaderProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
@@ -1050,19 +1048,19 @@ function ComponentInSection({
   ) => {
     if (!items || items.length === 0) return null;
 
-    // Filter by known characters if flag is set
-    const filteredItems = items.filter(
-      (item) => !filterKnownChars || characters[item.char],
-    );
+    // Separate known and unknown characters
+    const knownItems = items.filter((item) => characters[item.char]);
+    const unknownItems = items.filter((item) => !characters[item.char]);
 
-    if (filteredItems.length === 0) return null;
+    // If filtering is enabled and there are no known items, don't show the section
+    if (filterKnownChars && knownItems.length === 0) return null;
 
-    const verifiedCount = filteredItems.filter(
+    const verifiedCount = items.filter(
       (item) => item.isVerified === true,
     ).length;
 
     // Sort by bookCharCount in descending order
-    const sortedItems = [...filteredItems].sort((a, b) => {
+    const sortedItems = [...items].sort((a, b) => {
       const aCount = a.statistics?.bookCharCount || 0;
       const bCount = b.statistics?.bookCharCount || 0;
       return bCount - aCount;
@@ -1070,33 +1068,36 @@ function ComponentInSection({
 
     return (
       <Section
-        title={`${title} ${filteredItems.length} character${filteredItems.length !== 1 ? "s" : ""} (${verifiedCount} verified)`}
+        title={`${title} ${knownItems.length} known${unknownItems.length > 0 ? ` + ${unknownItems.length} unknown` : ""} (${verifiedCount} verified)`}
       >
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
-          {sortedItems.map((item, index) => (
-            <a
-              key={index}
-              href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              title={`${item.char} - View on Dong Chinese`}
-            >
-              <div className="text-5xl font-serif mb-2 dark:text-gray-100">
-                {item.char}
-              </div>
-              {item.statistics?.bookCharCount && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  {item.statistics.bookCharCount.toLocaleString()} uses
+          {sortedItems.map((item, index) => {
+            const isKnown = characters[item.char];
+            return (
+              <a
+                key={index}
+                href={`https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(item.char)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!isKnown ? "opacity-30" : ""}`}
+                title={`${item.char} - View on Dong Chinese${!isKnown ? " (Unknown)" : ""}`}
+              >
+                <div className="text-5xl font-serif mb-2 dark:text-gray-100">
+                  {item.char}
                 </div>
-              )}
-              {item.isVerified && (
-                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  ✓ Verified
-                </div>
-              )}
-            </a>
-          ))}
+                {item.statistics?.bookCharCount && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    {item.statistics.bookCharCount.toLocaleString()} uses
+                  </div>
+                )}
+                {item.isVerified && (
+                  <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    ✓ Verified
+                  </div>
+                )}
+              </a>
+            );
+          })}
         </div>
       </Section>
     );
@@ -1167,9 +1168,6 @@ export function DongCharacterDisplay({
     }
   });
 
-  // Generate Dong Chinese dictionary URL
-  const dongChineseUrl = `https://www.dong-chinese.com/dictionary/search/${encodeURIComponent(character.char)}`;
-
   // Prepare stroke colors for header
   const strokeData = getStrokeData(character);
   const mainCharImage = character.images.find((img) => img.data);
@@ -1198,7 +1196,6 @@ export function DongCharacterDisplay({
         bothPinyins={bothPinyins}
         onlyModernPinyins={onlyModernPinyins}
         onlyOldPinyins={onlyOldPinyins}
-        dongChineseUrl={dongChineseUrl}
       />
 
       {/* Components Section */}
