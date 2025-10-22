@@ -206,8 +206,9 @@ def main():
     }
 
     # Process each file
-    for json_path in json_files:
-        print(f"\nProcessing: {json_path.name}")
+    for idx, json_path in enumerate(json_files, 1):
+        progress = (idx / len(json_files)) * 100
+        print(f"\n[{idx}/{len(json_files)} - {progress:.1f}%] Processing: {json_path.name}")
 
         stats = process_json_file(json_path)
 
