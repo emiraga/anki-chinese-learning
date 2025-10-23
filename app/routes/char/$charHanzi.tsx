@@ -14,6 +14,8 @@ import { useSettings } from "~/settings/SettingsContext";
 import { comparePinyin } from "~/utils/pinyin";
 import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { DongCharacterDisplay } from "~/components/DongCharacterDisplay";
+import { useRtegaCharacter } from "~/hooks/useRtegaCharacter";
+import { RtegaCharacterView } from "~/components/RtegaCharacterView";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -44,6 +46,9 @@ export default function CharDetail() {
 
   // Load Dong Chinese character data
   const { character: dongCharacter, loading: dongLoading, error: dongError } = useDongCharacter(char.traditional);
+
+  // Load Rtega character data
+  const { character: rtegaCharacter, loading: rtegaLoading, error: rtegaError } = useRtegaCharacter(char.traditional);
 
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional)
@@ -124,6 +129,26 @@ export default function CharDetail() {
           search={char.traditional}
           filterUnknownChars={true}
         />
+        <hr className="my-4" />
+        <h2 className="text-2xl">Rtega Mnemonic:</h2>
+        {rtegaLoading && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            Loading Rtega mnemonic...
+          </div>
+        )}
+        {rtegaError && (
+          <div className="text-xl text-red-600 dark:text-red-400">
+            Error: {rtegaError}
+          </div>
+        )}
+        {!rtegaLoading && !rtegaError && !rtegaCharacter && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            No Rtega mnemonic found
+          </div>
+        )}
+        {rtegaCharacter && (
+          <RtegaCharacterView character={rtegaCharacter} />
+        )}
         <hr className="my-4" />
         <h2 className="text-2xl">Character Etymology:</h2>
         {dongLoading && (

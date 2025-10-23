@@ -68,6 +68,10 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
         encodeURIComponent(char.traditional),
     },
     {
+      name: "rtega",
+      link: "http://rtega.be/chmn/?c=" + encodeURIComponent(char.traditional),
+    },
+    {
       name: "yellowbridge",
       link:
         "https://www.yellowbridge.com/chinese/character-dictionary.php?zi=" +

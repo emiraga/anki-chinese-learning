@@ -96,8 +96,8 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
                         simplified_char = text
                         break
 
-        # Use traditional as main character if no simplified
-        main_char = simplified_char if simplified_char else traditional_char
+        # Use traditional as main character (prefer traditional over simplified)
+        main_char = traditional_char if traditional_char else simplified_char
 
         if not main_char:
             return None
@@ -129,16 +129,37 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
             mnemonic_html = extract_html_content(mnemonic_cell)
             mnemonic_text = extract_text_from_html(mnemonic_cell)
 
-        # Extract related characters from last cell
+        # Extract related characters from second cell (cells[1])
+        # These appear to be phonetically or semantically related characters
         related_chars = []
+        if len(cells) >= 2:
+            related_cell = cells[1]
+            # Look for font tags with uid attributes
+            related_fonts = related_cell.find_all('font', {'id': 'chanzilarge'})
+            for font in related_fonts:
+                char_text = font.get_text(strip=True)
+                if char_text:
+                    related_chars.append(char_text)
+
+            # Also check for links (backup method)
+            if not related_chars:
+                related_links = related_cell.find_all('a')
+                for link in related_links:
+                    href = link.get('href', '')
+                    match = re.search(r'\?c=([^&]+)', href)
+                    if match:
+                        related_chars.append(match.group(1))
+
+        # Extract additional related characters from last cell (if present)
+        additional_related_chars = []
         if len(cells) >= 5:
-            related_cell = cells[4]
-            related_links = related_cell.find_all('a')
-            for link in related_links:
+            additional_cell = cells[4]
+            additional_links = additional_cell.find_all('a')
+            for link in additional_links:
                 href = link.get('href', '')
                 match = re.search(r'\?c=([^&]+)', href)
                 if match:
-                    related_chars.append(match.group(1))
+                    additional_related_chars.append(match.group(1))
 
         # Extract referenced characters from mnemonic
         referenced_chars = extract_referenced_characters(mnemonic_html)
@@ -147,8 +168,8 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
         char_data = {
             'id': row_id,
             'character': main_char,
-            'traditional': traditional_char if traditional_char != main_char else None,
-            'simplified': simplified_char,
+            'traditional': traditional_char,
+            'simplified': simplified_char if simplified_char != main_char else None,
             'japanese': japanese_char if japanese_char != main_char else None,
             'uid': char_uid,
             'meaning': meaning,
@@ -158,7 +179,8 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
                 'items': mnemonic_items
             },
             'referenced_characters': referenced_chars,
-            'related_characters': related_chars
+            'related_characters': related_chars,
+            'additional_related_characters': additional_related_chars if additional_related_chars else None
         }
 
         return char_data
@@ -250,6 +272,7 @@ def main():
 
     print()
     print(f"Total characters extracted: {len(all_characters)}")
+    print(list(map(lambda x: x["character"], all_characters)))
     print()
 
     # Save individual JSON files
