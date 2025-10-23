@@ -13,6 +13,27 @@ import json
 from pathlib import Path
 import urllib.parse
 from collections import Counter
+import unicodedata
+
+
+def normalize_cjk_char(char: str) -> str:
+    """
+    Normalize CJK characters by converting compatibility ideographs to canonical forms.
+
+    Args:
+        char (str): Character to normalize
+
+    Returns:
+        str: Normalized character
+    """
+    if not char:
+        return char
+
+    # First apply NFKC normalization which maps compatibility characters to canonical equivalents
+    normalized = unicodedata.normalize('NFKC', char)
+
+    # Then apply NFC to ensure canonical composition
+    return unicodedata.normalize('NFC', normalized)
 
 
 def anki_connect_request(action, params=None):
@@ -77,7 +98,7 @@ def find_all_notes_with_traditional(note_type):
     Returns:
         list: List of note IDs
     """
-    search_query = f'note:{note_type} Traditional:_* -is:suspended'
+    search_query = f'note:{note_type} Traditional:_*'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -137,7 +158,9 @@ def get_existing_rtega_chars(rtega_data_dir):
     for html_file in rtega_data_dir.glob("*.html"):
         # The filename is the character plus .html extension
         char = html_file.stem
-        existing_chars.add(char)
+        # Normalize the character to match what we'll extract from JSON
+        normalized_char = normalize_cjk_char(char)
+        existing_chars.add(normalized_char)
 
     print(f"Found {len(existing_chars)} existing rtega character files")
     return existing_chars
@@ -178,8 +201,10 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
                     if char:
                         # Extract individual characters
                         chars = extract_all_characters(char)
-                        component_chars.update(chars)
-                        component_frequency.update(chars)
+                        # Normalize each character
+                        normalized_chars = {normalize_cjk_char(c) for c in chars}
+                        component_chars.update(normalized_chars)
+                        component_frequency.update(normalized_chars)
 
                 # Extract related_characters array
                 related = data.get('related_characters', [])
@@ -187,8 +212,10 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
                     if char:
                         # Extract individual characters
                         chars = extract_all_characters(char)
-                        component_chars.update(chars)
-                        component_frequency.update(chars)
+                        # Normalize each character
+                        normalized_chars = {normalize_cjk_char(c) for c in chars}
+                        component_chars.update(normalized_chars)
+                        component_frequency.update(normalized_chars)
 
                 # Extract additional_related_characters if present
                 additional = data.get('additional_related_characters', [])
@@ -197,8 +224,10 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
                         if char:
                             # Extract individual characters
                             chars = extract_all_characters(char)
-                            component_chars.update(chars)
-                            component_frequency.update(chars)
+                            # Normalize each character
+                            normalized_chars = {normalize_cjk_char(c) for c in chars}
+                            component_chars.update(normalized_chars)
+                            component_frequency.update(normalized_chars)
         except Exception as e:
             print(f"  Warning: Error reading {json_file.name}: {e}")
 
@@ -296,8 +325,10 @@ def main():
                     if traditional:
                         # Extract individual characters
                         chars = extract_all_characters(traditional)
-                        anki_chars.update(chars)
-                        char_frequency.update(chars)
+                        # Normalize each character
+                        normalized_chars = {normalize_cjk_char(c) for c in chars}
+                        anki_chars.update(normalized_chars)
+                        char_frequency.update(normalized_chars)
             except Exception as e:
                 print(f"  Error processing batch starting at note {i}: {e}")
 
