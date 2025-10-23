@@ -162,3 +162,5 @@ utils/tts/emir_tts_*
 public/data/dong
 public/data/dong_backup_*
 public/images/dong/
+data/rtega/
+public/data/rtega/
