@@ -99,7 +99,7 @@ function MnemonicSection({ character }: MnemonicSectionProps) {
       <div className="space-y-4">
         {/* Main mnemonic HTML with inlined SVGs */}
         <div
-          className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed prose prose-lg dark:prose-invert max-w-none"
+          className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed prose2 dark:prose2-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: character.mnemonic.html }}
         />
 
@@ -112,7 +112,7 @@ function MnemonicSection({ character }: MnemonicSectionProps) {
                 className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
               >
                 <div
-                  className="text-sm text-gray-600 dark:text-gray-400 mb-2 prose dark:prose-invert max-w-none"
+                  className="text-sm text-gray-600 dark:text-gray-400 mb-2 prose2 dark:prose2-invert max-w-none"
                   dangerouslySetInnerHTML={{ __html: item.html }}
                 />
                 <div className="text-xs text-gray-500 dark:text-gray-500">

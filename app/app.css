@@ -236,7 +236,7 @@ tr.row-male > th {
   overflow: visible;
 }
 
-.prose .inlined-svg {
+.prose2 .inlined-svg {
   display: inline-block;
   height: auto;
   max-height: 3em;
@@ -249,29 +249,46 @@ tr.row-male > th {
 
 /* Ensure SVG paths inherit color in dark mode */
 .dark .inlined-svg path {
-  fill: currentColor;
+  fill: currentColor !important;
 }
 
 /* Style links within prose content */
-.prose a {
+.prose2 a {
   color: #2563eb;
   text-decoration: none;
 }
 
-.prose a:hover {
+.prose2 a:hover {
   text-decoration: underline;
 }
 
-.dark .prose a {
+.dark .prose2 a {
   color: #60a5fa;
 }
 
 /* Style lists in prose */
-.prose ul {
+.prose2 ul {
   list-style-type: none;
   padding-left: 0;
 }
 
-.prose li {
+.prose2 li {
   margin-bottom: 0.5em;
+}
+
+/* Dark mode prose2 styles */
+.dark .prose2 {
+  color: #d1d5db; /* gray-300 */
+}
+
+.dark .prose2 a {
+  color: #60a5fa; /* blue-400 */
+}
+
+.dark .prose2 path {
+  fill: currentColor !important;
+}
+
+.dark .prose2 img {
+  filter: invert(1);
 }

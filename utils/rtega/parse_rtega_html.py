@@ -193,8 +193,12 @@ def fetch_svg_content(svg_name: str, cache_metadata: Optional[Dict] = None) -> O
 
 
 def inline_svg_images(html_content: str) -> str:
-    """Replace <img svg="..."> tags with inlined SVG content."""
+    """Replace <img svg="..."> tags with inlined SVG content and clean up style attributes."""
     soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Remove style attributes from <a> tags
+    for a_tag in soup.find_all('a', attrs={'style': True}):
+        del a_tag['style']
 
     # Find all img tags with svg attribute
     img_tags = soup.find_all('img', attrs={'svg': True})
