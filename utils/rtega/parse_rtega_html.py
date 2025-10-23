@@ -387,9 +387,10 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
         return None
 
 
-def parse_html_file(file_path: Path) -> List[Dict]:
+def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Dict]:
     """Parse an HTML file and extract all character data."""
-    print(f"Parsing {file_path.name}...")
+    progress_pct = (file_num / total_files) * 100
+    print(f"[{progress_pct:5.1f}%] Parsing {file_path.name}...")
 
     with open(file_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
@@ -399,7 +400,7 @@ def parse_html_file(file_path: Path) -> List[Dict]:
     # Find the main table with class 'chmn'
     table = soup.find('table', {'class': 'chmn'})
     if not table:
-        print(f"  No table found in {file_path.name}")
+        print(f"         No table found in {file_path.name}")
         return []
 
     # Parse all rows
@@ -411,7 +412,7 @@ def parse_html_file(file_path: Path) -> List[Dict]:
         if char_data:
             characters.append(char_data)
 
-    print(f"  Found {len(characters)} characters")
+    print(f"         Found {len(characters)} characters")
     return characters
 
 
@@ -467,8 +468,8 @@ def main():
     # Process all files
     all_characters = []
 
-    for html_file in html_files:
-        characters = parse_html_file(html_file)
+    for i, html_file in enumerate(html_files, 1):
+        characters = parse_html_file(html_file, i, len(html_files))
         all_characters.extend(characters)
 
     print()
@@ -478,7 +479,11 @@ def main():
 
     # Save individual JSON files
     print("Saving JSON files...")
-    for char_data in all_characters:
+    total_chars = len(all_characters)
+    for i, char_data in enumerate(all_characters, 1):
+        progress_pct = (i / total_chars) * 100
+        if i % 10 == 0 or i == total_chars:  # Print every 10 files or the last one
+            print(f"  [{progress_pct:5.1f}%] Saved {i}/{total_chars} files...")
         save_character_json(char_data, output_dir)
 
     # Also save a combined index file

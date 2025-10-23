@@ -148,7 +148,8 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
     Extract all referenced and related characters from existing rtega JSON files
 
     Args:
-        rtega_data_dir (Path): Path to the rtega data directory
+        rtega_data_dir (Path): Path to the rtega HTML data directory (data/rtega)
+                               JSON files are in public/data/rtega
 
     Returns:
         tuple: (set of component characters, Counter of component frequency)
@@ -156,11 +157,14 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
     component_chars = set()
     component_frequency = Counter()
 
-    if not rtega_data_dir.exists():
-        print(f"Warning: RTEGA data directory does not exist: {rtega_data_dir}")
+    # JSON files are in public/data/rtega, not data/rtega
+    json_dir = rtega_data_dir.parent.parent / "public" / "data" / "rtega"
+
+    if not json_dir.exists():
+        print(f"Warning: RTEGA JSON directory does not exist: {json_dir}")
         return component_chars, component_frequency
 
-    json_files = list(rtega_data_dir.glob("*.json"))
+    json_files = list(json_dir.glob("*.json"))
     print(f"\nScanning {len(json_files)} rtega JSON files for referenced/related characters...")
 
     for json_file in json_files:
