@@ -268,8 +268,8 @@ tr.row-male > th {
 
 /* Style lists in prose */
 .prose2 ul {
-  list-style-type: none;
-  padding-left: 0;
+  list-style-type: circle;
+  padding-left: 30px;
 }
 
 .prose2 li {
@@ -291,4 +291,13 @@ tr.row-male > th {
 
 .dark .prose2 img {
   filter: invert(1);
+}
+
+.prose2 i {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  border-width: 1px;
+  border-left: 0px;
+  border-right: 0px;
+  font-weight: bold;
 }

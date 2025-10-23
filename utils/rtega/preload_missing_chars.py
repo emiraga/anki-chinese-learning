@@ -373,9 +373,9 @@ def main():
         # Add a small delay to avoid overwhelming the server
         if i % 10 == 0:
             print(f"  Downloaded {i} files, pausing for longer...")
-            time.sleep(5)
+            time.sleep(3)
         else:
-            time.sleep(1)
+            time.sleep(0.01)
 
     print(f"\n{'='*60}")
     print("Done!")
