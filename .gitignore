@@ -145,6 +145,9 @@ vite.config.ts.timestamp-*
 # python
 __pycache__
 
+# Python script caches
+utils/rtega/.cache/
+
 # Secrets
 keys_secret.txt
 ai_key.txt

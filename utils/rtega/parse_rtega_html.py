@@ -4,6 +4,7 @@
 # dependencies = [
 #   "beautifulsoup4",
 #   "lxml",
+#   "requests",
 # ]
 # ///
 """
@@ -12,18 +13,25 @@ Extracts character data and generates JSON files for each character.
 """
 
 import json
-import os
 import re
+import requests
+import hashlib
+import time
 from pathlib import Path
 from typing import Dict, List, Optional
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Tag
 
 
 def extract_text_from_html(element: Tag) -> str:
-    """Extract plain text from HTML element, removing all tags."""
+    """Extract plain text from HTML element, removing all tags but preserving spacing."""
     if element is None:
         return ""
-    return element.get_text(strip=True)
+    # Use separator to preserve spaces between elements
+    # get_text(' ') adds a space when transitioning from one element to another
+    text = element.get_text(' ', strip=True)
+    # Clean up multiple spaces
+    text = re.sub(r'\s+', ' ', text)
+    return text
 
 
 def extract_html_content(element: Tag) -> str:
@@ -32,6 +40,213 @@ def extract_html_content(element: Tag) -> str:
         return ""
     # Get inner HTML
     return ''.join(str(child) for child in element.children)
+
+
+# Global cache for SVG content (in-memory)
+_svg_cache: Dict[str, str] = {}
+
+# Cache configuration
+CACHE_VERSION = "1"
+CACHE_EXPIRY_DAYS = 30
+
+
+def get_cache_dir() -> Path:
+    """Get the cache directory path."""
+    script_dir = Path(__file__).parent
+    cache_dir = script_dir / '.cache' / 'svg'
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
+
+
+def get_cache_metadata_file() -> Path:
+    """Get the cache metadata file path."""
+    return get_cache_dir() / 'metadata.json'
+
+
+def load_cache_metadata() -> Dict:
+    """Load cache metadata from disk."""
+    metadata_file = get_cache_metadata_file()
+    if metadata_file.exists():
+        try:
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"  Warning: Failed to load cache metadata: {e}")
+            return {'version': CACHE_VERSION, 'entries': {}}
+    return {'version': CACHE_VERSION, 'entries': {}}
+
+
+def save_cache_metadata(metadata: Dict):
+    """Save cache metadata to disk."""
+    metadata_file = get_cache_metadata_file()
+    try:
+        with open(metadata_file, 'w', encoding='utf-8') as f:
+            json.dump(metadata, f, ensure_ascii=False, indent=2)
+    except IOError as e:
+        print(f"  Warning: Failed to save cache metadata: {e}")
+
+
+def get_cache_file_path(svg_name: str) -> Path:
+    """Get the cache file path for a given SVG name."""
+    # Use hash to avoid filesystem issues with special characters
+    name_hash = hashlib.md5(svg_name.encode('utf-8')).hexdigest()
+    return get_cache_dir() / f"{name_hash}.svg"
+
+
+def is_cache_valid(svg_name: str, metadata: Dict) -> bool:
+    """Check if cached SVG is still valid."""
+    if svg_name not in metadata.get('entries', {}):
+        return False
+
+    entry = metadata['entries'][svg_name]
+
+    # Check cache version
+    if entry.get('version') != CACHE_VERSION:
+        return False
+
+    # Check expiry
+    cached_time = entry.get('timestamp', 0)
+    current_time = time.time()
+    age_days = (current_time - cached_time) / (60 * 60 * 24)
+
+    if age_days > CACHE_EXPIRY_DAYS:
+        return False
+
+    # Check if file exists
+    cache_file = get_cache_file_path(svg_name)
+    return cache_file.exists()
+
+
+def load_from_cache(svg_name: str, metadata: Dict) -> Optional[str]:
+    """Load SVG content from disk cache."""
+    if not is_cache_valid(svg_name, metadata):
+        return None
+
+    cache_file = get_cache_file_path(svg_name)
+    try:
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            return f.read()
+    except IOError as e:
+        print(f"  Warning: Failed to read cached SVG {svg_name}: {e}")
+        return None
+
+
+def save_to_cache(svg_name: str, svg_content: str, metadata: Dict):
+    """Save SVG content to disk cache."""
+    cache_file = get_cache_file_path(svg_name)
+
+    try:
+        # Save SVG content
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            f.write(svg_content)
+
+        # Update metadata
+        if 'entries' not in metadata:
+            metadata['entries'] = {}
+
+        metadata['entries'][svg_name] = {
+            'version': CACHE_VERSION,
+            'timestamp': time.time(),
+            'file': cache_file.name
+        }
+
+        save_cache_metadata(metadata)
+    except IOError as e:
+        print(f"  Warning: Failed to cache SVG {svg_name}: {e}")
+
+
+def fetch_svg_content(svg_name: str, cache_metadata: Optional[Dict] = None) -> Optional[str]:
+    """Fetch SVG content from rtega.be server and cache it."""
+    # Check in-memory cache first
+    if svg_name in _svg_cache:
+        return _svg_cache[svg_name]
+
+    # Load cache metadata if not provided
+    if cache_metadata is None:
+        cache_metadata = load_cache_metadata()
+
+    # Check disk cache
+    svg_content = load_from_cache(svg_name, cache_metadata)
+    if svg_content:
+        _svg_cache[svg_name] = svg_content
+        print(f"  Loaded from cache: {svg_name}")
+        return svg_content
+
+    # Fetch from network
+    url = f"http://rtega.be/chmn/img/{svg_name}.svg"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        svg_content = response.text
+
+        # Cache in memory
+        _svg_cache[svg_name] = svg_content
+
+        # Cache to disk
+        save_to_cache(svg_name, svg_content, cache_metadata)
+
+        print(f"  Fetched SVG: {svg_name}")
+        return svg_content
+    except requests.RequestException as e:
+        print(f"  Warning: Failed to fetch SVG {svg_name}: {e}")
+        return None
+
+
+def inline_svg_images(html_content: str) -> str:
+    """Replace <img svg="..."> tags with inlined SVG content."""
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Find all img tags with svg attribute
+    img_tags = soup.find_all('img', attrs={'svg': True})
+
+    for img_tag in img_tags:
+        svg_name = img_tag.get('svg')
+        if svg_name:
+            # Fetch the SVG content
+            svg_content = fetch_svg_content(svg_name)
+            if svg_content:
+                # Parse the SVG content
+                svg_soup = BeautifulSoup(svg_content, 'xml')
+                svg_element = svg_soup.find('svg')
+
+                if svg_element:
+                    # Add a class to identify these as inlined SVGs
+                    if svg_element.get('class'):
+                        svg_element['class'].append('inlined-svg')
+                    else:
+                        svg_element['class'] = ['inlined-svg']
+
+                    # Add data attribute to track original svg name
+                    svg_element['data-svg-name'] = svg_name
+
+                    # Remove fixed width/height attributes, keep viewBox for proper scaling
+                    if svg_element.get('width'):
+                        del svg_element['width']
+                    if svg_element.get('height'):
+                        del svg_element['height']
+
+                    # Ensure viewBox is present for proper scaling
+                    # If no viewBox, try to create one from original width/height
+                    if not svg_element.get('viewBox'):
+                        # Try to extract from original dimensions in the fetched content
+                        original_svg = BeautifulSoup(svg_content, 'xml').find('svg')
+                        width = original_svg.get('width', '100')
+                        height = original_svg.get('height', '100')
+                        # Remove any units from width/height
+                        width_val = re.sub(r'[^0-9.]', '', str(width))
+                        height_val = re.sub(r'[^0-9.]', '', str(height))
+                        if width_val and height_val:
+                            svg_element['viewBox'] = f"0 0 {width_val} {height_val}"
+
+                    # Replace img tag with SVG element
+                    img_tag.replace_with(svg_element)
+                else:
+                    print(f"  Warning: No SVG element found in {svg_name}")
+            else:
+                # If fetch failed, add src attribute as fallback
+                img_tag['src'] = f"http://rtega.be/chmn/img/{svg_name}.svg"
+
+    return str(soup)
 
 
 def extract_referenced_characters(html_content: str) -> List[str]:
@@ -108,47 +323,26 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
 
         # Extract mnemonic from fourth cell
         mnemonic_cell = cells[3]
-
-        # Get both HTML and text versions of mnemonic
-        mnemonic_html = ""
-        mnemonic_text = ""
-        mnemonic_items = []
-
-        if mnemonic_cell:
-            # Find all list items
-            list_items = mnemonic_cell.find_all('li')
-            for li in list_items:
-                # Get HTML version
-                item_html = extract_html_content(li)
-                mnemonic_items.append({
-                    'html': item_html,
-                    'text': extract_text_from_html(li),
-                    'author': li.get('data-toggle') and li.get('title', '')
-                })
-
-            mnemonic_html = extract_html_content(mnemonic_cell)
-            mnemonic_text = extract_text_from_html(mnemonic_cell)
+        mnemonic_html = inline_svg_images(extract_html_content(mnemonic_cell)) if mnemonic_cell else ""
+        mnemonic_text = extract_text_from_html(mnemonic_cell) if mnemonic_cell else ""
 
         # Extract related characters from second cell (cells[1])
-        # These appear to be phonetically or semantically related characters
         related_chars = []
-        if len(cells) >= 2:
-            related_cell = cells[1]
-            # Look for font tags with uid attributes
-            related_fonts = related_cell.find_all('font', {'id': 'chanzilarge'})
-            for font in related_fonts:
-                char_text = font.get_text(strip=True)
-                if char_text:
-                    related_chars.append(char_text)
+        related_cell = cells[1]
+        # Look for font tags with uid attributes
+        related_fonts = related_cell.find_all('font', {'id': 'chanzilarge'})
+        for font in related_fonts:
+            char_text = font.get_text(strip=True)
+            if char_text:
+                related_chars.append(char_text)
 
-            # Also check for links (backup method)
-            if not related_chars:
-                related_links = related_cell.find_all('a')
-                for link in related_links:
-                    href = link.get('href', '')
-                    match = re.search(r'\?c=([^&]+)', href)
-                    if match:
-                        related_chars.append(match.group(1))
+        # Also check for links (backup method)
+        if not related_chars:
+            for link in related_cell.find_all('a'):
+                href = link.get('href', '')
+                match = re.search(r'\?c=([^&]+)', href)
+                if match:
+                    related_chars.append(match.group(1))
 
         # Extract additional related characters from last cell (if present)
         additional_related_chars = []
@@ -175,8 +369,7 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
             'meaning': meaning,
             'mnemonic': {
                 'text': mnemonic_text,
-                'html': mnemonic_html,
-                'items': mnemonic_items
+                'html': mnemonic_html
             },
             'referenced_characters': referenced_chars,
             'related_characters': related_chars,
@@ -224,17 +417,15 @@ def save_character_json(char_data: Dict, output_dir: Path):
 
     # Create filename - use character as filename
     # For special characters, use the uid or id
-    filename = f"{char}.json"
-
-    # If character has problematic filename chars, use uid
     try:
-        filepath = output_dir / filename
-    except:
-        filename = f"char_{char_data['id']}.json"
-        filepath = output_dir / filename
-
-    with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(char_data, f, ensure_ascii=False, indent=2)
+        filepath = output_dir / f"{char}.json"
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(char_data, f, ensure_ascii=False, indent=2)
+    except (OSError, ValueError) as e:
+        # Fallback for problematic filename characters
+        filepath = output_dir / f"char_{char_data['id']}.json"
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(char_data, f, ensure_ascii=False, indent=2)
 
 
 def main():
@@ -252,6 +443,12 @@ def main():
 
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load cache metadata once
+    cache_metadata = load_cache_metadata()
+    print(f"Cache directory: {get_cache_dir()}")
+    print(f"Cached SVGs: {len(cache_metadata.get('entries', {}))} entries")
+    print()
 
     # Find all HTML files
     html_files = sorted(input_dir.glob('*.html'))
@@ -272,7 +469,7 @@ def main():
 
     print()
     print(f"Total characters extracted: {len(all_characters)}")
-    print(list(map(lambda x: x["character"], all_characters)))
+    print([char["character"] for char in all_characters])
     print()
 
     # Save individual JSON files

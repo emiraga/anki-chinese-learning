@@ -97,22 +97,24 @@ function MnemonicSection({ character }: MnemonicSectionProps) {
   return (
     <Section title="Mnemonic">
       <div className="space-y-4">
-        {/* Main mnemonic text */}
-        <div className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-          {character.mnemonic.text}
-        </div>
+        {/* Main mnemonic HTML with inlined SVGs */}
+        <div
+          className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed prose prose-lg dark:prose-invert max-w-none"
+          dangerouslySetInnerHTML={{ __html: character.mnemonic.html }}
+        />
 
         {/* Individual mnemonic items */}
-        {character.mnemonic.items.length > 0 && (
+        {character.mnemonic.items && character.mnemonic.items.length > 0 && (
           <div className="space-y-3 border-t dark:border-gray-700 pt-4">
             {character.mnemonic.items.map((item, index) => (
               <div
                 key={index}
                 className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
               >
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {item.text}
-                </div>
+                <div
+                  className="text-sm text-gray-600 dark:text-gray-400 mb-2 prose dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{ __html: item.html }}
+                />
                 <div className="text-xs text-gray-500 dark:text-gray-500">
                   — {item.author}
                 </div>
