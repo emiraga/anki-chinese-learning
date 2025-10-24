@@ -320,7 +320,7 @@ function createStrokeColorMapFromIndices(
 function getStrokeData(
   character: DongCharacter,
 ): { strokes: string[]; medians: number[][][] } | undefined {
-  return character.data || character.images.find((img) => img.data)?.data;
+  return character.data || character.images?.find((img) => img.data)?.data;
 }
 
 // Component for rendering character (SVG or fallback text)
@@ -1172,7 +1172,7 @@ export function DongCharacterDisplay({
 
   // Prepare stroke colors for header
   const strokeData = getStrokeData(character);
-  const mainCharImage = character.images.find((img) => img.data);
+  const mainCharImage = character.images?.find((img) => img.data);
   const fragments = mainCharImage?.fragments || [];
 
   // Create a map of stroke index to color for colored version
@@ -1239,7 +1239,8 @@ export function DongCharacterDisplay({
       />
 
       {/* Evolution Section */}
-      {character.images.length > 0 &&
+      {character.images &&
+        character.images.length > 0 &&
         (() => {
           // Don't show evolution if there's only one modern image
           if (character.images.length === 1) {

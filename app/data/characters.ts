@@ -37,7 +37,17 @@ export function getNewCharacter(traditional: string): CharacterType | null {
 
   const toneMatch = numberedPinyin.match(/([a-z]+)([1-5])*$/);
   if (toneMatch === null) {
-    return null;
+    return {
+      ankiId: null,
+      traditional: traditional,
+      meaning: "",
+      meaning2: "",
+      pinyin: [{ pinyinAccented: realPinyin, tone: -1, sylable: realPinyin }],
+      mnemonic: "",
+      tags: [],
+      withSound: true,
+      todoMoreWork: false,
+    };
   }
   let sylable = toneMatch[1];
   let tone = toneMatch[2] ? parseInt(toneMatch[2], 10) : 5;
