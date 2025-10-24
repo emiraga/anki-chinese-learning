@@ -133,13 +133,14 @@ def load_rtega_mnemonic(character):
         return None
 
 
-def update_hanzi_mnemonics(dry_run=False, limit=None):
+def update_hanzi_mnemonics(dry_run=False, limit=None, overwrite=False):
     """
     Update all Hanzi notes with Rtega mnemonics
 
     Args:
         dry_run (bool): If True, only print what would be updated without making changes
         limit (int): If specified, only process this many notes
+        overwrite (bool): If True, overwrite existing content in the field
     """
     note_ids = find_hanzi_notes()
 
@@ -174,19 +175,21 @@ def update_hanzi_mnemonics(dry_run=False, limit=None):
             # Check if field already has content
             current_mnemonic = note_info['fields'].get('Rtega Mnemonic', {}).get('value', '').strip()
 
-            if current_mnemonic:
+            if current_mnemonic and not overwrite:
                 print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Already has mnemonic, skipping")
                 skipped_count += 1
                 continue
 
             if dry_run:
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Would update with mnemonic")
+                action = "Would overwrite" if current_mnemonic else "Would update"
+                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): {action} with mnemonic")
                 print(f"  Mnemonic: {mnemonic_html}")
                 updated_count += 1
             else:
                 # Update the note
                 update_note_field(note_id, "Rtega Mnemonic", mnemonic_html)
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Updated successfully")
+                action = "Overwritten" if current_mnemonic else "Updated"
+                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): {action} successfully")
                 updated_count += 1
 
         except Exception as e:
@@ -205,14 +208,34 @@ def update_hanzi_mnemonics(dry_run=False, limit=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Fill Rtega Mnemonic field for Hanzi notes')
+    parser = argparse.ArgumentParser(
+        description='Fill Rtega Mnemonic field for Hanzi notes in Anki',
+        epilog='''
+Examples:
+  %(prog)s --dry-run                    Preview changes without updating
+  %(prog)s --dry-run --limit 5          Preview first 5 notes only
+  %(prog)s                              Update all Hanzi notes
+  %(prog)s --limit 100                  Update first 100 notes only
+  %(prog)s --overwrite                  Overwrite existing mnemonics
+
+This script loads Rtega mnemonic HTML from JSON files and fills the
+"Rtega Mnemonic" field in Anki Hanzi notes.
+
+The script only updates empty fields by default. Use --overwrite to update
+fields that already have content.
+Requires Anki running with AnkiConnect addon installed.
+        ''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument('--dry-run', action='store_true',
                        help='Preview changes without actually updating notes')
-    parser.add_argument('--limit', type=int,
+    parser.add_argument('--limit', type=int, metavar='N',
                        help='Limit number of notes to process (useful for testing)')
+    parser.add_argument('--overwrite', action='store_true',
+                       help='Overwrite existing content in the field (default: skip filled fields)')
     args = parser.parse_args()
 
-    update_hanzi_mnemonics(dry_run=args.dry_run, limit=args.limit)
+    update_hanzi_mnemonics(dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite)
 
 
 if __name__ == "__main__":
