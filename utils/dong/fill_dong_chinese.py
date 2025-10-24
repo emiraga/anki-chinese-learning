@@ -311,19 +311,26 @@ def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, char
         overwrite (bool): If True, overwrite existing content in the field
         character (str): If specified, only process this specific character
     """
+    # Build search query
+    search_query = 'note:Hanzi'
     if character:
-        # Search for specific character
-        search_query = f'note:Hanzi Traditional:{character}'
-        response = anki_connect_request("findNotes", {"query": search_query})
-
-        if response and response.get("result"):
-            note_ids = response["result"]
-            print(f"Found {len(note_ids)} note(s) for character '{character}'")
-        else:
-            print(f"No notes found for character '{character}'")
-            return
+        search_query += f' Traditional:{character}'
     else:
-        note_ids = find_hanzi_notes()
+        search_query += f' Traditional:_'
+
+    if not overwrite:
+        # Exclude notes that already have content in the Dongchinese Etymology field
+        search_query += ' -"Dongchinese Etymology:_*"'
+
+    response = anki_connect_request("findNotes", {"query": search_query})
+    if response and response.get("result"):
+        note_ids = response["result"]
+        char_info = f" for character '{character}'" if character else ""
+        print(f"Found {len(note_ids)} Hanzi notes{char_info}")
+    else:
+        char_info = f" for character '{character}'" if character else ""
+        print(f"No Hanzi notes found{char_info}")
+        return
 
     if limit and not character:
         note_ids = note_ids[:limit]
@@ -353,14 +360,6 @@ def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, char
                 skipped_count += 1
                 continue
 
-            # Check if field already has content
-            current_etymology = note_info['fields'].get('Dongchinese Etymology', {}).get('value', '').strip()
-
-            if current_etymology and not overwrite:
-                # print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Already has etymology, skipping")
-                skipped_count += 1
-                continue
-
             # Generate the etymology HTML
             etymology_html = generate_dong_etymology_html(dong_data)
 
@@ -370,15 +369,13 @@ def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, char
                 continue
 
             if dry_run:
-                action = "Would overwrite" if current_etymology else "Would update"
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): {action} with etymology")
+                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Would update with etymology")
                 print(f"  Etymology HTML:\n{etymology_html}")
                 updated_count += 1
             else:
                 # Update the note
                 update_note_field(note_id, "Dongchinese Etymology", etymology_html)
-                action = "Overwritten" if current_etymology else "Updated"
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): {action} successfully")
+                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Updated successfully")
                 updated_count += 1
 
         except Exception as e:

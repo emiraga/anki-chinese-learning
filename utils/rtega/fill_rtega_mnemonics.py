@@ -10,6 +10,7 @@ import os
 import json
 import requests
 import argparse
+import re
 from pathlib import Path
 
 
@@ -107,6 +108,22 @@ def update_note_field(note_id, field_name, field_value):
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
+def replace_hrefs_with_pleco_urls(html):
+    """
+    Replace href="?c=CHARACTER" with href="plecoapi://x-callback-url/df?hw=CHARACTER"
+
+    Args:
+        html (str): HTML content with character links
+
+    Returns:
+        str: HTML with Pleco API URLs
+    """
+    # Pattern matches: href="?c=CHARACTER"
+    pattern = r'href="\?c=([^"]+)"'
+    replacement = r'href="plecoapi://x-callback-url/df?hw=\1"'
+    return re.sub(pattern, replacement, html)
+
+
 def load_rtega_mnemonic(character):
     """
     Load the Rtega mnemonic HTML for a given character
@@ -127,13 +144,17 @@ def load_rtega_mnemonic(character):
     try:
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            return data.get("mnemonic", {}).get("html")
+            html = data.get("mnemonic", {}).get("html")
+            if html:
+                # Replace character links with Pleco API URLs
+                html = replace_hrefs_with_pleco_urls(html)
+            return html
     except Exception as e:
         print(f"Error loading mnemonic for {character}: {e}")
         return None
 
 
-def update_hanzi_mnemonics(dry_run=False, limit=None, overwrite=False):
+def update_hanzi_mnemonics(dry_run=False, limit=None, overwrite=False, character=None):
     """
     Update all Hanzi notes with Rtega mnemonics
 
@@ -141,8 +162,28 @@ def update_hanzi_mnemonics(dry_run=False, limit=None, overwrite=False):
         dry_run (bool): If True, only print what would be updated without making changes
         limit (int): If specified, only process this many notes
         overwrite (bool): If True, overwrite existing content in the field
+        character (str): If specified, only process notes with this character
     """
-    note_ids = find_hanzi_notes()
+    # Build search query
+    search_query = 'note:Hanzi Traditional:_'
+    if character:
+        search_query += f' Traditional:{character}'
+    else:
+        search_query += f' Traditional:_'
+
+    if not overwrite:
+        # Exclude notes that already have content in the Rtega Mnemonic field
+        search_query += ' -"Rtega Mnemonic:_*"'
+
+    response = anki_connect_request("findNotes", {"query": search_query})
+    if response and response.get("result"):
+        note_ids = response["result"]
+        char_info = f" for character '{character}'" if character else ""
+        print(f"Found {len(note_ids)} Hanzi notes{char_info}")
+    else:
+        char_info = f" for character '{character}'" if character else ""
+        print(f"No Hanzi notes found{char_info}")
+        return
 
     if limit:
         note_ids = note_ids[:limit]
@@ -172,24 +213,14 @@ def update_hanzi_mnemonics(dry_run=False, limit=None, overwrite=False):
                 skipped_count += 1
                 continue
 
-            # Check if field already has content
-            current_mnemonic = note_info['fields'].get('Rtega Mnemonic', {}).get('value', '').strip()
-
-            if current_mnemonic and not overwrite:
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Already has mnemonic, skipping")
-                skipped_count += 1
-                continue
-
             if dry_run:
-                action = "Would overwrite" if current_mnemonic else "Would update"
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): {action} with mnemonic")
+                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Would update with mnemonic")
                 print(f"  Mnemonic: {mnemonic_html}")
                 updated_count += 1
             else:
                 # Update the note
                 update_note_field(note_id, "Rtega Mnemonic", mnemonic_html)
-                action = "Overwritten" if current_mnemonic else "Updated"
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): {action} successfully")
+                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Updated successfully")
                 updated_count += 1
 
         except Exception as e:
@@ -214,6 +245,7 @@ def main():
 Examples:
   %(prog)s --dry-run                    Preview changes without updating
   %(prog)s --dry-run --limit 5          Preview first 5 notes only
+  %(prog)s --character 㒼                Update only the specific character
   %(prog)s                              Update all Hanzi notes
   %(prog)s --limit 100                  Update first 100 notes only
   %(prog)s --overwrite                  Overwrite existing mnemonics
@@ -233,9 +265,11 @@ Requires Anki running with AnkiConnect addon installed.
                        help='Limit number of notes to process (useful for testing)')
     parser.add_argument('--overwrite', action='store_true',
                        help='Overwrite existing content in the field (default: skip filled fields)')
+    parser.add_argument('--character', type=str, metavar='CHAR',
+                       help='Process only notes with this specific character')
     args = parser.parse_args()
 
-    update_hanzi_mnemonics(dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite)
+    update_hanzi_mnemonics(dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite, character=args.character)
 
 
 if __name__ == "__main__":
