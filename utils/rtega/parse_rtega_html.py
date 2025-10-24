@@ -192,11 +192,72 @@ def fetch_svg_content(svg_name: str, cache_metadata: Optional[Dict] = None) -> O
         return None
 
 
-def inline_svg_images(html_content: str) -> str:
-    """Replace <img svg="..."> tags with inlined SVG content and clean up style attributes."""
+def extract_abbreviation_definitions(soup: BeautifulSoup) -> dict[str, str]:
+    """Extract abbreviation/term definitions from the HTML."""
+    definitions = {
+        'triggeralo': 'allograph (different shape but same meaning)',
+        'triggercon': 'connotation as a character part',
+        'triggerabbr': 'abbreviated, abbreviation',
+        'triggercontr': 'contracted, contraction',
+        'triggerext': 'extended meaning',
+        'triggergovt': 'government',
+        'triggerk': 'kanji, ideograph, character',
+        'triggerlit': 'literal translation from the Shuowen Jiezi',
+        'triggermodf': 'modified, modification',
+        'triggeropp': 'opposite meaning or situation',
+        'triggerpt': 'when used as a character part',
+        'triggerrs': 'explanation according to Richard Sears (http://hanziyuan.net/)',
+        'triggerrad': 'one of the 214 radicals in the traditional character classification system',
+        'triggersit': 'situation chosen for evoking this meaning',
+        'triggerx': 'suffix for counting units of objects, etc.',
+        'triggeruncl': 'Unclassified by Joseph De Roo.'
+    }
+
+    # Try to extract definitions from the HTML divs if they exist
+    div_map = {
+        'triggeralo': 'alo',
+        'triggercon': 'conno',
+        'triggerabbr': 'abbr',
+        'triggercontr': 'contr',
+        'triggerext': 'ext',
+        'triggergovt': 'govt',
+        'triggerk': 'kanji',
+        'triggerlit': 'lit',
+        'triggermodf': 'modf',
+        'triggeropp': 'opp',
+        'triggerpt': 'pt',
+        'triggerrs': 'rs',
+        'triggerrad': 'rad',
+        'triggersit': 'sit',
+        'triggerx': 'suff',
+        'triggeruncl': 'uncl'
+    }
+
+    for trigger_id, div_id in div_map.items():
+        div = soup.find('div', {'id': div_id})
+        if div:
+            text = div.get_text(strip=True)
+            if text:
+                definitions[trigger_id] = text
+
+    return definitions
+
+
+def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str]) -> str:
+    """Replace <img svg="..."> tags with inlined SVG content, clean up style attributes, and inline abbreviations."""
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    # Remove style attributes from <a> tags
+    # Inline abbreviation definitions
+    for a_tag in soup.find_all('a', attrs={'id': True}):
+        trigger_id = a_tag.get('id')
+        if trigger_id in abbreviation_definitions:
+            # Get the text content
+            text = a_tag.get_text(strip=True)
+            definition = abbreviation_definitions[trigger_id]
+            # Replace with text + definition in parentheses
+            a_tag.replace_with(f"{text} ({definition})")
+
+    # Remove style attributes from remaining <a> tags
     for a_tag in soup.find_all('a', attrs={'style': True}):
         del a_tag['style']
 
@@ -270,7 +331,7 @@ def extract_referenced_characters(html_content: str) -> List[str]:
     return chars
 
 
-def parse_character_row(row: Tag) -> Optional[Dict]:
+def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> Optional[Dict]:
     """Parse a single table row containing character data."""
     try:
         # Get row ID
@@ -327,7 +388,7 @@ def parse_character_row(row: Tag) -> Optional[Dict]:
 
         # Extract mnemonic from fourth cell
         mnemonic_cell = cells[3]
-        mnemonic_html = inline_svg_images(extract_html_content(mnemonic_cell)) if mnemonic_cell else ""
+        mnemonic_html = inline_svg_images(extract_html_content(mnemonic_cell), abbreviation_definitions) if mnemonic_cell else ""
         mnemonic_text = extract_text_from_html(mnemonic_cell) if mnemonic_cell else ""
 
         # Extract related characters from second cell (cells[1])
@@ -397,6 +458,9 @@ def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Di
 
     soup = BeautifulSoup(html_content, 'html.parser')
 
+    # Extract abbreviation definitions from the page
+    abbreviation_definitions = extract_abbreviation_definitions(soup)
+
     # Find the main table with class 'chmn'
     table = soup.find('table', {'class': 'chmn'})
     if not table:
@@ -408,7 +472,7 @@ def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Di
     rows = table.find_all('tr')
 
     for row in rows:
-        char_data = parse_character_row(row)
+        char_data = parse_character_row(row, abbreviation_definitions)
         if char_data:
             characters.append(char_data)
 

@@ -76,7 +76,7 @@ def find_all_notes_with_traditional(note_type):
     Returns:
         list: List of note IDs
     """
-    search_query = f'note:{note_type} Traditional:_* -is:suspended'
+    search_query = f'note:{note_type} Traditional:_* -is:suspended*'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
