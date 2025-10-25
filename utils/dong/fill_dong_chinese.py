@@ -248,6 +248,9 @@ def generate_dong_etymology_html(dong_data):
 
     html_parts = []
 
+    char_gloss = escape_html(dong_data["gloss"])
+    html_parts.append(f'<p>Meaning: {char_gloss}</p>')
+
     # 1. Original Meaning (optional)
     if dong_data.get("originalMeaning"):
         original_meaning = escape_html(dong_data["originalMeaning"])
