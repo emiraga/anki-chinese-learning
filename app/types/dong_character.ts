@@ -33,9 +33,11 @@ export interface DongCharacter {
   }>;
   hint: string;
   shuowen?: string;
+  shuowen_en_translation?: string;
   comments?: Array<{
     source: string;
     text: string;
+    text_en_translation?: string;
   }>;
   variants?: Array<{
     char: string;

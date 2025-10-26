@@ -239,6 +239,13 @@ const DEFAULT_TYPE_CONFIG = {
   label: "Unknown",
 };
 
+// Helper to decode HTML entities
+function decodeHtmlEntities(text: string): string {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 // Helper to adjust color brightness
 function adjustColorBrightness(hexColor: string, amount: number): string {
   // Convert hex to RGB
@@ -952,6 +959,11 @@ function ComponentDetailsSection({ chars }: ComponentDetailsSectionProps) {
                     說文解字 (Shuowen Jiezi):
                   </div>
                   <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
+                    {componentChar.shuowen_en_translation
+                      ? decodeHtmlEntities(componentChar.shuowen_en_translation)
+                      : ""}
+                  </div>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
                     {componentChar.shuowen}
                   </div>
                 </div>
@@ -995,6 +1007,11 @@ function ComponentDetailsSection({ chars }: ComponentDetailsSectionProps) {
                       >
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                           {comment.source}
+                        </div>
+                        <div className="text-gray-800 dark:text-gray-200">
+                          {comment.text_en_translation
+                            ? decodeHtmlEntities(comment.text_en_translation)
+                            : ""}
                         </div>
                         <div className="text-gray-800 dark:text-gray-200">
                           {comment.text}
