@@ -12,10 +12,14 @@ import sys
 from pathlib import Path
 import time
 
+# In-memory cache for translations
+_translation_cache: dict[str, str] = {}
+
 
 def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
     """
     Translate Chinese text to English using Google Cloud Translation API.
+    Uses in-memory cache to avoid redundant API calls.
 
     Args:
         text: Chinese text to translate
@@ -31,6 +35,12 @@ def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
     if not text or not text.strip():
         return ""
 
+    # Check cache first
+    if text in _translation_cache:
+        print(f"  [CACHE HIT] Using cached translation")
+        return _translation_cache[text]
+
+    # Not in cache, translate it
     for attempt in range(max_retries):
         try:
             result = client.translate(
@@ -38,7 +48,12 @@ def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
                 source_language='zh-CN',
                 target_language='en'
             )
-            return result['translatedText']
+            translated_text = result['translatedText']
+
+            # Store in cache
+            _translation_cache[text] = translated_text
+
+            return translated_text
         except Exception as e:
             if attempt < max_retries - 1:
                 print(f"Translation attempt {attempt + 1} failed: {e}. Retrying...")
@@ -84,6 +99,9 @@ def process_dong_file(file_path: Path, client, dry_run: bool = False) -> bool:
                     except Exception as e:
                         print(f"  Error translating shuowen: {e}")
                         raise
+                else:
+                    # Populate cache with existing translation
+                    _translation_cache[char_obj['shuowen']] = char_obj['shuowen_en_translation']
 
             # Translate comments.text field
             if 'comments' in char_obj and isinstance(char_obj['comments'], list):
@@ -100,6 +118,9 @@ def process_dong_file(file_path: Path, client, dry_run: bool = False) -> bool:
                             except Exception as e:
                                 print(f"  Error translating comment: {e}")
                                 raise
+                        else:
+                            # Populate cache with existing translation
+                            _translation_cache[comment['text']] = comment['text_en_translation']
 
     # Save the modified file
     if modified and not dry_run:
@@ -197,7 +218,6 @@ def main():
     # Process each file
     modified_count = 0
     for file_path in files_to_process:
-        print(f"\nProcessing {file_path.name}...")
         try:
             if process_dong_file(file_path, client, dry_run=args.dry_run):
                 modified_count += 1
@@ -206,6 +226,7 @@ def main():
             sys.exit(1)
 
     print(f"\n{'Would modify' if args.dry_run else 'Modified'} {modified_count} file(s)")
+    print(f"Translation cache: {len(_translation_cache)} unique texts cached")
 
 
 if __name__ == '__main__':
