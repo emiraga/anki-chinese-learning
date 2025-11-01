@@ -322,7 +322,8 @@ def main():
                 # Get pinyin from note if available and flag is set
                 pinyin_hint = None
                 if args.use_pinyin_hint:
-                    pinyin_hint = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+                    pinyin_hint = (note_info['fields'].get('Pinyin', {}).get('value', '')
+                        .replace('<div>', '').replace('</div>', '').strip())
                     if pinyin_hint:
                         print(f"Using Pinyin field from note: {pinyin_hint}")
 

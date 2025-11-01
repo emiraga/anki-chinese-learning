@@ -6,7 +6,6 @@
 # ]
 # ///
 
-import os
 import json
 import requests
 import argparse
@@ -43,26 +42,6 @@ def anki_connect_request(action, params=None):
         raise
 
 
-def find_hanzi_notes():
-    """
-    Find all notes with note type "Hanzi"
-
-    Returns:
-        list: List of note IDs
-    """
-    search_query = 'note:Hanzi'
-
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        print(f"Found {len(note_ids)} Hanzi notes")
-        return note_ids
-
-    print("No Hanzi notes found")
-    return []
-
-
 def get_note_info(note_id):
     """
     Get detailed information about a note
@@ -90,8 +69,8 @@ def update_note_field(note_id, field_name, field_value):
         field_name (str): Name of the field to update
         field_value (str): Value to set
 
-    Returns:
-        bool: True if successful, False otherwise
+    Raises:
+        Exception: If the update fails
     """
     fields = {field_name: field_value}
 
@@ -102,9 +81,7 @@ def update_note_field(note_id, field_name, field_value):
         }
     })
 
-    if response and response.get("error") is None:
-        return True
-    else:
+    if response.get("error") is not None:
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
@@ -274,25 +251,6 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
     print("="*60)
 
 
-def update_hanzi_mnemonics(dry_run=False, limit=None, overwrite=False, character=None):
-    """
-    Update all Hanzi notes with Rtega mnemonics (legacy function for backward compatibility)
-
-    Args:
-        dry_run (bool): If True, only print what would be updated without making changes
-        limit (int): If specified, only process this many notes
-        overwrite (bool): If True, overwrite existing content in the field
-        character (str): If specified, only process notes with this character
-    """
-    update_mnemonics_for_note_types(
-        note_types=["Hanzi"],
-        dry_run=dry_run,
-        limit=limit,
-        overwrite=overwrite,
-        character=character
-    )
-
-
 def main():
     parser = argparse.ArgumentParser(
         description='Fill Rtega Mnemonic field for notes in Anki',
@@ -301,8 +259,8 @@ Examples:
   %(prog)s --dry-run                           Preview changes without updating
   %(prog)s --dry-run --limit 5                 Preview first 5 notes only
   %(prog)s --character 㒼                       Update only the specific character
-  %(prog)s                                     Update all Hanzi notes
-  %(prog)s --note-types Hanzi TOCFL            Update both Hanzi and TOCFL notes
+  %(prog)s                                     Update all Hanzi and TOCFL notes (default)
+  %(prog)s --note-types Hanzi                  Update only Hanzi notes
   %(prog)s --limit 100                         Update first 100 notes only
   %(prog)s --overwrite                         Overwrite existing mnemonics
   %(prog)s --note-types TOCFL --dry-run        Preview TOCFL single-character notes
@@ -326,8 +284,8 @@ Requires Anki running with AnkiConnect addon installed.
                        help='Overwrite existing content in the field (default: skip filled fields)')
     parser.add_argument('--character', type=str, metavar='CHAR',
                        help='Process only notes with this specific character')
-    parser.add_argument('--note-types', nargs='+', default=['Hanzi'], metavar='TYPE',
-                       help='Note types to process (default: Hanzi). Examples: Hanzi, TOCFL')
+    parser.add_argument('--note-types', nargs='+', default=['Hanzi', 'TOCFL'], metavar='TYPE',
+                       help='Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL')
     args = parser.parse_args()
 
     update_mnemonics_for_note_types(

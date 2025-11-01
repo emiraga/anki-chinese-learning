@@ -42,26 +42,6 @@ def anki_connect_request(action, params=None):
         raise
 
 
-def find_hanzi_notes():
-    """
-    Find all notes with note type "Hanzi"
-
-    Returns:
-        list: List of note IDs
-    """
-    search_query = 'note:Hanzi'
-
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        print(f"Found {len(note_ids)} Hanzi notes")
-        return note_ids
-
-    print("No Hanzi notes found")
-    return []
-
-
 def get_note_info(note_id):
     """
     Get detailed information about a note
@@ -337,7 +317,7 @@ def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, 
     # Collect notes from all specified note types
     for note_type in note_types:
         # Build search query
-        search_query = f'note:{note_type}'
+        search_query = f'note:{note_type} -is:suspended'
         if character:
             search_query += f' Traditional:{character}'
         else:
@@ -432,25 +412,6 @@ def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, 
     print("="*60)
 
 
-def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, character=None):
-    """
-    Update all Hanzi notes with Dongchinese Etymology (legacy function for backward compatibility)
-
-    Args:
-        dry_run (bool): If True, only print what would be updated without making changes
-        limit (int): If specified, only process this many notes
-        overwrite (bool): If True, overwrite existing content in the field
-        character (str): If specified, only process this specific character
-    """
-    update_dong_etymology_for_note_types(
-        note_types=["Hanzi"],
-        dry_run=dry_run,
-        limit=limit,
-        overwrite=overwrite,
-        character=character
-    )
-
-
 def main():
     parser = argparse.ArgumentParser(
         description='Fill Dongchinese Etymology field for notes in Anki',
@@ -488,8 +449,8 @@ Requires Anki running with AnkiConnect addon installed.
                        help='Overwrite existing content in the field (default: skip filled fields)')
     parser.add_argument('--character', type=str, metavar='CHAR',
                        help='Process only this specific character (e.g., 你)')
-    parser.add_argument('--note-types', nargs='+', default=['Hanzi'], metavar='TYPE',
-                       help='Note types to process (default: Hanzi). Examples: Hanzi, TOCFL')
+    parser.add_argument('--note-types', nargs='+', default=['Hanzi', 'TOCFL'], metavar='TYPE',
+                       help='Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL')
     args = parser.parse_args()
 
     update_dong_etymology_for_note_types(

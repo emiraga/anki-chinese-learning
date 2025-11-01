@@ -207,9 +207,6 @@ def main():
 
     # Process each file
     for idx, json_path in enumerate(json_files, 1):
-        progress = (idx / len(json_files)) * 100
-        print(f"\n[{idx}/{len(json_files)} - {progress:.1f}%] Processing: {json_path.name}")
-
         stats = process_json_file(json_path)
 
         total_stats['files_processed'] += 1
@@ -220,7 +217,9 @@ def main():
             total_stats['total_failed'] += stats['failed']
             total_stats['total_already_local'] += stats['already_local']
 
-        if stats['processed'] > 0:
+        if stats['processed'] > 0 and stats['processed'] != stats['already_local']:
+            progress = (idx / len(json_files)) * 100
+            print(f"\n[{idx}/{len(json_files)} - {progress:.1f}%] Processing: {json_path.name}")
             print(f"  Images: {stats['processed']} processed, "
                   f"{stats['downloaded']} downloaded, "
                   f"{stats['already_local']} already local, "
