@@ -6,6 +6,8 @@ import type { OutletContext } from "~/data/types";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
 import { PhraseLink } from "./Phrase";
+import { Tooltip } from "@base-ui-components/react/tooltip";
+import styles from "./index.module.css";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
@@ -563,6 +565,8 @@ function ComponentCard({
   fragmentIndices,
   fillColor,
 }: ComponentCardProps) {
+  const { isDarkMode } = useDarkMode();
+
   // Try to get pinyin from multiple sources
   const pinyin =
     componentChar?.pinyinFrequencies?.[0]?.pinyin ||
@@ -588,7 +592,14 @@ function ComponentCard({
     displayText = `(${hintDescription})`;
   }
 
-  return (
+  // Check if component has additional details
+  const hasDetails = componentChar && (
+    componentChar.shuowen ||
+    (componentChar.variants && componentChar.variants.length > 0) ||
+    (componentChar.comments && componentChar.comments.length > 0)
+  );
+
+  const cardContent = (
     <div className="flex items-start gap-4 p-4 transition-colors">
       {/* Component character with colored overlay */}
       <div className="relative w-24 h-24 flex-shrink-0">
@@ -679,6 +690,46 @@ function ComponentCard({
         )}
       </div>
     </div>
+  );
+
+  // If there are no additional details, just return the card content
+  if (!hasDetails) {
+    return cardContent;
+  }
+
+  // Wrap with tooltip if there are additional details
+  return (
+    <Tooltip.Root>
+      <Tooltip.Trigger className={styles.Button} style={{ display: 'block', width: '100%', textAlign: 'left' }}>
+        {cardContent}
+      </Tooltip.Trigger>
+
+      <Tooltip.Portal>
+        <Tooltip.Positioner sideOffset={10}>
+          <Tooltip.Popup className={styles.Popup} data-dark-mode={isDarkMode}>
+            <div className="max-w-2xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-4xl font-serif dark:text-gray-100">
+                  {componentChar.char}
+                </span>
+                <div>
+                  <div className="font-medium text-lg dark:text-gray-200">
+                    {componentChar.gloss}
+                  </div>
+                  {componentChar.pinyinFrequencies &&
+                    componentChar.pinyinFrequencies[0] && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {componentChar.pinyinFrequencies[0].pinyin}
+                      </div>
+                    )}
+                </div>
+              </div>
+              <ComponentDetailContent componentChar={componentChar} />
+            </div>
+          </Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }
 
@@ -900,6 +951,95 @@ function DefinitionsSection({ title, words }: DefinitionsSectionProps) {
   );
 }
 
+// Shared component detail content renderer
+interface ComponentDetailContentProps {
+  componentChar: NonNullable<DongCharacter["chars"]>[number];
+}
+
+function ComponentDetailContent({
+  componentChar,
+}: ComponentDetailContentProps) {
+  const hasShuowen = componentChar.shuowen;
+  const hasVariants = componentChar.variants && componentChar.variants.length > 0;
+  const hasComments = componentChar.comments && componentChar.comments.length > 0;
+
+  if (!hasShuowen && !hasVariants && !hasComments) return null;
+
+  return (
+    <div className="space-y-3">
+      {hasShuowen && (
+        <div>
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            說文解字 (Shuowen Jiezi):
+          </div>
+          <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
+            {componentChar.shuowen_en_translation
+              ? decodeHtmlEntities(componentChar.shuowen_en_translation)
+              : ""}
+          </div>
+          <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
+            {componentChar.shuowen}
+          </div>
+        </div>
+      )}
+
+      {hasVariants && (
+        <div>
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Variants:
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(componentChar.variants || []).map((variant: { char: string; parts?: string }, vIdx: number) => (
+              <div
+                key={vIdx}
+                className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
+              >
+                <span className="font-serif text-lg mr-2 dark:text-gray-100">
+                  {variant.char}
+                </span>
+                {variant.parts && (
+                  <span className="text-gray-600 dark:text-gray-400">
+                    ({variant.parts})
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasComments && (
+        <div>
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            Scholarly Notes:
+          </div>
+          <div className="space-y-2">
+            {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
+            {(componentChar.comments || []).map((comment: { source: string; text_en_translation?: string; text: string }, cIdx: number) => (
+              <div
+                key={cIdx}
+                className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
+              >
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  {comment.source}
+                </div>
+                <div className="text-gray-800 dark:text-gray-200">
+                  {comment.text_en_translation
+                    ? decodeHtmlEntities(comment.text_en_translation)
+                    : ""}
+                </div>
+                <div className="text-gray-800 dark:text-gray-200">
+                  {comment.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Component Details section - displays detailed information about character components
 interface ComponentDetailsSectionProps {
   chars?: DongCharacter["chars"];
@@ -953,74 +1093,7 @@ function ComponentDetailsSection({ chars }: ComponentDetailsSectionProps) {
                 </div>
               </div>
 
-              {hasShuowen && (
-                <div className="mb-3">
-                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    說文解字 (Shuowen Jiezi):
-                  </div>
-                  <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
-                    {componentChar.shuowen_en_translation
-                      ? decodeHtmlEntities(componentChar.shuowen_en_translation)
-                      : ""}
-                  </div>
-                  <div className="text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-amber-500">
-                    {componentChar.shuowen}
-                  </div>
-                </div>
-              )}
-
-              {hasVariants && (
-                <div className="mb-3">
-                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Variants:
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {(componentChar.variants || []).map((variant, vIdx) => (
-                      <div
-                        key={vIdx}
-                        className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
-                      >
-                        <span className="font-serif text-lg mr-2 dark:text-gray-100">
-                          {variant.char}
-                        </span>
-                        {variant.parts && (
-                          <span className="text-gray-600 dark:text-gray-400">
-                            ({variant.parts})
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {hasComments && (
-                <div>
-                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                    Scholarly Notes:
-                  </div>
-                  <div className="space-y-2">
-                    {(componentChar.comments || []).map((comment, cIdx) => (
-                      <div
-                        key={cIdx}
-                        className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
-                      >
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          {comment.source}
-                        </div>
-                        <div className="text-gray-800 dark:text-gray-200">
-                          {comment.text_en_translation
-                            ? decodeHtmlEntities(comment.text_en_translation)
-                            : ""}
-                        </div>
-                        <div className="text-gray-800 dark:text-gray-200">
-                          {comment.text}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <ComponentDetailContent componentChar={componentChar} />
             </div>
           );
         })}

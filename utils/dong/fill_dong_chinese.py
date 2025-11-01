@@ -304,54 +304,89 @@ def generate_dong_etymology_html(dong_data):
     return "\n".join(html_parts)
 
 
-def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, character=None):
+def should_process_note(note_type, traditional):
     """
-    Update all Hanzi notes with Dongchinese Etymology
+    Determine if a note should be processed based on note type and traditional field
 
     Args:
+        note_type (str): The note type (e.g., "Hanzi", "TOCFL")
+        traditional (str): The Traditional field content
+
+    Returns:
+        bool: True if note should be processed, False otherwise
+    """
+    if note_type == "TOCFL":
+        # For TOCFL, only process single character notes
+        return len(traditional) == 1
+    return True
+
+
+def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
+    """
+    Update notes with Dongchinese Etymology for specified note types
+
+    Args:
+        note_types (list): List of note type names to process (e.g., ["Hanzi", "TOCFL"])
         dry_run (bool): If True, only print what would be updated without making changes
-        limit (int): If specified, only process this many notes
+        limit (int): If specified, only process this many notes total
         overwrite (bool): If True, overwrite existing content in the field
         character (str): If specified, only process this specific character
     """
-    # Build search query
-    search_query = 'note:Hanzi'
-    if character:
-        search_query += f' Traditional:{character}'
-    else:
-        search_query += f' Traditional:_'
+    all_note_ids = []
 
-    if not overwrite:
-        # Exclude notes that already have content in the Dongchinese Etymology field
-        search_query += ' -"Dongchinese Etymology:_*"'
+    # Collect notes from all specified note types
+    for note_type in note_types:
+        # Build search query
+        search_query = f'note:{note_type}'
+        if character:
+            search_query += f' Traditional:{character}'
+        else:
+            search_query += f' Traditional:_'
 
-    response = anki_connect_request("findNotes", {"query": search_query})
-    if response and response.get("result"):
-        note_ids = response["result"]
-        char_info = f" for character '{character}'" if character else ""
-        print(f"Found {len(note_ids)} Hanzi notes{char_info}")
-    else:
-        char_info = f" for character '{character}'" if character else ""
-        print(f"No Hanzi notes found{char_info}")
+        if not overwrite:
+            # Exclude notes that already have content in the Dongchinese Etymology field
+            search_query += ' -"Dongchinese Etymology:_*"'
+
+        response = anki_connect_request("findNotes", {"query": search_query})
+        if response and response.get("result"):
+            note_ids = response["result"]
+            char_info = f" for character '{character}'" if character else ""
+            print(f"Found {len(note_ids)} {note_type} notes{char_info}")
+            all_note_ids.extend(note_ids)
+        else:
+            char_info = f" for character '{character}'" if character else ""
+            print(f"No {note_type} notes found{char_info}")
+
+    if not all_note_ids:
+        print("No notes found to process")
         return
 
+    print(f"\nTotal notes across all types: {len(all_note_ids)}")
+
     if limit and not character:
-        note_ids = note_ids[:limit]
+        all_note_ids = all_note_ids[:limit]
         print(f"Processing limited to {limit} notes")
 
     updated_count = 0
     skipped_count = 0
     error_count = 0
 
-    for i, note_id in enumerate(note_ids, 1):
+    for i, note_id in enumerate(all_note_ids, 1):
         try:
             note_info = get_note_info(note_id)
+            note_type = note_info.get('modelName', 'Unknown')
 
             # Get the Traditional field (which contains the hanzi character)
             traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
 
             if not traditional:
-                print(f"[{i}/{len(note_ids)}] Note {note_id}: No Traditional field, skipping")
+                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}): No Traditional field, skipping")
+                skipped_count += 1
+                continue
+
+            # Check if this note should be processed based on note type rules
+            if not should_process_note(note_type, traditional):
+                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
                 skipped_count += 1
                 continue
 
@@ -359,7 +394,7 @@ def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, char
             dong_data = load_dong_character(traditional)
 
             if not dong_data:
-                # print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): No Dong Chinese data found, skipping")
+                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No Dong Chinese data found, skipping")
                 skipped_count += 1
                 continue
 
@@ -367,28 +402,28 @@ def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, char
             etymology_html = generate_dong_etymology_html(dong_data)
 
             if not etymology_html:
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): No etymology data to generate, skipping")
+                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No etymology data to generate, skipping")
                 skipped_count += 1
                 continue
 
             if dry_run:
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Would update with etymology")
+                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Would update with etymology")
                 print(f"  Etymology HTML:\n{etymology_html}")
                 updated_count += 1
             else:
                 # Update the note
                 update_note_field(note_id, "Dongchinese Etymology", etymology_html)
-                print(f"[{i}/{len(note_ids)}] Note {note_id} ({traditional}): Updated successfully")
+                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Updated successfully")
                 updated_count += 1
 
         except Exception as e:
-            print(f"[{i}/{len(note_ids)}] Error processing note {note_id}: {e}")
+            print(f"[{i}/{len(all_note_ids)}] Error processing note {note_id}: {e}")
             error_count += 1
             raise
 
     print("\n" + "="*60)
     print(f"Summary:")
-    print(f"  Total notes: {len(note_ids)}")
+    print(f"  Total notes: {len(all_note_ids)}")
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")
     print(f"  Errors: {error_count}")
@@ -397,17 +432,38 @@ def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, char
     print("="*60)
 
 
+def update_hanzi_dong_etymology(dry_run=False, limit=None, overwrite=False, character=None):
+    """
+    Update all Hanzi notes with Dongchinese Etymology (legacy function for backward compatibility)
+
+    Args:
+        dry_run (bool): If True, only print what would be updated without making changes
+        limit (int): If specified, only process this many notes
+        overwrite (bool): If True, overwrite existing content in the field
+        character (str): If specified, only process this specific character
+    """
+    update_dong_etymology_for_note_types(
+        note_types=["Hanzi"],
+        dry_run=dry_run,
+        limit=limit,
+        overwrite=overwrite,
+        character=character
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill Dongchinese Etymology field for Hanzi notes in Anki',
+        description='Fill Dongchinese Etymology field for notes in Anki',
         epilog='''
 Examples:
-  %(prog)s --dry-run                    Preview changes without updating
-  %(prog)s --dry-run --limit 5          Preview first 5 notes only
-  %(prog)s                              Update all Hanzi notes
-  %(prog)s --limit 100                  Update first 100 notes only
-  %(prog)s --character 你               Update specific character only
-  %(prog)s --character 你 --overwrite   Rebuild specific character
+  %(prog)s --dry-run                           Preview changes without updating
+  %(prog)s --dry-run --limit 5                 Preview first 5 notes only
+  %(prog)s                                     Update all Hanzi notes
+  %(prog)s --note-types Hanzi TOCFL            Update both Hanzi and TOCFL notes
+  %(prog)s --limit 100                         Update first 100 notes only
+  %(prog)s --character 你                      Update specific character only
+  %(prog)s --character 你 --overwrite          Rebuild specific character
+  %(prog)s --note-types TOCFL --dry-run        Preview TOCFL single-character notes
 
 This script generates HTML content for the "Dongchinese Etymology" field including:
   1. Original Meaning (if available)
@@ -416,6 +472,8 @@ This script generates HTML content for the "Dongchinese Etymology" field includi
 
 Component types are color-coded: Meaning (red), Sound (blue), Iconic (green),
 Remnant (purple), Distinguishing (cyan), Simplified (pink), Unknown (gray).
+
+Note: TOCFL notes are only processed if the Traditional field contains a single character.
 
 The script only updates empty fields and skips notes that already have content.
 Requires Anki running with AnkiConnect addon installed.
@@ -430,9 +488,17 @@ Requires Anki running with AnkiConnect addon installed.
                        help='Overwrite existing content in the field (default: skip filled fields)')
     parser.add_argument('--character', type=str, metavar='CHAR',
                        help='Process only this specific character (e.g., 你)')
+    parser.add_argument('--note-types', nargs='+', default=['Hanzi'], metavar='TYPE',
+                       help='Note types to process (default: Hanzi). Examples: Hanzi, TOCFL')
     args = parser.parse_args()
 
-    update_hanzi_dong_etymology(dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite, character=args.character)
+    update_dong_etymology_for_note_types(
+        note_types=args.note_types,
+        dry_run=args.dry_run,
+        limit=args.limit,
+        overwrite=args.overwrite,
+        character=args.character
+    )
 
 
 if __name__ == "__main__":

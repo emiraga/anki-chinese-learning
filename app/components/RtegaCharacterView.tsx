@@ -41,7 +41,7 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <div className="flex items-start gap-8">
         {/* Main Character Display */}
-        <div className="text-9xl font-serif leading-none dark:text-gray-100">
+        <div className="text-7xl font-serif leading-none dark:text-gray-100">
           {character.character}
         </div>
 
@@ -76,11 +76,6 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
                 <span className="text-lg font-serif">{character.japanese}</span>
               </div>
             )}
-          </div>
-
-          {/* UID */}
-          <div className="text-xs text-gray-500 dark:text-gray-500">
-            Unicode: {character.uid}
           </div>
         </div>
       </div>
