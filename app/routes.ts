@@ -21,6 +21,7 @@ export default [
   route("props", "routes/props.tsx"),
   route("settings", "routes/settings.tsx"),
   route("similar_props", "routes/similar_props.tsx"),
+  route("sound_components", "routes/sound_components.tsx"),
   route("stats", "routes/stats.tsx"),
   route("stats_progress", "routes/stats_progress.tsx"),
   route("story", "routes/story.tsx"),

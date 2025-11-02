@@ -117,6 +117,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Similar Props",
           show: Object.keys(characters).length > 0,
         },
+        {
+          pathname: "/sound_components",
+          name: "Sound Components",
+          show: Object.keys(characters).length > 0,
+        },
       ],
     },
     {
