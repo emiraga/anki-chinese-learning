@@ -60,6 +60,24 @@ def get_note_info(note_id):
     raise Exception(f"No note found for ID {note_id}")
 
 
+def get_notes_info_batch(note_ids):
+    """
+    Get detailed information about multiple notes in a single request
+
+    Args:
+        note_ids (list): List of note IDs
+
+    Returns:
+        list: List of note information dictionaries
+    """
+    response = anki_connect_request("notesInfo", {"notes": note_ids})
+
+    if response and response.get("result"):
+        return response["result"]
+
+    raise Exception(f"Failed to fetch batch of {len(note_ids)} notes")
+
+
 def update_note_field(note_id, field_name, field_value):
     """
     Update a specific field of a note
@@ -198,22 +216,42 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
     skipped_count = 0
     error_count = 0
 
-    for i, note_id in enumerate(all_note_ids, 1):
+    # Fetch all notes in batches for better performance
+    BATCH_SIZE = 100
+    print(f"\nFetching note information in batches of {BATCH_SIZE}...")
+
+    all_notes_info = []
+    for batch_start in range(0, len(all_note_ids), BATCH_SIZE):
+        batch_end = min(batch_start + BATCH_SIZE, len(all_note_ids))
+        batch_ids = all_note_ids[batch_start:batch_end]
+
         try:
-            note_info = get_note_info(note_id)
+            batch_notes = get_notes_info_batch(batch_ids)
+            all_notes_info.extend(batch_notes)
+            print(f"  Fetched {batch_end}/{len(all_note_ids)} notes")
+        except Exception as e:
+            print(f"  Error fetching batch {batch_start}-{batch_end}: {e}")
+            raise
+
+    print(f"Successfully fetched information for {len(all_notes_info)} notes\n")
+
+    # Process the fetched notes
+    for i, note_info in enumerate(all_notes_info, 1):
+        try:
+            note_id = note_info.get('noteId')
             note_type = note_info.get('modelName', 'Unknown')
 
             # Get the Traditional field (which contains the hanzi character)
             traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
 
             if not traditional:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}): No Traditional field, skipping")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}): No Traditional field, skipping")
                 skipped_count += 1
                 continue
 
             # Check if this note should be processed based on note type rules
             if not should_process_note(note_type, traditional):
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
+                # print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
                 skipped_count += 1
                 continue
 
@@ -221,28 +259,28 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
             mnemonic_html = load_rtega_mnemonic(traditional)
 
             if not mnemonic_html:
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No mnemonic found, skipping")
+                # print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {traditional}): No mnemonic found, skipping")
                 skipped_count += 1
                 continue
 
             if dry_run:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Would update with mnemonic")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {traditional}): Would update with mnemonic")
                 print(f"  Mnemonic: {mnemonic_html}")
                 updated_count += 1
             else:
                 # Update the note
                 update_note_field(note_id, "Rtega Mnemonic", mnemonic_html)
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Updated successfully")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {traditional}): Updated successfully")
                 updated_count += 1
 
         except Exception as e:
-            print(f"[{i}/{len(all_note_ids)}] Error processing note {note_id}: {e}")
+            print(f"[{i}/{len(all_notes_info)}] Error processing note {note_id}: {e}")
             error_count += 1
             raise
 
     print("\n" + "="*60)
     print(f"Summary:")
-    print(f"  Total notes: {len(all_note_ids)}")
+    print(f"  Total notes: {len(all_notes_info)}")
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")
     print(f"  Errors: {error_count}")

@@ -14,7 +14,10 @@ export function meta({ params }: Route.MetaArgs) {
   ];
 }
 
-const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
+const PropRender: React.FC<{
+  propName: string;
+  showConversionCandidates?: boolean;
+}> = ({ propName, showConversionCandidates = false }) => {
   const { props, knownProps, characters } = useOutletContext<OutletContext>();
   const prop = knownProps[propName];
   if (!prop) {
@@ -36,6 +39,20 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
   const superprops = props.filter(
     (prop) => prop.tagnames.includes(propName) && prop.mainTagname !== propName
   );
+
+  // Find conversion candidates: chars that have all sub-props but not the current prop
+  const conversionCandidates =
+    subprops.length > 1
+      ? Object.values(characters).filter((char) => {
+          // Must have all sub-props
+          const hasAllSubProps = subprops.every((subprop) =>
+            char.tags.includes(subprop.mainTagname)
+          );
+          // Must NOT have the current prop
+          const hasCurrentProp = char.tags.includes(propName);
+          return hasAllSubProps && !hasCurrentProp;
+        })
+      : [];
 
   return (
     <div>
@@ -69,6 +86,17 @@ const PropRender: React.FC<{ propName: string }> = ({ propName }) => {
       {chars.map((char, i) => {
         return <CharCardDetails key={i} char={char} />;
       })}
+      {showConversionCandidates && conversionCandidates.length > 0 ? (
+        <div className="mt-8 bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded">
+          <h4 className="font-semibold text-lg mb-2">
+            Conversion Candidates
+            <span className="text-sm font-normal ml-2 text-gray-600 dark:text-gray-400">
+              (Characters with all sub-props but missing this prop)
+            </span>
+          </h4>
+          <CharList characters={conversionCandidates} />
+        </div>
+      ) : undefined}
       <div className="ml-10">
         {superprops.map((prop) => (
           <PropRender key={prop.prop} propName={prop.mainTagname} />
@@ -94,7 +122,7 @@ export default function PropDetail() {
           </Link>
           : {propName}
         </h3>
-        <PropRender propName={"prop::" + propName} />
+        <PropRender propName={"prop::" + propName} showConversionCandidates={true} />
       </div>
     </MainFrame>
   );
