@@ -20,6 +20,23 @@ export const CharLink: React.FC<{
   );
 };
 
+const CharPinyinSoundMeaning: React.FC<{
+  char: CharacterType;
+  showZhuyin?: boolean;
+}> = ({ char, showZhuyin }) => {
+  if (!char.withSound) {
+    return <div>{char.meaning2}</div>;
+  }
+
+  return (
+    <>
+      <PinyinList pinyin={char.pinyin} showZhuyin={showZhuyin} />{" "}
+      <span>{char.soundComponentCharacter}</span>
+      <div>{char.meaning2}</div>
+    </>
+  );
+};
+
 export const CharCard: React.FC<{ v: CharacterType; showZhuyin?: boolean }> = ({
   v,
   showZhuyin,
@@ -31,12 +48,7 @@ export const CharCard: React.FC<{ v: CharacterType; showZhuyin?: boolean }> = ({
           <CharLink traditional={v.traditional} />
         </div>
         <div className="flex-1">
-          {v.withSound ? (
-            <PinyinList pinyin={v.pinyin} showZhuyin={showZhuyin} />
-          ) : (
-            <></>
-          )}
-          <div>{v.meaning2}</div>
+          <CharPinyinSoundMeaning char={v} showZhuyin={showZhuyin} />
         </div>
       </div>
       <AnkiContentRenderer
@@ -119,13 +131,10 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
           <CharLink traditional={char.traditional} />
         </div>
         <div className="w-48">
-          {char.withSound ? (
-            <PinyinList
-              pinyin={char.pinyin}
-              showZhuyin={settings.features?.showZhuyin}
-            />
-          ) : undefined}
-          <div>{char.meaning2}</div>
+          <CharPinyinSoundMeaning
+            char={char}
+            showZhuyin={settings.features?.showZhuyin}
+          />
         </div>
         <div className="w-32 text-sm">
           {sources.map(({ name, link }) => (

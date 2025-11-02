@@ -19,6 +19,7 @@ export type CharacterType = {
   tags: string[];
   withSound: boolean;
   todoMoreWork: boolean;
+  soundComponentCharacter?: string;
 };
 
 function fromAccentedPinyin(pinyin: string): PinyinType {
@@ -166,6 +167,8 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
               note.tags.length < 2 ||
               note.tags.includes("chinese::some-props-missing") ||
               note.tags.filter((t) => t.startsWith("prop::")).length === 0,
+            soundComponentCharacter:
+              note.fields["Sound component character"]?.value,
           };
 
           if (info.withSound) {
