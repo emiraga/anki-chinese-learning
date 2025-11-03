@@ -6,6 +6,8 @@ import { useSettings } from "~/settings/SettingsContext";
 import { CharCard, CharLink } from "~/components/CharCard";
 import type { CharacterType } from "~/data/characters";
 import { useDongCharacter } from "~/hooks/useDongCharacter";
+import { getNewCharacter } from "~/data/characters";
+import { PinyinList } from "~/components/PinyinText";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -137,35 +139,44 @@ export default function SoundComponents() {
     <MainFrame>
       <section className="block p-4">
         <div className="space-y-6">
-          {sortedSoundComponents.map(([soundComponent, chars]) => (
-            <div key={soundComponent} className="">
-              <div className="flex items-center gap-3 mb-3">
-                <Link
-                  to={`/char/${encodeURIComponent(soundComponent)}`}
-                  className="text-3xl font-bold dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  {soundComponent}
-                </Link>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  ({chars.length} character{chars.length !== 1 ? "s" : ""})
-                </span>
+          {sortedSoundComponents.map(([soundComponent, chars]) => {
+            // Get pinyin for the sound component
+            const soundCompChar = characters[soundComponent];
+            const soundCompPinyin = soundCompChar?.pinyin ?? getNewCharacter(soundComponent)?.pinyin ?? [];
+
+            return (
+              <div key={soundComponent} className="">
+                <div className="flex items-center gap-3 mb-3">
+                  <Link
+                    to={`/char/${encodeURIComponent(soundComponent)}`}
+                    className="text-3xl font-bold dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    {soundComponent}
+                  </Link>
+                  <div className="text-lg">
+                    <PinyinList pinyin={soundCompPinyin} showZhuyin={features?.showZhuyin} />
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    ({chars.length} character{chars.length !== 1 ? "s" : ""})
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
+                  {chars.map((char) => (
+                    <CharCard
+                      key={char.traditional}
+                      v={char}
+                      showZhuyin={features?.showZhuyin}
+                    />
+                  ))}
+                </div>
+                <SoundComponentCandidates
+                  soundComponent={soundComponent}
+                  characters={characters}
+                  existingChars={chars}
+                />
               </div>
-              <div className="flex flex-wrap gap-2 border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
-                {chars.map((char) => (
-                  <CharCard
-                    key={char.traditional}
-                    v={char}
-                    showZhuyin={features?.showZhuyin}
-                  />
-                ))}
-              </div>
-              <SoundComponentCandidates
-                soundComponent={soundComponent}
-                characters={characters}
-                existingChars={chars}
-              />
-            </div>
-          ))}
+            );
+          })}
           {sortedSoundComponents.length === 0 && (
             <div className="text-center text-gray-500 dark:text-gray-400 py-8">
               No sound components found. Sound components are stored in the
