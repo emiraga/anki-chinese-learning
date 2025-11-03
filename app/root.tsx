@@ -36,6 +36,17 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function meta() {
+  return [
+    { title: "Chinese Learning" },
+    { name: "description", content: "Chinese Learning Companion with Anki Integration" },
+  ];
+}
+
+export const links = () => [
+  { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+];
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <DarkModeProvider>
