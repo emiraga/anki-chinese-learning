@@ -4,6 +4,7 @@ import { Link, useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
+import { CharList } from "~/components/CharList";
 import { PROP_MISC_TAGS } from "~/data/props";
 import { PhraseList } from "~/components/Phrase";
 import { LearnLink, PromptsLink } from "~/components/Learn";
@@ -30,7 +31,7 @@ export default function CharDetail() {
   const { characters, knownProps, characterList, phrases, charPhrasesPinyin } =
     useOutletContext<OutletContext>();
   const chars = Object.values(characters).filter(
-    (c) => c.traditional === charHanzi
+    (c) => c.traditional === charHanzi,
   );
   if (chars.length > 1) {
     throw new Error("Duplicate char: " + charHanzi);
@@ -45,13 +46,21 @@ export default function CharDetail() {
   }
 
   // Load Dong Chinese character data
-  const { character: dongCharacter, loading: dongLoading, error: dongError } = useDongCharacter(char.traditional);
+  const {
+    character: dongCharacter,
+    loading: dongLoading,
+    error: dongError,
+  } = useDongCharacter(char.traditional);
 
   // Load Rtega character data
-  const { character: rtegaCharacter, loading: rtegaLoading, error: rtegaError } = useRtegaCharacter(char.traditional);
+  const {
+    character: rtegaCharacter,
+    loading: rtegaLoading,
+    error: rtegaError,
+  } = useRtegaCharacter(char.traditional);
 
   const filteredPhrases = phrases.filter((p) =>
-    p.traditional.includes(char.traditional)
+    p.traditional.includes(char.traditional),
   );
   const propsName = char.tags.filter((t) => t.startsWith("prop::"));
   const miscTags = char.tags.filter((t) => PROP_MISC_TAGS.includes(t));
@@ -62,6 +71,24 @@ export default function CharDetail() {
       : null;
 
   const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
+
+  // Find characters that use this character as a sound component
+  const charsUsingSoundComponent = Object.values(characters).filter(
+    (c) => c.soundComponentCharacter === char.traditional,
+  );
+
+  // Find the prop tag for this character (if it exists)
+  const propForThisChar = Object.values(knownProps).find(
+    (prop) => prop.hanzi === char.traditional,
+  );
+
+  // Find characters that use this character as a prop
+  const charsUsingAsProp = propForThisChar
+    ? Object.values(characters).filter((c) =>
+        c.tags.includes(propForThisChar.mainTagname),
+      )
+    : [];
+
   return (
     <MainFrame>
       <div className="mx-4">
@@ -130,6 +157,29 @@ export default function CharDetail() {
           filterUnknownChars={true}
         />
         <hr className="my-4" />
+        {charsUsingSoundComponent.length > 0 && (
+          <>
+            <h2 className="text-2xl">Sound component in:</h2>
+            <CharList characters={charsUsingSoundComponent} />
+            <hr className="my-4" />
+          </>
+        )}
+        {charsUsingAsProp.length > 0 && propForThisChar && (
+          <>
+            <h2 className="text-2xl">
+              Used as prop{" "}
+              <Link
+                to={`/prop/${propForThisChar.prop}`}
+                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              >
+                {propForThisChar.prop}
+              </Link>{" "}
+              in:
+            </h2>
+            <CharList characters={charsUsingAsProp} />
+            <hr className="my-4" />
+          </>
+        )}
         <h2 className="text-2xl">Rtega Mnemonic:</h2>
         {rtegaLoading && (
           <div className="text-xl text-gray-600 dark:text-gray-400">
@@ -146,9 +196,7 @@ export default function CharDetail() {
             No Rtega mnemonic found
           </div>
         )}
-        {rtegaCharacter && (
-          <RtegaCharacterView character={rtegaCharacter} />
-        )}
+        {rtegaCharacter && <RtegaCharacterView character={rtegaCharacter} />}
         <hr className="my-4" />
         <h2 className="text-2xl">Character Etymology:</h2>
         {dongLoading && (
