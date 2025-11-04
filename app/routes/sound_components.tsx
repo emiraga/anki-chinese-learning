@@ -61,14 +61,6 @@ function SoundComponentCandidates({
     return null;
   }
 
-  // Separate known and unknown characters
-  const knownCandidates = soundCandidates.filter(
-    (item) => characters[item.char],
-  );
-  const unknownCandidates = soundCandidates.filter(
-    (item) => !characters[item.char],
-  );
-
   // Sort by bookCharCount (frequency)
   const sortedCandidates = [...soundCandidates].sort((a, b) => {
     const aCount = a.statistics?.bookCharCount || 0;
@@ -78,13 +70,6 @@ function SoundComponentCandidates({
 
   return (
     <div className="pt-3">
-      <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Candidates for sound component ({knownCandidates.length} known
-        {unknownCandidates.length > 0
-          ? ` + ${unknownCandidates.length} unknown`
-          : ""}
-        )
-      </div>
       <div className="flex flex-wrap gap-2">
         {sortedCandidates.map((item) => {
           const isKnown = characters[item.char];
@@ -142,7 +127,8 @@ export default function SoundComponents() {
           {sortedSoundComponents.map(([soundComponent, chars]) => {
             // Get pinyin for the sound component
             const soundCompChar = characters[soundComponent];
-            const soundCompPinyin = soundCompChar?.pinyin ?? getNewCharacter(soundComponent)?.pinyin ?? [];
+            const soundCompPinyin = soundCompChar?.pinyin ??
+              getNewCharacter(soundComponent)?.pinyin ?? ["???"];
 
             return (
               <div key={soundComponent} className="">
@@ -154,26 +140,31 @@ export default function SoundComponents() {
                     {soundComponent}
                   </Link>
                   <div className="text-lg">
-                    <PinyinList pinyin={soundCompPinyin} showZhuyin={features?.showZhuyin} />
+                    <PinyinList
+                      pinyin={soundCompPinyin}
+                      showZhuyin={features?.showZhuyin}
+                    />
                   </div>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     ({chars.length} character{chars.length !== 1 ? "s" : ""})
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2 border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
-                  {chars.map((char) => (
-                    <CharCard
-                      key={char.traditional}
-                      v={char}
-                      showZhuyin={features?.showZhuyin}
-                    />
-                  ))}
+                <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
+                  <div className="flex flex-wrap gap-2 ">
+                    {chars.map((char) => (
+                      <CharCard
+                        key={char.traditional}
+                        v={char}
+                        showZhuyin={features?.showZhuyin}
+                      />
+                    ))}
+                  </div>
+                  <SoundComponentCandidates
+                    soundComponent={soundComponent}
+                    characters={characters}
+                    existingChars={chars}
+                  />
                 </div>
-                <SoundComponentCandidates
-                  soundComponent={soundComponent}
-                  characters={characters}
-                  existingChars={chars}
-                />
               </div>
             );
           })}
