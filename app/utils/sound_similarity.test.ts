@@ -118,4 +118,29 @@ describe("scoreSoundSimilarity", () => {
       expect(breakdown.totalScore).toBeGreaterThan(2); // But not completely different
     }
   });
+
+  test("hù vs suǒ - different sounds with shared medial", () => {
+    // hù (ㄏㄨˋ) vs suǒ (ㄙㄨㄛˇ)
+    const breakdown = getSoundSimilarityBreakdown("hù", "suǒ");
+
+    expect(breakdown).not.toBeNull();
+    if (breakdown) {
+      // Initial: ㄏ (velar-fricative) vs ㄙ (dental-fricative) - partial similarity
+      expect(breakdown.initialScore).toBeGreaterThan(0);
+      expect(breakdown.initialScore).toBeLessThan(2);
+
+      // Medial: both have ㄨ - should get full credit
+      expect(breakdown.medialScore).toBe(2);
+
+      // Final: null vs ㄛ - one has final, one doesn't
+      expect(breakdown.finalScore).toBe(0);
+
+      // Tone: 4 vs 3 - partial similarity
+      expect(breakdown.toneScore).toBeGreaterThan(0);
+
+      // Total score
+      expect(breakdown.totalScore).toBeGreaterThan(2);
+      expect(breakdown.totalScore).toBeLessThan(6);
+    }
+  });
 });
