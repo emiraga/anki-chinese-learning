@@ -41,12 +41,14 @@ function getScoreBgColor(score: number): string {
 // Component to display sound component candidates from Dong Chinese data
 interface SoundComponentCandidatesProps {
   soundComponent: string;
+  soundComponentPinyin: string;
   characters: OutletContext["characters"];
   existingChars: CharacterType[];
 }
 
 function SoundComponentCandidates({
   soundComponent,
+  soundComponentPinyin,
   characters,
   existingChars,
 }: SoundComponentCandidatesProps) {
@@ -92,15 +94,38 @@ function SoundComponentCandidates({
       <div className="flex flex-wrap gap-2">
         {sortedCandidates.map((item) => {
           const isKnown = characters[item.char];
+
+          // Calculate score only for known characters
+          let score: number | null = null;
+          if (isKnown) {
+            // Get pinyin from the known character data (which has pinyinAccented)
+            const candidatePinyin = isKnown.pinyin?.[0]?.pinyinAccented || "";
+            if (candidatePinyin && soundComponentPinyin) {
+              score = scoreSoundSimilarity(
+                soundComponentPinyin,
+                candidatePinyin,
+              );
+            }
+          }
+
           return (
-            <CharLink
-              key={item.char}
-              traditional={item.char}
-              className={`text-2xl font-serif hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${!isKnown ? "opacity-30" : ""}`}
-              title={`${item.char}${!isKnown ? " (Unknown)" : ""}${item.statistics?.bookCharCount ? ` - ${item.statistics.bookCharCount.toLocaleString()} uses` : ""}${item.isVerified ? " ✓" : ""}`}
-            >
-              {item.char}
-            </CharLink>
+            <div key={item.char} className="relative">
+              <CharLink
+                traditional={item.char}
+                className={`text-2xl font-serif hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${!isKnown ? "opacity-30" : ""}`}
+                title={`${item.char}${!isKnown ? " (Unknown)" : ""}${item.statistics?.bookCharCount ? ` - ${item.statistics.bookCharCount.toLocaleString()} uses` : ""}${item.isVerified ? " ✓" : ""}${score !== null ? ` - Score: ${score.toFixed(1)}/10` : ""}`}
+              >
+                {item.char}
+              </CharLink>
+              {score !== null && (
+                <div
+                  className={`rounded text-xs font-bold ${getScoreBgColor(score)}`}
+                  title={`Sound similarity: ${score}/10`}
+                >
+                  {score.toFixed(1)}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -149,6 +174,13 @@ export default function SoundComponents() {
             const soundCompPinyin = soundCompChar?.pinyin ??
               getNewCharacter(soundComponent)?.pinyin ?? ["???"];
 
+            // Extract the pinyin string (with accents) for scoring
+            const firstPinyin = soundCompPinyin[0];
+            const soundPinyin =
+              typeof firstPinyin === "string"
+                ? firstPinyin
+                : firstPinyin?.pinyinAccented || "";
+
             return (
               <div key={soundComponent} className="">
                 <div className="flex items-center gap-3 mb-3">
@@ -174,11 +206,6 @@ export default function SoundComponents() {
                       // Calculate sound similarity score
                       // Use pinyinAccented to preserve tone marks
                       const charPinyin = char.pinyin?.[0]?.pinyinAccented || "";
-                      const firstPinyin = soundCompPinyin[0];
-                      const soundPinyin =
-                        typeof firstPinyin === "string"
-                          ? firstPinyin
-                          : firstPinyin?.pinyinAccented || "";
                       const score =
                         charPinyin && soundPinyin
                           ? scoreSoundSimilarity(soundPinyin, charPinyin)
@@ -207,6 +234,7 @@ export default function SoundComponents() {
                   </div>
                   <SoundComponentCandidates
                     soundComponent={soundComponent}
+                    soundComponentPinyin={soundPinyin}
                     characters={characters}
                     existingChars={chars}
                   />
