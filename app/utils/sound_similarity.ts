@@ -240,13 +240,30 @@ function scoreInitialSimilarity(init1: string | null, init2: string | null): num
 
 /**
  * Score the similarity between two medials (0-2 points)
+ * When both medials are null, the score depends on initial and final similarity
  */
-function scoreMedialSimilarity(med1: string | null, med2: string | null): number {
+function scoreMedialSimilarity(
+  med1: string | null,
+  med2: string | null,
+  initialScore?: number,
+  finalScore?: number
+): number {
   // Perfect match
-  if (med1 === med2) return 2;
+  if (med1 === med2 && med1 !== null) return 2;
 
   // Both null (no medial)
-  if (!med1 && !med2) return 2;
+  if (!med1 && !med2) {
+    // If initial and final scores are provided, apply conditional logic
+    if (initialScore !== undefined && finalScore !== undefined) {
+      // If both initial and final have low similarity, don't give credit for both lacking medials
+      // Threshold: at least one component should score > 2.0 to get credit
+      // (2.0 is partial credit, so we need strong similarity in at least one component)
+      if (initialScore <= 2.0 && finalScore <= 2.0) {
+        return 0;
+      }
+    }
+    return 2;
+  }
 
   // One has medial, one doesn't
   if (!med1 || !med2) return 0;
@@ -403,8 +420,8 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
 
   // Calculate individual scores
   let initialScore = scoreInitialSimilarity(comp1.initial, comp2.initial);
-  let medialScore = scoreMedialSimilarity(comp1.medial, comp2.medial);
   let finalScore = scoreFinalSimilarity(comp1.final, comp2.final);
+  let medialScore = scoreMedialSimilarity(comp1.medial, comp2.medial, initialScore, finalScore);
   const toneScore = scoreToneSimilarity(comp1.tone, comp2.tone);
 
   // Special case: Check if medial of one matches final of the other
@@ -471,8 +488,8 @@ export function getSoundSimilarityBreakdown(
   components2.tone = tone2;
 
   let initialScore = scoreInitialSimilarity(components1.initial, components2.initial);
-  let medialScore = scoreMedialSimilarity(components1.medial, components2.medial);
   let finalScore = scoreFinalSimilarity(components1.final, components2.final);
+  let medialScore = scoreMedialSimilarity(components1.medial, components2.medial, initialScore, finalScore);
   const toneScore = scoreToneSimilarity(components1.tone, components2.tone);
 
   // Special case: Check if medial of one matches final of the other

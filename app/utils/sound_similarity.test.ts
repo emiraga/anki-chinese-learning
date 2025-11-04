@@ -96,4 +96,26 @@ describe("scoreSoundSimilarity", () => {
     expect(score).toBeGreaterThan(4); // Should get credit for shared ㄧ sound
     expect(score).toBeLessThan(8); // But not perfect due to different initial and tone
   });
+
+  test("low similarity initials and finals should not get medial credit", () => {
+    // dá (ㄉㄚˊ) vs hé (ㄏㄜˊ) - different initials and finals
+    // Should NOT get 2 points for both lacking medials
+    const breakdown = getSoundSimilarityBreakdown("dá", "hé");
+
+    expect(breakdown).not.toBeNull();
+    if (breakdown) {
+      // Initial: ㄉ (alveolar) vs ㄏ (velar) - low similarity
+      expect(breakdown.initialScore).toBeLessThan(2);
+
+      // Final: ㄚ (back) vs ㄜ (mid) - moderate similarity
+      expect(breakdown.finalScore).toBeLessThan(3);
+
+      // Medial: both null, but since initial and final are both low, should be 0
+      expect(breakdown.medialScore).toBe(0);
+
+      // Total should be significantly lower than 6.0
+      expect(breakdown.totalScore).toBeLessThan(6);
+      expect(breakdown.totalScore).toBeGreaterThan(2); // But not completely different
+    }
+  });
 });
