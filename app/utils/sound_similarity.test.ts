@@ -19,8 +19,12 @@ describe("scoreSoundSimilarity", () => {
   });
 
   test("same initial and final, different tone", () => {
-    const score = scoreSoundSimilarity("ma", "ma"); // Would need tone marks for proper test
-    expect(score).toBe(10); // Without tone marks in pinyin, treated as same
+    const score1 = scoreSoundSimilarity("fāng", "fàng"); // Same except tone (1st vs 4th)
+    expect(score1).toBeGreaterThan(7); // Same initial, medial, final, different tone
+    expect(score1).toBeLessThan(10); // Should not be perfect match
+
+    const score2 = scoreSoundSimilarity("ma", "ma"); // No tone marks
+    expect(score2).toBe(10); // Without tone marks, treated as same (both tone 1)
   });
 
   test("completely different sounds", () => {
@@ -83,5 +87,13 @@ describe("scoreSoundSimilarity", () => {
     expect(score1).toBeLessThan(10);
     expect(score2).toBeGreaterThan(3);
     expect(score2).toBeLessThan(10);
+  });
+
+  test("medial as final: yi vs ti", () => {
+    // yi (ㄧ) has ㄧ as final, ti (ㄊㄧ) has ㄧ as medial
+    // They should score well because they share the same sound
+    const score = scoreSoundSimilarity("yì", "tī");
+    expect(score).toBeGreaterThan(4); // Should get credit for shared ㄧ sound
+    expect(score).toBeLessThan(8); // But not perfect due to different initial and tone
   });
 });

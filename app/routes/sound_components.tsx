@@ -8,6 +8,7 @@ import type { CharacterType } from "~/data/characters";
 import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { getNewCharacter } from "~/data/characters";
 import { PinyinList } from "~/components/PinyinText";
+import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -17,6 +18,24 @@ export function meta({}: Route.MetaArgs) {
       content: "Characters grouped by their sound components.",
     },
   ];
+}
+
+// Helper function to get color based on sound similarity score
+// function getScoreColor(score: number): string {
+//   if (score >= 9) return "text-green-600 dark:text-green-400"; // Excellent
+//   if (score >= 7) return "text-blue-600 dark:text-blue-400"; // Good
+//   if (score >= 5) return "text-yellow-600 dark:text-yellow-400"; // Moderate
+//   if (score >= 3) return "text-orange-600 dark:text-orange-400"; // Poor
+//   return "text-red-600 dark:text-red-400"; // Very poor
+// }
+
+// Helper function to get background color for score badge
+function getScoreBgColor(score: number): string {
+  if (score >= 9) return "bg-green-100 dark:bg-green-900/30"; // Excellent
+  if (score >= 7) return "bg-blue-100 dark:bg-blue-900/30"; // Good
+  if (score >= 5) return "bg-yellow-100 dark:bg-yellow-900/30"; // Moderate
+  if (score >= 3) return "bg-orange-100 dark:bg-orange-900/30"; // Poor
+  return "bg-red-100 dark:bg-red-900/30"; // Very poor
 }
 
 // Component to display sound component candidates from Dong Chinese data
@@ -151,13 +170,40 @@ export default function SoundComponents() {
                 </div>
                 <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
                   <div className="flex flex-wrap gap-2 ">
-                    {chars.map((char) => (
-                      <CharCard
-                        key={char.traditional}
-                        v={char}
-                        showZhuyin={features?.showZhuyin}
-                      />
-                    ))}
+                    {chars.map((char) => {
+                      // Calculate sound similarity score
+                      // Use pinyinAccented to preserve tone marks
+                      const charPinyin = char.pinyin?.[0]?.pinyinAccented || "";
+                      const firstPinyin = soundCompPinyin[0];
+                      const soundPinyin =
+                        typeof firstPinyin === "string"
+                          ? firstPinyin
+                          : firstPinyin?.pinyinAccented || "";
+                      const score =
+                        charPinyin && soundPinyin
+                          ? scoreSoundSimilarity(soundPinyin, charPinyin)
+                          : null;
+
+                      return (
+                        <div key={char.traditional} className="relative">
+                          {score !== null && (
+                            <div
+                              className={`px-1.5 py-0.5 w-26 rounded text-xs  ${getScoreBgColor(score)} `}
+                              title={`Sound similarity: ${score}/10`}
+                            >
+                              Score:{" "}
+                              <span className={`font-bold`}>
+                                {score.toFixed(1)}
+                              </span>
+                            </div>
+                          )}
+                          <CharCard
+                            v={char}
+                            showZhuyin={features?.showZhuyin}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                   <SoundComponentCandidates
                     soundComponent={soundComponent}

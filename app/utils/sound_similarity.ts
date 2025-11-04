@@ -2,6 +2,34 @@ import { PINYIN_TO_ZHUYIN } from "./zhuyin";
 import { stripPinyinTones } from "./pinyin";
 
 /**
+ * Extract tone number from accented pinyin
+ * Returns 1-5 (1=first tone, 5=neutral tone)
+ */
+function getToneFromPinyin(pinyin: string): number {
+  // Tone marks mapping
+  const toneMappings: { [key: string]: number } = {
+    // First tone (ā, ē, ī, ō, ū, ǖ)
+    'ā': 1, 'ē': 1, 'ī': 1, 'ō': 1, 'ū': 1, 'ǖ': 1,
+    // Second tone (á, é, í, ó, ú, ǘ)
+    'á': 2, 'é': 2, 'í': 2, 'ó': 2, 'ú': 2, 'ǘ': 2,
+    // Third tone (ǎ, ě, ǐ, ǒ, ǔ, ǚ)
+    'ǎ': 3, 'ě': 3, 'ǐ': 3, 'ǒ': 3, 'ǔ': 3, 'ǚ': 3,
+    // Fourth tone (à, è, ì, ò, ù, ǜ)
+    'à': 4, 'è': 4, 'ì': 4, 'ò': 4, 'ù': 4, 'ǜ': 4,
+  };
+
+  for (const char of pinyin) {
+    if (toneMappings[char]) {
+      return toneMappings[char];
+    }
+  }
+
+  // No tone mark found = neutral tone (5) or first tone (1)
+  // We'll treat unmarked as first tone (1) for backwards compatibility
+  return 1;
+}
+
+/**
  * Zhuyin phonetic component breakdown
  * Based on traditional phonological analysis
  */
@@ -344,8 +372,16 @@ function scoreToneSimilarity(tone1: number, tone2: number): number {
  */
 export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
   // Normalize pinyin (remove spaces, convert to lowercase)
-  const p1 = stripPinyinTones(pinyin1.trim().toLowerCase());
-  const p2 = stripPinyinTones(pinyin2.trim().toLowerCase());
+  const normalized1 = pinyin1.trim().toLowerCase();
+  const normalized2 = pinyin2.trim().toLowerCase();
+
+  // Extract tones BEFORE stripping them
+  const tone1 = getToneFromPinyin(normalized1);
+  const tone2 = getToneFromPinyin(normalized2);
+
+  // Now strip tones for Zhuyin conversion
+  const p1 = stripPinyinTones(normalized1);
+  const p2 = stripPinyinTones(normalized2);
 
   // Convert to Zhuyin
   const zhuyin1 = PINYIN_TO_ZHUYIN[p1];
@@ -357,15 +393,34 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
     return 0;
   }
 
-  // Parse components
+  // Parse components (but override tone with the one we extracted)
   const comp1 = parseZhuyin(zhuyin1);
   const comp2 = parseZhuyin(zhuyin2);
 
+  // Override tones with the ones we extracted from accented pinyin
+  comp1.tone = tone1;
+  comp2.tone = tone2;
+
   // Calculate individual scores
-  const initialScore = scoreInitialSimilarity(comp1.initial, comp2.initial);
-  const medialScore = scoreMedialSimilarity(comp1.medial, comp2.medial);
-  const finalScore = scoreFinalSimilarity(comp1.final, comp2.final);
+  let initialScore = scoreInitialSimilarity(comp1.initial, comp2.initial);
+  let medialScore = scoreMedialSimilarity(comp1.medial, comp2.medial);
+  let finalScore = scoreFinalSimilarity(comp1.final, comp2.final);
   const toneScore = scoreToneSimilarity(comp1.tone, comp2.tone);
+
+  // Special case: Check if medial of one matches final of the other
+  // This handles cases like yi (ㄧ) vs ti (ㄊㄧ) where ㄧ appears as final vs medial
+  if (medialScore === 0 && finalScore === 0) {
+    // Check if comp1's medial matches comp2's final (when both are medial-type characters)
+    if (comp1.medial && comp2.final && comp1.medial === comp2.final && comp1.medial in ZHUYIN_MEDIALS) {
+      medialScore = 2; // Give full medial score
+      finalScore = 3;  // Give full final score since they're the same sound
+    }
+    // Check if comp1's final matches comp2's medial
+    else if (comp1.final && comp2.medial && comp1.final === comp2.medial && comp1.final in ZHUYIN_MEDIALS) {
+      medialScore = 2; // Give full medial score
+      finalScore = 3;  // Give full final score since they're the same sound
+    }
+  }
 
   const totalScore = initialScore + medialScore + finalScore + toneScore;
 
@@ -391,8 +446,15 @@ export function getSoundSimilarityBreakdown(
   pinyin1: string,
   pinyin2: string
 ): SoundSimilarityBreakdown | null {
-  const p1 = stripPinyinTones(pinyin1.trim().toLowerCase());
-  const p2 = stripPinyinTones(pinyin2.trim().toLowerCase());
+  const normalized1 = pinyin1.trim().toLowerCase();
+  const normalized2 = pinyin2.trim().toLowerCase();
+
+  // Extract tones BEFORE stripping them
+  const tone1 = getToneFromPinyin(normalized1);
+  const tone2 = getToneFromPinyin(normalized2);
+
+  const p1 = stripPinyinTones(normalized1);
+  const p2 = stripPinyinTones(normalized2);
 
   const zhuyin1 = PINYIN_TO_ZHUYIN[p1];
   const zhuyin2 = PINYIN_TO_ZHUYIN[p2];
@@ -404,10 +466,26 @@ export function getSoundSimilarityBreakdown(
   const components1 = parseZhuyin(zhuyin1);
   const components2 = parseZhuyin(zhuyin2);
 
-  const initialScore = scoreInitialSimilarity(components1.initial, components2.initial);
-  const medialScore = scoreMedialSimilarity(components1.medial, components2.medial);
-  const finalScore = scoreFinalSimilarity(components1.final, components2.final);
+  // Override tones with the ones we extracted from accented pinyin
+  components1.tone = tone1;
+  components2.tone = tone2;
+
+  let initialScore = scoreInitialSimilarity(components1.initial, components2.initial);
+  let medialScore = scoreMedialSimilarity(components1.medial, components2.medial);
+  let finalScore = scoreFinalSimilarity(components1.final, components2.final);
   const toneScore = scoreToneSimilarity(components1.tone, components2.tone);
+
+  // Special case: Check if medial of one matches final of the other
+  if (medialScore === 0 && finalScore === 0) {
+    if (components1.medial && components2.final && components1.medial === components2.final && components1.medial in ZHUYIN_MEDIALS) {
+      medialScore = 2;
+      finalScore = 3;
+    } else if (components1.final && components2.medial && components1.final === components2.medial && components1.final in ZHUYIN_MEDIALS) {
+      medialScore = 2;
+      finalScore = 3;
+    }
+  }
+
   const totalScore = initialScore + medialScore + finalScore + toneScore;
 
   return {
