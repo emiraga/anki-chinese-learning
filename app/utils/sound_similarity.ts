@@ -256,9 +256,9 @@ function scoreMedialSimilarity(
     // If initial and final scores are provided, apply conditional logic
     if (initialScore !== undefined && finalScore !== undefined) {
       // If both initial and final have low similarity, don't give credit for both lacking medials
-      // Threshold: at least one component should score > 2.0 to get credit
-      // (2.0 is partial credit, so we need strong similarity in at least one component)
-      if (initialScore <= 2.0 && finalScore <= 2.0) {
+      // Threshold: at least one component should score > 2.5 to get credit
+      // (we need strong similarity in at least one component)
+      if (initialScore <= 2.5 && finalScore <= 2.5) {
         return 0;
       }
     }
@@ -347,10 +347,29 @@ function scoreFinalSimilarity(fin1: string | null, fin2: string | null): number 
 
 /**
  * Score the similarity between two tones (0-2 points)
+ * Only awards points if other phonetic components have sufficient similarity
  */
-function scoreToneSimilarity(tone1: number, tone2: number): number {
+function scoreToneSimilarity(
+  tone1: number,
+  tone2: number,
+  initialScore?: number,
+  medialScore?: number,
+  finalScore?: number
+): number {
   // Perfect match
   if (tone1 === tone2) return 2;
+
+  // If other component scores are provided, apply conditional logic
+  if (initialScore !== undefined && medialScore !== undefined && finalScore !== undefined) {
+    // Calculate total phonetic similarity (excluding tone)
+    const phoneticTotal = initialScore + medialScore + finalScore;
+
+    // Only give tone similarity credit if phonetic components have at least 50% similarity
+    // Threshold: at least 4.0 points out of 8 possible (max is 3+2+3=8)
+    if (phoneticTotal < 4.0) {
+      return 0;
+    }
+  }
 
   // Tone similarity based on contour
   // Tone 1 (high level) vs Tone 2 (rising): somewhat similar (high register)
@@ -422,7 +441,6 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
   let initialScore = scoreInitialSimilarity(comp1.initial, comp2.initial);
   let finalScore = scoreFinalSimilarity(comp1.final, comp2.final);
   let medialScore = scoreMedialSimilarity(comp1.medial, comp2.medial, initialScore, finalScore);
-  const toneScore = scoreToneSimilarity(comp1.tone, comp2.tone);
 
   // Special case: Check if medial of one matches final of the other
   // This handles cases like yi (ㄧ) vs ti (ㄊㄧ) where ㄧ appears as final vs medial
@@ -438,6 +456,9 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
       finalScore = 3;  // Give full final score since they're the same sound
     }
   }
+
+  // Calculate tone score AFTER adjusting medial/final scores
+  const toneScore = scoreToneSimilarity(comp1.tone, comp2.tone, initialScore, medialScore, finalScore);
 
   const totalScore = initialScore + medialScore + finalScore + toneScore;
 
@@ -490,7 +511,6 @@ export function getSoundSimilarityBreakdown(
   let initialScore = scoreInitialSimilarity(components1.initial, components2.initial);
   let finalScore = scoreFinalSimilarity(components1.final, components2.final);
   let medialScore = scoreMedialSimilarity(components1.medial, components2.medial, initialScore, finalScore);
-  const toneScore = scoreToneSimilarity(components1.tone, components2.tone);
 
   // Special case: Check if medial of one matches final of the other
   if (medialScore === 0 && finalScore === 0) {
@@ -502,6 +522,9 @@ export function getSoundSimilarityBreakdown(
       finalScore = 3;
     }
   }
+
+  // Calculate tone score AFTER adjusting medial/final scores
+  const toneScore = scoreToneSimilarity(components1.tone, components2.tone, initialScore, medialScore, finalScore);
 
   const totalScore = initialScore + medialScore + finalScore + toneScore;
 

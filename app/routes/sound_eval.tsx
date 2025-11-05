@@ -4,6 +4,8 @@ import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 import type { DongCharacter } from "~/types/dong_character";
 import MainFrame from "~/toolbar/frame";
+import { useEffect, useState } from "react";
+import { CharLink } from "~/components/CharCard";
 
 interface SoundComponentCandidate {
   character: string;
@@ -12,44 +14,35 @@ interface SoundComponentCandidate {
   depth: number; // Track recursion depth
 }
 
-function getAllSoundComponents(
+// Helper to extract sound components from a DongCharacter (non-recursive, single level)
+function extractSoundComponents(
   dongChar: DongCharacter | null,
-  depth: number = 0,
-  visited: Set<string> = new Set(),
-): SoundComponentCandidate[] {
-  if (!dongChar || depth > 3) return []; // Limit recursion depth
-  if (visited.has(dongChar.char)) return []; // Prevent circular references
+  depth: number,
+): Array<{ character: string; pinyin: string; depth: number }> {
+  if (!dongChar) return [];
 
-  visited.add(dongChar.char);
-  const candidates: SoundComponentCandidate[] = [];
-
-  // Get sound components from this character
   const soundComponents =
     dongChar.components?.filter(
       (comp) => comp.type.includes("sound") || comp.type.includes("phonetic"),
     ) || [];
 
+  const results: Array<{ character: string; pinyin: string; depth: number }> =
+    [];
+
   for (const soundComp of soundComponents) {
     const componentChar = soundComp.character;
-
-    // Get primary pinyin for this component
     const componentPinyin = getPrimaryPinyin(componentChar, dongChar);
 
     if (componentPinyin) {
-      candidates.push({
+      results.push({
         character: componentChar,
         pinyin: componentPinyin,
-        score: 0, // Will be calculated later
         depth,
       });
-
-      // TODO: Recursively get sound components of this component
-      // This would require fetching the DongCharacter for the component
-      // For now, we'll just use the immediate sound components
     }
   }
 
-  return candidates;
+  return results;
 }
 
 function getPrimaryPinyin(char: string, dongChar: DongCharacter): string {
@@ -64,18 +57,24 @@ function getPrimaryPinyin(char: string, dongChar: DongCharacter): string {
 
   // Try to get pinyin from the chars array (component character data)
   const componentChar = dongChar.chars?.find((c) => c.char === char);
-  if (componentChar?.pinyinFrequencies && componentChar.pinyinFrequencies.length > 0) {
+  if (
+    componentChar?.pinyinFrequencies &&
+    componentChar.pinyinFrequencies.length > 0
+  ) {
     return componentChar.pinyinFrequencies[0].pinyin;
   }
 
   // Try to get from oldPronunciations
-  if (componentChar?.oldPronunciations && componentChar.oldPronunciations.length > 0) {
+  if (
+    componentChar?.oldPronunciations &&
+    componentChar.oldPronunciations.length > 0
+  ) {
     return componentChar.oldPronunciations[0].pinyin;
   }
 
   // Try to get from words array
   const componentWord = dongChar.words?.find(
-    (w) => w.simp === char || w.trad === char
+    (w) => w.simp === char || w.trad === char,
   );
   if (componentWord?.items && componentWord.items.length > 0) {
     return componentWord.items[0].pinyin;
@@ -91,6 +90,61 @@ interface CharacterRowProps {
   soundComponentChar?: string;
 }
 
+// Fetch DongCharacter data directly (inlined hook implementation)
+async function fetchDongCharacter(char: string): Promise<DongCharacter | null> {
+  if (!char) return null;
+
+  try {
+    const res = await fetch(`/data/dong/${char}.json`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+// Recursively gather all sound components by fetching nested characters
+async function getAllSoundComponentsRecursive(
+  dongChar: DongCharacter,
+  charPinyin: string,
+  depth: number = 0,
+  visited: Set<string> = new Set(),
+): Promise<SoundComponentCandidate[]> {
+  if (depth > 3 || visited.has(dongChar.char)) return [];
+
+  visited.add(dongChar.char);
+  const allCandidates: SoundComponentCandidate[] = [];
+
+  // Get immediate sound components
+  const immediate = extractSoundComponents(dongChar, depth);
+
+  // Process each component
+  for (const comp of immediate) {
+    allCandidates.push({
+      character: comp.character,
+      pinyin: comp.pinyin,
+      depth: comp.depth,
+      score: scoreSoundSimilarity(charPinyin, comp.pinyin),
+    });
+
+    // Recursively fetch and process nested components
+    if (depth < 3) {
+      const nestedChar = await fetchDongCharacter(comp.character);
+      if (nestedChar) {
+        const nestedCandidates = await getAllSoundComponentsRecursive(
+          nestedChar,
+          charPinyin,
+          depth + 1,
+          visited,
+        );
+        allCandidates.push(...nestedCandidates);
+      }
+    }
+  }
+
+  return allCandidates;
+}
+
 function CharacterRow({
   character,
   charPinyin,
@@ -101,42 +155,99 @@ function CharacterRow({
   const { character: soundCompDong, loading: soundCompLoading } =
     useDongCharacter(soundComponentChar || "");
 
-  // Calculate candidates from Dong character data
-  let candidates: SoundComponentCandidate[] = [];
-  if (dongChar) {
-    const allCandidates = getAllSoundComponents(dongChar);
+  const [candidatesState, setCandidatesState] = useState<{
+    candidates: SoundComponentCandidate[];
+    loading: boolean;
+  }>({ candidates: [], loading: false });
 
-    // Calculate scores for each candidate
-    const scoredCandidates = allCandidates.map((candidate) => ({
-      ...candidate,
-      score: candidate.pinyin
-        ? scoreSoundSimilarity(charPinyin, candidate.pinyin)
-        : 0,
-    }));
+  // Recursively fetch and calculate candidates
+  useEffect(() => {
+    if (!dongChar) return;
 
-    // Sort by score descending
-    scoredCandidates.sort((a, b) => b.score - a.score);
+    let cancelled = false;
 
-    candidates = scoredCandidates;
-  }
+    const loadCandidates = async () => {
+      // Set loading state
+      if (!cancelled) {
+        setCandidatesState({ candidates: [], loading: true });
+      }
+
+      try {
+        const allCandidates = await getAllSoundComponentsRecursive(
+          dongChar,
+          charPinyin,
+        );
+        if (!cancelled) {
+          // Sort by score descending
+          allCandidates.sort((a, b) => b.score - a.score);
+          setCandidatesState({ candidates: allCandidates, loading: false });
+        }
+      } catch {
+        if (!cancelled) {
+          setCandidatesState({ candidates: [], loading: false });
+        }
+      }
+    };
+
+    loadCandidates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dongChar, charPinyin]);
+
+  const candidates = candidatesState.candidates;
+  const isLoadingCandidates = candidatesState.loading;
 
   const soundCompPinyin = soundCompDong?.pinyinFrequencies?.[0]?.pinyin || "";
   const soundCompScore = soundCompPinyin
     ? scoreSoundSimilarity(charPinyin, soundCompPinyin)
     : null;
 
+  // Check if any candidate has a higher score than the current Anki sound component
+  const hasBetterCandidate =
+    soundCompScore !== null &&
+    candidates.some((candidate) => candidate.score > soundCompScore);
+
+  // Check if Anki sound component matches the highest-scoring candidate
+  const topCandidate = candidates.length > 0 ? candidates[0] : null;
+  const ankiMatchesTopCandidate =
+    soundComponentChar &&
+    topCandidate &&
+    soundComponentChar === topCandidate.character;
+
+  // Don't render rows with no sound components found
+  if (!isLoadingCandidates && candidates.length === 0 && !soundComponentChar) {
+    return null;
+  }
+
+  // Don't render rows where Anki sound component matches the top candidate
+  if (!isLoadingCandidates && ankiMatchesTopCandidate) {
+    return null;
+  }
+
   return (
-    <tr className="border-b border-gray-200 hover:bg-gray-50">
-      <td className="px-4 py-2 font-bold text-lg">{character}</td>
-      <td className="px-4 py-2">{charPinyin}</td>
+    <tr
+      className={`border-b border-gray-200 hover:bg-gray-50 ${
+        hasBetterCandidate ? "bg-yellow-50" : ""
+      }`}
+    >
       <td className="px-4 py-2 font-bold text-lg">
-        {soundComponentChar || <span className="text-gray-400">-</span>}
+        <CharLink traditional={character} /> {charPinyin}
       </td>
-      <td className="px-4 py-2">
+      {/*<td className="px-4 py-2">{charPinyin}</td>*/}
+      <td className="px-4 py-2 font-bold text-lg">
+        {soundComponentChar ? (
+          <CharLink traditional={soundComponentChar} />
+        ) : (
+          <span className="text-gray-400">-</span>
+        )}{" "}
+        {/*</td>
+      <td className="px-4 py-2">*/}
         {soundCompLoading ? (
           <span className="text-gray-400">Loading...</span>
         ) : soundCompPinyin ? (
-          <div>
+          <>
             <span>{soundCompPinyin}</span>
             {soundCompScore !== null && (
               <span
@@ -151,15 +262,13 @@ function CharacterRow({
                 {soundCompScore.toFixed(1)}
               </span>
             )}
-          </div>
+          </>
         ) : soundComponentChar ? (
           <span className="text-gray-400">No pinyin</span>
-        ) : (
-          <span className="text-gray-400">-</span>
-        )}
+        ) : undefined}
       </td>
       <td className="px-4 py-2">
-        {dongLoading ? (
+        {dongLoading || isLoadingCandidates ? (
           <span className="text-gray-400">Loading...</span>
         ) : candidates.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -168,7 +277,10 @@ function CharacterRow({
                 key={`${candidate.character}-${idx}`}
                 className="inline-flex items-center gap-1 border border-gray-300 rounded px-2 py-1"
               >
-                <span className="font-bold">{candidate.character}</span>
+                <CharLink
+                  traditional={candidate.character}
+                  className="font-bold"
+                />
                 <span className="text-sm text-gray-600">
                   {candidate.pinyin}
                 </span>
@@ -205,7 +317,8 @@ function CharacterRow({
 export default function SoundEval() {
   const { characters } = useOutletContext<OutletContext>();
 
-  // Filter characters that have pinyin (show all, not just those with soundComponentCharacter)
+  // Filter characters that have pinyin and either have a sound component in Anki or might have candidates
+  // We'll let CharacterRow handle the filtering of those without any sound components
   const charsWithSoundComp = Object.values(characters).filter(
     (char): char is NonNullable<typeof char> => {
       return !!(char && char.pinyin.length > 0);
@@ -218,9 +331,7 @@ export default function SoundEval() {
         <h1 className="text-3xl font-bold mb-6">Sound Component Evaluation</h1>
 
         <div className="mb-4 text-gray-600">
-          <p>
-            Evaluating {charsWithSoundComp.length} characters
-          </p>
+          <p>Evaluating {charsWithSoundComp.length} characters</p>
           <p className="text-sm mt-1">
             Score:{" "}
             <span className="text-green-600 font-semibold">≥8 = Excellent</span>
@@ -242,15 +353,15 @@ export default function SoundEval() {
                 <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
                   Character
                 </th>
-                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                {/*<th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
                   Pinyin
-                </th>
+                </th>*/}
                 <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
                   Sound Component (Anki)
                 </th>
-                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                {/*<th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
                   Component Pinyin & Score
-                </th>
+                </th>*/}
                 <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
                   Dong Sound Components (Candidates)
                 </th>
