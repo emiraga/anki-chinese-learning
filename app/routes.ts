@@ -45,6 +45,7 @@ export default [
   route("tones", "routes/tones.tsx"),
   route("zhuyin_typing", "routes/zhuyin_typing.tsx"),
   route("dong_demo", "routes/dong_demo.tsx"),
+  route("sound_eval", "routes/sound_eval.tsx"),
   // Handle development tool files
   route("installHook.js.map", "routes/dev_files.tsx"),
   index("routes/index.tsx"),
