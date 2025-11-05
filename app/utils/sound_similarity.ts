@@ -9,13 +9,33 @@ function getToneFromPinyin(pinyin: string): number {
   // Tone marks mapping
   const toneMappings: { [key: string]: number } = {
     // First tone (ā, ē, ī, ō, ū, ǖ)
-    'ā': 1, 'ē': 1, 'ī': 1, 'ō': 1, 'ū': 1, 'ǖ': 1,
+    ā: 1,
+    ē: 1,
+    ī: 1,
+    ō: 1,
+    ū: 1,
+    ǖ: 1,
     // Second tone (á, é, í, ó, ú, ǘ)
-    'á': 2, 'é': 2, 'í': 2, 'ó': 2, 'ú': 2, 'ǘ': 2,
+    á: 2,
+    é: 2,
+    í: 2,
+    ó: 2,
+    ú: 2,
+    ǘ: 2,
     // Third tone (ǎ, ě, ǐ, ǒ, ǔ, ǚ)
-    'ǎ': 3, 'ě': 3, 'ǐ': 3, 'ǒ': 3, 'ǔ': 3, 'ǚ': 3,
+    ǎ: 3,
+    ě: 3,
+    ǐ: 3,
+    ǒ: 3,
+    ǔ: 3,
+    ǚ: 3,
     // Fourth tone (à, è, ì, ò, ù, ǜ)
-    'à': 4, 'è': 4, 'ì': 4, 'ò': 4, 'ù': 4, 'ǜ': 4,
+    à: 4,
+    è: 4,
+    ì: 4,
+    ò: 4,
+    ù: 4,
+    ǜ: 4,
   };
 
   for (const char of pinyin) {
@@ -37,68 +57,68 @@ function getToneFromPinyin(pinyin: string): number {
 // Initial consonants (聲母)
 const ZHUYIN_INITIALS = {
   // Labials (唇音)
-  "ㄅ": { group: "labial-unaspirated", subgroup: "stop" },
-  "ㄆ": { group: "labial-aspirated", subgroup: "stop" },
-  "ㄇ": { group: "labial-nasal", subgroup: "nasal" },
-  "ㄈ": { group: "labial-fricative", subgroup: "fricative" },
+  ㄅ: { group: "labial-unaspirated", subgroup: "stop" },
+  ㄆ: { group: "labial-aspirated", subgroup: "stop" },
+  ㄇ: { group: "labial-nasal", subgroup: "nasal" },
+  ㄈ: { group: "labial-fricative", subgroup: "fricative" },
 
   // Alveolars (舌尖音)
-  "ㄉ": { group: "alveolar-unaspirated", subgroup: "stop" },
-  "ㄊ": { group: "alveolar-aspirated", subgroup: "stop" },
-  "ㄋ": { group: "alveolar-nasal", subgroup: "nasal" },
-  "ㄌ": { group: "alveolar-lateral", subgroup: "lateral" },
+  ㄉ: { group: "alveolar-unaspirated", subgroup: "stop" },
+  ㄊ: { group: "alveolar-aspirated", subgroup: "stop" },
+  ㄋ: { group: "alveolar-nasal", subgroup: "nasal" },
+  ㄌ: { group: "alveolar-lateral", subgroup: "lateral" },
 
   // Velars (舌根音)
-  "ㄍ": { group: "velar-unaspirated", subgroup: "stop" },
-  "ㄎ": { group: "velar-aspirated", subgroup: "stop" },
-  "ㄏ": { group: "velar-fricative", subgroup: "fricative" },
+  ㄍ: { group: "velar-unaspirated", subgroup: "stop" },
+  ㄎ: { group: "velar-aspirated", subgroup: "stop" },
+  ㄏ: { group: "velar-fricative", subgroup: "fricative" },
 
   // Palatals (舌面音)
-  "ㄐ": { group: "palatal-unaspirated", subgroup: "affricate" },
-  "ㄑ": { group: "palatal-aspirated", subgroup: "affricate" },
-  "ㄒ": { group: "palatal-fricative", subgroup: "fricative" },
+  ㄐ: { group: "palatal-unaspirated", subgroup: "affricate" },
+  ㄑ: { group: "palatal-aspirated", subgroup: "affricate" },
+  ㄒ: { group: "palatal-fricative", subgroup: "fricative" },
 
   // Retroflexes (舌尖後音)
-  "ㄓ": { group: "retroflex-unaspirated", subgroup: "affricate" },
-  "ㄔ": { group: "retroflex-aspirated", subgroup: "affricate" },
-  "ㄕ": { group: "retroflex-fricative", subgroup: "fricative" },
-  "ㄖ": { group: "retroflex-approximant", subgroup: "approximant" },
+  ㄓ: { group: "retroflex-unaspirated", subgroup: "affricate" },
+  ㄔ: { group: "retroflex-aspirated", subgroup: "affricate" },
+  ㄕ: { group: "retroflex-fricative", subgroup: "fricative" },
+  ㄖ: { group: "retroflex-approximant", subgroup: "approximant" },
 
   // Dentals (舌尖前音)
-  "ㄗ": { group: "dental-unaspirated", subgroup: "affricate" },
-  "ㄘ": { group: "dental-aspirated", subgroup: "affricate" },
-  "ㄙ": { group: "dental-fricative", subgroup: "fricative" },
+  ㄗ: { group: "dental-unaspirated", subgroup: "affricate" },
+  ㄘ: { group: "dental-aspirated", subgroup: "affricate" },
+  ㄙ: { group: "dental-fricative", subgroup: "fricative" },
 } as const;
 
 // Medials (介音)
 const ZHUYIN_MEDIALS = {
-  "ㄧ": "i", // palatal
-  "ㄨ": "u", // labial
-  "ㄩ": "ü", // palatal-labial
+  ㄧ: "i", // palatal
+  ㄨ: "u", // labial
+  ㄩ: "ü", // palatal-labial
 } as const;
 
 // Finals (韻母)
 const ZHUYIN_FINALS = {
   // Simple finals
-  "ㄚ": { type: "open", backness: "back" },
-  "ㄛ": { type: "open", backness: "back" },
-  "ㄜ": { type: "open", backness: "mid" },
-  "ㄝ": { type: "open", backness: "front" },
-  "ㄦ": { type: "rhotic", backness: "mid" },
+  ㄚ: { type: "open", backness: "back" },
+  ㄛ: { type: "open", backness: "back" },
+  ㄜ: { type: "open", backness: "mid" },
+  ㄝ: { type: "open", backness: "front" },
+  ㄦ: { type: "rhotic", backness: "mid" },
 
   // Compound finals with i
-  "ㄞ": { type: "diphthong", backness: "front" }, // ai
-  "ㄟ": { type: "diphthong", backness: "front" }, // ei
+  ㄞ: { type: "diphthong", backness: "front" }, // ai
+  ㄟ: { type: "diphthong", backness: "front" }, // ei
 
   // Compound finals with u
-  "ㄠ": { type: "diphthong", backness: "back" }, // ao
-  "ㄡ": { type: "diphthong", backness: "back" }, // ou
+  ㄠ: { type: "diphthong", backness: "back" }, // ao
+  ㄡ: { type: "diphthong", backness: "back" }, // ou
 
   // Nasal finals
-  "ㄢ": { type: "nasal-front", backness: "front" }, // an
-  "ㄣ": { type: "nasal-front", backness: "mid" }, // en
-  "ㄤ": { type: "nasal-back", backness: "back" }, // ang
-  "ㄥ": { type: "nasal-back", backness: "mid" }, // eng
+  ㄢ: { type: "nasal-front", backness: "front" }, // an
+  ㄣ: { type: "nasal-front", backness: "mid" }, // en
+  ㄤ: { type: "nasal-back", backness: "back" }, // ang
+  ㄥ: { type: "nasal-back", backness: "mid" }, // eng
 } as const;
 
 // Tone marks
@@ -169,7 +189,10 @@ function parseZhuyin(zhuyin: string): ZhuyinComponents {
 /**
  * Score the similarity between two initials (0-3 points)
  */
-function scoreInitialSimilarity(init1: string | null, init2: string | null): number {
+function scoreInitialSimilarity(
+  init1: string | null,
+  init2: string | null,
+): number {
   // Perfect match
   if (init1 === init2) return 3;
 
@@ -246,7 +269,7 @@ function scoreMedialSimilarity(
   med1: string | null,
   med2: string | null,
   initialScore?: number,
-  finalScore?: number
+  finalScore?: number,
 ): number {
   // Perfect match
   if (med1 === med2 && med1 !== null) return 2;
@@ -258,7 +281,7 @@ function scoreMedialSimilarity(
       // If both initial and final have low similarity, don't give credit for both lacking medials
       // Threshold: at least one component should score > 2.5 to get credit
       // (we need strong similarity in at least one component)
-      if (initialScore <= 2.5 && finalScore <= 2.5) {
+      if (initialScore <= 2.4 && finalScore <= 2.4) {
         return 0;
       }
     }
@@ -281,7 +304,10 @@ function scoreMedialSimilarity(
 /**
  * Score the similarity between two finals (0-3 points)
  */
-function scoreFinalSimilarity(fin1: string | null, fin2: string | null): number {
+function scoreFinalSimilarity(
+  fin1: string | null,
+  fin2: string | null,
+): number {
   // Perfect match
   if (fin1 === fin2) return 3;
 
@@ -354,13 +380,17 @@ function scoreToneSimilarity(
   tone2: number,
   initialScore?: number,
   medialScore?: number,
-  finalScore?: number
+  finalScore?: number,
 ): number {
   // Perfect match
   if (tone1 === tone2) return 2;
 
   // If other component scores are provided, apply conditional logic
-  if (initialScore !== undefined && medialScore !== undefined && finalScore !== undefined) {
+  if (
+    initialScore !== undefined &&
+    medialScore !== undefined &&
+    finalScore !== undefined
+  ) {
     // Calculate total phonetic similarity (excluding tone)
     const phoneticTotal = initialScore + medialScore + finalScore;
 
@@ -416,8 +446,8 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
   const tone2 = getToneFromPinyin(normalized2);
 
   // Now strip tones for Zhuyin conversion
-  const p1 = stripPinyinTones(normalized1);
-  const p2 = stripPinyinTones(normalized2);
+  const p1 = stripPinyinTones(normalized1).replace(/ü/g, "v");
+  const p2 = stripPinyinTones(normalized2).replace(/ü/g, "v");
 
   // Convert to Zhuyin
   const zhuyin1 = PINYIN_TO_ZHUYIN[p1];
@@ -440,25 +470,70 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
   // Calculate individual scores
   let initialScore = scoreInitialSimilarity(comp1.initial, comp2.initial);
   let finalScore = scoreFinalSimilarity(comp1.final, comp2.final);
-  let medialScore = scoreMedialSimilarity(comp1.medial, comp2.medial, initialScore, finalScore);
+  let medialScore = scoreMedialSimilarity(
+    comp1.medial,
+    comp2.medial,
+    initialScore,
+    finalScore,
+  );
 
   // Special case: Check if medial of one matches final of the other
   // This handles cases like yi (ㄧ) vs ti (ㄊㄧ) where ㄧ appears as final vs medial
   if (medialScore === 0 && finalScore === 0) {
     // Check if comp1's medial matches comp2's final (when both are medial-type characters)
-    if (comp1.medial && comp2.final && comp1.medial === comp2.final && comp1.medial in ZHUYIN_MEDIALS) {
+    if (
+      comp1.medial &&
+      comp2.final &&
+      comp1.medial === comp2.final &&
+      comp1.medial in ZHUYIN_MEDIALS
+    ) {
       medialScore = 2; // Give full medial score
-      finalScore = 3;  // Give full final score since they're the same sound
+      finalScore = 3; // Give full final score since they're the same sound
     }
     // Check if comp1's final matches comp2's medial
-    else if (comp1.final && comp2.medial && comp1.final === comp2.medial && comp1.final in ZHUYIN_MEDIALS) {
+    else if (
+      comp1.final &&
+      comp2.medial &&
+      comp1.final === comp2.medial &&
+      comp1.final in ZHUYIN_MEDIALS
+    ) {
       medialScore = 2; // Give full medial score
-      finalScore = 3;  // Give full final score since they're the same sound
+      finalScore = 3; // Give full final score since they're the same sound
+    }
+    // Check if both are medial-type characters but different (e.g., ㄨ vs ㄩ)
+    else if (
+      comp1.medial &&
+      comp2.final &&
+      comp1.medial in ZHUYIN_MEDIALS &&
+      comp2.final in ZHUYIN_MEDIALS
+    ) {
+      // Score them as if they were both medials
+      const crossMedialScore = scoreMedialSimilarity(comp1.medial, comp2.final);
+      medialScore = crossMedialScore;
+      finalScore = crossMedialScore * 1.5; // Scale to final range (0-3)
+    }
+    // Check if comp1's final is a medial and comp2's medial exists
+    else if (
+      comp1.final &&
+      comp2.medial &&
+      comp1.final in ZHUYIN_MEDIALS &&
+      comp2.medial in ZHUYIN_MEDIALS
+    ) {
+      // Score them as if they were both medials
+      const crossMedialScore = scoreMedialSimilarity(comp1.final, comp2.medial);
+      medialScore = crossMedialScore;
+      finalScore = crossMedialScore * 1.5; // Scale to final range (0-3)
     }
   }
 
   // Calculate tone score AFTER adjusting medial/final scores
-  const toneScore = scoreToneSimilarity(comp1.tone, comp2.tone, initialScore, medialScore, finalScore);
+  const toneScore = scoreToneSimilarity(
+    comp1.tone,
+    comp2.tone,
+    initialScore,
+    medialScore,
+    finalScore,
+  );
 
   const totalScore = initialScore + medialScore + finalScore + toneScore;
 
@@ -482,7 +557,7 @@ export interface SoundSimilarityBreakdown {
 
 export function getSoundSimilarityBreakdown(
   pinyin1: string,
-  pinyin2: string
+  pinyin2: string,
 ): SoundSimilarityBreakdown | null {
   const normalized1 = pinyin1.trim().toLowerCase();
   const normalized2 = pinyin2.trim().toLowerCase();
@@ -491,8 +566,8 @@ export function getSoundSimilarityBreakdown(
   const tone1 = getToneFromPinyin(normalized1);
   const tone2 = getToneFromPinyin(normalized2);
 
-  const p1 = stripPinyinTones(normalized1);
-  const p2 = stripPinyinTones(normalized2);
+  const p1 = stripPinyinTones(normalized1).replace(/ü/g, "v");
+  const p2 = stripPinyinTones(normalized2).replace(/ü/g, "v");
 
   const zhuyin1 = PINYIN_TO_ZHUYIN[p1];
   const zhuyin2 = PINYIN_TO_ZHUYIN[p2];
@@ -508,23 +583,73 @@ export function getSoundSimilarityBreakdown(
   components1.tone = tone1;
   components2.tone = tone2;
 
-  let initialScore = scoreInitialSimilarity(components1.initial, components2.initial);
+  let initialScore = scoreInitialSimilarity(
+    components1.initial,
+    components2.initial,
+  );
   let finalScore = scoreFinalSimilarity(components1.final, components2.final);
-  let medialScore = scoreMedialSimilarity(components1.medial, components2.medial, initialScore, finalScore);
+  let medialScore = scoreMedialSimilarity(
+    components1.medial,
+    components2.medial,
+    initialScore,
+    finalScore,
+  );
 
   // Special case: Check if medial of one matches final of the other
   if (medialScore === 0 && finalScore === 0) {
-    if (components1.medial && components2.final && components1.medial === components2.final && components1.medial in ZHUYIN_MEDIALS) {
+    if (
+      components1.medial &&
+      components2.final &&
+      components1.medial === components2.final &&
+      components1.medial in ZHUYIN_MEDIALS
+    ) {
       medialScore = 2;
       finalScore = 3;
-    } else if (components1.final && components2.medial && components1.final === components2.medial && components1.final in ZHUYIN_MEDIALS) {
+    } else if (
+      components1.final &&
+      components2.medial &&
+      components1.final === components2.medial &&
+      components1.final in ZHUYIN_MEDIALS
+    ) {
       medialScore = 2;
       finalScore = 3;
+    }
+    // Check if both are medial-type characters but different (e.g., ㄨ vs ㄩ)
+    else if (
+      components1.medial &&
+      components2.final &&
+      components1.medial in ZHUYIN_MEDIALS &&
+      components2.final in ZHUYIN_MEDIALS
+    ) {
+      const crossMedialScore = scoreMedialSimilarity(
+        components1.medial,
+        components2.final,
+      );
+      medialScore = crossMedialScore;
+      finalScore = crossMedialScore * 1.5;
+    } else if (
+      components1.final &&
+      components2.medial &&
+      components1.final in ZHUYIN_MEDIALS &&
+      components2.medial in ZHUYIN_MEDIALS
+    ) {
+      const crossMedialScore = scoreMedialSimilarity(
+        components1.final,
+        components2.medial,
+      );
+      medialScore = crossMedialScore;
+      finalScore = crossMedialScore * 1.5;
     }
   }
 
   // Calculate tone score AFTER adjusting medial/final scores
-  const toneScore = scoreToneSimilarity(components1.tone, components2.tone, initialScore, medialScore, finalScore);
+  const toneScore = scoreToneSimilarity(
+    components1.tone,
+    components2.tone,
+    initialScore,
+    medialScore,
+    finalScore,
+  );
 
   const totalScore = initialScore + medialScore + finalScore + toneScore;
 

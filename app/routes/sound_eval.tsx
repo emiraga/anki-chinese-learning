@@ -4,7 +4,7 @@ import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 import type { DongCharacter } from "~/types/dong_character";
 import MainFrame from "~/toolbar/frame";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
 
 interface SoundComponentCandidate {
@@ -88,6 +88,8 @@ interface CharacterRowProps {
   character: string;
   charPinyin: string;
   soundComponentChar?: string;
+  candidates: SoundComponentCandidate[];
+  isLoadingCandidates: boolean;
 }
 
 // Fetch DongCharacter data directly (inlined hook implementation)
@@ -120,6 +122,11 @@ async function getAllSoundComponentsRecursive(
 
   // Process each component
   for (const comp of immediate) {
+    // Skip if this component is the same as the original character
+    if (comp.character === dongChar.char) {
+      continue;
+    }
+
     allCandidates.push({
       character: comp.character,
       pinyin: comp.pinyin,
@@ -128,7 +135,7 @@ async function getAllSoundComponentsRecursive(
     });
 
     // Recursively fetch and process nested components
-    if (depth < 3) {
+    if (depth < 5) {
       const nestedChar = await fetchDongCharacter(comp.character);
       if (nestedChar) {
         const nestedCandidates = await getAllSoundComponentsRecursive(
@@ -145,59 +152,24 @@ async function getAllSoundComponentsRecursive(
   return allCandidates;
 }
 
+interface CharacterData {
+  character: string;
+  charPinyin: string;
+  soundComponentChar?: string;
+  candidates: SoundComponentCandidate[];
+  maxScore: number;
+  isLoadingCandidates: boolean;
+}
+
 function CharacterRow({
   character,
   charPinyin,
   soundComponentChar,
+  candidates,
+  isLoadingCandidates,
 }: CharacterRowProps) {
-  const { character: dongChar, loading: dongLoading } =
-    useDongCharacter(character);
   const { character: soundCompDong, loading: soundCompLoading } =
     useDongCharacter(soundComponentChar || "");
-
-  const [candidatesState, setCandidatesState] = useState<{
-    candidates: SoundComponentCandidate[];
-    loading: boolean;
-  }>({ candidates: [], loading: false });
-
-  // Recursively fetch and calculate candidates
-  useEffect(() => {
-    if (!dongChar) return;
-
-    let cancelled = false;
-
-    const loadCandidates = async () => {
-      // Set loading state
-      if (!cancelled) {
-        setCandidatesState({ candidates: [], loading: true });
-      }
-
-      try {
-        const allCandidates = await getAllSoundComponentsRecursive(
-          dongChar,
-          charPinyin,
-        );
-        if (!cancelled) {
-          // Sort by score descending
-          allCandidates.sort((a, b) => b.score - a.score);
-          setCandidatesState({ candidates: allCandidates, loading: false });
-        }
-      } catch {
-        if (!cancelled) {
-          setCandidatesState({ candidates: [], loading: false });
-        }
-      }
-    };
-
-    loadCandidates();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dongChar, charPinyin]);
-
-  const candidates = candidatesState.candidates;
-  const isLoadingCandidates = candidatesState.loading;
 
   const soundCompPinyin = soundCompDong?.pinyinFrequencies?.[0]?.pinyin || "";
   const soundCompScore = soundCompPinyin
@@ -268,7 +240,7 @@ function CharacterRow({
         ) : undefined}
       </td>
       <td className="px-4 py-2">
-        {dongLoading || isLoadingCandidates ? (
+        {isLoadingCandidates ? (
           <span className="text-gray-400">Loading...</span>
         ) : candidates.length > 0 ? (
           <div className="flex flex-wrap gap-2">
@@ -317,13 +289,106 @@ function CharacterRow({
 export default function SoundEval() {
   const { characters } = useOutletContext<OutletContext>();
 
-  // Filter characters that have pinyin and either have a sound component in Anki or might have candidates
-  // We'll let CharacterRow handle the filtering of those without any sound components
-  const charsWithSoundComp = Object.values(characters).filter(
-    (char): char is NonNullable<typeof char> => {
-      return !!(char && char.pinyin.length > 0);
-    },
+  // Filter characters that have pinyin
+  const charsWithPinyin = useMemo(() => {
+    return Object.values(characters).filter(
+      (char): char is NonNullable<typeof char> => {
+        return !!(char && char.pinyin.length > 0);
+      },
+    );
+  }, [characters]);
+
+  // State to hold all character data with computed candidates
+  const [characterDataList, setCharacterDataList] = useState<CharacterData[]>(
+    [],
   );
+  const [isLoadingAll, setIsLoadingAll] = useState(true);
+
+  // Compute candidates for all characters
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAllCandidates = async () => {
+      setIsLoadingAll(true);
+      setCharacterDataList([]);
+
+      const allData: CharacterData[] = [];
+
+      // Process characters one at a time to show progressive updates
+      for (const char of charsWithPinyin) {
+        if (cancelled) break;
+
+        const charPinyin = char.pinyin[0].pinyinAccented;
+        const dongChar = await fetchDongCharacter(char.traditional);
+
+        let candidates: SoundComponentCandidate[] = [];
+
+        if (dongChar) {
+          try {
+            const allCandidates = await getAllSoundComponentsRecursive(
+              dongChar,
+              charPinyin,
+            );
+            // Sort by score descending
+            allCandidates.sort((a, b) => b.score - a.score);
+            candidates = allCandidates;
+          } catch {
+            // Error loading candidates
+          }
+        }
+
+        const maxScore = candidates.length > 0 ? candidates[0].score : 0;
+
+        allData.push({
+          character: char.traditional,
+          charPinyin,
+          soundComponentChar: char.soundComponentCharacter,
+          candidates,
+          maxScore,
+          isLoadingCandidates: false,
+        });
+
+        if (!cancelled) {
+          // Sort by maxScore descending and update state
+          const sortedData = [...allData].sort(
+            (a, b) => b.maxScore - a.maxScore,
+          );
+          setCharacterDataList(sortedData);
+        }
+      }
+
+      if (!cancelled) {
+        setIsLoadingAll(false);
+      }
+    };
+
+    loadAllCandidates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [charsWithPinyin]);
+
+  // Filter out characters that should not be displayed
+  const filteredCharacterData = characterDataList.filter((data) => {
+    // Don't render rows with no sound components found
+    if (data.candidates.length === 0 && !data.soundComponentChar) {
+      return false;
+    }
+
+    // Don't render rows where Anki sound component matches the top candidate
+    const topCandidate = data.candidates.length > 0 ? data.candidates[0] : null;
+    const ankiMatchesTopCandidate =
+      data.soundComponentChar &&
+      topCandidate &&
+      data.soundComponentChar === topCandidate.character;
+
+    if (ankiMatchesTopCandidate) {
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <MainFrame>
@@ -331,7 +396,11 @@ export default function SoundEval() {
         <h1 className="text-3xl font-bold mb-6">Sound Component Evaluation</h1>
 
         <div className="mb-4 text-gray-600">
-          <p>Evaluating {charsWithSoundComp.length} characters</p>
+          <p>
+            {isLoadingAll
+              ? `Loading... ${characterDataList.length} / ${charsWithPinyin.length} characters processed`
+              : `Showing ${filteredCharacterData.length} of ${charsWithPinyin.length} characters (sorted by max candidate score)`}
+          </p>
           <p className="text-sm mt-1">
             Score:{" "}
             <span className="text-green-600 font-semibold">≥8 = Excellent</span>
@@ -368,12 +437,14 @@ export default function SoundEval() {
               </tr>
             </thead>
             <tbody>
-              {charsWithSoundComp.map((char) => (
+              {filteredCharacterData.map((data) => (
                 <CharacterRow
-                  key={char.traditional}
-                  character={char.traditional}
-                  charPinyin={char.pinyin[0].pinyinAccented}
-                  soundComponentChar={char.soundComponentCharacter}
+                  key={data.character}
+                  character={data.character}
+                  charPinyin={data.charPinyin}
+                  soundComponentChar={data.soundComponentChar}
+                  candidates={data.candidates}
+                  isLoadingCandidates={data.isLoadingCandidates}
                 />
               ))}
             </tbody>
