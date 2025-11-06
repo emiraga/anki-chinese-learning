@@ -66,7 +66,7 @@ def get_notes_info_batch(note_ids):
     raise Exception("Failed to fetch notes")
 
 
-def find_all_notes_with_traditional(note_type):
+def find_all_notes_with_traditional(note_type, extra_filter):
     """
     Find all notes with Traditional field
 
@@ -76,7 +76,7 @@ def find_all_notes_with_traditional(note_type):
     Returns:
         list: List of note IDs
     """
-    search_query = f'note:{note_type} Traditional:_* -is:suspended*'
+    search_query = f'note:{note_type} Traditional:_* ' + extra_filter
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -199,12 +199,17 @@ def main():
     anki_chars = set()
     char_frequency = Counter()
 
-    note_types = ["TOCFL", "MyWords", "Hanzi", "Dangdai"]
+    note_types = [
+        ("TOCFL", ""),
+        ("MyWords", ""),
+        ("Hanzi", "-is:suspended"),
+        ("Dangdai", "-is:suspended")
+    ]
     BATCH_SIZE = 100  # Process 100 notes at a time
 
-    for note_type in note_types:
+    for note_type, extra_filter in note_types:
         print(f"\nProcessing note type: {note_type}")
-        note_ids = find_all_notes_with_traditional(note_type)
+        note_ids = find_all_notes_with_traditional(note_type, extra_filter)
 
         # Process notes in batches
         for i in range(0, len(note_ids), BATCH_SIZE):
@@ -293,9 +298,9 @@ def main():
         # Add a small delay to avoid overwhelming the browser
         if i % 10 == 0:
             print(f"  Opened {i} tabs, pausing for longer...")
-            time.sleep(10)
+            time.sleep(3)
         else:
-            time.sleep(2)
+            time.sleep(1)
 
     print(f"\n{'='*60}")
     print("Done! All browser tabs opened.")
