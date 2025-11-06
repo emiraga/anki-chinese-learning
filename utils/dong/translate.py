@@ -37,7 +37,6 @@ def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
 
     # Check cache first
     if text in _translation_cache:
-        print(f"  [CACHE HIT] Using cached translation")
         return _translation_cache[text]
 
     # Not in cache, translate it

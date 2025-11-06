@@ -202,8 +202,8 @@ def main():
     note_types = [
         ("TOCFL", ""),
         ("MyWords", ""),
-        ("Hanzi", "-is:suspended"),
-        ("Dangdai", "-is:suspended")
+        ("Hanzi", ""),
+        ("Dangdai", "")
     ]
     BATCH_SIZE = 100  # Process 100 notes at a time
 
