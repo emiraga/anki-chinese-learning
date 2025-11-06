@@ -181,6 +181,9 @@ export default function SoundComponents() {
                 ? firstPinyin
                 : firstPinyin?.pinyinAccented || "";
 
+            // Check if sound component is a known character
+            const isSoundComponentKnown = !!soundCompChar;
+
             return (
               <div key={soundComponent} className="">
                 <div className="flex items-center gap-3 mb-3">
@@ -199,6 +202,11 @@ export default function SoundComponents() {
                   <span className="text-sm text-gray-500 dark:text-gray-400">
                     ({chars.length} character{chars.length !== 1 ? "s" : ""})
                   </span>
+                  {!isSoundComponentKnown && (
+                    <span className="text-sm text-orange-600 dark:text-orange-400 font-medium" title="This sound component is not in your known characters">
+                      ⚠ Unknown component
+                    </span>
+                  )}
                 </div>
                 <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
                   <div className="flex flex-wrap gap-2 ">

@@ -6,6 +6,7 @@ import type { DongCharacter } from "~/types/dong_character";
 import MainFrame from "~/toolbar/frame";
 import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
+import anki from "~/apis/anki";
 
 interface SoundComponentCandidate {
   character: string;
@@ -90,6 +91,8 @@ interface CharacterRowProps {
   soundComponentChar?: string;
   candidates: SoundComponentCandidate[];
   isLoadingCandidates: boolean;
+  ankiId: number | null;
+  onSoundComponentUpdate: (character: string) => void;
 }
 
 // Fetch DongCharacter data directly (inlined hook implementation)
@@ -157,6 +160,7 @@ interface CharacterData {
   candidates: SoundComponentCandidate[];
   maxScore: number;
   isLoadingCandidates: boolean;
+  ankiId: number | null;
 }
 
 function CharacterRow({
@@ -165,7 +169,10 @@ function CharacterRow({
   soundComponentChar,
   candidates,
   isLoadingCandidates,
+  ankiId,
+  onSoundComponentUpdate,
 }: CharacterRowProps) {
+  const [isUpdating, setIsUpdating] = useState(false);
   const { character: soundCompDong, loading: soundCompLoading } =
     useDongCharacter(soundComponentChar || "");
 
@@ -173,6 +180,27 @@ function CharacterRow({
   const soundCompScore = soundCompPinyin
     ? scoreSoundSimilarity(charPinyin, soundCompPinyin)
     : null;
+
+  const setSoundComponent = async (candidateChar: string) => {
+    if (!ankiId) {
+      alert("No Anki note found for this character");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await anki.note.updateNoteFields({
+        note: {
+          id: ankiId,
+          fields: { "Sound component character": candidateChar },
+        },
+      });
+      onSoundComponentUpdate(character);
+    } catch (error) {
+      alert(`Failed to update sound component: ${error}`);
+      setIsUpdating(false);
+    }
+  };
 
   // Check if any candidate has a higher score than the current Anki sound component
   const hasBetterCandidate =
@@ -273,6 +301,14 @@ function CharacterRow({
                     (d{candidate.depth})
                   </span>
                 )}
+                <button
+                  onClick={() => setSoundComponent(candidate.character)}
+                  disabled={isUpdating || !ankiId}
+                  className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  title="Set as sound component"
+                >
+                  +
+                </button>
               </div>
             ))}
           </div>
@@ -301,6 +337,11 @@ export default function SoundEval() {
     [],
   );
   const [isLoadingAll, setIsLoadingAll] = useState(true);
+
+  const handleSoundComponentUpdate = (character: string) => {
+    // Remove the character from the list
+    setCharacterDataList((prev) => prev.filter((data) => data.character !== character));
+  };
 
   // Compute candidates for all characters
   useEffect(() => {
@@ -348,6 +389,7 @@ export default function SoundEval() {
           candidates,
           maxScore,
           isLoadingCandidates: false,
+          ankiId: char.ankiId,
         });
 
         if (!cancelled) {
@@ -447,6 +489,8 @@ export default function SoundEval() {
                   soundComponentChar={data.soundComponentChar}
                   candidates={data.candidates}
                   isLoadingCandidates={data.isLoadingCandidates}
+                  ankiId={data.ankiId}
+                  onSoundComponentUpdate={handleSoundComponentUpdate}
                 />
               ))}
             </tbody>

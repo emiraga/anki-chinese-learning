@@ -188,16 +188,50 @@ function parseZhuyin(zhuyin: string): ZhuyinComponents {
 
 /**
  * Score the similarity between two initials (0-3 points)
+ * Takes into account medials since they can act as onsets
+ * Also checks if finals are medial-type characters (for cases like wu/yi)
  */
 function scoreInitialSimilarity(
   init1: string | null,
   init2: string | null,
+  medial1?: string | null,
+  medial2?: string | null,
+  final1?: string | null,
+  final2?: string | null,
 ): number {
   // Perfect match
-  if (init1 === init2) return 3;
+  if (init1 === init2 && init1 !== null) return 3;
 
-  // Both null (no initial)
-  if (!init1 && !init2) return 3;
+  // Both null (no initial) - but check medials and finals
+  if (!init1 && !init2) {
+    // Check if finals are actually medial-type characters (like ㄨ, ㄧ, ㄩ standing alone)
+    const final1IsMedial = final1 && final1 in ZHUYIN_MEDIALS;
+    const final2IsMedial = final2 && final2 in ZHUYIN_MEDIALS;
+
+    // If both have medial-type finals (like wu=ㄨ and yi=ㄧ), compare them
+    if (final1IsMedial && final2IsMedial && !medial1 && !medial2) {
+      return final1 === final2 ? 3 : 0;
+    }
+
+    // If one has medial-type final and the other doesn't, they're different
+    if (final1IsMedial !== final2IsMedial && !medial1 && !medial2) {
+      return 0;
+    }
+
+    // If both lack initials AND both lack medials, they're similar
+    if (!medial1 && !medial2 && !final1IsMedial && !final2IsMedial) return 3;
+
+    // If both have medials (acting as onsets), check if they match
+    if (medial1 && medial2) {
+      return medial1 === medial2 ? 3 : 0;
+    }
+
+    // If one has medial (acting as onset) and the other doesn't, they're quite different
+    if (medial1 !== medial2) return 0;
+
+    // Fallback
+    return 3;
+  }
 
   // One has initial, one doesn't
   if (!init1 || !init2) return 0;
@@ -468,7 +502,14 @@ export function scoreSoundSimilarity(pinyin1: string, pinyin2: string): number {
   comp2.tone = tone2;
 
   // Calculate individual scores
-  let initialScore = scoreInitialSimilarity(comp1.initial, comp2.initial);
+  let initialScore = scoreInitialSimilarity(
+    comp1.initial,
+    comp2.initial,
+    comp1.medial,
+    comp2.medial,
+    comp1.final,
+    comp2.final,
+  );
   let finalScore = scoreFinalSimilarity(comp1.final, comp2.final);
   let medialScore = scoreMedialSimilarity(
     comp1.medial,
@@ -586,6 +627,10 @@ export function getSoundSimilarityBreakdown(
   let initialScore = scoreInitialSimilarity(
     components1.initial,
     components2.initial,
+    components1.medial,
+    components2.medial,
+    components1.final,
+    components2.final,
   );
   let finalScore = scoreFinalSimilarity(components1.final, components2.final);
   let medialScore = scoreMedialSimilarity(
