@@ -154,13 +154,15 @@ def get_component_chars_from_dong_files(dong_data_dir):
     """
     component_chars = set()
     component_frequency = Counter()
+    description_chars = set()
+    description_frequency = Counter()
 
     if not dong_data_dir.exists():
         print(f"Warning: Dong data directory does not exist: {dong_data_dir}")
         return component_chars, component_frequency
 
     json_files = list(dong_data_dir.glob("*.json"))
-    print(f"\nScanning {len(json_files)} dong JSON files for component characters...")
+    print(f"\nScanning {len(json_files)} dong JSON files for component and description characters...")
 
     for json_file in json_files:
         try:
@@ -176,11 +178,19 @@ def get_component_chars_from_dong_files(dong_data_dir):
                         chars = extract_all_characters(char)
                         component_chars.update(chars)
                         component_frequency.update(chars)
+
+                # Extract characters from hint/description field
+                hint = data.get('hint', '')
+                if hint:
+                    chars = extract_all_characters(hint)
+                    description_chars.update(chars)
+                    description_frequency.update(chars)
         except Exception as e:
             print(f"  Warning: Error reading {json_file.name}: {e}")
 
     print(f"Found {len(component_chars)} unique component characters in dong files")
-    return component_chars, component_frequency
+    print(f"Found {len(description_chars)} unique description characters in dong files")
+    return component_chars | description_chars, component_frequency + description_frequency
 
 
 def main():
@@ -230,26 +240,26 @@ def main():
             except Exception as e:
                 print(f"  Error processing batch starting at note {i}: {e}")
 
-    # Get component characters from existing dong files
-    component_chars, component_frequency = get_component_chars_from_dong_files(dong_data_dir)
+    # Get component and description characters from existing dong files
+    ref_chars, ref_frequency = get_component_chars_from_dong_files(dong_data_dir)
 
     # Merge all characters and frequencies
-    all_chars = anki_chars | component_chars
-    char_frequency.update(component_frequency)
+    all_chars = anki_chars | ref_chars
+    char_frequency.update(ref_frequency)
 
     print(f"\n{'='*60}")
     print(f"Total unique characters in Anki: {len(anki_chars)}")
-    print(f"Component characters in dong files: {len(component_chars)}")
+    print(f"Referenced characters in dong files (components + descriptions): {len(ref_chars)}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with dong data: {len(existing_chars)}")
 
     # Find missing characters
     missing_anki_chars = anki_chars - existing_chars
-    missing_component_chars = component_chars - existing_chars
+    missing_ref_chars = ref_chars - existing_chars
     missing_chars = all_chars - existing_chars
 
     print(f"\nMissing from Anki: {len(missing_anki_chars)}")
-    print(f"Missing from components: {len(missing_component_chars)}")
+    print(f"Missing from dong references (components + descriptions): {len(missing_ref_chars)}")
     print(f"Total missing characters: {len(missing_chars)}")
 
     if not missing_chars:
@@ -265,8 +275,8 @@ def main():
         sources = []
         if char in missing_anki_chars:
             sources.append("Anki")
-        if char in missing_component_chars:
-            sources.append("Component")
+        if char in missing_ref_chars:
+            sources.append("Referenced")
         source_str = "+".join(sources)
         print(f"  {i}. {char} (appears {char_frequency[char]} times) [{source_str}]")
 

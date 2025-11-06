@@ -13,25 +13,23 @@ interface SoundComponentCandidate {
   pinyin: string;
   score: number;
   depth: number; // Track recursion depth
+  componentType: string[]; // Type of component (sound, meaning, etc.)
 }
 
-// Helper to extract sound components from a DongCharacter (non-recursive, single level)
-function extractSoundComponents(
+// Helper to extract all components from a DongCharacter (non-recursive, single level)
+function extractAllComponents(
   dongChar: DongCharacter | null,
   depth: number,
-): Array<{ character: string; pinyin: string; depth: number }> {
+): Array<{ character: string; pinyin: string; depth: number; componentType: string[] }> {
   if (!dongChar) return [];
 
-  const soundComponents =
-    dongChar.components?.filter(
-      (comp) => comp.type.includes("sound") || comp.type.includes("phonetic"),
-    ) || [];
+  const allComponents = dongChar.components || [];
 
-  const results: Array<{ character: string; pinyin: string; depth: number }> =
+  const results: Array<{ character: string; pinyin: string; depth: number; componentType: string[] }> =
     [];
 
-  for (const soundComp of soundComponents) {
-    const componentChar = soundComp.character;
+  for (const comp of allComponents) {
+    const componentChar = comp.character;
     const componentPinyin = getPrimaryPinyin(componentChar, dongChar);
 
     if (componentPinyin) {
@@ -39,6 +37,7 @@ function extractSoundComponents(
         character: componentChar,
         pinyin: componentPinyin,
         depth,
+        componentType: comp.type,
       });
     }
   }
@@ -108,8 +107,8 @@ async function fetchDongCharacter(char: string): Promise<DongCharacter | null> {
   }
 }
 
-// Recursively gather all sound components by fetching nested characters
-async function getAllSoundComponentsRecursive(
+// Recursively gather all components by fetching nested characters
+async function getAllComponentsRecursive(
   dongChar: DongCharacter,
   charPinyin: string,
   depth: number = 0,
@@ -118,8 +117,8 @@ async function getAllSoundComponentsRecursive(
   visited.add(dongChar.char);
   const allCandidates: SoundComponentCandidate[] = [];
 
-  // Get immediate sound components
-  const immediate = extractSoundComponents(dongChar, depth);
+  // Get immediate components (all types)
+  const immediate = extractAllComponents(dongChar, depth);
 
   // Process each component
   for (const comp of immediate) {
@@ -132,6 +131,7 @@ async function getAllSoundComponentsRecursive(
       character: comp.character,
       pinyin: comp.pinyin,
       depth: comp.depth,
+      componentType: comp.componentType,
       score: scoreSoundSimilarity(charPinyin, comp.pinyin),
     });
 
@@ -139,7 +139,7 @@ async function getAllSoundComponentsRecursive(
     if (depth < 5) {
       const nestedChar = await fetchDongCharacter(comp.character);
       if (nestedChar) {
-        const nestedCandidates = await getAllSoundComponentsRecursive(
+        const nestedCandidates = await getAllComponentsRecursive(
           nestedChar,
           charPinyin,
           depth + 1,
@@ -151,6 +151,70 @@ async function getAllSoundComponentsRecursive(
   }
 
   return allCandidates;
+}
+
+// Component type configuration (matching DongCharacterDisplay.tsx)
+const COMPONENT_TYPE_CONFIG = {
+  deleted: {
+    borderColor: "border-gray-300",
+    bgColor: "bg-gray-50",
+    badgeColor: "bg-gray-100 text-gray-700",
+  },
+  sound: {
+    borderColor: "border-blue-300",
+    bgColor: "bg-blue-50",
+    badgeColor: "bg-blue-100 text-blue-700",
+  },
+  iconic: {
+    borderColor: "border-green-300",
+    bgColor: "bg-green-50",
+    badgeColor: "bg-green-100 text-green-700",
+  },
+  meaning: {
+    borderColor: "border-red-300",
+    bgColor: "bg-red-50",
+    badgeColor: "bg-red-100 text-red-700",
+  },
+  remnant: {
+    borderColor: "border-purple-300",
+    bgColor: "bg-purple-50",
+    badgeColor: "bg-purple-100 text-purple-700",
+  },
+  distinguishing: {
+    borderColor: "border-cyan-300",
+    bgColor: "bg-cyan-50",
+    badgeColor: "bg-cyan-100 text-cyan-700",
+  },
+  simplified: {
+    borderColor: "border-pink-300",
+    bgColor: "bg-pink-50",
+    badgeColor: "bg-pink-100 text-pink-700",
+  },
+} as const;
+
+const DEFAULT_TYPE_CONFIG = {
+  borderColor: "border-gray-300",
+  bgColor: "bg-gray-50",
+  badgeColor: "bg-gray-100 text-gray-700",
+};
+
+// Helper to get component type styling
+function getComponentTypeStyle(componentType: string[]): {
+  borderColor: string;
+  bgColor: string;
+  badgeColor: string;
+} {
+  // Check for each type in the component type array
+  for (const type of componentType) {
+    const typeLower = type.toLowerCase();
+    for (const [key, config] of Object.entries(COMPONENT_TYPE_CONFIG)) {
+      if (typeLower.includes(key)) {
+        return config;
+      }
+    }
+  }
+
+  return DEFAULT_TYPE_CONFIG;
 }
 
 interface CharacterData {
@@ -269,48 +333,57 @@ function CharacterRow({
         {isLoadingCandidates ? (
           <span className="text-gray-400">Loading...</span>
         ) : candidates.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {candidates.map((candidate, idx) => (
-              <div
-                key={`${candidate.character}-${idx}`}
-                className="inline-flex items-center gap-1 border border-gray-300 rounded px-2 py-1"
-              >
-                <CharLink
-                  traditional={candidate.character}
-                  className="font-bold"
-                />
-                <span className="text-sm text-gray-600">
-                  {candidate.pinyin}
-                </span>
-                <span
-                  className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                    candidate.score >= 8
-                      ? "bg-green-100 text-green-800"
-                      : candidate.score >= 6
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                  }`}
+          <div className="flex flex-nowrap gap-2 overflow-x-auto">
+            {candidates.map((candidate, idx) => {
+              const typeStyle = getComponentTypeStyle(candidate.componentType);
+              return (
+                <div
+                  key={`${candidate.character}-${idx}`}
+                  className={`inline-flex items-center gap-1 border ${typeStyle.borderColor} ${typeStyle.bgColor} rounded px-2 py-1`}
                 >
-                  {candidate.score.toFixed(1)}
-                </span>
-                {candidate.depth > 0 && (
-                  <span
-                    className="text-xs text-gray-400"
-                    title={`Recursion depth: ${candidate.depth}`}
-                  >
-                    (d{candidate.depth})
+                  <CharLink
+                    traditional={candidate.character}
+                    className="font-bold"
+                  />
+                  <span className="text-sm text-gray-600">
+                    {candidate.pinyin}
                   </span>
-                )}
-                <button
-                  onClick={() => setSoundComponent(candidate.character)}
-                  disabled={isUpdating || !ankiId}
-                  className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  title="Set as sound component"
-                >
-                  +
-                </button>
-              </div>
-            ))}
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                      candidate.score >= 8
+                        ? "bg-green-100 text-green-800"
+                        : candidate.score >= 6
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {candidate.score.toFixed(1)}
+                  </span>
+                  <span
+                    className={`text-xs px-1 py-0.5 rounded ${typeStyle.badgeColor}`}
+                    title={`Component type: ${candidate.componentType.join(", ")}`}
+                  >
+                    {candidate.componentType[0]}
+                  </span>
+                  {candidate.depth > 0 && (
+                    <span
+                      className="text-xs text-gray-400"
+                      title={`Recursion depth: ${candidate.depth}`}
+                    >
+                      (d{candidate.depth})
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setSoundComponent(candidate.character)}
+                    disabled={isUpdating || !ankiId}
+                    className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    title="Set as sound component"
+                  >
+                    +
+                  </button>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <span className="text-gray-400">No sound components found</span>
@@ -366,7 +439,7 @@ export default function SoundEval() {
 
         if (dongChar) {
           try {
-            const allCandidates = await getAllSoundComponentsRecursive(
+            const allCandidates = await getAllComponentsRecursive(
               dongChar,
               charPinyin,
               0,
