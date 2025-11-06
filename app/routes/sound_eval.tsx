@@ -112,8 +112,6 @@ async function getAllSoundComponentsRecursive(
   depth: number = 0,
   visited: Set<string> = new Set(),
 ): Promise<SoundComponentCandidate[]> {
-  if (depth > 3 || visited.has(dongChar.char)) return [];
-
   visited.add(dongChar.char);
   const allCandidates: SoundComponentCandidate[] = [];
 
@@ -122,8 +120,8 @@ async function getAllSoundComponentsRecursive(
 
   // Process each component
   for (const comp of immediate) {
-    // Skip if this component is the same as the original character
-    if (comp.character === dongChar.char) {
+    // Skip if already visited (prevents self-reference and cycles)
+    if (visited.has(comp.character)) {
       continue;
     }
 
@@ -316,7 +314,9 @@ export default function SoundEval() {
 
       // Process characters one at a time to show progressive updates
       for (const char of charsWithPinyin) {
-        if (cancelled) break;
+        if (cancelled) {
+          break;
+        }
 
         const charPinyin = char.pinyin[0].pinyinAccented;
         const dongChar = await fetchDongCharacter(char.traditional);
@@ -328,6 +328,8 @@ export default function SoundEval() {
             const allCandidates = await getAllSoundComponentsRecursive(
               dongChar,
               charPinyin,
+              0,
+              new Set([char.traditional]),
             );
             // Sort by score descending
             allCandidates.sort((a, b) => b.score - a.score);
