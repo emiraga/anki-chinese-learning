@@ -142,12 +142,13 @@ def get_existing_dong_chars(dong_data_dir):
     return existing_chars
 
 
-def get_component_chars_from_dong_files(dong_data_dir):
+def get_component_chars_from_dong_files(dong_data_dir, top_words_share_threshold=0.02):
     """
     Extract all component characters referenced in existing dong JSON files
 
     Args:
         dong_data_dir (Path): Path to the dong data directory
+        top_words_share_threshold (float): Minimum share value for topWords to include (default: 0.4)
 
     Returns:
         tuple: (set of component characters, Counter of component frequency)
@@ -156,13 +157,15 @@ def get_component_chars_from_dong_files(dong_data_dir):
     component_frequency = Counter()
     description_chars = set()
     description_frequency = Counter()
+    top_words_chars = set()
+    top_words_frequency = Counter()
 
     if not dong_data_dir.exists():
         print(f"Warning: Dong data directory does not exist: {dong_data_dir}")
         return component_chars, component_frequency
 
     json_files = list(dong_data_dir.glob("*.json"))
-    print(f"\nScanning {len(json_files)} dong JSON files for component and description characters...")
+    print(f"\nScanning {len(json_files)} dong JSON files for component, description, and topWords characters...")
 
     for json_file in json_files:
         try:
@@ -185,12 +188,29 @@ def get_component_chars_from_dong_files(dong_data_dir):
                     chars = extract_all_characters(hint)
                     description_chars.update(chars)
                     description_frequency.update(chars)
+
+                # Extract characters from topWords with share > threshold (from 'trad' field only)
+                statistics = data.get('statistics', {})
+                top_words = statistics.get('topWords', [])
+                for word_entry in top_words:
+                    share = word_entry.get('share', 0)
+                    if share > top_words_share_threshold:
+                        trad = word_entry.get('trad', '')
+                        chars = extract_all_characters(trad)
+                        top_words_chars.update(chars)
+                        top_words_frequency.update(chars)
+
         except Exception as e:
             print(f"  Warning: Error reading {json_file.name}: {e}")
 
     print(f"Found {len(component_chars)} unique component characters in dong files")
     print(f"Found {len(description_chars)} unique description characters in dong files")
-    return component_chars | description_chars, component_frequency + description_frequency
+    print(f"Found {len(top_words_chars)} unique characters from topWords (share > {top_words_share_threshold})")
+
+    all_ref_chars = component_chars | description_chars | top_words_chars
+    all_ref_frequency = component_frequency + description_frequency + top_words_frequency
+
+    return all_ref_chars, all_ref_frequency
 
 
 def main():
