@@ -5,13 +5,17 @@
 #   "requests",
 #   "dragonmapper",
 #   "hanziconv",
+#   "chinese-english-lookup",
 # ]
 # ///
 
 import requests
 import dragonmapper.transcriptions
 import hanziconv
+from chinese_english_lookup import Dictionary
 from collections import Counter
+import re
+import json
 
 
 def anki_connect_request(action, params=None):
@@ -156,30 +160,93 @@ def extract_characters_from_phrases(note_types):
             notes_info = get_notes_info(batch_ids)
 
             for note_info in notes_info:
-                traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-                pinyin_raw = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
                 meaning = note_info['fields'].get('Meaning', {}).get('value', '').strip()
 
-                # Clean HTML tags from pinyin
-                pinyin = pinyin_raw.replace('<div>', '').replace('</div>', '').strip()
+                # Check if Variants field exists and has content
+                variants_raw = note_info['fields'].get('Variants', {}).get('value', '').strip()
+                variants_list = []
 
-                if not traditional or not pinyin:
-                    print("Warning: missing traditional or pinyin", note_info)
-                    continue
+                if variants_raw:
+                    # Parse Variants JSON array
+                    try:
+                        variants_list = json.loads(variants_raw)
+                        if not isinstance(variants_list, list):
+                            variants_list = []
+                    except json.JSONDecodeError as e:
+                        print(f"Warning: Failed to parse Variants JSON: {e}")
+                        variants_list = []
 
-                # Extract pinyin syllables
-                try:
-                    pinyin_syllables = extract_pinyin_syllables(pinyin, len(traditional))
-                except Exception as e:
-                    print(f"Error extracting pinyin for '{traditional}': {e}")
-                    continue
+                # If no variants, use the Traditional and Pinyin fields as a single variant
+                if not variants_list:
+                    traditional_raw = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+                    pinyin_raw = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
 
-                # Map each character to its pinyin syllable
-                if len(pinyin_syllables) == len(traditional):
-                    for char, syllable in zip(traditional, pinyin_syllables):
-                        if char not in char_data:
-                            char_data[char] = []
-                        char_data[char].append((syllable, traditional, meaning))
+                    # Clean HTML tags from pinyin
+                    pinyin_raw = pinyin_raw.replace('<div>', '').replace('</div>', '').strip()
+
+                    if not traditional_raw or not pinyin_raw:
+                        print("Warning: missing traditional or pinyin", note_info)
+                        continue
+
+                    variants_list = [{"Traditional": traditional_raw, "Pinyin": pinyin_raw}]
+
+                # Process each variant
+                for variant in variants_list:
+                    traditional_raw = variant.get('Traditional', '').strip()
+                    pinyin_raw = variant.get('Pinyin', '').strip()
+
+                    if not traditional_raw or not pinyin_raw:
+                        continue
+
+                    # Handle variants separated by / (e.g., "一塊/一塊兒" or "yīkuài/yīkuàir")
+                    # Take only the first variant before the slash
+                    traditional = traditional_raw.split('/')[0].strip()
+                    pinyin = pinyin_raw.split('/')[0].strip()
+
+                    # Remove parenthetical content (e.g., "籠(子)" -> "籠", "lóng(zi)" -> "lóng")
+                    # This handles optional suffixes
+                    traditional = re.sub(r'\([^)]*\)', '', traditional).strip()
+                    pinyin = re.sub(r'\([^)]*\)', '', pinyin).strip()
+
+                    # Remove ellipsis and surrounding characters (e.g., "以…為…" -> skip)
+                    if '…' in traditional or '...' in traditional:
+                        continue
+
+                    # Skip entries with Latin letters or numbers (e.g., "KTV", "BBC", "101")
+                    if re.search(r'[A-Za-z0-9]', traditional):
+                        continue
+
+                    # Remove punctuation from traditional (e.g., "哪裡，哪裡" -> "哪裡哪裡")
+                    # Include middle dot ． which is used in foreign names
+                    traditional = re.sub(r'[，、。！？；：．·]', '', traditional).strip()
+
+                    # Remove punctuation and clean pinyin
+                    # Include middle dot and apostrophes used in foreign names
+                    pinyin = re.sub(r"[,，、。！？；：．·']", ' ', pinyin).strip()
+                    # Remove hyphens (e.g., "chāo-shāng" -> "chāo shāng")
+                    pinyin = pinyin.replace('-', ' ')
+                    # Convert to lowercase to handle capitalized syllables (e.g., "Ōu" -> "ōu")
+                    # But preserve tone marks
+                    pinyin = pinyin.lower()
+                    # Normalize multiple spaces to single space
+                    pinyin = re.sub(r'\s+', ' ', pinyin).strip()
+
+                    if not traditional or not pinyin:
+                        continue
+
+                    # Extract pinyin syllables
+                    try:
+                        pinyin_syllables = extract_pinyin_syllables(pinyin, len(traditional))
+                    except Exception as e:
+                        print(f"Error extracting pinyin for '{traditional}' (from '{traditional_raw}'): {e}")
+                        continue
+
+                    # Map each character to its pinyin syllable
+                    if len(pinyin_syllables) == len(traditional):
+                        for char, syllable in zip(traditional, pinyin_syllables):
+                            if char not in char_data:
+                                char_data[char] = []
+                            char_data[char].append((syllable, traditional, meaning))
 
     print(f"Extracted data for {len(char_data)} unique characters")
     return char_data
@@ -237,13 +304,14 @@ def infer_most_common_pinyin(char_occurrences):
     return most_common_pinyin
 
 
-def extract_meaning_for_char(char, char_occurrences):
+def extract_meaning_for_char(char, char_occurrences, dictionary):
     """
-    Extract a meaning for a character from phrases containing it
+    Extract a meaning for a character from phrases containing it or from dictionary
 
     Args:
         char (str): The character
         char_occurrences (list): List of (pinyin_syllable, phrase, meaning) tuples
+        dictionary (Dictionary): Chinese-English dictionary instance
 
     Returns:
         str: Extracted meaning or empty string
@@ -253,8 +321,16 @@ def extract_meaning_for_char(char, char_occurrences):
         if phrase == char and meaning:
             return meaning
 
-    # If no single-char phrase found, return empty
-    # (We could try to extract from multi-char phrases, but that's complex)
+    # If no single-char phrase found, try to get from dictionary
+    try:
+        entry = dictionary.lookup(char)
+        if entry and entry.definition_entries:
+            # Get the first few definitions (limit to 3 for brevity)
+            definitions = entry.definition_entries[0].definitions[:3]
+            return '; '.join(definitions)
+    except Exception as e:
+        print(f"Warning: Could not lookup '{char}' in dictionary: {e}")
+
     return ""
 
 
@@ -319,6 +395,10 @@ def main():
     """
     print("=== Starting Hanzi note generation ===")
 
+    # Initialize dictionary
+    print("Loading Chinese-English dictionary...")
+    dictionary = Dictionary()
+
     # Step 1: Get existing Hanzi characters
     existing_chars = extract_existing_hanzi_characters()
 
@@ -342,7 +422,7 @@ def main():
         pinyin = infer_most_common_pinyin(char_occurrences)
 
         # Extract meaning
-        meaning = extract_meaning_for_char(char, char_occurrences)
+        meaning = extract_meaning_for_char(char, char_occurrences, dictionary)
 
         # Get simplified form
         simplified = traditional_to_simplified(char)
