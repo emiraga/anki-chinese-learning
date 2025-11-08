@@ -17,6 +17,10 @@ import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { DongCharacterDisplay } from "~/components/DongCharacterDisplay";
 import { useRtegaCharacter } from "~/hooks/useRtegaCharacter";
 import { RtegaCharacterView } from "~/components/RtegaCharacterView";
+import { useHanziYuanCharacter } from "~/hooks/useHanziYuanCharacter";
+import { HanziYuanDisplay } from "~/components/HanziYuanDisplay";
+import { useYellowBridgeCharacter } from "~/hooks/useYellowBridgeCharacter";
+import { YellowBridgeDisplay } from "~/components/YellowBridgeDisplay";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -58,6 +62,20 @@ export default function CharDetail() {
     loading: rtegaLoading,
     error: rtegaError,
   } = useRtegaCharacter(char.traditional);
+
+  // Load HanziYuan character data
+  const {
+    character: hanziYuanCharacter,
+    loading: hanziYuanLoading,
+    error: hanziYuanError,
+  } = useHanziYuanCharacter(char.traditional);
+
+  // Load YellowBridge character data
+  const {
+    character: yellowBridgeCharacter,
+    loading: yellowBridgeLoading,
+    error: yellowBridgeError,
+  } = useYellowBridgeCharacter(char.traditional);
 
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional),
@@ -219,6 +237,46 @@ export default function CharDetail() {
             character={dongCharacter}
             filterKnownChars={true}
           />
+        )}
+        <hr className="my-4" />
+        <h2 className="text-2xl">YellowBridge Character Decomposition:</h2>
+        {yellowBridgeLoading && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            Loading YellowBridge data...
+          </div>
+        )}
+        {yellowBridgeError && (
+          <div className="text-xl text-red-600 dark:text-red-400">
+            Error: {yellowBridgeError}
+          </div>
+        )}
+        {!yellowBridgeLoading && !yellowBridgeError && !yellowBridgeCharacter && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            No YellowBridge data found
+          </div>
+        )}
+        {yellowBridgeCharacter && (
+          <YellowBridgeDisplay character={yellowBridgeCharacter} />
+        )}
+        <hr className="my-4" />
+        <h2 className="text-2xl">HanziYuan Character Information:</h2>
+        {hanziYuanLoading && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            Loading HanziYuan data...
+          </div>
+        )}
+        {hanziYuanError && (
+          <div className="text-xl text-red-600 dark:text-red-400">
+            Error: {hanziYuanError}
+          </div>
+        )}
+        {!hanziYuanLoading && !hanziYuanError && !hanziYuanCharacter && (
+          <div className="text-xl text-gray-600 dark:text-gray-400">
+            No HanziYuan data found
+          </div>
+        )}
+        {hanziYuanCharacter && (
+          <HanziYuanDisplay character={hanziYuanCharacter} />
         )}
       </div>
     </MainFrame>

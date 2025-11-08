@@ -67,53 +67,63 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
 
   const sources = [
     {
-      name: "wiktionary",
+      name: "wiki",
       link:
         "https://en.wiktionary.org/wiki/" +
         encodeURIComponent(char.traditional) +
         "#Chinese",
     },
     {
-      name: "dong-ch",
+      name: "dong",
       link:
         "https://www.dong-chinese.com/dictionary/search/" +
         encodeURIComponent(char.traditional),
     },
     {
-      name: "rtega",
-      link: "http://rtega.be/chmn/?c=" + encodeURIComponent(char.traditional),
+      name: "zi",
+      link: "https://zi.tools/zi/" + encodeURIComponent(char.traditional),
     },
     {
-      name: "yellowbridge",
+      name: "multi",
+      link:
+        "https://humanum.arts.cuhk.edu.hk/Lexis/lexi-mf/search.php?word=" +
+        encodeURIComponent(char.traditional),
+    },
+    {
+      name: "yellowb",
       link:
         "https://www.yellowbridge.com/chinese/character-dictionary.php?zi=" +
         encodeURIComponent(char.traditional),
     },
     {
-      name: "hanziyuan",
+      name: "hyuan",
       link: "https://hanziyuan.net/#" + encodeURIComponent(char.traditional),
     },
     {
-      name: "MoE revised",
+      name: "MoE",
       link:
         "https://dict.revised.moe.edu.tw/search.jsp?md=1&word=" +
         encodeURIComponent(char.traditional) +
         "&qMd=0&qCol=1",
     },
     {
-      name: "hanzihero",
+      name: "rtega",
+      link: "http://rtega.be/chmn/?c=" + encodeURIComponent(char.traditional),
+    },
+    {
+      name: "hero",
       link:
         "https://hanzihero.com/traditional/characters/" +
         encodeURIComponent(char.traditional),
     },
     {
-      name: "kanji koohii",
+      name: "kanji",
       link:
         "https://kanji.koohii.com/study/kanji/" +
         encodeURIComponent(char.traditional),
     },
     {
-      name: "hanzicraft",
+      name: "craft",
       link:
         "https://hanzicraft.com/character/" +
         encodeURIComponent(char.traditional),
@@ -145,7 +155,7 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
               target="_blank"
               className="inline-block"
             >
-              {char.traditional} {name} 🔗
+              {name} 🔗 &nbsp;
             </a>
           ))}
         </div>
