@@ -317,7 +317,7 @@ def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, 
     # Collect notes from all specified note types
     for note_type in note_types:
         # Build search query
-        search_query = f'note:{note_type} -is:suspended'
+        search_query = f'note:{note_type}'
         if character:
             search_query += f' Traditional:{character}'
         else:
