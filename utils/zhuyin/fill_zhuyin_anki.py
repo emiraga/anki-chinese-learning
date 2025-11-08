@@ -169,14 +169,13 @@ def main():
     """
     Main function to process all note types and update Zhuyin fields
     """
-    note_types = ["TOCFL", "MyWords", "Dangdai"]
+    note_types = ["TOCFL", "MyWords", "Dangdai", "Hanzi"]
 
     for note_type in note_types:
         print(f"\n=== Processing {note_type} ===")
         note_ids = find_notes_with_empty_zhuyin(note_type)
 
-        # Limit to first 1000 notes for safety
-        for note_id in note_ids[:100]:
+        for note_id in note_ids[:500]:
             update_zhuyin_for_note(note_type, note_id)
 
         print(f"Completed processing {note_type}")
