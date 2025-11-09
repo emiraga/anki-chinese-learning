@@ -107,9 +107,13 @@ def traditional_to_simplified(traditional_char):
 def extract_existing_hanzi_characters():
     """
     Extract all single characters from existing Hanzi notes
+    Validates that Traditional field doesn't contain simplified-only characters
 
     Returns:
         set: Set of characters that already exist in Hanzi notes
+
+    Raises:
+        ValueError: If Traditional field contains a simplified-only character
     """
     print("\n=== Extracting existing Hanzi characters ===")
     hanzi_note_ids = find_notes_by_type("Hanzi")
@@ -128,6 +132,31 @@ def extract_existing_hanzi_characters():
             traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
             # Only consider single character notes
             if len(traditional) == 1:
+                # Get the Hanzi (simplified) field for validation
+                hanzi_field = note_info['fields'].get('Hanzi', {}).get('value', '').strip()
+
+                if hanzi_field and len(hanzi_field) == 1:
+                    # Validate consistency: if Traditional and Hanzi differ,
+                    # verify that Traditional simplifies to Hanzi
+                    if traditional != hanzi_field:
+                        simplified_of_traditional = hanziconv.HanziConv.toSimplified(traditional)
+
+                        if simplified_of_traditional != hanzi_field:
+                            # Traditional doesn't simplify to Hanzi field value
+                            # This could mean Traditional field contains the simplified form
+                            # Check if Hanzi field is already in simplified form
+                            traditional_of_hanzi = hanziconv.HanziConv.toTraditional(hanzi_field)
+
+                            if traditional_of_hanzi != traditional and traditional == hanzi_field:
+                                # Traditional field equals Hanzi field, but there's a different traditional form
+                                note_id = note_info.get('noteId', 'unknown')
+                                raise ValueError(
+                                    f"Simplified character '{traditional}' found in Traditional field of Hanzi note {note_id}. "
+                                    f"Traditional form should be '{traditional_of_hanzi}'. "
+                                    f"Hanzi (simplified) field correctly contains: '{hanzi_field}'. "
+                                    f"Please correct the Traditional field to use '{traditional_of_hanzi}'."
+                                )
+
                 existing_chars.add(traditional)
 
     print(f"Found {len(existing_chars)} existing single-character Hanzi notes")
@@ -403,7 +432,7 @@ def main():
     existing_chars = extract_existing_hanzi_characters()
 
     # Step 2: Extract characters from TOCFL and Dangdai
-    note_types = ["TOCFL", "Dangdai"]
+    note_types = ["TOCFL", "Dangdai", "MyWords"]
     char_data = extract_characters_from_phrases(note_types)
 
     # Step 3: Find missing characters
