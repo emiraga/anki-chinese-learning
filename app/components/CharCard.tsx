@@ -34,7 +34,11 @@ const CharPinyinSoundMeaning: React.FC<{
       {char.soundComponentCharacter && (
         <span>
           (📢
-          <CharLink traditional={char.soundComponentCharacter} />)
+          <CharLink
+            className="text-2xl"
+            traditional={char.soundComponentCharacter}
+          />
+          )
         </span>
       )}
       <div>{char.meaning2}</div>
