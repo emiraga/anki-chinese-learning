@@ -7,6 +7,7 @@ import MainFrame from "~/toolbar/frame";
 import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
 import anki from "~/apis/anki";
+import { getNewCharacter } from "~/data/characters";
 
 interface SoundComponentCandidate {
   character: string;
@@ -80,7 +81,16 @@ function getPrimaryPinyin(char: string, dongChar: DongCharacter): string {
     return componentWord.items[0].pinyin;
   }
 
-  // Return empty if we can't determine
+  // Fallback to library to get approximate pinyin
+  const newChar = getNewCharacter(char);
+  if (newChar?.pinyin && newChar.pinyin.length > 0) {
+    const firstPinyin = newChar.pinyin[0];
+    return typeof firstPinyin === "string"
+      ? firstPinyin
+      : firstPinyin?.pinyinAccented || "";
+  }
+
+  // Return empty if we still can't determine
   return "";
 }
 
@@ -240,7 +250,20 @@ function CharacterRow({
   const { character: soundCompDong, loading: soundCompLoading } =
     useDongCharacter(soundComponentChar || "");
 
-  const soundCompPinyin = soundCompDong?.pinyinFrequencies?.[0]?.pinyin || "";
+  // Get pinyin from Dong data, or fallback to library
+  let soundCompPinyin = soundCompDong?.pinyinFrequencies?.[0]?.pinyin || "";
+
+  // If no pinyin from Dong data, try to get from library
+  if (!soundCompPinyin && soundComponentChar) {
+    const newChar = getNewCharacter(soundComponentChar);
+    if (newChar?.pinyin && newChar.pinyin.length > 0) {
+      const firstPinyin = newChar.pinyin[0];
+      soundCompPinyin = typeof firstPinyin === "string"
+        ? firstPinyin
+        : firstPinyin?.pinyinAccented || "";
+    }
+  }
+
   const soundCompScore = soundCompPinyin
     ? scoreSoundSimilarity(charPinyin, soundCompPinyin)
     : null;
