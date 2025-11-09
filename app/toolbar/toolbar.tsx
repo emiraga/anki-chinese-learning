@@ -122,6 +122,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Sound Components",
           show: Object.keys(characters).length > 0,
         },
+        {
+          pathname: "/sound_eval",
+          name: "Sound Eval",
+          show: Object.keys(characters).length > 0,
+        },
       ],
     },
     {

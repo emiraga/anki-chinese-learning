@@ -445,8 +445,18 @@ export default function SoundEval() {
               0,
               new Set([char.traditional]),
             );
-            // Sort by score descending
-            allCandidates.sort((a, b) => b.score - a.score);
+            // Sort by component type (sound first) and then by score descending
+            allCandidates.sort((a, b) => {
+              const aIsSound = a.componentType.some(type => type.toLowerCase().includes('sound'));
+              const bIsSound = b.componentType.some(type => type.toLowerCase().includes('sound'));
+
+              // If one is sound and the other isn't, sound comes first
+              if (aIsSound && !bIsSound) return -1;
+              if (!aIsSound && bIsSound) return 1;
+
+              // Otherwise, sort by score descending
+              return b.score - a.score;
+            });
             candidates = allCandidates;
           } catch {
             // Error loading candidates

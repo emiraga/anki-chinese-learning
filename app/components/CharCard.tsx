@@ -31,7 +31,12 @@ const CharPinyinSoundMeaning: React.FC<{
   return (
     <>
       <PinyinList pinyin={char.pinyin} showZhuyin={showZhuyin} />{" "}
-      <span>{char.soundComponentCharacter}</span>
+      {char.soundComponentCharacter && (
+        <span>
+          (📢
+          <CharLink traditional={char.soundComponentCharacter} />)
+        </span>
+      )}
       <div>{char.meaning2}</div>
     </>
   );
