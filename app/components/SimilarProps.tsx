@@ -1,7 +1,32 @@
 import { type CharactersType } from "~/data/characters";
 import React from "react";
-import { getCharacterPairsWithSimilarProps } from "~/data/char_conflicts";
+import { getCharacterPairsWithSimilarProps, type SoundRelationship } from "~/data/char_conflicts";
 import { Link } from "react-router";
+
+const formatSoundRelationship = (relationship: SoundRelationship, char1: string, char2: string): React.JSX.Element => {
+  switch (relationship.type) {
+    case "none":
+      return <span className="text-gray-400 dark:text-gray-500">-</span>;
+    case "char1_is_sound_of_char2":
+      return (
+        <span className="text-blue-600 dark:text-blue-400">
+          <span className="text-2xl">{char1}</span> is sound of <span className="text-2xl">{char2}</span>
+        </span>
+      );
+    case "char2_is_sound_of_char1":
+      return (
+        <span className="text-blue-600 dark:text-blue-400">
+          <span className="text-2xl">{char2}</span> is sound of <span className="text-2xl">{char1}</span>
+        </span>
+      );
+    case "shared_sound_component":
+      return (
+        <span className="text-green-600 dark:text-green-400">
+          Share sound: <span className="text-2xl">{relationship.component}</span>
+        </span>
+      );
+  }
+};
 
 export const SimilarPropsList: React.FC<{
   characters: CharactersType;
@@ -36,6 +61,9 @@ export const SimilarPropsList: React.FC<{
             </th>
             <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
               Shared Props
+            </th>
+            <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
+              Sound Relationship
             </th>
           </tr>
         </thead>
@@ -79,6 +107,9 @@ export const SimilarPropsList: React.FC<{
                     </Link>
                   ))}
                 </div>
+              </td>
+              <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
+                {formatSoundRelationship(pair.soundRelationship, pair.char1.traditional, pair.char2.traditional)}
               </td>
             </tr>
           ))}

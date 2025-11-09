@@ -58,12 +58,48 @@ export function getMissingPhraseChars(
   );
 }
 
+export type SoundRelationship =
+  | { type: "none" }
+  | { type: "char1_is_sound_of_char2" }
+  | { type: "char2_is_sound_of_char1" }
+  | { type: "shared_sound_component"; component: string };
+
 export type CharacterPairWithSharedProps = {
   char1: CharacterType;
   char2: CharacterType;
   sharedProps: string[];
   sharedPropsCount: number;
+  soundRelationship: SoundRelationship;
 };
+
+function getSoundRelationship(
+  char1: CharacterType,
+  char2: CharacterType
+): SoundRelationship {
+  // Check if char1 is the sound component of char2
+  if (char2.soundComponentCharacter === char1.traditional) {
+    return { type: "char1_is_sound_of_char2" };
+  }
+
+  // Check if char2 is the sound component of char1
+  if (char1.soundComponentCharacter === char2.traditional) {
+    return { type: "char2_is_sound_of_char1" };
+  }
+
+  // Check if they share the same sound component
+  if (
+    char1.soundComponentCharacter &&
+    char2.soundComponentCharacter &&
+    char1.soundComponentCharacter === char2.soundComponentCharacter
+  ) {
+    return {
+      type: "shared_sound_component",
+      component: char1.soundComponentCharacter,
+    };
+  }
+
+  return { type: "none" };
+}
 
 export function getCharacterPairsWithSimilarProps(
   characters: CharactersType
@@ -87,11 +123,13 @@ export function getCharacterPairsWithSimilarProps(
       const sharedProps = char1Props.filter(prop => char2Props.includes(prop));
 
       if (sharedProps.length >= 3) {
+        const soundRelationship = getSoundRelationship(char1, char2);
         pairs.push({
           char1,
           char2,
           sharedProps,
-          sharedPropsCount: sharedProps.length
+          sharedPropsCount: sharedProps.length,
+          soundRelationship
         });
       }
     }

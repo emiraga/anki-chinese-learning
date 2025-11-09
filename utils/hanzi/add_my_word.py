@@ -118,6 +118,33 @@ def get_pinyin_and_zhuyin(traditional_text):
         raise ValueError(f"Failed to generate pinyin/zhuyin for '{traditional_text}': {e}")
 
 
+def check_traditional_exists(traditional):
+    """
+    Check if a note with the given Traditional field value already exists
+
+    Args:
+        traditional (str): Traditional Chinese text to check
+
+    Returns:
+        bool: True if exists, False otherwise
+
+    Raises:
+        Exception: If the check fails
+    """
+    # Search for notes with this exact Traditional field value
+    # Using quotes for exact match
+    response = anki_connect_request("findNotes", {
+        "query": f'Traditional:"{traditional}"'
+    })
+
+    if response and response.get("result") is not None:
+        note_ids = response["result"]
+        return len(note_ids) > 0
+    else:
+        error = response.get("error", "Unknown error") if response else "No response"
+        raise Exception(f"Failed to check if Traditional field exists: {error}")
+
+
 def create_my_words_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::Phrases", set_due_today=True):
     """
     Create a new MyWords note
@@ -134,8 +161,12 @@ def create_my_words_note(traditional, pinyin, zhuyin, meaning, deck_name="Chines
         int: Note ID if successful
 
     Raises:
-        Exception: If note creation fails
+        Exception: If note creation fails or if Traditional field already exists
     """
+    # Check if Traditional field already exists
+    if check_traditional_exists(traditional):
+        raise Exception(f"A note with Traditional field '{traditional}' already exists")
+
     response = anki_connect_request("addNote", {
         "note": {
             "deckName": deck_name,
