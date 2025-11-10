@@ -166,46 +166,46 @@ async function getAllComponentsRecursive(
 // Component type configuration (matching DongCharacterDisplay.tsx)
 const COMPONENT_TYPE_CONFIG = {
   deleted: {
-    borderColor: "border-gray-300",
-    bgColor: "bg-gray-50",
-    badgeColor: "bg-gray-100 text-gray-700",
+    borderColor: "border-gray-300 dark:border-gray-600",
+    bgColor: "bg-gray-50 dark:bg-gray-800",
+    badgeColor: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
   },
   sound: {
-    borderColor: "border-blue-300",
-    bgColor: "bg-blue-50",
-    badgeColor: "bg-blue-100 text-blue-700",
+    borderColor: "border-blue-300 dark:border-blue-700",
+    bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
   },
   iconic: {
-    borderColor: "border-green-300",
-    bgColor: "bg-green-50",
-    badgeColor: "bg-green-100 text-green-700",
+    borderColor: "border-green-300 dark:border-green-700",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
+    badgeColor: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
   },
   meaning: {
-    borderColor: "border-red-300",
-    bgColor: "bg-red-50",
-    badgeColor: "bg-red-100 text-red-700",
+    borderColor: "border-red-300 dark:border-red-700",
+    bgColor: "bg-red-50 dark:bg-red-900/20",
+    badgeColor: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   },
   remnant: {
-    borderColor: "border-purple-300",
-    bgColor: "bg-purple-50",
-    badgeColor: "bg-purple-100 text-purple-700",
+    borderColor: "border-purple-300 dark:border-purple-700",
+    bgColor: "bg-purple-50 dark:bg-purple-900/20",
+    badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
   },
   distinguishing: {
-    borderColor: "border-cyan-300",
-    bgColor: "bg-cyan-50",
-    badgeColor: "bg-cyan-100 text-cyan-700",
+    borderColor: "border-cyan-300 dark:border-cyan-700",
+    bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
+    badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
   },
   simplified: {
-    borderColor: "border-pink-300",
-    bgColor: "bg-pink-50",
-    badgeColor: "bg-pink-100 text-pink-700",
+    borderColor: "border-pink-300 dark:border-pink-700",
+    bgColor: "bg-pink-50 dark:bg-pink-900/20",
+    badgeColor: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
   },
 } as const;
 
 const DEFAULT_TYPE_CONFIG = {
-  borderColor: "border-gray-300",
-  bgColor: "bg-gray-50",
-  badgeColor: "bg-gray-100 text-gray-700",
+  borderColor: "border-gray-300 dark:border-gray-600",
+  bgColor: "bg-gray-50 dark:bg-gray-800",
+  badgeColor: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
 };
 
 // Helper to get component type styling
@@ -313,24 +313,24 @@ function CharacterRow({
 
   return (
     <tr
-      className={`border-b border-gray-200 hover:bg-gray-50 ${
-        hasBetterCandidate ? "bg-yellow-50" : ""
+      className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 ${
+        hasBetterCandidate ? "bg-yellow-50 dark:bg-yellow-900/20" : ""
       }`}
     >
-      <td className="px-4 py-2 font-bold text-lg">
+      <td className="px-4 py-2 font-bold text-lg dark:text-white">
         <CharLink traditional={character} /> {charPinyin}
       </td>
       {/*<td className="px-4 py-2">{charPinyin}</td>*/}
-      <td className="px-4 py-2 font-bold text-lg">
+      <td className="px-4 py-2 font-bold text-lg dark:text-white">
         {soundComponentChar ? (
           <CharLink traditional={soundComponentChar} />
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-gray-400 dark:text-gray-500">-</span>
         )}{" "}
         {/*</td>
       <td className="px-4 py-2">*/}
         {soundCompLoading ? (
-          <span className="text-gray-400">Loading...</span>
+          <span className="text-gray-400 dark:text-gray-500">Loading...</span>
         ) : soundCompPinyin ? (
           <>
             <span>{soundCompPinyin}</span>
@@ -338,10 +338,10 @@ function CharacterRow({
               <span
                 className={`ml-2 px-2 py-1 rounded text-sm font-semibold ${
                   soundCompScore >= 8
-                    ? "bg-green-100 text-green-800"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                     : soundCompScore >= 6
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
+                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                 }`}
               >
                 {soundCompScore.toFixed(1)}
@@ -349,12 +349,12 @@ function CharacterRow({
             )}
           </>
         ) : soundComponentChar ? (
-          <span className="text-gray-400">No pinyin</span>
+          <span className="text-gray-400 dark:text-gray-500">No pinyin</span>
         ) : undefined}
       </td>
       <td className="px-4 py-2">
         {isLoadingCandidates ? (
-          <span className="text-gray-400">Loading...</span>
+          <span className="text-gray-400 dark:text-gray-500">Loading...</span>
         ) : candidates.length > 0 ? (
           <div className="flex flex-nowrap gap-2 overflow-x-auto">
             {candidates.map((candidate, idx) => {
@@ -368,16 +368,16 @@ function CharacterRow({
                     traditional={candidate.character}
                     className="font-bold"
                   />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
                     {candidate.pinyin}
                   </span>
                   <span
                     className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
                       candidate.score >= 8
-                        ? "bg-green-100 text-green-800"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                         : candidate.score >= 6
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                     }`}
                   >
                     {candidate.score.toFixed(1)}
@@ -390,7 +390,7 @@ function CharacterRow({
                   </span>
                   {candidate.depth > 0 && (
                     <span
-                      className="text-xs text-gray-400"
+                      className="text-xs text-gray-400 dark:text-gray-500"
                       title={`Recursion depth: ${candidate.depth}`}
                     >
                       (d{candidate.depth})
@@ -399,7 +399,7 @@ function CharacterRow({
                   <button
                     onClick={() => setSoundComponent(candidate.character)}
                     disabled={isUpdating || !ankiId}
-                    className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                     title="Set as sound component"
                   >
                     +
@@ -409,7 +409,7 @@ function CharacterRow({
             })}
           </div>
         ) : (
-          <span className="text-gray-400">No sound components found</span>
+          <span className="text-gray-400 dark:text-gray-500">No sound components found</span>
         )}
       </td>
     </tr>
@@ -543,9 +543,9 @@ export default function SoundEval() {
   return (
     <MainFrame>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Sound Component Evaluation</h1>
+        <h1 className="text-3xl font-bold mb-6 dark:text-white">Sound Component Evaluation</h1>
 
-        <div className="mb-4 text-gray-600">
+        <div className="mb-4 text-gray-600 dark:text-gray-300">
           <p>
             {isLoadingAll
               ? `Loading... ${characterDataList.length} / ${charsWithPinyin.length} characters processed`
@@ -553,35 +553,35 @@ export default function SoundEval() {
           </p>
           <p className="text-sm mt-1">
             Score:{" "}
-            <span className="text-green-600 font-semibold">≥8 = Excellent</span>
+            <span className="text-green-600 dark:text-green-400 font-semibold">≥8 = Excellent</span>
             ,
-            <span className="text-yellow-600 font-semibold ml-2">
+            <span className="text-yellow-600 dark:text-yellow-400 font-semibold ml-2">
               ≥6 = Good
             </span>
             ,
-            <span className="text-red-600 font-semibold ml-2">
+            <span className="text-red-600 dark:text-red-400 font-semibold ml-2">
               &lt;6 = Poor
             </span>
           </p>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead className="bg-gray-100">
+          <table className="min-w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
+            <thead className="bg-gray-100 dark:bg-gray-800">
               <tr>
-                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300 dark:border-gray-700 dark:text-white">
                   Character
                 </th>
-                {/*<th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                {/*<th className="px-4 py-2 text-left font-semibold border-b border-gray-300 dark:border-gray-700 dark:text-white">
                   Pinyin
                 </th>*/}
-                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300 dark:border-gray-700 dark:text-white">
                   Sound Component (Anki)
                 </th>
-                {/*<th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                {/*<th className="px-4 py-2 text-left font-semibold border-b border-gray-300 dark:border-gray-700 dark:text-white">
                   Component Pinyin & Score
                 </th>*/}
-                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300">
+                <th className="px-4 py-2 text-left font-semibold border-b border-gray-300 dark:border-gray-700 dark:text-white">
                   Dong Sound Components (Candidates)
                 </th>
               </tr>
