@@ -234,21 +234,33 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
                 }
 
                 // Add mnemonic tags (actor, place, tone) if applicable
+                let mnemonicMessage = "";
                 if (shouldHaveMnemonicTags(char)) {
                   try {
-                    const { missingTags } = getCharacterMnemonicTags(char);
+                    const { allTags } = getCharacterMnemonicTags(char);
+                    const currentTags = notes[0].tags;
+                    const missingTags = allTags.filter(
+                      (tag) => !currentTags.includes(tag),
+                    );
+
                     if (missingTags.length > 0) {
                       await anki.note.addTags({
                         notes: notesId,
                         tags: missingTags.join(" "),
                       });
+                      mnemonicMessage = `\nAdded tags: ${missingTags.join(", ")}`;
+                    } else {
+                      mnemonicMessage = "\nAll mnemonic tags already present.";
                     }
                   } catch (error) {
                     console.error("Failed to add mnemonic tags:", error);
+                    mnemonicMessage = `\nMnemonic tags error: ${error}`;
                   }
+                } else {
+                  mnemonicMessage = `\nSkipped mnemonic tags: withSound=${char.withSound}, pinyinAnki=${char.pinyinAnki}`;
                 }
 
-                alert("All done, enabled!");
+                alert(`All done, enabled!${mnemonicMessage}`);
               }}
             >
               Enable in anki

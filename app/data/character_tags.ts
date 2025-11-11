@@ -84,5 +84,5 @@ export function getCharacterMnemonicTags(
  * @returns true if the character should have mnemonic tags
  */
 export function shouldHaveMnemonicTags(char: CharacterType): boolean {
-  return char.withSound === true && char.pinyinAnki !== undefined;
+  return char.withSound === true && char.pinyin[0]?.sylable !== undefined;
 }
