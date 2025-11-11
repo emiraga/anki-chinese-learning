@@ -152,6 +152,7 @@ utils/rtega/.cache/
 keys_secret.txt
 ai_key.txt
 gcloud_account.json
+gcloud_api_key.txt
 
 # MacOSX nonsense
 .DS_Store
