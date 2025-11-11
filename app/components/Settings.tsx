@@ -73,10 +73,10 @@ const findDifferingPaths = (obj1: unknown, obj2: unknown): string[] => {
 
 // Custom FieldTemplate to apply styling
 const CustomFieldTemplate = (props: FieldTemplateProps) => {
-  const { id, children, errors, help, classNames, hidden, formContext } = props;
+  const { id, children, errors, help, classNames, hidden, registry } = props;
   const { isDarkMode } = useDarkMode();
-  const modifiedFields = formContext?.modifiedFields || [];
-  const hasUnsavedChanges = formContext?.hasUnsavedChanges || false;
+  const modifiedFields = registry.formContext?.modifiedFields || [];
+  const hasUnsavedChanges = registry.formContext?.hasUnsavedChanges || false;
 
   const isModified = modifiedFields.some((path: string) => {
     return "root_" + path.replaceAll(".", "_") === id;
