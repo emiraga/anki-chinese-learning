@@ -6,6 +6,10 @@ import { Link } from "react-router";
 import { TagList } from "./TagList";
 import { useSettings } from "~/settings/SettingsContext";
 import AnkiContentRenderer from "./AnkiContentRenderer";
+import {
+  getCharacterMnemonicTags,
+  shouldHaveMnemonicTags,
+} from "~/data/character_tags";
 
 export const CharLink: React.FC<{
   traditional: string;
@@ -228,6 +232,22 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
                     tags: "chinese::not-learning-sound-yet",
                   });
                 }
+
+                // Add mnemonic tags (actor, place, tone) if applicable
+                if (shouldHaveMnemonicTags(char)) {
+                  try {
+                    const { missingTags } = getCharacterMnemonicTags(char);
+                    if (missingTags.length > 0) {
+                      await anki.note.addTags({
+                        notes: notesId,
+                        tags: missingTags.join(" "),
+                      });
+                    }
+                  } catch (error) {
+                    console.error("Failed to add mnemonic tags:", error);
+                  }
+                }
+
                 alert("All done, enabled!");
               }}
             >

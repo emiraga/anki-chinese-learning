@@ -8,8 +8,6 @@ import anki, {
 } from "~/apis/anki";
 import {
   ACTOR_TAGS_MAP,
-  LOCATION_TAGS_MAP,
-  PLACE_TAGS_MAP,
   REVERSE_FULL_MAP,
 } from "~/data/pinyin_table";
 import { PropCard } from "./PropCard";
@@ -18,6 +16,10 @@ import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 import { LoadingProgressBar } from "./LoadingProgressBar";
 import { PhraseMeaning } from "./Phrase";
+import {
+  getCharacterMnemonicTags,
+  shouldHaveMnemonicTags,
+} from "~/data/character_tags";
 
 function IntegrityActorPlaceAnki() {
   const { characters } = useOutletContext<OutletContext>();
@@ -25,34 +27,27 @@ function IntegrityActorPlaceAnki() {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
 
   const filtered = Object.values(characters)
-    .filter((char) => char.pinyinAnki !== undefined)
+    .filter((char) => shouldHaveMnemonicTags(char))
     .map((char) => {
-      if (REVERSE_FULL_MAP[char.pinyin[0].sylable] === undefined) {
-        console.error(char.pinyin[0].sylable);
-        console.error(Object.keys(REVERSE_FULL_MAP));
-        throw new Error("REVERSE_FULL_MAP[char.sylable] === undefined");
+      try {
+        const { missingTags, actorTag, placeTag, toneTag } =
+          getCharacterMnemonicTags(char);
+        const { initial, final } = REVERSE_FULL_MAP[char.pinyin[0].sylable];
+        return {
+          ...char,
+          needTags: missingTags,
+          initial,
+          final,
+          actorTag,
+          placeTag,
+          toneTag,
+        };
+      } catch (error) {
+        console.error("Error processing character:", char.traditional, error);
+        throw error;
       }
-      const { initial, final } = REVERSE_FULL_MAP[char.pinyin[0].sylable] || {
-        initial: "???",
-        final: "???",
-      };
-      const needTags: string[] = [];
-      if (!char.tags.includes(ACTOR_TAGS_MAP[initial])) {
-        needTags.push(ACTOR_TAGS_MAP[initial]);
-      }
-      if (!char.tags.includes(PLACE_TAGS_MAP[final])) {
-        needTags.push(PLACE_TAGS_MAP[final]);
-      }
-      if (!char.tags.includes(LOCATION_TAGS_MAP[char.pinyin[0].tone])) {
-        needTags.push(LOCATION_TAGS_MAP[char.pinyin[0].tone]);
-      }
-
-      return { ...char, needTags, initial, final };
     })
     .filter((char) => {
-      if (!char.withSound) {
-        return false;
-      }
       if (
         char.tags.filter((t) => t.startsWith("actor::")).length === 1 &&
         char.tags.filter((t) => t.startsWith("place::")).length === 1 &&
