@@ -4,7 +4,7 @@
 # dependencies = [
 #   "requests",
 #   "dragonmapper",
-#   "google-cloud-translate>=3.15.0",
+#   "google-generativeai",
 # ]
 # ///
 
@@ -63,14 +63,14 @@ def pinyin_to_zhuyin(pinyin_text):
         raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}")
 
 
-def translate_with_google(traditional_text, client, max_retries=3):
+def translate_with_gemini(traditional_text, model, max_retries=3):
     """
-    Use Google Cloud Translation API to translate Chinese text to English
-    Uses zh-TW (Taiwan) as source language
+    Use Google Gemini API to translate Chinese text to English
+    Better at understanding idioms and colloquial expressions
 
     Args:
         traditional_text (str): Traditional Chinese text
-        client: Google Cloud Translation client
+        model: GenerativeModel instance
         max_retries (int): Maximum number of retry attempts
 
     Returns:
@@ -79,14 +79,16 @@ def translate_with_google(traditional_text, client, max_retries=3):
     if not traditional_text or not traditional_text.strip():
         raise ValueError("Text cannot be empty")
 
+    prompt = f"""Translate this Traditional Chinese text to English. If it contains idioms or colloquial expressions, translate the meaning, not literally.
+
+Traditional Chinese: {traditional_text}
+
+Provide only the English translation, nothing else."""
+
     for attempt in range(max_retries):
         try:
-            result = client.translate(
-                traditional_text,
-                source_language='zh-TW',  # Taiwan Traditional Chinese
-                target_language='en'
-            )
-            translated_text = result['translatedText']
+            response = model.generate_content(prompt)
+            translated_text = response.text.strip()
             return translated_text
         except Exception as e:
             if attempt < max_retries - 1:
@@ -293,32 +295,56 @@ def main():
             meaning = args.meaning
             print(f"✓ Using provided meaning: {meaning}")
         else:
-            # Set up Google Cloud credentials
-            credentials_path = args.credentials
-            if not credentials_path:
-                script_dir = Path(__file__).resolve().parent
-                project_root = script_dir.parent.parent
-                credentials_path = project_root / 'utils' / 'tts' / 'gcloud_account.json'
-            else:
-                credentials_path = Path(credentials_path)
+            # Get Google Gemini API key
+            api_key = None
 
-            if not credentials_path.exists():
+            # Try to get from API key file first
+            script_dir = Path(__file__).resolve().parent
+            project_root = script_dir.parent.parent
+            api_key_path = project_root / 'utils' / 'tts' / 'gcloud_api_key.txt'
+
+            if api_key_path.exists():
+                with open(api_key_path) as f:
+                    api_key = f.read().strip()
+
+            # Try credentials JSON file
+            if not api_key:
+                credentials_path = args.credentials
+                if not credentials_path:
+                    credentials_path = project_root / 'utils' / 'tts' / 'gcloud_account.json'
+                else:
+                    credentials_path = Path(credentials_path)
+
+                if credentials_path.exists():
+                    import json
+                    with open(credentials_path) as f:
+                        creds = json.load(f)
+                        api_key = creds.get('gemini_api_key')
+
+            # Try environment variable if not in file
+            if not api_key:
+                api_key = os.environ.get('GEMINI_API_KEY')
+
+            if not api_key:
                 raise Exception(
-                    f"Credentials file not found: {credentials_path}. "
-                    "Provide --credentials path or use --meaning to provide translation manually."
+                    "Gemini API key not found. Please either:\n"
+                    "1. Create utils/tts/gcloud_api_key.txt with your API key\n"
+                    "2. Add 'gemini_api_key' field to utils/tts/gcloud_account.json\n"
+                    "3. Set GEMINI_API_KEY environment variable\n"
+                    "4. Use --meaning to provide translation manually\n\n"
+                    "Get an API key at: https://aistudio.google.com/apikey"
                 )
 
-            # Set environment variable for Google Cloud credentials
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(credentials_path)
+            # Initialize Gemini
+            print("⋯ Initializing Google Gemini model...")
+            import google.generativeai as genai
 
-            # Initialize translation client
-            print("⋯ Initializing Google Cloud Translation client...")
-            from google.cloud import translate_v2 as translate
-            client = translate.Client()
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel("gemini-2.0-flash-exp")
 
             # Translate
-            print("⋯ Translating with Google Cloud Translation API...")
-            meaning = translate_with_google(args.traditional, client)
+            print("⋯ Translating with Google Gemini...")
+            meaning = translate_with_gemini(args.traditional, model)
             print(f"✓ Translated: {meaning}")
 
         # Step 3: Create the note
