@@ -6,6 +6,7 @@ declare module "react-router" {
   interface Register {
     pages: Pages
     routeFiles: RouteFiles
+    routeModules: RouteModules
   }
 }
 
@@ -341,4 +342,52 @@ type RouteFiles = {
     id: "routes/index";
     page: "/";
   };
+};
+
+type RouteModules = {
+  "root": typeof import("./app/root.tsx");
+  "routes/actor/$actorName": typeof import("./app/routes/actor/$actorName.tsx");
+  "routes/actors": typeof import("./app/routes/actors.tsx");
+  "routes/char/$charHanzi": typeof import("./app/routes/char/$charHanzi.tsx");
+  "routes/chars": typeof import("./app/routes/chars.tsx");
+  "routes/conflicts": typeof import("./app/routes/conflicts.tsx");
+  "routes/invalid_data": typeof import("./app/routes/invalid_data.tsx");
+  "routes/integrity": typeof import("./app/routes/integrity.tsx");
+  "routes/phrase/$phraseHanzi": typeof import("./app/routes/phrase/$phraseHanzi.tsx");
+  "routes/phrases": typeof import("./app/routes/phrases.tsx");
+  "routes/phrases_import": typeof import("./app/routes/phrases_import.tsx");
+  "routes/phrases_more": typeof import("./app/routes/phrases_more.tsx");
+  "routes/pinyin": typeof import("./app/routes/pinyin.tsx");
+  "routes/place/$placeName": typeof import("./app/routes/place/$placeName.tsx");
+  "routes/places": typeof import("./app/routes/places.tsx");
+  "routes/practice": typeof import("./app/routes/practice.tsx");
+  "routes/problematic": typeof import("./app/routes/problematic.tsx");
+  "routes/prop/$propName": typeof import("./app/routes/prop/$propName.tsx");
+  "routes/props": typeof import("./app/routes/props.tsx");
+  "routes/settings": typeof import("./app/routes/settings.tsx");
+  "routes/similar_props": typeof import("./app/routes/similar_props.tsx");
+  "routes/sound_components": typeof import("./app/routes/sound_components.tsx");
+  "routes/stats": typeof import("./app/routes/stats.tsx");
+  "routes/stats_progress": typeof import("./app/routes/stats_progress.tsx");
+  "routes/story": typeof import("./app/routes/story.tsx");
+  "routes/study": typeof import("./app/routes/study.tsx");
+  "routes/study_weak_chars": typeof import("./app/routes/study_weak_chars.tsx");
+  "routes/advance_cards": typeof import("./app/routes/advance_cards.tsx");
+  "routes/sylable/$sylable": typeof import("./app/routes/sylable/$sylable.tsx");
+  "routes/tag/$tagName": typeof import("./app/routes/tag/$tagName.tsx");
+  "routes/tags": typeof import("./app/routes/tags.tsx");
+  "routes/todo_chars": typeof import("./app/routes/todo_chars.tsx");
+  "routes/chars_sentence_input": typeof import("./app/routes/chars_sentence_input.tsx");
+  "routes/chars_multiple_pronunciation": typeof import("./app/routes/chars_multiple_pronunciation.tsx");
+  "routes/exam_level": typeof import("./app/routes/exam_level.tsx");
+  "routes/help": typeof import("./app/routes/help.tsx");
+  "routes/homophones": typeof import("./app/routes/homophones.tsx");
+  "routes/migration": typeof import("./app/routes/migration.tsx");
+  "routes/tone/$toneName": typeof import("./app/routes/tone/$toneName.tsx");
+  "routes/tones": typeof import("./app/routes/tones.tsx");
+  "routes/zhuyin_typing": typeof import("./app/routes/zhuyin_typing.tsx");
+  "routes/dong_demo": typeof import("./app/routes/dong_demo.tsx");
+  "routes/sound_eval": typeof import("./app/routes/sound_eval.tsx");
+  "routes/dev_files": typeof import("./app/routes/dev_files.tsx");
+  "routes/index": typeof import("./app/routes/index.tsx");
 };
