@@ -34,6 +34,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: external,
+    // IMPORTANT: Dependencies must be explicitly listed here due to babel-plugin-react-compiler.
+    // Vite's automatic dependency discovery (optimizeDeps.entries) fails because esbuild cannot
+    // parse JSX in files transformed by the React Compiler. When you see "new dependencies optimized"
+    // messages during navigation, add those dependencies to this list, clear cache (rm -rf node_modules/.vite .react-router),
+    // and restart the dev server. See CLAUDE.md for more details.
     include: [
       "recharts",
       "@rjsf/core",

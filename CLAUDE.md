@@ -14,6 +14,23 @@ This is a React-based Chinese learning companion application that integrates wit
 - **TailwindCSS**: Utility-first CSS framework
 - **Anki Integration**: Uses `yanki-connect` library to interface with Anki desktop app
 - **AI Integration**: Google Generative AI and Claude API for content generation
+- **React Compiler**: Uses babel-plugin-react-compiler for optimization
+
+## Known Issues and Workarounds
+
+### Vite Dependency Pre-bundling with React Compiler
+
+**Issue**: When using `babel-plugin-react-compiler` with Vite, the automatic dependency discovery (`optimizeDeps.entries`) causes build errors. During the dependency scanning phase, esbuild cannot parse the JSX syntax in files that have been transformed by the React Compiler babel plugin.
+
+**Workaround**: Dependencies must be explicitly listed in `vite.config.ts` under `optimizeDeps.include`. This ensures all dependencies are pre-bundled at startup, preventing mid-navigation reloads and module loading errors.
+
+**What to do when seeing "new dependencies optimized" messages**:
+1. Note the dependency name from the console message (e.g., "react-async-hook")
+2. Add it to the `optimizeDeps.include` array in `vite.config.ts`
+3. Clear the cache: `rm -rf node_modules/.vite .react-router`
+4. Restart the dev server
+
+This is a known limitation when combining React Compiler with Vite, and the explicit dependency list is the recommended approach.
 
 ## Development Commands
 

@@ -2,6 +2,7 @@
   "name": "modified_pinyin",
   "private": true,
   "type": "module",
+  "//": "IMPORTANT: Due to babel-plugin-react-compiler, Vite cannot auto-discover dependencies. All dependencies must be explicitly listed in vite.config.ts optimizeDeps.include. See CLAUDE.md for details.",
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev --port 5173",
