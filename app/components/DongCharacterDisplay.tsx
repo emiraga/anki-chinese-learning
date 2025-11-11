@@ -593,11 +593,11 @@ function ComponentCard({
   }
 
   // Check if component has additional details
-  const hasDetails = componentChar && (
-    componentChar.shuowen ||
-    (componentChar.variants && componentChar.variants.length > 0) ||
-    (componentChar.comments && componentChar.comments.length > 0)
-  );
+  const hasDetails =
+    componentChar &&
+    (componentChar.shuowen ||
+      (componentChar.variants && componentChar.variants.length > 0) ||
+      (componentChar.comments && componentChar.comments.length > 0));
 
   const cardContent = (
     <div className="flex items-start gap-4 p-4 transition-colors">
@@ -700,7 +700,10 @@ function ComponentCard({
   // Wrap with tooltip if there are additional details
   return (
     <Tooltip.Root>
-      <Tooltip.Trigger className={styles.Button} style={{ display: 'block', width: '100%', textAlign: 'left' }}>
+      <Tooltip.Trigger
+        className={styles.Button}
+        style={{ display: "block", width: "100%", textAlign: "left" }}
+      >
         {cardContent}
       </Tooltip.Trigger>
 
@@ -960,8 +963,10 @@ function ComponentDetailContent({
   componentChar,
 }: ComponentDetailContentProps) {
   const hasShuowen = componentChar.shuowen;
-  const hasVariants = componentChar.variants && componentChar.variants.length > 0;
-  const hasComments = componentChar.comments && componentChar.comments.length > 0;
+  const hasVariants =
+    componentChar.variants && componentChar.variants.length > 0;
+  const hasComments =
+    componentChar.comments && componentChar.comments.length > 0;
 
   if (!hasShuowen && !hasVariants && !hasComments) return null;
 
@@ -989,21 +994,23 @@ function ComponentDetailContent({
             Variants:
           </div>
           <div className="flex flex-wrap gap-2">
-            {(componentChar.variants || []).map((variant: { char: string; parts?: string }, vIdx: number) => (
-              <div
-                key={vIdx}
-                className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
-              >
-                <span className="font-serif text-lg mr-2 dark:text-gray-100">
-                  {variant.char}
-                </span>
-                {variant.parts && (
-                  <span className="text-gray-600 dark:text-gray-400">
-                    ({variant.parts})
+            {(componentChar.variants || []).map(
+              (variant: { char: string; parts?: string }, vIdx: number) => (
+                <div
+                  key={vIdx}
+                  className="bg-white dark:bg-gray-800 px-3 py-1 rounded border dark:border-gray-600 text-sm"
+                >
+                  <span className="font-serif text-lg mr-2 dark:text-gray-100">
+                    {variant.char}
                   </span>
-                )}
-              </div>
-            ))}
+                  {variant.parts && (
+                    <span className="text-gray-600 dark:text-gray-400">
+                      ({variant.parts})
+                    </span>
+                  )}
+                </div>
+              ),
+            )}
           </div>
         </div>
       )}
@@ -1015,24 +1022,33 @@ function ComponentDetailContent({
           </div>
           <div className="space-y-2">
             {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
-            {(componentChar.comments || []).map((comment: { source: string; text_en_translation?: string; text: string }, cIdx: number) => (
-              <div
-                key={cIdx}
-                className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
-              >
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {comment.source}
+            {(componentChar.comments || []).map(
+              (
+                comment: {
+                  source: string;
+                  text_en_translation?: string;
+                  text: string;
+                },
+                cIdx: number,
+              ) => (
+                <div
+                  key={cIdx}
+                  className="text-sm bg-white dark:bg-gray-800 p-2 rounded border-l-2 border-green-500"
+                >
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    {comment.source}
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200">
+                    {comment.text_en_translation
+                      ? decodeHtmlEntities(comment.text_en_translation)
+                      : ""}
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200">
+                    {comment.text}
+                  </div>
                 </div>
-                <div className="text-gray-800 dark:text-gray-200">
-                  {comment.text_en_translation
-                    ? decodeHtmlEntities(comment.text_en_translation)
-                    : ""}
-                </div>
-                <div className="text-gray-800 dark:text-gray-200">
-                  {comment.text}
-                </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </div>
       )}
@@ -1216,8 +1232,6 @@ export function DongCharacterDisplay({
   character,
   filterKnownChars = false,
 }: DongCharacterDisplayProps) {
-  console.log(character);
-
   // Get known characters from context
   const { characters } = useOutletContext<OutletContext>();
 

@@ -103,9 +103,7 @@ const AdvanceCardsManager: React.FC = () => {
       const fullQuery = buildAnkiQuery(filters);
 
       setStage("Finding notes...");
-      console.log(fullQuery);
       const noteIds = await anki.note.findNotes({ query: fullQuery });
-      console.log("Found:", noteIds.length);
 
       if (noteIds.length === 0) {
         setStage("No notes found");
