@@ -602,7 +602,7 @@ function ComponentCard({
   const cardContent = (
     <div className="flex items-start gap-4 p-4 transition-colors">
       {/* Component character with colored overlay */}
-      <div className="relative w-24 h-24 flex-shrink-0">
+      <div className="relative w-24 h-24 shrink-0">
         {strokeData && fragmentIndices.length > 0 ? (
           <LayeredCharacter
             strokeData={strokeData}
@@ -856,7 +856,7 @@ function InfoBox({ type = "info", children }: InfoBoxProps) {
       className={`${bgColor} border ${borderColor} rounded p-2 text-sm text-gray-700 dark:text-gray-300`}
     >
       <div className="flex gap-2">
-        <span className={`${iconColor} flex-shrink-0`}>{icon}</span>
+        <span className={`${iconColor} shrink-0`}>{icon}</span>
         <div>{children}</div>
       </div>
     </div>
@@ -1021,11 +1021,11 @@ function ComponentDetailContent({
             Scholarly Notes:
           </div>
           <div className="space-y-2">
-            {/* eslint-disable-next-line @typescript-eslint/naming-convention */}
             {(componentChar.comments || []).map(
               (
                 comment: {
                   source: string;
+                  //  eslint-disable-next-line @typescript-eslint/naming-convention
                   text_en_translation?: string;
                   text: string;
                 },
