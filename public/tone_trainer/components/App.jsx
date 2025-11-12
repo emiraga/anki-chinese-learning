@@ -9,7 +9,7 @@ import { SpectrogramCanvas } from "./SpectrogramCanvas.jsx";
 import { YinPitchCanvas } from "./YinPitchCanvas.jsx";
 import { DropOverlay } from "./DropOverlay.jsx";
 import { StatusMessage } from "./StatusMessage";
-import { ProgressLine } from "./ProgressLine.jsx";
+import { ProgressLine } from "./ProgressLine.tsx";
 import { PlaybackControls } from "./PlaybackControls.jsx";
 import { AudioFilesList } from "./AudioFilesList.jsx";
 import { DebugTools } from "./DebugTools.jsx";
@@ -171,7 +171,7 @@ function AppContent() {
         {/* Status Message */}
         {statusMessage && (
           <StatusMessage
-            message={statusMessage.text}
+            message={statusMessage.message}
             isLoading={statusMessage.isLoading}
             spinnerColor={statusMessage.spinnerColor}
             backgroundColor={statusMessage.backgroundColor}

@@ -1,6 +1,11 @@
 import React from "react";
 
-export function ProgressLine({ show, percentage }) {
+interface ProgressLineProps {
+  show: boolean;
+  percentage: number;
+}
+
+export function ProgressLine({ show, percentage }: ProgressLineProps) {
   if (!show) return null;
 
   return (

@@ -70,7 +70,7 @@ export function useAudioProcessing(): UseAudioProcessingReturn {
 
         // Update status for YIN analysis
         setStatusMessage({
-          text: "Computing YIN pitch analysis...",
+          message: "Computing YIN pitch analysis...",
           isLoading: true,
           spinnerColor: "border-purple-300",
         });
@@ -81,14 +81,16 @@ export function useAudioProcessing(): UseAudioProcessingReturn {
 
         // Update status for spectrogram
         setStatusMessage({
-          text: "Generating spectrogram...",
+          message: "Generating spectrogram...",
           isLoading: true,
           spinnerColor: "border-green-300",
         });
 
         // Generate spectrogram
         const spectrogramData = await generateSpectrogram(audioBuffer);
-        setSpectrogramData(spectrogramData);
+        // Convert Uint8Array[] to number[][]
+        const spectrogramDataConverted = spectrogramData.map((arr) => Array.from(arr));
+        setSpectrogramData(spectrogramDataConverted);
 
         // Clear status
         setStatusMessage(null);
@@ -97,7 +99,7 @@ export function useAudioProcessing(): UseAudioProcessingReturn {
       } catch (err) {
         console.error("Error processing audio buffer:", err);
         setStatusMessage({
-          text: "Could not process audio. Please try again.",
+          message: "Could not process audio. Please try again.",
           isLoading: false,
           backgroundColor: "#d97706",
         });

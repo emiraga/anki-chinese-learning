@@ -2,6 +2,13 @@ import React, { createContext, useContext, useState, useRef, useCallback, type R
 import { RECORDING_SAMPLE_RATE } from "../utils/constants";
 import type { PitchFrame, YinParams } from "../utils/pitchProcessing";
 
+export interface StatusMessageState {
+  message: string;
+  isLoading: boolean;
+  spinnerColor?: string;
+  backgroundColor?: string;
+}
+
 export interface VisualizationSettings {
   colorScheme: string;
   brightness: number;
@@ -29,8 +36,8 @@ export interface ToneAnalyzerContextValue {
   setYinData: Dispatch<SetStateAction<PitchFrame[]>>;
   lastAudioBuffer: AudioBuffer | null;
   setLastAudioBuffer: Dispatch<SetStateAction<AudioBuffer | null>>;
-  statusMessage: string | null;
-  setStatusMessage: Dispatch<SetStateAction<string | null>>;
+  statusMessage: StatusMessageState | null;
+  setStatusMessage: Dispatch<SetStateAction<StatusMessageState | null>>;
   progressPercentage: number;
   setProgressPercentage: Dispatch<SetStateAction<number>>;
   showProgress: boolean;
@@ -79,7 +86,7 @@ export function ToneAnalyzerProvider({ children }: ToneAnalyzerProviderProps) {
   const [spectrogramData, setSpectrogramData] = useState<number[][]>([]);
   const [yinData, setYinData] = useState<PitchFrame[]>([]);
   const [lastAudioBuffer, setLastAudioBuffer] = useState<AudioBuffer | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<StatusMessageState | null>(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
 

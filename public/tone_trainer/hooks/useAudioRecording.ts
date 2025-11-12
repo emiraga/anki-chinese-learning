@@ -39,7 +39,6 @@ export function useAudioRecording(): UseAudioRecordingReturn {
           echoCancellation: recordingSettings.echoCancellation,
           noiseSuppression: recordingSettings.noiseSuppression,
           autoGainControl: recordingSettings.autoGainControl,
-          latency: 0,
         },
       });
 
@@ -52,7 +51,7 @@ export function useAudioRecording(): UseAudioRecordingReturn {
 
       recorder.onstart = () => {
         setStatusMessage({
-          text: "Recording...",
+          message: "Recording...",
           isLoading: false,
           backgroundColor: "#ef4444",
         });
@@ -68,7 +67,7 @@ export function useAudioRecording(): UseAudioRecordingReturn {
         });
 
         setStatusMessage({
-          text: "Analyzing...",
+          message: "Analyzing...",
           isLoading: true,
           backgroundColor: "#3b82f6",
         });
@@ -80,7 +79,7 @@ export function useAudioRecording(): UseAudioRecordingReturn {
         } catch (err) {
           console.error("Error decoding audio data:", err);
           setStatusMessage({
-            text: "Could not process audio. Please try again.",
+            message: "Could not process audio. Please try again.",
             isLoading: false,
             backgroundColor: "#d97706",
           });
@@ -94,7 +93,7 @@ export function useAudioRecording(): UseAudioRecordingReturn {
     } catch (err) {
       console.error("Error accessing microphone:", err);
       setStatusMessage({
-        text: "Microphone access denied. Please allow access and try again.",
+        message: "Microphone access denied. Please allow access and try again.",
         isLoading: false,
         backgroundColor: "#d97706",
       });

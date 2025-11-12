@@ -36,7 +36,7 @@ export function useAudioLoader(): UseAudioLoaderReturn {
 
         // Show loading indicator
         setStatusMessage({
-          text: "Loading audio file...",
+          message: "Loading audio file...",
           isLoading: true,
           spinnerColor: "border-blue-300",
           backgroundColor: "#3b82f6",
@@ -67,7 +67,7 @@ export function useAudioLoader(): UseAudioLoaderReturn {
       } catch (err) {
         console.error("Error loading audio file:", err);
         setStatusMessage({
-          text: "Could not load audio file. Please try again.",
+          message: "Could not load audio file. Please try again.",
           isLoading: false,
           backgroundColor: "#d97706",
         });
@@ -92,7 +92,7 @@ export function useAudioLoader(): UseAudioLoaderReturn {
 
         // Show loading indicator
         setStatusMessage({
-          text: "Processing audio file...",
+          message: "Processing audio file...",
           isLoading: true,
           spinnerColor: "border-blue-300",
           backgroundColor: "#3b82f6",
@@ -117,7 +117,7 @@ export function useAudioLoader(): UseAudioLoaderReturn {
       } catch (err) {
         console.error("Error loading dropped audio:", err);
         setStatusMessage({
-          text: "Could not process audio file. Make sure it's a valid audio format.",
+          message: "Could not process audio file. Make sure it's a valid audio format.",
           isLoading: false,
           backgroundColor: "#d97706",
         });
