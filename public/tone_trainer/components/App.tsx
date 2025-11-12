@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { ToneAnalyzerProvider, useToneAnalyzer } from "../context/ToneAnalyzerContext";
+import {
+  ToneAnalyzerProvider,
+  useToneAnalyzer,
+} from "../context/ToneAnalyzerContext";
 import { useAudioInstance } from "../hooks/useAudioInstance";
 import { AudioVisualizerPanel } from "./AudioVisualizerPanel";
 import { DropOverlay } from "./DropOverlay";
@@ -25,14 +28,19 @@ function AppContent() {
 
   // Helper to set status message
   const handleStatusChange = useCallback(
-    (message: string, isLoading: boolean, backgroundColor?: string, spinnerColor?: string) => {
+    (
+      message: string,
+      isLoading: boolean,
+      backgroundColor?: string,
+      spinnerColor?: string,
+    ) => {
       if (message) {
         setStatusMessage({ message, isLoading, backgroundColor, spinnerColor });
       } else {
         setStatusMessage(null);
       }
     },
-    [setStatusMessage]
+    [setStatusMessage],
   );
 
   // Two audio instances using the custom hook
@@ -44,7 +52,7 @@ function AppContent() {
       showRecordingControls: false,
     },
     audioContext,
-    handleStatusChange
+    handleStatusChange,
   );
 
   const recordingAudio = useAudioInstance(
@@ -55,7 +63,7 @@ function AppContent() {
       showRecordingControls: true,
     },
     audioContext,
-    handleStatusChange
+    handleStatusChange,
   );
 
   // Load audio file for sample instance
@@ -66,7 +74,10 @@ function AppContent() {
         window.scrollTo({ top: 0, behavior: "smooth" });
 
         // Adjust Max Freq if specified
-        if (needMaxFreq !== null && sampleAudio.instance.yinParams.maxFreq !== needMaxFreq) {
+        if (
+          needMaxFreq !== null &&
+          sampleAudio.instance.yinParams.maxFreq !== needMaxFreq
+        ) {
           sampleAudio.updateYinParams({
             ...sampleAudio.instance.yinParams,
             maxFreq: needMaxFreq,
@@ -100,7 +111,7 @@ function AppContent() {
         });
       }
     },
-    [sampleAudio, ensureAudioContext, setStatusMessage]
+    [sampleAudio, ensureAudioContext, setStatusMessage],
   );
 
   // Load dropped audio for sample instance
@@ -125,13 +136,14 @@ function AppContent() {
       } catch (err) {
         console.error("Error loading dropped audio:", err);
         setStatusMessage({
-          message: "Could not process audio file. Make sure it's a valid audio format.",
+          message:
+            "Could not process audio file. Make sure it's a valid audio format.",
           isLoading: false,
           backgroundColor: "#d97706",
         });
       }
     },
-    [sampleAudio, ensureAudioContext, setStatusMessage]
+    [sampleAudio, ensureAudioContext, setStatusMessage],
   );
 
   // Recording functions
@@ -205,7 +217,15 @@ function AppContent() {
       });
       setIsRecording(false);
     }
-  }, [isRecording, recordingSettings, ensureAudioContext, setStatusMessage, audioChunksRef, mediaRecorderRef, recordingAudio]);
+  }, [
+    isRecording,
+    recordingSettings,
+    ensureAudioContext,
+    setStatusMessage,
+    audioChunksRef,
+    mediaRecorderRef,
+    recordingAudio,
+  ]);
 
   const stopRecording = useCallback(() => {
     if (!isRecording || !mediaRecorderRef.current) return;
@@ -317,6 +337,15 @@ function AppContent() {
         onYinParamsChange={sampleAudio.updateYinParams}
         onRecomputeYin={sampleAudio.recomputeYin}
         showYinLoadingOverlay={sampleAudio.yinLoading}
+        instructions={
+          <>
+            Press{" "}
+            <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
+              Enter
+            </kbd>{" "}
+            to play or drag & drop an audio file
+          </>
+        }
       />
 
       {/* Recording Instance */}
@@ -328,24 +357,20 @@ function AppContent() {
         onYinParamsChange={recordingAudio.updateYinParams}
         onRecomputeYin={recordingAudio.recomputeYin}
         showYinLoadingOverlay={recordingAudio.yinLoading}
+        instructions={
+          <>
+            Hold{" "}
+            <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
+              Space
+            </kbd>{" "}
+            to record
+          </>
+        }
       />
 
       {/* Display Controls (shared) */}
       <div className="w-full max-w-4xl mx-auto">
         <DisplayControls onRedraw={() => {}} />
-      </div>
-
-      {/* Instructions */}
-      <div className="w-full max-w-4xl mx-auto mt-4 p-3.5 text-center text-gray-300">
-        Press{" "}
-        <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
-          Enter
-        </kbd>{" "}
-        to play sample audio, hold{" "}
-        <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
-          Space
-        </kbd>{" "}
-        to record, or drag & drop an audio file.
       </div>
 
       {/* Audio File Links */}

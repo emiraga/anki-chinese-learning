@@ -15,6 +15,7 @@ interface AudioVisualizerPanelProps {
   onYinParamsChange: (params: AudioInstance["yinParams"]) => void;
   onRecomputeYin: () => void;
   showYinLoadingOverlay?: boolean;
+  instructions?: React.ReactNode;
 }
 
 /**
@@ -29,6 +30,7 @@ export function AudioVisualizerPanel({
   onYinParamsChange,
   onRecomputeYin,
   showYinLoadingOverlay = false,
+  instructions,
 }: AudioVisualizerPanelProps) {
   const handleRedraw = () => {
     // The canvases will redraw automatically when their dependencies change
@@ -70,8 +72,8 @@ export function AudioVisualizerPanel({
           </div>
         )}
 
-        {/* Play Button */}
-        <div className="flex justify-center mt-3">
+        {/* Play Button and Instructions */}
+        <div className="flex items-center justify-center gap-4 mt-3">
           <button
             onClick={onPlayStop}
             className={`flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-200 shadow-lg ${
@@ -100,6 +102,9 @@ export function AudioVisualizerPanel({
               </svg>
             )}
           </button>
+          {instructions && (
+            <div className="text-sm text-gray-300">{instructions}</div>
+          )}
         </div>
       </div>
 
