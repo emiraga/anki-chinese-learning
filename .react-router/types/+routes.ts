@@ -150,6 +150,9 @@ type Pages = {
   "/zhuyin_typing": {
     params: {};
   };
+  "/pronunciation": {
+    params: {};
+  };
   "/dong_demo": {
     params: {};
   };
@@ -164,7 +167,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -326,6 +329,10 @@ type RouteFiles = {
     id: "routes/zhuyin_typing";
     page: "/zhuyin_typing";
   };
+  "routes/pronunciation.tsx": {
+    id: "routes/pronunciation";
+    page: "/pronunciation";
+  };
   "routes/dong_demo.tsx": {
     id: "routes/dong_demo";
     page: "/dong_demo";
@@ -386,6 +393,7 @@ type RouteModules = {
   "routes/tone/$toneName": typeof import("./app/routes/tone/$toneName.tsx");
   "routes/tones": typeof import("./app/routes/tones.tsx");
   "routes/zhuyin_typing": typeof import("./app/routes/zhuyin_typing.tsx");
+  "routes/pronunciation": typeof import("./app/routes/pronunciation.tsx");
   "routes/dong_demo": typeof import("./app/routes/dong_demo.tsx");
   "routes/sound_eval": typeof import("./app/routes/sound_eval.tsx");
   "routes/dev_files": typeof import("./app/routes/dev_files.tsx");

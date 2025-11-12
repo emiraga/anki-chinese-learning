@@ -76,10 +76,7 @@ function AppContent() {
 
   // Load audio file for sample instance
   const loadAudioFile = useCallback(
-    async (
-      filePath: string,
-      description?: string,
-    ) => {
+    async (filePath: string, description?: string) => {
       try {
         sampleAudio.stopPlayback();
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -257,7 +254,10 @@ function AppContent() {
 
   // Load default audio on mount
   useEffect(() => {
-    loadAudioFile("audio/ai_讀書寫字.mp3");
+    loadAudioFile(
+      "audio/ai_讀書寫字.mp3",
+      'AI voice: "dú shū xiě zì" (read books, write characters)',
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

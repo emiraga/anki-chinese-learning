@@ -206,6 +206,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Zhuyin Typing",
           show: true,
         },
+        {
+          pathname: "/pronunciation",
+          name: "Pronunciation",
+          show: true,
+        },
       ],
     },
     {

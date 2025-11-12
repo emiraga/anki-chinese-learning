@@ -44,6 +44,7 @@ export default [
   route("tone/:toneName", "routes/tone/$toneName.tsx"),
   route("tones", "routes/tones.tsx"),
   route("zhuyin_typing", "routes/zhuyin_typing.tsx"),
+  route("pronunciation", "routes/pronunciation.tsx"),
   route("dong_demo", "routes/dong_demo.tsx"),
   route("sound_eval", "routes/sound_eval.tsx"),
   // Handle development tool files
