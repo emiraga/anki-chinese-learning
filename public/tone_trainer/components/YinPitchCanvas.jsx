@@ -7,7 +7,7 @@ import {
   YIN_MAX_JUMP_THRESHOLD_PERCENT,
   YIN_PITCH_POINT_RADIUS,
   YIN_PITCH_LINE_WIDTH,
-} from "../utils/constants.js";
+} from "../utils/constants.ts";
 
 export function YinPitchCanvas() {
   const canvasRef = useRef(null);

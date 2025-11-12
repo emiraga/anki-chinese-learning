@@ -1,5 +1,5 @@
 import React from "react";
-import { SAMPLE_AUDIO_FILES, TONE_PRACTICE_MATRIX, TONE_LABELS } from "../utils/constants.js";
+import { SAMPLE_AUDIO_FILES, TONE_PRACTICE_MATRIX, TONE_LABELS } from "../utils/constants.ts";
 
 export function AudioFilesList({ onLoadAudio }) {
   return (

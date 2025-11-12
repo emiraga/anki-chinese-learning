@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useRef, useCallback } from "react";
-import { RECORDING_SAMPLE_RATE } from "../utils/constants.js";
+import { RECORDING_SAMPLE_RATE } from "../utils/constants.ts";
 
 const ToneAnalyzerContext = createContext(null);
 

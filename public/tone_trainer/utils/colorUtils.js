@@ -1,4 +1,4 @@
-import { COLOR_MAPS } from "./constants.js";
+import { COLOR_MAPS } from "./constants.ts";
 
 export function interpolateColor(c1, c2, factor) {
   const result = c1.slice();

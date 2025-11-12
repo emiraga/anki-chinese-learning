@@ -1,3 +1,19 @@
+// Type Definitions
+export type RGBColor = [number, number, number];
+
+export interface ColorMap {
+  [key: string]: RGBColor[];
+}
+
+export interface AudioFile {
+  path: string;
+  maxFreq: number | null;
+}
+
+export interface SampleAudioFile extends AudioFile {
+  description: string;
+}
+
 // Analysis Constants
 export const FFT_SIZE = 4096 * 2;
 export const MAX_FREQ_HZ = 1300;
@@ -12,7 +28,7 @@ export const YIN_PITCH_LINE_WIDTH = 3;
 export const RECORDING_SAMPLE_RATE = 48000;
 
 // Color Maps
-export const COLOR_MAPS = {
+export const COLOR_MAPS: ColorMap = {
   viridis: [
     [68, 1, 84],
     [72, 40, 120],
@@ -50,7 +66,7 @@ export const COLOR_MAPS = {
 
 // Tone Combination Practice Files (4x4 matrix)
 // Rows represent the first tone, columns represent the second tone
-export const TONE_PRACTICE_MATRIX = [
+export const TONE_PRACTICE_MATRIX: AudioFile[][] = [
   [
     { path: "audio/Tone11loop.mp3", maxFreq: null },
     { path: "audio/Tone12loop.mp3", maxFreq: null },
@@ -77,7 +93,7 @@ export const TONE_PRACTICE_MATRIX = [
   ],
 ];
 
-export const TONE_LABELS = [
+export const TONE_LABELS: string[] = [
   "1st (flat)",
   "2nd (rising)",
   "3rd (low)",
@@ -85,7 +101,7 @@ export const TONE_LABELS = [
 ];
 
 // Sample Audio Files
-export const SAMPLE_AUDIO_FILES = [
+export const SAMPLE_AUDIO_FILES: SampleAudioFile[] = [
   {
     path: "audio/ai_讀書寫字.mp3",
     maxFreq: null,
