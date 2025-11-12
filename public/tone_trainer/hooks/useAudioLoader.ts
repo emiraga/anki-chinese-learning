@@ -3,7 +3,12 @@ import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { useAudioProcessing } from "./useAudioProcessing";
 import { useAudioPlayback } from "./useAudioPlayback";
 
-export function useAudioLoader() {
+export interface UseAudioLoaderReturn {
+  loadAudioFile: (filePath: string, needMaxFreq?: number | null) => Promise<void>;
+  loadDroppedAudio: (file: File) => Promise<void>;
+}
+
+export function useAudioLoader(): UseAudioLoaderReturn {
   const {
     audioContext,
     setStatusMessage,
@@ -16,7 +21,7 @@ export function useAudioLoader() {
   const { playAudio, stopPlayback } = useAudioPlayback();
 
   const loadAudioFile = useCallback(
-    async (filePath, needMaxFreq = null) => {
+    async (filePath: string, needMaxFreq: number | null = null): Promise<void> => {
       try {
         // Stop any currently playing audio
         stopPlayback();
@@ -80,7 +85,7 @@ export function useAudioLoader() {
   );
 
   const loadDroppedAudio = useCallback(
-    async (file) => {
+    async (file: File): Promise<void> => {
       try {
         // Stop any currently playing audio
         stopPlayback();

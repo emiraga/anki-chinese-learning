@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { ToneAnalyzerProvider, useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { useAudioRecording } from "../hooks/useAudioRecording";
 import { useAudioPlayback } from "../hooks/useAudioPlayback";
-import { useAudioLoader } from "../hooks/useAudioLoader.js";
+import { useAudioLoader } from "../hooks/useAudioLoader";
 import { useAudioProcessing } from "../hooks/useAudioProcessing";
 import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { SpectrogramCanvas } from "./SpectrogramCanvas.jsx";
