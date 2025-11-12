@@ -1,6 +1,10 @@
 import React from "react";
 
-export function DropOverlay({ show }) {
+interface DropOverlayProps {
+  show: boolean;
+}
+
+export function DropOverlay({ show }: DropOverlayProps) {
   if (!show) return null;
 
   return (

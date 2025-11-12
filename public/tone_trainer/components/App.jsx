@@ -7,7 +7,7 @@ import { useAudioProcessing } from "../hooks/useAudioProcessing";
 import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { SpectrogramCanvas } from "./SpectrogramCanvas.jsx";
 import { YinPitchCanvas } from "./YinPitchCanvas.jsx";
-import { DropOverlay } from "./DropOverlay.jsx";
+import { DropOverlay } from "./DropOverlay.tsx";
 import { StatusMessage } from "./StatusMessage";
 import { ProgressLine } from "./ProgressLine.tsx";
 import { PlaybackControls } from "./PlaybackControls.jsx";
