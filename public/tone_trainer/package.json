@@ -1,0 +1,22 @@
+{
+  "name": "tone-trainer-react",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "React version of the Mandarin tone trainer application",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:css && vite build && npm run postbuild",
+    "build:css": "npx @tailwindcss/cli --minify -i ./input.css -o ./output.css && perl -i -p -e 's/.webkit.text.size.adjust: ?100.;//' ./output.css && wc -c ./input.css ./output.css",
+    "postbuild": "cp -r audio dist/ && cp fftjs.min.js dist/ && cp output.css dist/",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "tailwindcss": "^4.0.0",
+    "vite": "^5.4.2"
+  }
+}
