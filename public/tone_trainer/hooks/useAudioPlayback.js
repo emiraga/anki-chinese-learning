@@ -51,10 +51,8 @@ export function useAudioPlayback() {
       let playbackStartTime = null;
 
       function updateProgress() {
-        if (!isPlaying) {
-          progressAnimationFrameRef.current = null;
-          return;
-        }
+        // Don't check isPlaying here - it's a stale closure value
+        // The animation frame is properly cancelled via stopPlayback and onended
 
         if (playbackStartTime === null) {
           playbackStartTime = performance.now();
