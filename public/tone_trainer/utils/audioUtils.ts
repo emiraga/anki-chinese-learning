@@ -1,7 +1,7 @@
 /**
  * Convert AudioBuffer to WAV format
  */
-export function audioBufferToWav(audioBuffer) {
+export function audioBufferToWav(audioBuffer: AudioBuffer): Blob {
   const numberOfChannels = audioBuffer.numberOfChannels;
   const length = audioBuffer.length * numberOfChannels * 2;
   const sampleRate = audioBuffer.sampleRate;
@@ -9,7 +9,7 @@ export function audioBufferToWav(audioBuffer) {
   const view = new DataView(buffer);
 
   // Write WAV header
-  const writeString = (offset, string) => {
+  const writeString = (offset: number, string: string): void => {
     for (let i = 0; i < string.length; i++) {
       view.setUint8(offset + i, string.charCodeAt(i));
     }
@@ -30,7 +30,7 @@ export function audioBufferToWav(audioBuffer) {
   view.setUint32(40, length, true);
 
   // Write audio data
-  const channels = [];
+  const channels: Float32Array[] = [];
   for (let i = 0; i < numberOfChannels; i++) {
     channels.push(audioBuffer.getChannelData(i));
   }
@@ -54,7 +54,7 @@ export function audioBufferToWav(audioBuffer) {
 /**
  * Download audio buffer as WAV file
  */
-export function downloadAudioBuffer(audioBuffer) {
+export function downloadAudioBuffer(audioBuffer: AudioBuffer): void {
   const wavBlob = audioBufferToWav(audioBuffer);
   const url = URL.createObjectURL(wavBlob);
   const a = document.createElement("a");

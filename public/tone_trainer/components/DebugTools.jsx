@@ -1,6 +1,6 @@
 import React from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
-import { downloadAudioBuffer } from "../utils/audioUtils.js";
+import { downloadAudioBuffer } from "../utils/audioUtils";
 
 export function DebugTools() {
   const { lastAudioBuffer } = useToneAnalyzer();
