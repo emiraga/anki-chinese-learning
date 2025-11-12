@@ -16,7 +16,8 @@ export function DebugTools() {
       console.log("Audio file saved successfully");
     } catch (err) {
       console.error("Error saving audio file:", err);
-      alert("Error saving audio file: " + err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      alert("Error saving audio file: " + message);
     }
   };
 
