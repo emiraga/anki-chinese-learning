@@ -11,7 +11,7 @@ import { DropOverlay } from "./DropOverlay.tsx";
 import { StatusMessage } from "./StatusMessage";
 import { ProgressLine } from "./ProgressLine.tsx";
 import { PlaybackControls } from "./PlaybackControls.tsx";
-import { AudioFilesList } from "./AudioFilesList.jsx";
+import { AudioFilesList } from "./AudioFilesList.tsx";
 import { DebugTools } from "./DebugTools.jsx";
 import { DisplayControls } from "./DisplayControls.jsx";
 import { RecordingControls } from "./RecordingControls.jsx";

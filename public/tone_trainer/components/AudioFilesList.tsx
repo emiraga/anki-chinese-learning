@@ -1,7 +1,11 @@
 import React from "react";
-import { SAMPLE_AUDIO_FILES, TONE_PRACTICE_MATRIX, TONE_LABELS } from "../utils/constants.ts";
+import { SAMPLE_AUDIO_FILES, TONE_PRACTICE_MATRIX, TONE_LABELS } from "../utils/constants";
 
-export function AudioFilesList({ onLoadAudio }) {
+interface AudioFilesListProps {
+  onLoadAudio: (path: string, maxFreq: number | null) => void;
+}
+
+export function AudioFilesList({ onLoadAudio }: AudioFilesListProps) {
   return (
     <div className="w-full max-w-4xl mx-auto mt-3 space-y-6">
       {/* Tone Practice Matrix */}
