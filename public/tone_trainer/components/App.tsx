@@ -3,7 +3,6 @@ import { ToneAnalyzerProvider, useToneAnalyzer } from "../context/ToneAnalyzerCo
 import { useAudioRecording } from "../hooks/useAudioRecording";
 import { useAudioPlayback } from "../hooks/useAudioPlayback";
 import { useAudioLoader } from "../hooks/useAudioLoader";
-import { useAudioProcessing } from "../hooks/useAudioProcessing";
 import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { SpectrogramCanvas } from "./SpectrogramCanvas";
 import { YinPitchCanvas } from "./YinPitchCanvas";
@@ -33,7 +32,6 @@ function AppContent() {
   const { loadAudioFile, loadDroppedAudio } = useAudioLoader();
 
   const [showDropOverlay, setShowDropOverlay] = useState(false);
-  const [dragCounter, setDragCounter] = useState(0);
   const [showYinLoadingOverlay, setShowYinLoadingOverlay] = useState(false);
 
   // Load default audio on mount
@@ -81,7 +79,6 @@ function AppContent() {
   // Drag and drop handlers
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setDragCounter((prev) => prev + 1);
     setShowDropOverlay(true);
   };
 
@@ -92,19 +89,11 @@ function AppContent() {
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setDragCounter((prev) => {
-      const newCount = prev - 1;
-      if (newCount === 0) {
-        setShowDropOverlay(false);
-      }
-      return newCount;
-    });
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragCounter(0);
     setShowDropOverlay(false);
 
     const files = e.dataTransfer.files;

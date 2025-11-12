@@ -32,7 +32,7 @@ export function useAudioPlayback(): UseAudioPlaybackReturn {
       if (currentAudioSourceRef.current) {
         try {
           currentAudioSourceRef.current.stop();
-        } catch (e) {
+        } catch {
           // Ignore errors if source already stopped
         }
       }
@@ -117,7 +117,7 @@ export function useAudioPlayback(): UseAudioPlaybackReturn {
     if (currentAudioSourceRef.current) {
       try {
         currentAudioSourceRef.current.stop();
-      } catch (e) {
+      } catch {
         // Ignore errors if source already stopped
       }
       currentAudioSourceRef.current = null;

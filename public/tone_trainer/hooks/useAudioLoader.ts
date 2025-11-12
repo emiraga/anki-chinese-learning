@@ -10,7 +10,6 @@ export interface UseAudioLoaderReturn {
 
 export function useAudioLoader(): UseAudioLoaderReturn {
   const {
-    audioContext,
     setStatusMessage,
     yinParams,
     setYinParams,

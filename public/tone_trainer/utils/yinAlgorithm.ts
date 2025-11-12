@@ -125,8 +125,8 @@ export function yinDifferenceFunctionFftZeroPadding(buffer: Float32Array): numbe
   differenceFunction[0] = 0;
 
   for (let tau = 1; tau < halfBufferSize; tau++) {
-    const r_tau = autocorrelationResult[tau * 2] * scaleFactor;
-    differenceFunction[tau] = 2.0 * (r0 - r_tau);
+    const rTau = autocorrelationResult[tau * 2] * scaleFactor;
+    differenceFunction[tau] = 2.0 * (r0 - rTau);
   }
 
   return differenceFunction;
@@ -292,14 +292,14 @@ export function performYinAnalysis(audioBuffer: AudioBuffer, yinParams: YinParam
   const analysisStartTime = performance.now();
   let frameCount = 0;
 
-  const useDifferenceFunction =
+  const calculateDifferenceFunction =
     yinDifferenceMethods[yinParams.differenceMethod] ||
     yinDifferenceFunctionFftZeroPadding;
 
   for (let i = 0; i <= audioData.length - frameSize; i += hopSize) {
     const frame = audioData.slice(i, i + frameSize);
 
-    const differenceFunction = useDifferenceFunction(frame);
+    const differenceFunction = calculateDifferenceFunction(frame);
     frameCount++;
 
     const cmndf = yinCumulativeMeanNormalizedDifference(differenceFunction);

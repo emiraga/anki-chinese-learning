@@ -134,7 +134,8 @@ export function ToneAnalyzerProvider({ children }: ToneAnalyzerProviderProps) {
   // Ensure audio context is initialized
   const ensureAudioContext = useCallback((): AudioContext => {
     if (!audioContext) {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({
+      const AudioContextConstructor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioContextConstructor({
         sampleRate: RECORDING_SAMPLE_RATE,
       });
       setAudioContext(ctx);

@@ -9,7 +9,6 @@ export interface UseAudioProcessingReturn {
 
 export function useAudioProcessing(): UseAudioProcessingReturn {
   const {
-    audioContext,
     setSpectrogramData,
     setYinData,
     setLastAudioBuffer,

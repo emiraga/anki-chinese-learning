@@ -9,7 +9,6 @@ export interface UseAudioRecordingReturn {
 
 export function useAudioRecording(): UseAudioRecordingReturn {
   const {
-    audioContext,
     isRecording,
     setIsRecording,
     recordingSettings,
