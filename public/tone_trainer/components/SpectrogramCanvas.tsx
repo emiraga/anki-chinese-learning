@@ -4,7 +4,7 @@ import { getColor } from "../utils/colorUtils";
 import { FFT_SIZE, MAX_FREQ_HZ } from "../utils/constants";
 
 export function SpectrogramCanvas() {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { spectrogramData, settings, audioContext } = useToneAnalyzer();
 
   useEffect(() => {
@@ -14,6 +14,10 @@ export function SpectrogramCanvas() {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
+
     const numSlices = spectrogramData.length;
 
     // Calculate frequency bins to show
