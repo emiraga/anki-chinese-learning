@@ -6,6 +6,7 @@ import {
 } from "../../public/tone_trainer/context/ToneAnalyzerContext";
 import { useAudioInstance } from "../../public/tone_trainer/hooks/useAudioInstance";
 import { AudioVisualizerPanel } from "../../public/tone_trainer/components/AudioVisualizerPanel";
+import { trimSilence } from "../../public/tone_trainer/utils/audioUtils";
 
 interface AnkiAudioPlayerProps {
   audioField?: string;
@@ -247,8 +248,11 @@ const PitchVisualizationPlayer: React.FC<
       const ctx = ensureAudioContext();
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
+      // Trim silence from beginning and end
+      const trimmedBuffer = trimSilence(audioBuffer);
+
       const processedBuffer =
-        await audioInstance.processAudioBuffer(audioBuffer);
+        await audioInstance.processAudioBuffer(trimmedBuffer);
       audioInstance.playAudio(processedBuffer);
     } catch (err) {
       console.error("Error loading audio file:", err);

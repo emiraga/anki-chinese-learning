@@ -12,6 +12,7 @@ import { DisplayControls } from "./DisplayControls";
 import { AudioFilesList } from "./AudioFilesList";
 import { DebugTools } from "./DebugTools";
 import { MobileRecordingFooter } from "./MobileRecordingFooter";
+import { trimSilence } from "../utils/audioUtils";
 
 function AppContent() {
   const {
@@ -103,8 +104,11 @@ function AppContent() {
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
+        // Trim silence from beginning and end
+        const trimmedBuffer = trimSilence(audioBuffer);
+
         const processedBuffer =
-          await sampleAudio.processAudioBuffer(audioBuffer);
+          await sampleAudio.processAudioBuffer(trimmedBuffer);
         sampleAudio.playAudio(processedBuffer);
       } catch (err) {
         console.error("Error loading audio file:", err);
@@ -141,8 +145,11 @@ function AppContent() {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
+        // Trim silence from beginning and end
+        const trimmedBuffer = trimSilence(audioBuffer);
+
         const processedBuffer =
-          await sampleAudio.processAudioBuffer(audioBuffer);
+          await sampleAudio.processAudioBuffer(trimmedBuffer);
         sampleAudio.playAudio(processedBuffer);
       } catch (err) {
         console.error("Error loading dropped audio:", err);
@@ -205,7 +212,11 @@ function AppContent() {
         try {
           const arrayBuffer = await audioBlob.arrayBuffer();
           const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-          await recordingAudio.processAudioBuffer(audioBuffer);
+
+          // Trim silence from beginning and end
+          const trimmedBuffer = trimSilence(audioBuffer);
+
+          await recordingAudio.processAudioBuffer(trimmedBuffer);
         } catch (err) {
           console.error("Error decoding audio data:", err);
           setStatusMessage({
