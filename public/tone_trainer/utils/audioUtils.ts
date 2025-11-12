@@ -81,7 +81,7 @@ export interface TrimSilenceOptions {
 
   /**
    * Minimum padding to keep at the end in seconds
-   * @default 0.05
+   * @default 0.15
    */
   paddingEnd?: number;
 
@@ -182,7 +182,7 @@ export function trimSilence(
   const {
     threshold = 0.01,
     paddingStart = 0.05,
-    paddingEnd = 0.05,
+    paddingEnd = 0.15,
     windowSize = 100,
   } = options;
 
