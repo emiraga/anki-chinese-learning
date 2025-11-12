@@ -48,6 +48,42 @@ export const COLOR_MAPS = {
   ],
 };
 
+// Tone Combination Practice Files (4x4 matrix)
+// Rows represent the first tone, columns represent the second tone
+export const TONE_PRACTICE_MATRIX = [
+  [
+    { path: "audio/Tone11loop.mp3", maxFreq: null },
+    { path: "audio/Tone12loop.mp3", maxFreq: null },
+    { path: "audio/Tone13loop.mp3", maxFreq: null },
+    { path: "audio/Tone14loop.mp3", maxFreq: null },
+  ],
+  [
+    { path: "audio/Tone21loop.mp3", maxFreq: null },
+    { path: "audio/Tone22loop.mp3", maxFreq: null },
+    { path: "audio/Tone23loop.mp3", maxFreq: null },
+    { path: "audio/Tone24loop.mp3", maxFreq: null },
+  ],
+  [
+    { path: "audio/Tone31loop.mp3", maxFreq: null },
+    { path: "audio/Tone32loop.mp3", maxFreq: null },
+    { path: "audio/Tone33loop.mp3", maxFreq: null },
+    { path: "audio/Tone34loop.mp3", maxFreq: null },
+  ],
+  [
+    { path: "audio/Tone41loop.mp3", maxFreq: null },
+    { path: "audio/Tone42loop.mp3", maxFreq: null },
+    { path: "audio/Tone43loop.mp3", maxFreq: null },
+    { path: "audio/Tone44loop.mp3", maxFreq: null },
+  ],
+];
+
+export const TONE_LABELS = [
+  "1st (flat)",
+  "2nd (rising)",
+  "3rd (low)",
+  "4th (falling)",
+];
+
 // Sample Audio Files
 export const SAMPLE_AUDIO_FILES = [
   {
@@ -69,94 +105,12 @@ export const SAMPLE_AUDIO_FILES = [
   {
     path: "audio/human_我喜歡吃東西.m4a",
     maxFreq: null,
-    description:
-      'Human voice: "wǒ xǐ huān chī dōng xī" (I like to eat things)',
+    description: 'Human voice: "wǒ xǐ huān chī dōng xī" (I like to eat things)',
   },
   {
     path: "audio/human_我一歲了.m4a",
     maxFreq: null,
     description: 'Human voice: "wǒ yī suì le" (I am one year old)',
-  },
-  // Tone combination practice files
-  {
-    path: "audio/Tone11loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 1st tone → 1st tone (flat → flat)",
-  },
-  {
-    path: "audio/Tone12loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 1st tone → 2nd tone (flat → rising)",
-  },
-  {
-    path: "audio/Tone13loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 1st tone → 3rd tone (flat → dipping)",
-  },
-  {
-    path: "audio/Tone14loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 1st tone → 4th tone (flat → falling)",
-  },
-  {
-    path: "audio/Tone21loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 2nd tone → 1st tone (rising → flat)",
-  },
-  {
-    path: "audio/Tone22loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 2nd tone → 2nd tone (rising → rising)",
-  },
-  {
-    path: "audio/Tone23loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 2nd tone → 3rd tone (rising → dipping)",
-  },
-  {
-    path: "audio/Tone24loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 2nd tone → 4th tone (rising → falling)",
-  },
-  {
-    path: "audio/Tone31loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 3rd tone → 1st tone (dipping → flat)",
-  },
-  {
-    path: "audio/Tone32loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 3rd tone → 2nd tone (dipping → rising)",
-  },
-  {
-    path: "audio/Tone33loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 3rd tone → 3rd tone (dipping → dipping)",
-  },
-  {
-    path: "audio/Tone34loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 3rd tone → 4th tone (dipping → falling)",
-  },
-  {
-    path: "audio/Tone41loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 4th tone → 1st tone (falling → flat)",
-  },
-  {
-    path: "audio/Tone42loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 4th tone → 2nd tone (falling → rising)",
-  },
-  {
-    path: "audio/Tone43loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 4th tone → 3rd tone (falling → dipping)",
-  },
-  {
-    path: "audio/Tone44loop.mp3",
-    maxFreq: null,
-    description: "Tone practice: 4th tone → 4th tone (falling → falling)",
   },
   // Human voices and music
   {

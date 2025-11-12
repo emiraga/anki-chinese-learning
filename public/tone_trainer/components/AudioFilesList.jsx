@@ -1,9 +1,59 @@
 import React from "react";
-import { SAMPLE_AUDIO_FILES } from "../utils/constants.js";
+import { SAMPLE_AUDIO_FILES, TONE_PRACTICE_MATRIX, TONE_LABELS } from "../utils/constants.js";
 
 export function AudioFilesList({ onLoadAudio }) {
   return (
-    <div className="w-full max-w-4xl mx-auto mt-3">
+    <div className="w-full max-w-4xl mx-auto mt-3 space-y-6">
+      {/* Tone Practice Matrix */}
+      <div className="bg-gray-700/50 p-4 rounded-lg">
+        <h4 className="text-gray-300 text-sm font-medium mb-3">
+          Tone Combination Practice (4x4 Matrix)
+        </h4>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="border border-gray-600 p-2 bg-gray-800 text-gray-300 text-xs font-medium">
+                  From → To
+                </th>
+                {TONE_LABELS.map((label, index) => (
+                  <th
+                    key={index}
+                    className="border border-gray-600 p-2 bg-gray-800 text-gray-300 text-xs font-medium"
+                  >
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {TONE_PRACTICE_MATRIX.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  <td className="border border-gray-600 p-2 bg-gray-800 text-gray-300 text-xs font-medium">
+                    {TONE_LABELS[rowIndex]}
+                  </td>
+                  {row.map((file, colIndex) => {
+                    const fileName = file.path.split("/").pop();
+                    return (
+                      <td key={colIndex} className="border border-gray-600 p-2">
+                        <button
+                          onClick={() => onLoadAudio(file.path, file.maxFreq)}
+                          className="w-full cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors duration-200"
+                          title={fileName}
+                        >
+                          {rowIndex + 1}→{colIndex + 1}
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Regular Sample Audio Files */}
       <div className="bg-gray-700/50 p-4 rounded-lg">
         <h4 className="text-gray-300 text-sm font-medium mb-3">
           Load Sample Audio Files: (you can also drag-and-drop your own audio

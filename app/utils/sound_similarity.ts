@@ -437,7 +437,7 @@ function scoreToneSimilarity(
 
   // Tone similarity based on contour
   // Tone 1 (high level) vs Tone 2 (rising): somewhat similar (high register)
-  // Tone 3 (low dipping) vs Tone 4 (falling): somewhat different
+  // Tone 3 (low level) vs Tone 4 (falling): somewhat different
   // Tone 5 (neutral) is special
 
   const toneSimilarity: { [key: string]: number } = {
