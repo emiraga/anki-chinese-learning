@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
+import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { getPitchPointColor } from "../utils/colorUtils";
 import { medianFilter, correctOctaveJumps } from "../utils/pitchProcessing";
 import {

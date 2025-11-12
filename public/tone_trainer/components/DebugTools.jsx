@@ -1,5 +1,5 @@
 import React from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
+import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { downloadAudioBuffer } from "../utils/audioUtils";
 
 export function DebugTools() {

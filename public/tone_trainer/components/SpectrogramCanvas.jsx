@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
+import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { getColor } from "../utils/colorUtils";
 import { FFT_SIZE, MAX_FREQ_HZ } from "../utils/constants";
 

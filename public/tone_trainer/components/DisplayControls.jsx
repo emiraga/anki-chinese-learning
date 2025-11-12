@@ -1,5 +1,5 @@
 import React from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
+import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { CollapsibleSection } from "./CollapsibleSection.jsx";
 
 export function DisplayControls({ onRedraw }) {

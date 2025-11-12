@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
+import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { useAudioProcessing } from "./useAudioProcessing.js";
 import { useAudioPlayback } from "./useAudioPlayback.js";
 

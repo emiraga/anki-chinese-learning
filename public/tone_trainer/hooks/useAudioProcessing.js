@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
+import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { FFT_SIZE, BUFFER_SIZE } from "../utils/constants";
 
