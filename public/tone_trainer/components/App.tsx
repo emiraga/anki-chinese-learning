@@ -100,8 +100,8 @@ function AppContent() {
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
-        await sampleAudio.processAudioBuffer(audioBuffer);
-        sampleAudio.playAudio();
+        const processedBuffer = await sampleAudio.processAudioBuffer(audioBuffer);
+        sampleAudio.playAudio(processedBuffer);
       } catch (err) {
         console.error("Error loading audio file:", err);
         setStatusMessage({
@@ -131,8 +131,8 @@ function AppContent() {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
-        await sampleAudio.processAudioBuffer(audioBuffer);
-        sampleAudio.playAudio();
+        const processedBuffer = await sampleAudio.processAudioBuffer(audioBuffer);
+        sampleAudio.playAudio(processedBuffer);
       } catch (err) {
         console.error("Error loading dropped audio:", err);
         setStatusMessage({

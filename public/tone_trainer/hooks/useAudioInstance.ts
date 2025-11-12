@@ -8,11 +8,11 @@ export interface UseAudioInstanceReturn {
   instance: AudioInstance;
   setInstance: React.Dispatch<React.SetStateAction<AudioInstance>>;
   yinLoading: boolean;
-  playAudio: () => Promise<void>;
+  playAudio: (buffer?: AudioBuffer) => Promise<void>;
   stopPlayback: () => void;
   togglePlayStop: () => void;
   recomputeYin: () => void;
-  processAudioBuffer: (audioBuffer: AudioBuffer) => Promise<void>;
+  processAudioBuffer: (audioBuffer: AudioBuffer) => Promise<AudioBuffer>;
   updateYinParams: (yinParams: AudioInstance["yinParams"]) => void;
 }
 
@@ -49,6 +49,7 @@ export function useAudioInstance(
         }));
 
         onStatusChange?.("", false);
+        return audioBuffer;
       } catch (err) {
         throw err;
       }
@@ -57,8 +58,9 @@ export function useAudioInstance(
   );
 
   // Play audio
-  const playAudio = useCallback(async () => {
-    if (!instance.audioBuffer || !audioContext) return;
+  const playAudio = useCallback(async (buffer?: AudioBuffer) => {
+    const bufferToPlay = buffer ?? instance.audioBuffer;
+    if (!bufferToPlay || !audioContext) return;
 
     // Stop any currently playing audio
     if (audioSourceRef.current) {
@@ -78,7 +80,7 @@ export function useAudioInstance(
     }
 
     const source = audioContext.createBufferSource();
-    source.buffer = instance.audioBuffer;
+    source.buffer = bufferToPlay;
     source.connect(audioContext.destination);
 
     setInstance((prev) => ({
@@ -88,7 +90,7 @@ export function useAudioInstance(
       isPlaying: true,
     }));
 
-    durationRef.current = instance.audioBuffer.duration;
+    durationRef.current = bufferToPlay.duration;
     audioSourceRef.current = source;
 
     let playbackStartTime: number | null = null;
