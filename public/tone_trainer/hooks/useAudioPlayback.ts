@@ -1,7 +1,15 @@
 import { useCallback } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 
-export function useAudioPlayback() {
+export interface UseAudioPlaybackReturn {
+  playAudio: (audioBuffer: AudioBuffer) => Promise<void>;
+  stopPlayback: () => void;
+  togglePlayStop: () => void;
+  progressPercentage: number;
+  showProgress: boolean;
+}
+
+export function useAudioPlayback(): UseAudioPlaybackReturn {
   const {
     audioContext,
     isPlaying,
@@ -17,7 +25,7 @@ export function useAudioPlayback() {
   } = useToneAnalyzer();
 
   const playAudio = useCallback(
-    async (audioBuffer) => {
+    async (audioBuffer: AudioBuffer): Promise<void> => {
       if (!audioContext) return;
 
       // Stop any currently playing audio
@@ -49,9 +57,9 @@ export function useAudioPlayback() {
       currentAudioSourceRef.current = source;
       setIsPlaying(true);
 
-      let playbackStartTime = null;
+      let playbackStartTime: number | null = null;
 
-      function updateProgress() {
+      function updateProgress(): void {
         // Don't check isPlaying here - it's a stale closure value
         // The animation frame is properly cancelled via stopPlayback and onended
 
@@ -61,13 +69,13 @@ export function useAudioPlayback() {
 
         const elapsed = (performance.now() - playbackStartTime) / 1000;
         const progress = Math.min(
-          (elapsed / audioDurationRef.current) * 100,
+          (elapsed / audioDurationRef.current!) * 100,
           100
         );
 
         setProgressPercentage(progress);
 
-        if (progress >= 100 || elapsed >= audioDurationRef.current) {
+        if (progress >= 100 || elapsed >= audioDurationRef.current!) {
           setIsPlaying(false);
           currentAudioSourceRef.current = null;
           setProgressPercentage(100);
@@ -105,7 +113,7 @@ export function useAudioPlayback() {
     ]
   );
 
-  const stopPlayback = useCallback(() => {
+  const stopPlayback = useCallback((): void => {
     if (currentAudioSourceRef.current) {
       try {
         currentAudioSourceRef.current.stop();
@@ -125,9 +133,11 @@ export function useAudioPlayback() {
     setIsPlaying,
     currentAudioSourceRef,
     progressAnimationFrameRef,
+    setProgressPercentage,
+    setShowProgress,
   ]);
 
-  const togglePlayStop = useCallback(() => {
+  const togglePlayStop = useCallback((): void => {
     if (isPlaying) {
       stopPlayback();
     } else if (lastAudioBuffer) {

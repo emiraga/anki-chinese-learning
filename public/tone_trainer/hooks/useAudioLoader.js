@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { useAudioProcessing } from "./useAudioProcessing";
-import { useAudioPlayback } from "./useAudioPlayback.js";
+import { useAudioPlayback } from "./useAudioPlayback";
 
 export function useAudioLoader() {
   const {
