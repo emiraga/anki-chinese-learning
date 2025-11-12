@@ -1,18 +1,26 @@
 import React from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { CollapsibleSection } from "./CollapsibleSection";
+import type { YinParams } from "../utils/pitchProcessing";
 
-interface YinControlsProps {
+interface YinControlsPureProps {
+  yinParams: YinParams;
+  onYinParamsChange: (params: YinParams) => void;
   onRecompute?: () => void;
   onRedraw?: () => void;
 }
 
-export function YinControls({ onRecompute, onRedraw }: YinControlsProps) {
-  const { yinParams, setYinParams } = useToneAnalyzer();
-
+/**
+ * Prop-based YIN controls that don't rely on context
+ */
+export function YinControlsPure({
+  yinParams,
+  onYinParamsChange,
+  onRecompute,
+  onRedraw,
+}: YinControlsPureProps) {
   const handleStringChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setYinParams((prev) => ({ ...prev, [field]: value }));
+    onYinParamsChange({ ...yinParams, [field]: value });
     if (shouldRecompute) {
       onRecompute?.();
     } else {
@@ -22,7 +30,7 @@ export function YinControls({ onRecompute, onRedraw }: YinControlsProps) {
 
   const handleIntChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
-    setYinParams((prev) => ({ ...prev, [field]: value }));
+    onYinParamsChange({ ...yinParams, [field]: value });
     if (shouldRecompute) {
       onRecompute?.();
     } else {
@@ -32,7 +40,7 @@ export function YinControls({ onRecompute, onRedraw }: YinControlsProps) {
 
   const handleFloatChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
-    setYinParams((prev) => ({ ...prev, [field]: value }));
+    onYinParamsChange({ ...yinParams, [field]: value });
     if (shouldRecompute) {
       onRecompute?.();
     } else {
@@ -42,7 +50,7 @@ export function YinControls({ onRecompute, onRedraw }: YinControlsProps) {
 
   const handleBooleanChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.checked;
-    setYinParams((prev) => ({ ...prev, [field]: value }));
+    onYinParamsChange({ ...yinParams, [field]: value });
     if (shouldRecompute) {
       onRecompute?.();
     } else {

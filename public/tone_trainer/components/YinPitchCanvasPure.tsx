@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { getPitchPointColor } from "../utils/colorUtils";
 import { medianFilter, correctOctaveJumps } from "../utils/pitchProcessing";
+import type { PitchFrame, YinParams } from "../utils/pitchProcessing";
 import {
   FFT_SIZE,
   YIN_MAX_JUMP_THRESHOLD_PERCENT,
@@ -9,12 +9,24 @@ import {
   YIN_PITCH_LINE_WIDTH,
 } from "../utils/constants";
 
-export function YinPitchCanvas() {
+interface YinPitchCanvasPureProps {
+  yinData: PitchFrame[];
+  yinParams: YinParams;
+  audioBuffer: AudioBuffer | null;
+}
+
+/**
+ * Prop-based YIN pitch canvas that doesn't rely on context
+ */
+export function YinPitchCanvasPure({
+  yinData,
+  yinParams,
+  audioBuffer,
+}: YinPitchCanvasPureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { yinData, lastAudioBuffer, yinParams } = useToneAnalyzer();
 
   useEffect(() => {
-    if (!canvasRef.current || yinData.length === 0 || !lastAudioBuffer) {
+    if (!canvasRef.current || yinData.length === 0 || !audioBuffer) {
       return;
     }
 
@@ -63,8 +75,8 @@ export function YinPitchCanvas() {
 
       const maxJumpThreshold = height * YIN_MAX_JUMP_THRESHOLD_PERCENT;
 
-      const sampleRate = lastAudioBuffer.sampleRate;
-      const totalDuration = lastAudioBuffer.duration;
+      const sampleRate = audioBuffer.sampleRate;
+      const totalDuration = audioBuffer.duration;
 
       const spectrogramDelay = FFT_SIZE / 2;
 
@@ -133,12 +145,11 @@ export function YinPitchCanvas() {
       ctx.textAlign = "center";
       ctx.fillText("No pitch detected", width / 2, height / 2);
     }
-  }, [yinData, lastAudioBuffer, yinParams]);
+  }, [yinData, audioBuffer, yinParams]);
 
   return (
     <canvas
       ref={canvasRef}
-      id="yinPitchCanvas"
       className="absolute top-0 left-0 pointer-events-none w-full h-[300px]"
       style={{ background: "transparent" }}
     />

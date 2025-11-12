@@ -1,11 +1,23 @@
 import React, { useRef, useEffect } from "react";
-import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { getColor } from "../utils/colorUtils";
 import { FFT_SIZE, MAX_FREQ_HZ } from "../utils/constants";
+import type { VisualizationSettings } from "../context/ToneAnalyzerContext";
 
-export function SpectrogramCanvas() {
+interface SpectrogramCanvasPureProps {
+  spectrogramData: number[][];
+  settings: VisualizationSettings;
+  audioContext: AudioContext | null;
+}
+
+/**
+ * Prop-based spectrogram canvas that doesn't rely on context
+ */
+export function SpectrogramCanvasPure({
+  spectrogramData,
+  settings,
+  audioContext,
+}: SpectrogramCanvasPureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { spectrogramData, settings, audioContext } = useToneAnalyzer();
 
   useEffect(() => {
     if (!canvasRef.current || spectrogramData.length === 0 || !audioContext) {
@@ -61,7 +73,6 @@ export function SpectrogramCanvas() {
   return (
     <canvas
       ref={canvasRef}
-      id="spectrogramCanvas"
       className="w-full h-[300px] bg-gray-900 rounded-lg"
       style={{
         imageRendering: "pixelated",
