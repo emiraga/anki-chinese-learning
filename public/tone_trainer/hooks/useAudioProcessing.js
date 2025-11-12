@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
-import { performYinAnalysis } from "../utils/yinAlgorithm.js";
-import { FFT_SIZE, BUFFER_SIZE } from "../utils/constants.ts";
+import { performYinAnalysis } from "../utils/yinAlgorithm";
+import { FFT_SIZE, BUFFER_SIZE } from "../utils/constants";
 
 export function useAudioProcessing() {
   const {

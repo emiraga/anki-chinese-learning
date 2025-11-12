@@ -1,9 +1,19 @@
 // YIN Algorithm Implementation
+import type { PitchFrame, YinParams } from "./pitchProcessing";
+
+// Declare FFTJS type for the global library loaded from fftjs.min.js
+declare const FFTJS: {
+  new (size: number): {
+    createComplexArray(): Float32Array;
+    realTransform(out: Float32Array, data: Float32Array): void;
+    inverseTransform(out: Float32Array, data: Float32Array): void;
+  };
+};
 
 /**
  * Calculate RMS (Root Mean Square) power of an audio frame
  */
-export function calculateRMSPower(frame) {
+export function calculateRMSPower(frame: Float32Array): number {
   let sumSquares = 0;
   for (let i = 0; i < frame.length; i++) {
     sumSquares += frame[i] * frame[i];
@@ -14,14 +24,18 @@ export function calculateRMSPower(frame) {
 /**
  * Adjust confidence based on audio power
  */
-export function adjustConfidenceByPower(confidence, power, minPowerThreshold) {
+export function adjustConfidenceByPower(
+  confidence: number,
+  power: number,
+  minPowerThreshold: number
+): number {
   if (power < minPowerThreshold) {
     return 0;
   }
   return confidence;
 }
 
-export function yinDifferenceFunction(buffer) {
+export function yinDifferenceFunction(buffer: Float32Array): number[] {
   const bufferSize = buffer.length;
   const differenceFunction = new Array(bufferSize / 2);
 
@@ -37,7 +51,7 @@ export function yinDifferenceFunction(buffer) {
   return differenceFunction;
 }
 
-export function yinDifferenceFunctionFFTSimple(buffer) {
+export function yinDifferenceFunctionFFTSimple(buffer: Float32Array): number[] {
   const bufferSize = buffer.length;
   const halfBufferSize = bufferSize / 2;
   const differenceFunction = new Array(halfBufferSize).fill(0);
@@ -76,7 +90,7 @@ export function yinDifferenceFunctionFFTSimple(buffer) {
   return differenceFunction;
 }
 
-export function yinDifferenceFunctionFftZeroPadding(buffer) {
+export function yinDifferenceFunctionFftZeroPadding(buffer: Float32Array): number[] {
   const N = buffer.length;
   const halfBufferSize = N / 2;
   const differenceFunction = new Array(halfBufferSize).fill(0);
@@ -118,7 +132,7 @@ export function yinDifferenceFunctionFftZeroPadding(buffer) {
   return differenceFunction;
 }
 
-export function yinCumulativeMeanNormalizedDifference(differenceFunction) {
+export function yinCumulativeMeanNormalizedDifference(differenceFunction: number[]): number[] {
   const cmndf = new Array(differenceFunction.length);
   cmndf[0] = 1;
 
@@ -131,7 +145,7 @@ export function yinCumulativeMeanNormalizedDifference(differenceFunction) {
   return cmndf;
 }
 
-export function yinAbsoluteThresholdSimple(cmndf, threshold) {
+export function yinAbsoluteThresholdSimple(cmndf: number[], threshold: number): number {
   for (let tau = 2; tau < cmndf.length; tau++) {
     if (cmndf[tau] < threshold) {
       while (tau + 1 < cmndf.length && cmndf[tau + 1] < cmndf[tau]) {
@@ -144,11 +158,11 @@ export function yinAbsoluteThresholdSimple(cmndf, threshold) {
 }
 
 export function yinAbsoluteThresholdAdaptive(
-  cmndf,
-  threshold,
-  sampleRate,
-  yinParams
-) {
+  cmndf: number[],
+  threshold: number,
+  sampleRate: number,
+  yinParams: YinParams
+): number {
   const minTau = Math.floor(sampleRate / yinParams.maxFreq);
   const maxTau = Math.floor(sampleRate / yinParams.minFreq);
 
@@ -195,11 +209,11 @@ export function yinAbsoluteThresholdAdaptive(
 }
 
 export function yinAbsoluteThresholdFirstDip(
-  cmndf,
-  threshold,
-  sampleRate,
-  yinParams
-) {
+  cmndf: number[],
+  threshold: number,
+  sampleRate: number,
+  yinParams: YinParams
+): number {
   const minTau = Math.floor(sampleRate / yinParams.maxFreq);
   const maxTau = Math.floor(sampleRate / yinParams.minFreq);
 
@@ -232,7 +246,7 @@ export function yinAbsoluteThresholdFirstDip(
   return -1;
 }
 
-export function yinParabolicInterpolation(cmndf, tauEstimate) {
+export function yinParabolicInterpolation(cmndf: number[], tauEstimate: number): number {
   if (tauEstimate < 1 || tauEstimate >= cmndf.length - 1) {
     return tauEstimate;
   }
@@ -245,24 +259,35 @@ export function yinParabolicInterpolation(cmndf, tauEstimate) {
   return betterTau;
 }
 
+// Threshold method function type
+type ThresholdMethodFn = (
+  cmndf: number[],
+  threshold: number,
+  sampleRate: number,
+  yinParams: YinParams
+) => number;
+
+// Difference method function type
+type DifferenceMethodFn = (buffer: Float32Array) => number[];
+
 // Mapping of methods
-export const yinThresholdMethods = {
+export const yinThresholdMethods: Record<string, ThresholdMethodFn> = {
   simple: yinAbsoluteThresholdSimple,
   adaptive: yinAbsoluteThresholdAdaptive,
   firstDip: yinAbsoluteThresholdFirstDip,
 };
 
-export const yinDifferenceMethods = {
+export const yinDifferenceMethods: Record<string, DifferenceMethodFn> = {
   simple: yinDifferenceFunction,
   fftSimple: yinDifferenceFunctionFFTSimple,
   fftZeroPadding: yinDifferenceFunctionFftZeroPadding,
 };
 
-export function performYinAnalysis(audioBuffer, yinParams) {
+export function performYinAnalysis(audioBuffer: AudioBuffer, yinParams: YinParams): PitchFrame[] {
   const { frameSize, hopSize } = yinParams;
   const sampleRate = audioBuffer.sampleRate;
   const audioData = audioBuffer.getChannelData(0);
-  const yinResults = [];
+  const yinResults: PitchFrame[] = [];
 
   const analysisStartTime = performance.now();
   let frameCount = 0;

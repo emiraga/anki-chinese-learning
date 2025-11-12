@@ -4,7 +4,7 @@ import { useAudioRecording } from "../hooks/useAudioRecording.js";
 import { useAudioPlayback } from "../hooks/useAudioPlayback.js";
 import { useAudioLoader } from "../hooks/useAudioLoader.js";
 import { useAudioProcessing } from "../hooks/useAudioProcessing.js";
-import { performYinAnalysis } from "../utils/yinAlgorithm.js";
+import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { SpectrogramCanvas } from "./SpectrogramCanvas.jsx";
 import { YinPitchCanvas } from "./YinPitchCanvas.jsx";
 import { DropOverlay } from "./DropOverlay.jsx";
