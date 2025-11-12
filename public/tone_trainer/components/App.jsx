@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { ToneAnalyzerProvider, useToneAnalyzer } from "../context/ToneAnalyzerContext";
-import { useAudioRecording } from "../hooks/useAudioRecording.js";
+import { useAudioRecording } from "../hooks/useAudioRecording";
 import { useAudioPlayback } from "../hooks/useAudioPlayback.js";
 import { useAudioLoader } from "../hooks/useAudioLoader.js";
 import { useAudioProcessing } from "../hooks/useAudioProcessing";

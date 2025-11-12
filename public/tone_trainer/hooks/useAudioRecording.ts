@@ -2,7 +2,12 @@ import { useCallback } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { useAudioProcessing } from "./useAudioProcessing";
 
-export function useAudioRecording() {
+export interface UseAudioRecordingReturn {
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+}
+
+export function useAudioRecording(): UseAudioRecordingReturn {
   const {
     audioContext,
     isRecording,
@@ -16,7 +21,7 @@ export function useAudioRecording() {
 
   const { processAudioBuffer } = useAudioProcessing();
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(async (): Promise<void> => {
     if (isRecording) {
       return;
     }
@@ -106,7 +111,7 @@ export function useAudioRecording() {
     processAudioBuffer,
   ]);
 
-  const stopRecording = useCallback(() => {
+  const stopRecording = useCallback((): void => {
     if (!isRecording || !mediaRecorderRef.current) {
       return;
     }
