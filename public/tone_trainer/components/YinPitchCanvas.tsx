@@ -10,7 +10,7 @@ import {
 } from "../utils/constants";
 
 export function YinPitchCanvas() {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const { yinData, lastAudioBuffer, yinParams } = useToneAnalyzer();
 
   useEffect(() => {
@@ -20,6 +20,9 @@ export function YinPitchCanvas() {
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return;
+    }
 
     // Get display dimensions
     const displayWidth = canvas.clientWidth;

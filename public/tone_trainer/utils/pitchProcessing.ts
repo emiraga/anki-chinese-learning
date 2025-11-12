@@ -1,7 +1,9 @@
+export type OctaveCorrection = "none" | "up_2x" | "up_4x" | "down_2x" | "down_4x";
+
 export interface PitchFrame {
   pitch: number;
   confidence: number;
-  correction?: string;
+  correction?: OctaveCorrection;
 }
 
 export interface YinParams {
@@ -20,8 +22,6 @@ export interface YinParams {
   octaveRatioThreshold: number;
   medianFilterWindowSize: number;
 }
-
-export type OctaveCorrection = "none" | "up_2x" | "up_4x" | "down_2x" | "down_4x";
 
 export interface OctaveJump {
   pitch: number;
