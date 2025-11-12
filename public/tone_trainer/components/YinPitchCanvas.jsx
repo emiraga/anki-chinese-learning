@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
 import { getPitchPointColor } from "../utils/colorUtils";
-import { medianFilter, correctOctaveJumps } from "../utils/pitchProcessing.js";
+import { medianFilter, correctOctaveJumps } from "../utils/pitchProcessing";
 import {
   FFT_SIZE,
   YIN_MAX_JUMP_THRESHOLD_PERCENT,

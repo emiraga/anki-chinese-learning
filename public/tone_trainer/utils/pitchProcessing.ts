@@ -1,12 +1,42 @@
+export interface PitchFrame {
+  pitch: number;
+  confidence: number;
+  correction?: string;
+}
+
+export interface YinParams {
+  frameSize: number;
+  hopSize: number;
+  threshold: number;
+  fallbackThreshold: number;
+  minFreq: number;
+  maxFreq: number;
+  interpolation: boolean;
+  differenceMethod: string;
+  thresholdMethod: string;
+  powerConfidenceAdjust: boolean;
+  minPowerThreshold: number;
+  octaveJumpCorrection: boolean;
+  octaveRatioThreshold: number;
+  medianFilterWindowSize: number;
+}
+
+export type OctaveCorrection = "none" | "up_2x" | "up_4x" | "down_2x" | "down_4x";
+
+export interface OctaveJump {
+  pitch: number;
+  correction: OctaveCorrection;
+}
+
 /**
  * Applies a median filter to an array of pitch data.
  */
-export function medianFilter(data, windowSize) {
+export function medianFilter(data: PitchFrame[], windowSize: number): PitchFrame[] {
   if (windowSize % 2 === 0 || windowSize < 1) {
     throw new Error("Window size must be an odd positive number.");
   }
   const halfWindow = Math.floor(windowSize / 2);
-  const filteredData = [];
+  const filteredData: PitchFrame[] = [];
 
   for (let i = 0; i < data.length; i++) {
     const start = Math.max(0, i - halfWindow);
@@ -33,7 +63,13 @@ export function medianFilter(data, windowSize) {
 /**
  * Helper function to detect octave jump between two pitches
  */
-export function detectOctaveJump(pitch1, pitch2, threshold, minFreq, maxFreq) {
+export function detectOctaveJump(
+  pitch1: number,
+  pitch2: number,
+  threshold: number,
+  minFreq: number,
+  maxFreq: number
+): OctaveJump | null {
   if (pitch1 === 0 || pitch2 === 0) return null;
 
   const ratio = pitch2 / pitch1;
@@ -73,15 +109,18 @@ export function detectOctaveJump(pitch1, pitch2, threshold, minFreq, maxFreq) {
 /**
  * Two-pass bidirectional octave jump correction
  */
-export function correctOctaveJumps(pitchData, yinParams) {
+export function correctOctaveJumps(
+  pitchData: PitchFrame[],
+  yinParams: YinParams
+): PitchFrame[] {
   if (pitchData.length === 0) return [];
 
   const octaveRatioThreshold = yinParams.octaveRatioThreshold;
   const minFreq = yinParams.minFreq;
   const maxFreq = yinParams.maxFreq;
 
-  const forwardCorrections = new Array(pitchData.length).fill(null);
-  const backwardCorrections = new Array(pitchData.length).fill(null);
+  const forwardCorrections: (OctaveJump | null)[] = new Array(pitchData.length).fill(null);
+  const backwardCorrections: (OctaveJump | null)[] = new Array(pitchData.length).fill(null);
 
   // Forward pass
   const forwardData = pitchData.map((f) => ({ ...f }));
@@ -135,7 +174,7 @@ export function correctOctaveJumps(pitchData, yinParams) {
 
     return {
       ...frame,
-      correction: "none",
+      correction: "none" as const,
     };
   });
 
