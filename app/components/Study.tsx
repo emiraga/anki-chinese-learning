@@ -54,7 +54,7 @@ export default function Study() {
         <div className="mt-8 space-y-6 flex flex-col items-center">
           {cardInfo.fields["Audio"]?.value && (
             <div className="flex justify-center">
-              <AnkiAudioPlayer audioField={cardInfo.fields["Audio"]?.value} />
+              <AnkiAudioPlayer audioField={cardInfo.fields["Audio"]?.value} pitchVisualisation={true} />
             </div>
           )}
           <div className="max-w-2xl w-full">

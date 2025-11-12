@@ -77,7 +77,6 @@ function AppContent() {
   const loadAudioFile = useCallback(
     async (
       filePath: string,
-      needMaxFreq: number | null = null,
       description?: string,
     ) => {
       try {
@@ -87,17 +86,6 @@ function AppContent() {
         // Extract filename and update state
         const filename = filePath.split("/").pop() || filePath;
         setSampleAudioInfo({ filename, description });
-
-        // Adjust Max Freq if specified
-        if (
-          needMaxFreq !== null &&
-          sampleAudio.instance.yinParams.maxFreq !== needMaxFreq
-        ) {
-          sampleAudio.updateYinParams({
-            ...sampleAudio.instance.yinParams,
-            maxFreq: needMaxFreq,
-          });
-        }
 
         setStatusMessage({
           message: "Loading audio file...",

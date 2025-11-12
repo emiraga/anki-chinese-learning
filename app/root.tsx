@@ -26,6 +26,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          src="/tone_trainer/fftjs.min.js"
+          integrity="sha384-YGUhgQuvCUKMptNIzlqRNH0P/JeHxBCxhApvJV3rR8PLJ6dNueD0tZv9UDochYMV"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className={isDarkMode ? "dark" : ""}>
         <SettingsProvider>{children}</SettingsProvider>

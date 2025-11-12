@@ -2,7 +2,7 @@ import React from "react";
 import { SAMPLE_AUDIO_FILES, TONE_PRACTICE_MATRIX, TONE_LABELS } from "../utils/constants";
 
 interface AudioFilesListProps {
-  onLoadAudio: (path: string, maxFreq: number | null, description?: string) => void;
+  onLoadAudio: (path: string, description?: string) => void;
 }
 
 export function AudioFilesList({ onLoadAudio }: AudioFilesListProps) {
@@ -42,7 +42,7 @@ export function AudioFilesList({ onLoadAudio }: AudioFilesListProps) {
                     return (
                       <td key={colIndex} className="border border-gray-600 p-2">
                         <button
-                          onClick={() => onLoadAudio(file.path, file.maxFreq, description)}
+                          onClick={() => onLoadAudio(file.path, description)}
                           className="w-full cursor-pointer px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded transition-colors duration-200"
                           title={fileName}
                         >
@@ -70,7 +70,7 @@ export function AudioFilesList({ onLoadAudio }: AudioFilesListProps) {
             return (
               <div key={index} className="flex items-center gap-3">
                 <button
-                  onClick={() => onLoadAudio(file.path, file.maxFreq, file.description)}
+                  onClick={() => onLoadAudio(file.path, file.description)}
                   className="cursor-pointer px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap"
                 >
                   {fileName}

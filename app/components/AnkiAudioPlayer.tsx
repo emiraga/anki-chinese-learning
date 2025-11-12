@@ -1,15 +1,22 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import anki from "~/apis/anki";
+import {
+  ToneAnalyzerProvider,
+  useToneAnalyzer,
+} from "../../public/tone_trainer/context/ToneAnalyzerContext";
+import { useAudioInstance } from "../../public/tone_trainer/hooks/useAudioInstance";
+import { AudioVisualizerPanel } from "../../public/tone_trainer/components/AudioVisualizerPanel";
 
 interface AnkiAudioPlayerProps {
   audioField?: string;
   className?: string;
+  pitchVisualisation?: boolean;
 }
 
-const AnkiAudioPlayer: React.FC<AnkiAudioPlayerProps> = ({
-  audioField,
-  className,
-}) => {
+// Simple audio player (no visualization)
+const SimpleAnkiAudioPlayer: React.FC<
+  Omit<AnkiAudioPlayerProps, "pitchVisualisation">
+> = ({ audioField, className }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -153,6 +160,157 @@ const AnkiAudioPlayer: React.FC<AnkiAudioPlayerProps> = ({
         className="hidden"
       />
     </span>
+  );
+};
+
+// Pitch visualization audio player
+const PitchVisualizationPlayer: React.FC<
+  Omit<AnkiAudioPlayerProps, "pitchVisualisation">
+> = ({ audioField }) => {
+  const { audioContext, ensureAudioContext, settings, setStatusMessage } =
+    useToneAnalyzer();
+
+  const [error, setError] = useState<string | null>(null);
+
+  const handleStatusChange = useCallback(
+    (
+      message: string,
+      isLoading: boolean,
+      backgroundColor?: string,
+      spinnerColor?: string,
+    ) => {
+      if (message) {
+        setStatusMessage({ message, isLoading, backgroundColor, spinnerColor });
+      } else {
+        setStatusMessage(null);
+      }
+    },
+    [setStatusMessage],
+  );
+
+  const audioInstance = useAudioInstance(
+    {
+      id: "anki-audio",
+      showYinControls: false,
+      showRecordingControls: false,
+    },
+    audioContext,
+    handleStatusChange,
+  );
+
+  const extractFilename = (audioField: string): string | null => {
+    const match = audioField.match(/\[sound:([^\]]+)\]/);
+    return match ? match[1] : null;
+  };
+
+  const loadAudio = useCallback(async () => {
+    if (!audioField) {
+      setError("Audio field is empty");
+      return;
+    }
+
+    const filename = extractFilename(audioField);
+
+    if (!filename) {
+      setError("No audio filename found in the field");
+      return;
+    }
+
+    try {
+      audioInstance.stopPlayback();
+
+      setStatusMessage({
+        message: "Loading audio from Anki...",
+        isLoading: true,
+        spinnerColor: "border-blue-300",
+        backgroundColor: "#3b82f6",
+      });
+
+      // Retrieve media file from Anki
+      const mediaFile = await anki.media.retrieveMediaFile({
+        filename: filename,
+      });
+
+      if (!mediaFile) {
+        throw new Error("Audio file not found in Anki media collection");
+      }
+
+      // Convert base64 to arraybuffer
+      const binaryString = atob(mediaFile);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const arrayBuffer = bytes.buffer;
+
+      const ctx = ensureAudioContext();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+      const processedBuffer =
+        await audioInstance.processAudioBuffer(audioBuffer);
+      audioInstance.playAudio(processedBuffer);
+    } catch (err) {
+      console.error("Error loading audio file:", err);
+      setError(err instanceof Error ? err.message : "Failed to load audio");
+      setStatusMessage({
+        message: "Could not load audio file. Please try again.",
+        isLoading: false,
+        backgroundColor: "#d97706",
+      });
+    }
+  }, [
+    audioField,
+    audioInstance,
+    ensureAudioContext,
+    setStatusMessage,
+  ]);
+
+  // Load audio on mount
+  useEffect(() => {
+    loadAudio();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!audioField) {
+    return undefined;
+  }
+
+  return (
+    <div className="my-4 w-full">
+      {error && (
+        <div className="flex items-center space-x-1 text-red-600 dark:text-red-400 text-sm mb-2">
+          🛑 <span>{error}</span>
+        </div>
+      )}
+
+      <AudioVisualizerPanel
+        instance={audioInstance.instance}
+        audioContext={audioContext}
+        visualizationSettings={settings}
+        onPlayStop={audioInstance.togglePlayStop}
+        onYinParamsChange={audioInstance.updateYinParams}
+        onRecomputeYin={audioInstance.recomputeYin}
+        showYinLoadingOverlay={audioInstance.yinLoading}
+      />
+    </div>
+  );
+};
+
+// Main component that chooses which player to render
+const AnkiAudioPlayer: React.FC<AnkiAudioPlayerProps> = ({
+  audioField,
+  className,
+  pitchVisualisation = false,
+}) => {
+  if (!pitchVisualisation) {
+    return <SimpleAnkiAudioPlayer audioField={audioField} className={className} />;
+  }
+
+  return (
+    <ToneAnalyzerProvider>
+      <PitchVisualizationPlayer audioField={audioField} />
+    </ToneAnalyzerProvider>
   );
 };
 
