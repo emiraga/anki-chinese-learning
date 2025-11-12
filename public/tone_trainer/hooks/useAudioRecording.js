@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
-import { useAudioProcessing } from "./useAudioProcessing.js";
+import { useAudioProcessing } from "./useAudioProcessing";
 
 export function useAudioRecording() {
   const {

@@ -3,7 +3,11 @@ import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { FFT_SIZE, BUFFER_SIZE } from "../utils/constants";
 
-export function useAudioProcessing() {
+export interface UseAudioProcessingReturn {
+  processAudioBuffer: (audioBuffer: AudioBuffer) => Promise<boolean>;
+}
+
+export function useAudioProcessing(): UseAudioProcessingReturn {
   const {
     audioContext,
     setSpectrogramData,
@@ -14,7 +18,7 @@ export function useAudioProcessing() {
   } = useToneAnalyzer();
 
   const generateSpectrogram = useCallback(
-    (audioBuffer) => {
+    (audioBuffer: AudioBuffer): Promise<Uint8Array[]> => {
       return new Promise((resolve, reject) => {
         const offlineCtx = new OfflineAudioContext(
           audioBuffer.numberOfChannels,
@@ -32,7 +36,7 @@ export function useAudioProcessing() {
         const processor = offlineCtx.createScriptProcessor(bufferSize, 1, 1);
 
         const freqData = new Uint8Array(analyser.frequencyBinCount);
-        const spectrogramData = [];
+        const spectrogramData: Uint8Array[] = [];
 
         processor.onaudioprocess = () => {
           analyser.getByteFrequencyData(freqData);
@@ -59,7 +63,7 @@ export function useAudioProcessing() {
   );
 
   const processAudioBuffer = useCallback(
-    async (audioBuffer) => {
+    async (audioBuffer: AudioBuffer): Promise<boolean> => {
       try {
         // Store for replay
         setLastAudioBuffer(audioBuffer);
