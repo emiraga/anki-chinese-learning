@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
-import { getColor } from "../utils/colorUtils.js";
-import { FFT_SIZE, MAX_FREQ_HZ } from "../utils/constants.ts";
+import { getColor } from "../utils/colorUtils";
+import { FFT_SIZE, MAX_FREQ_HZ } from "../utils/constants";
 
 export function SpectrogramCanvas() {
   const canvasRef = useRef(null);

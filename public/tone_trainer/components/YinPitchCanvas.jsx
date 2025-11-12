@@ -1,13 +1,13 @@
 import React, { useRef, useEffect } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
-import { getPitchPointColor } from "../utils/colorUtils.js";
+import { getPitchPointColor } from "../utils/colorUtils";
 import { medianFilter, correctOctaveJumps } from "../utils/pitchProcessing.js";
 import {
   FFT_SIZE,
   YIN_MAX_JUMP_THRESHOLD_PERCENT,
   YIN_PITCH_POINT_RADIUS,
   YIN_PITCH_LINE_WIDTH,
-} from "../utils/constants.ts";
+} from "../utils/constants";
 
 export function YinPitchCanvas() {
   const canvasRef = useRef(null);
