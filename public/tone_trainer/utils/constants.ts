@@ -7,7 +7,6 @@ export interface ColorMap {
 
 export interface AudioFile {
   path: string;
-  maxFreq: number | null;
 }
 
 export interface SampleAudioFile extends AudioFile {
@@ -68,28 +67,28 @@ export const COLOR_MAPS: ColorMap = {
 // Rows represent the first tone, columns represent the second tone
 export const TONE_PRACTICE_MATRIX: AudioFile[][] = [
   [
-    { path: "audio/Tone11loop.mp3", maxFreq: null },
-    { path: "audio/Tone12loop.mp3", maxFreq: null },
-    { path: "audio/Tone13loop.mp3", maxFreq: null },
-    { path: "audio/Tone14loop.mp3", maxFreq: null },
+    { path: "audio/Tone11loop.mp3" },
+    { path: "audio/Tone12loop.mp3" },
+    { path: "audio/Tone13loop.mp3" },
+    { path: "audio/Tone14loop.mp3" },
   ],
   [
-    { path: "audio/Tone21loop.mp3", maxFreq: null },
-    { path: "audio/Tone22loop.mp3", maxFreq: null },
-    { path: "audio/Tone23loop.mp3", maxFreq: null },
-    { path: "audio/Tone24loop.mp3", maxFreq: null },
+    { path: "audio/Tone21loop.mp3" },
+    { path: "audio/Tone22loop.mp3" },
+    { path: "audio/Tone23loop.mp3" },
+    { path: "audio/Tone24loop.mp3" },
   ],
   [
-    { path: "audio/Tone31loop.mp3", maxFreq: null },
-    { path: "audio/Tone32loop.mp3", maxFreq: null },
-    { path: "audio/Tone33loop.mp3", maxFreq: null },
-    { path: "audio/Tone34loop.mp3", maxFreq: null },
+    { path: "audio/Tone31loop.mp3" },
+    { path: "audio/Tone32loop.mp3" },
+    { path: "audio/Tone33loop.mp3" },
+    { path: "audio/Tone34loop.mp3" },
   ],
   [
-    { path: "audio/Tone41loop.mp3", maxFreq: null },
-    { path: "audio/Tone42loop.mp3", maxFreq: null },
-    { path: "audio/Tone43loop.mp3", maxFreq: null },
-    { path: "audio/Tone44loop.mp3", maxFreq: null },
+    { path: "audio/Tone41loop.mp3" },
+    { path: "audio/Tone42loop.mp3" },
+    { path: "audio/Tone43loop.mp3" },
+    { path: "audio/Tone44loop.mp3" },
   ],
 ];
 
@@ -104,73 +103,70 @@ export const TONE_LABELS: string[] = [
 export const SAMPLE_AUDIO_FILES: SampleAudioFile[] = [
   {
     path: "audio/ai_讀書寫字.mp3",
-    maxFreq: null,
+
     description: 'AI voice: "dú shū xiě zì" (read books, write characters)',
   },
   {
     path: "audio/ai_高富帥.mp3",
-    maxFreq: null,
+
     description: 'AI voice: "gāo fù shuài" (tall, rich, handsome)',
   },
   {
     path: "audio/ai_今天不用上班.mp3",
-    maxFreq: null,
+
     description:
       'AI voice: "jīn tiān bù yòng shàng bān" (don\'t have to work today)',
   },
   {
     path: "audio/human_我喜歡吃東西.m4a",
-    maxFreq: null,
+
     description: 'Human voice: "wǒ xǐ huān chī dōng xī" (I like to eat things)',
   },
   {
     path: "audio/human_我一歲了.m4a",
-    maxFreq: null,
+
     description: 'Human voice: "wǒ yī suì le" (I am one year old)',
   },
   // Human voices and music
   {
     path: "audio/367215_1847127-lq.mp3",
-    maxFreq: null,
+
     description: "Music: Male voice La la la la la la",
   },
   {
     path: "audio/427200_8176931-lq.mp3",
-    maxFreq: 500,
     description:
-      'Music: Beatiful female melody. Warning! Increase Max Freq to 500Hz, also warning! since voice is soft, you may need to reduce "Min Power Threshold"',
+      'Music: Beatiful female melody. ⚠️ Warning! Increase Max Freq to 500Hz, also ⚠️ Warning! since voice is soft, you may need to reduce "Min Power Threshold" ⚠️',
   },
   {
     path: "audio/417938_8176931-lq.mp3",
-    maxFreq: 500,
     description:
-      'Music: Female singing "Do you want to be beautiful?" Warning! Increase Max Freq to 500Hz',
+      'Music: Female singing "Do you want to be beautiful?" ⚠️ Warning! Increase Max Freq to 500Hz ⚠️',
   },
   {
     path: "audio/30084_129090-lq.mp3",
-    maxFreq: 800,
     description:
-      "Music: Very high female tone, Warning! Increase Max Freq to 800Hz",
+      "Music: Very high female tone, ⚠️ Warning! Increase Max Freq to 800Hz ⚠️",
   },
   // Test files for discontinuities
   {
     path: "audio/1760610667332.wav",
-    maxFreq: null,
+
     description: "Test for discontinuities",
   },
   {
     path: "audio/1760616895897.wav",
-    maxFreq: null,
+
     description: "Test for discontinuities",
   },
   {
     path: "audio/1760620947969.wav",
-    maxFreq: null,
+
     description: "Test for discontinuities",
   },
   {
     path: "audio/1760621775872.wav",
-    maxFreq: null,
+
     description: "Test for discontinuities",
   },
 ];
