@@ -108,7 +108,7 @@ export const SAMPLE_AUDIO_FILES: SampleAudioFile[] = [
     description: 'AI voice: "dú shū xiě zì" (read books, write characters)',
   },
   {
-    path: "audio/ai_高富帥_gao1_fu4_shuai4.mp3",
+    path: "audio/ai_高富帥.mp3",
     maxFreq: null,
     description: 'AI voice: "gāo fù shuài" (tall, rich, handsome)',
   },

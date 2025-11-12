@@ -39,9 +39,11 @@ export function AudioVisualizerPanel({
   return (
     <div className="w-full max-w-4xl mx-auto mb-8">
       {/* Instance Label */}
-      <h2 className="text-xl font-semibold text-gray-200 mb-3">
-        {instance.label}
-      </h2>
+      {instance.label ? (
+        <h2 className="text-xl font-semibold text-gray-200 mb-3">
+          {instance.label}
+        </h2>
+      ) : undefined}
 
       {/* Visualization Container */}
       <div className="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative transition-all duration-200">

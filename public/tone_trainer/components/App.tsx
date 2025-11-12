@@ -27,6 +27,10 @@ function AppContent() {
 
   const [showDropOverlay, setShowDropOverlay] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [sampleAudioInfo, setSampleAudioInfo] = useState<{
+    filename: string;
+    description?: string;
+  } | null>(null);
   const isMobile = useIsMobile();
 
   // Helper to set status message
@@ -50,7 +54,7 @@ function AppContent() {
   const sampleAudio = useAudioInstance(
     {
       id: "sample",
-      label: "Sample Audio",
+      // label: "Sample Audio",
       showYinControls: true,
       showRecordingControls: false,
     },
@@ -61,7 +65,7 @@ function AppContent() {
   const recordingAudio = useAudioInstance(
     {
       id: "recording",
-      label: "Recording",
+      // label: "Recording",
       showYinControls: true,
       showRecordingControls: true,
     },
@@ -71,10 +75,18 @@ function AppContent() {
 
   // Load audio file for sample instance
   const loadAudioFile = useCallback(
-    async (filePath: string, needMaxFreq: number | null = null) => {
+    async (
+      filePath: string,
+      needMaxFreq: number | null = null,
+      description?: string,
+    ) => {
       try {
         sampleAudio.stopPlayback();
         window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // Extract filename and update state
+        const filename = filePath.split("/").pop() || filePath;
+        setSampleAudioInfo({ filename, description });
 
         // Adjust Max Freq if specified
         if (
@@ -103,7 +115,8 @@ function AppContent() {
         const arrayBuffer = await response.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
-        const processedBuffer = await sampleAudio.processAudioBuffer(audioBuffer);
+        const processedBuffer =
+          await sampleAudio.processAudioBuffer(audioBuffer);
         sampleAudio.playAudio(processedBuffer);
       } catch (err) {
         console.error("Error loading audio file:", err);
@@ -123,6 +136,12 @@ function AppContent() {
       try {
         sampleAudio.stopPlayback();
 
+        // Update state with dropped file name
+        setSampleAudioInfo({
+          filename: file.name,
+          description: "Dropped file",
+        });
+
         setStatusMessage({
           message: "Processing audio file...",
           isLoading: true,
@@ -134,7 +153,8 @@ function AppContent() {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
-        const processedBuffer = await sampleAudio.processAudioBuffer(audioBuffer);
+        const processedBuffer =
+          await sampleAudio.processAudioBuffer(audioBuffer);
         sampleAudio.playAudio(processedBuffer);
       } catch (err) {
         console.error("Error loading dropped audio:", err);
@@ -313,7 +333,7 @@ function AppContent() {
 
   return (
     <div
-      className={`flex-col items-center justify-center min-h-screen p-4 ${isMobile ? "pb-48" : ""}`}
+      className={`flex flex-col items-center justify-center min-h-screen p-4 ${isMobile ? "pb-48" : ""}`}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -334,24 +354,39 @@ function AppContent() {
       )}
 
       {/* Sample Audio Instance */}
-      <AudioVisualizerPanel
-        instance={sampleAudio.instance}
-        audioContext={audioContext}
-        visualizationSettings={settings}
-        onPlayStop={sampleAudio.togglePlayStop}
-        onYinParamsChange={sampleAudio.updateYinParams}
-        onRecomputeYin={sampleAudio.recomputeYin}
-        showYinLoadingOverlay={sampleAudio.yinLoading}
-        instructions={
-          <>
-            Press{" "}
-            <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
-              Enter
-            </kbd>{" "}
-            to play or drag & drop an audio file
-          </>
-        }
-      />
+      <div className="w-full max-w-4xl mx-auto">
+        {sampleAudioInfo && (
+          <div className="mb-2 px-4">
+            <h3 className="text-lg font-medium text-gray-200">
+              <span className="mr-3">{sampleAudioInfo.filename}</span>
+              {sampleAudioInfo.description && (
+                <span className="ml-3 text-sm text-gray-400 font-normal">
+                  {" "}
+                  {sampleAudioInfo.description}
+                </span>
+              )}
+            </h3>
+          </div>
+        )}
+        <AudioVisualizerPanel
+          instance={sampleAudio.instance}
+          audioContext={audioContext}
+          visualizationSettings={settings}
+          onPlayStop={sampleAudio.togglePlayStop}
+          onYinParamsChange={sampleAudio.updateYinParams}
+          onRecomputeYin={sampleAudio.recomputeYin}
+          showYinLoadingOverlay={sampleAudio.yinLoading}
+          instructions={
+            <>
+              Press{" "}
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
+                Enter
+              </kbd>{" "}
+              to play or drag & drop an audio file
+            </>
+          }
+        />
+      </div>
 
       {/* Recording Instance - show instructions or visualizer */}
       {recordingAudio.instance.audioBuffer ? (

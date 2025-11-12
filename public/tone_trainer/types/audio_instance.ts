@@ -5,7 +5,7 @@ import type { PitchFrame, YinParams } from "../utils/pitchProcessing";
  */
 export interface AudioInstance {
   id: string;
-  label: string; // Display name like "Sample Audio" or "Recording"
+  label?: string; // Display name like "Sample Audio" or "Recording"
   audioBuffer: AudioBuffer | null;
   spectrogramData: number[][];
   yinData: PitchFrame[];
@@ -22,7 +22,7 @@ export interface AudioInstance {
  */
 export interface CreateAudioInstanceOptions {
   id: string;
-  label: string;
+  label?: string;
   showYinControls?: boolean;
   showRecordingControls?: boolean;
   yinParams?: Partial<YinParams>;
