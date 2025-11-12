@@ -1,23 +1,27 @@
 import React from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
-import { CollapsibleSection } from "./CollapsibleSection.tsx";
+import { CollapsibleSection } from "./CollapsibleSection";
 
-export function DisplayControls({ onRedraw }) {
+interface DisplayControlsProps {
+  onRedraw?: () => void;
+}
+
+export function DisplayControls({ onRedraw }: DisplayControlsProps) {
   const { settings, setSettings } = useToneAnalyzer();
 
-  const handleBrightnessChange = (e) => {
+  const handleBrightnessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
     setSettings((prev) => ({ ...prev, brightness: value }));
     onRedraw?.();
   };
 
-  const handleContrastChange = (e) => {
+  const handleContrastChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setSettings((prev) => ({ ...prev, contrast: value }));
     onRedraw?.();
   };
 
-  const handleColorSchemeChange = (e) => {
+  const handleColorSchemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSettings((prev) => ({ ...prev, colorScheme: value }));
     onRedraw?.();
