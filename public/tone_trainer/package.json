@@ -5,9 +5,10 @@
   "description": "React version of the Mandarin tone trainer application",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:css && vite build && npm run postbuild",
+    "build": "npm run typecheck && npm run build:css && vite build && npm run postbuild",
     "build:css": "npx @tailwindcss/cli --minify -i ./input.css -o ./output.css && perl -i -p -e 's/.webkit.text.size.adjust: ?100.;//' ./output.css && wc -c ./input.css ./output.css",
     "postbuild": "cp -r audio dist/ && cp fftjs.min.js dist/ && cp output.css dist/",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
