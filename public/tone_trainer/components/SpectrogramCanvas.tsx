@@ -3,7 +3,7 @@ import { getColor } from "../utils/colorUtils";
 import { FFT_SIZE, MAX_FREQ_HZ } from "../utils/constants";
 import type { VisualizationSettings } from "../context/ToneAnalyzerContext";
 
-interface SpectrogramCanvasPureProps {
+interface SpectrogramCanvasProps {
   spectrogramData: number[][];
   settings: VisualizationSettings;
   audioContext: AudioContext | null;
@@ -12,11 +12,11 @@ interface SpectrogramCanvasPureProps {
 /**
  * Prop-based spectrogram canvas that doesn't rely on context
  */
-export function SpectrogramCanvasPure({
+export function SpectrogramCanvas({
   spectrogramData,
   settings,
   audioContext,
-}: SpectrogramCanvasPureProps) {
+}: SpectrogramCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

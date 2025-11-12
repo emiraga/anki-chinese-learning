@@ -9,7 +9,7 @@ import {
   YIN_PITCH_LINE_WIDTH,
 } from "../utils/constants";
 
-interface YinPitchCanvasPureProps {
+interface YinPitchCanvasProps {
   yinData: PitchFrame[];
   yinParams: YinParams;
   audioBuffer: AudioBuffer | null;
@@ -18,11 +18,11 @@ interface YinPitchCanvasPureProps {
 /**
  * Prop-based YIN pitch canvas that doesn't rely on context
  */
-export function YinPitchCanvasPure({
+export function YinPitchCanvas({
   yinData,
   yinParams,
   audioBuffer,
-}: YinPitchCanvasPureProps) {
+}: YinPitchCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

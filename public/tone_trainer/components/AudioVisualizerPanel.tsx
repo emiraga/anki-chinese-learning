@@ -1,8 +1,8 @@
 import React from "react";
-import { SpectrogramCanvasPure } from "./SpectrogramCanvasPure";
-import { YinPitchCanvasPure } from "./YinPitchCanvasPure";
+import { SpectrogramCanvas } from "./SpectrogramCanvas";
+import { YinPitchCanvas } from "./YinPitchCanvas";
 import { ProgressLine } from "./ProgressLine";
-import { YinControlsPure } from "./YinControlsPure";
+import { YinControls } from "./YinControls";
 import { RecordingControls } from "./RecordingControls";
 import type { AudioInstance } from "../types/audio_instance";
 import type { VisualizationSettings } from "../context/ToneAnalyzerContext";
@@ -44,12 +44,12 @@ export function AudioVisualizerPanel({
       {/* Visualization Container */}
       <div className="w-full bg-gray-900 rounded-lg shadow-lg p-2 relative transition-all duration-200">
         <div className="relative">
-          <SpectrogramCanvasPure
+          <SpectrogramCanvas
             spectrogramData={instance.spectrogramData}
             settings={visualizationSettings}
             audioContext={audioContext}
           />
-          <YinPitchCanvasPure
+          <YinPitchCanvas
             yinData={instance.yinData}
             yinParams={instance.yinParams}
             audioBuffer={instance.audioBuffer}
@@ -106,7 +106,7 @@ export function AudioVisualizerPanel({
       {/* YIN Controls */}
       {instance.showYinControls && instance.spectrogramData.length > 0 && (
         <div className="mt-3">
-          <YinControlsPure
+          <YinControls
             yinParams={instance.yinParams}
             onYinParamsChange={onYinParamsChange}
             onRecompute={onRecomputeYin}

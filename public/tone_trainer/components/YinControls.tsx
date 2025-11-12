@@ -2,7 +2,7 @@ import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import type { YinParams } from "../utils/pitchProcessing";
 
-interface YinControlsPureProps {
+interface YinControlsProps {
   yinParams: YinParams;
   onYinParamsChange: (params: YinParams) => void;
   onRecompute?: () => void;
@@ -12,12 +12,12 @@ interface YinControlsPureProps {
 /**
  * Prop-based YIN controls that don't rely on context
  */
-export function YinControlsPure({
+export function YinControls({
   yinParams,
   onYinParamsChange,
   onRecompute,
   onRedraw,
-}: YinControlsPureProps) {
+}: YinControlsProps) {
   const handleStringChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     onYinParamsChange({ ...yinParams, [field]: value });
