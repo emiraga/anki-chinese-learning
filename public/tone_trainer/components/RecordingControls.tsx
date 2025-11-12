@@ -1,12 +1,18 @@
 import React from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
-import { CollapsibleSection } from "./CollapsibleSection.tsx";
+import { CollapsibleSection } from "./CollapsibleSection";
+import type { RecordingSettings } from "../context/ToneAnalyzerContext";
 
 export function RecordingControls() {
   const { recordingSettings, setRecordingSettings } = useToneAnalyzer();
 
-  const handleChange = (field, parser = (v) => v) => (e) => {
-    const value = parser(e.target);
+  const handleNumberChange = (field: keyof RecordingSettings) => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = parseInt(e.target.value, 10);
+    setRecordingSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleBooleanChange = (field: keyof RecordingSettings) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.checked;
     setRecordingSettings((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -23,7 +29,7 @@ export function RecordingControls() {
           <select
             id="recordingSampleRate"
             value={recordingSettings.sampleRate}
-            onChange={handleChange("sampleRate", (t) => parseInt(t.value, 10))}
+            onChange={handleNumberChange("sampleRate")}
             className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
           >
             <option value="8000">8000</option>
@@ -44,7 +50,7 @@ export function RecordingControls() {
           <select
             id="recordingChannelCount"
             value={recordingSettings.channelCount}
-            onChange={handleChange("channelCount", (t) => parseInt(t.value, 10))}
+            onChange={handleNumberChange("channelCount")}
             className="bg-gray-600 border border-gray-500 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
           >
             <option value="1">Mono (1)</option>
@@ -56,7 +62,7 @@ export function RecordingControls() {
             type="checkbox"
             id="recordingEchoCancellation"
             checked={recordingSettings.echoCancellation}
-            onChange={handleChange("echoCancellation", (t) => t.checked)}
+            onChange={handleBooleanChange("echoCancellation")}
             className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
           />
           <label
@@ -71,7 +77,7 @@ export function RecordingControls() {
             type="checkbox"
             id="recordingNoiseSuppression"
             checked={recordingSettings.noiseSuppression}
-            onChange={handleChange("noiseSuppression", (t) => t.checked)}
+            onChange={handleBooleanChange("noiseSuppression")}
             className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
           />
           <label
@@ -86,7 +92,7 @@ export function RecordingControls() {
             type="checkbox"
             id="recordingAutoGainControl"
             checked={recordingSettings.autoGainControl}
-            onChange={handleChange("autoGainControl", (t) => t.checked)}
+            onChange={handleBooleanChange("autoGainControl")}
             className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
           />
           <label
