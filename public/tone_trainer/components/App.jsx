@@ -10,7 +10,7 @@ import { YinPitchCanvas } from "./YinPitchCanvas.jsx";
 import { DropOverlay } from "./DropOverlay.tsx";
 import { StatusMessage } from "./StatusMessage";
 import { ProgressLine } from "./ProgressLine.tsx";
-import { PlaybackControls } from "./PlaybackControls.jsx";
+import { PlaybackControls } from "./PlaybackControls.tsx";
 import { AudioFilesList } from "./AudioFilesList.jsx";
 import { DebugTools } from "./DebugTools.jsx";
 import { DisplayControls } from "./DisplayControls.jsx";

@@ -1,7 +1,11 @@
 import React from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
 
-export function PlaybackControls({ onPlayStop }) {
+interface PlaybackControlsProps {
+  onPlayStop: () => void;
+}
+
+export function PlaybackControls({ onPlayStop }: PlaybackControlsProps) {
   const { isPlaying } = useToneAnalyzer();
 
   return (
