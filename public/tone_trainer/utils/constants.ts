@@ -154,22 +154,22 @@ export const SAMPLE_AUDIO_FILES: SampleAudioFile[] = [
   },
   // Test files for discontinuities
   {
-    path: "audio/tone_recording_1760610667332.wav",
+    path: "audio/1760610667332.wav",
     maxFreq: null,
     description: "Test for discontinuities",
   },
   {
-    path: "audio/tone_recording_1760616895897.wav",
+    path: "audio/1760616895897.wav",
     maxFreq: null,
     description: "Test for discontinuities",
   },
   {
-    path: "audio/tone_recording_1760620947969.wav",
+    path: "audio/1760620947969.wav",
     maxFreq: null,
     description: "Test for discontinuities",
   },
   {
-    path: "audio/tone_recording_1760621775872.wav",
+    path: "audio/1760621775872.wav",
     maxFreq: null,
     description: "Test for discontinuities",
   },

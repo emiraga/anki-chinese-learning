@@ -4,12 +4,14 @@ import {
   useToneAnalyzer,
 } from "../context/ToneAnalyzerContext";
 import { useAudioInstance } from "../hooks/useAudioInstance";
+import { useIsMobile } from "../hooks/useIsMobile";
 import { AudioVisualizerPanel } from "./AudioVisualizerPanel";
 import { DropOverlay } from "./DropOverlay";
 import { StatusMessage } from "./StatusMessage";
 import { DisplayControls } from "./DisplayControls";
 import { AudioFilesList } from "./AudioFilesList";
 import { DebugTools } from "./DebugTools";
+import { MobileRecordingFooter } from "./MobileRecordingFooter";
 
 function AppContent() {
   const {
@@ -25,6 +27,7 @@ function AppContent() {
 
   const [showDropOverlay, setShowDropOverlay] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const isMobile = useIsMobile();
 
   // Helper to set status message
   const handleStatusChange = useCallback(
@@ -239,8 +242,10 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keyboard event handlers
+  // Keyboard event handlers (desktop only)
   useEffect(() => {
+    if (isMobile) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -273,7 +278,7 @@ function AppContent() {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [sampleAudio, startRecording, stopRecording]);
+  }, [isMobile, sampleAudio, startRecording, stopRecording]);
 
   // Drag and drop handlers
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
@@ -308,7 +313,7 @@ function AppContent() {
 
   return (
     <div
-      className="flex-col items-center justify-center min-h-screen p-4"
+      className={`flex-col items-center justify-center min-h-screen p-4 ${isMobile ? "pb-48" : ""}`}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -359,16 +364,18 @@ function AppContent() {
           onRecomputeYin={recordingAudio.recomputeYin}
           showYinLoadingOverlay={recordingAudio.yinLoading}
           instructions={
-            <>
-              Hold{" "}
-              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
-                Space
-              </kbd>{" "}
-              to record
-            </>
+            !isMobile ? (
+              <>
+                Hold{" "}
+                <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
+                  Space
+                </kbd>{" "}
+                to record
+              </>
+            ) : null
           }
         />
-      ) : (
+      ) : !isMobile ? (
         <div className="w-full max-w-4xl mx-auto mt-6">
           <div className="bg-gray-700/50 p-6 rounded-lg border border-gray-600">
             <h3 className="text-lg font-medium text-gray-200 mb-3">
@@ -399,7 +406,7 @@ function AppContent() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Display Controls (shared) */}
       <div className="w-full max-w-4xl mx-auto">
@@ -411,6 +418,16 @@ function AppContent() {
 
       {/* Debug Section */}
       <DebugTools />
+
+      {/* Mobile Recording Footer */}
+      {isMobile && (
+        <MobileRecordingFooter
+          isRecording={isRecording}
+          hasRecording={!!recordingAudio.instance.audioBuffer}
+          onRecordStart={startRecording}
+          onRecordStop={stopRecording}
+        />
+      )}
     </div>
   );
 }
