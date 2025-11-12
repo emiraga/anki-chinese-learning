@@ -1,12 +1,47 @@
 import React from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
-import { CollapsibleSection } from "./CollapsibleSection.tsx";
+import { CollapsibleSection } from "./CollapsibleSection";
 
-export function YinControls({ onRecompute, onRedraw }) {
+interface YinControlsProps {
+  onRecompute?: () => void;
+  onRedraw?: () => void;
+}
+
+export function YinControls({ onRecompute, onRedraw }: YinControlsProps) {
   const { yinParams, setYinParams } = useToneAnalyzer();
 
-  const handleChange = (field, parser = (v) => v, shouldRecompute = true) => (e) => {
-    const value = parser(e.target);
+  const handleStringChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setYinParams((prev) => ({ ...prev, [field]: value }));
+    if (shouldRecompute) {
+      onRecompute?.();
+    } else {
+      onRedraw?.();
+    }
+  };
+
+  const handleIntChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10);
+    setYinParams((prev) => ({ ...prev, [field]: value }));
+    if (shouldRecompute) {
+      onRecompute?.();
+    } else {
+      onRedraw?.();
+    }
+  };
+
+  const handleFloatChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value);
+    setYinParams((prev) => ({ ...prev, [field]: value }));
+    if (shouldRecompute) {
+      onRecompute?.();
+    } else {
+      onRedraw?.();
+    }
+  };
+
+  const handleBooleanChange = (field: string, shouldRecompute = true) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.checked;
     setYinParams((prev) => ({ ...prev, [field]: value }));
     if (shouldRecompute) {
       onRecompute?.();
@@ -34,7 +69,7 @@ export function YinControls({ onRecompute, onRedraw }) {
               <select
                 id="yinDifferenceMethod"
                 value={yinParams.differenceMethod}
-                onChange={handleChange("differenceMethod")}
+                onChange={handleStringChange("differenceMethod")}
                 className="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
               >
                 <option value="simple">Simple (Slow)</option>
@@ -53,7 +88,7 @@ export function YinControls({ onRecompute, onRedraw }) {
               <select
                 id="yinFrameSize"
                 value={yinParams.frameSize}
-                onChange={handleChange("frameSize", (t) => parseInt(t.value, 10))}
+                onChange={handleIntChange("frameSize")}
                 className="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
               >
                 <option value="128">128</option>
@@ -75,7 +110,7 @@ export function YinControls({ onRecompute, onRedraw }) {
               <select
                 id="yinHopSize"
                 value={yinParams.hopSize}
-                onChange={handleChange("hopSize", (t) => parseInt(t.value, 10))}
+                onChange={handleIntChange("hopSize")}
                 className="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
               >
                 <option value="16">16</option>
@@ -108,7 +143,7 @@ export function YinControls({ onRecompute, onRedraw }) {
               <select
                 id="yinThresholdMethod"
                 value={yinParams.thresholdMethod}
-                onChange={handleChange("thresholdMethod")}
+                onChange={handleStringChange("thresholdMethod")}
                 className="bg-gray-600 border border-gray-500 text-white text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-1"
               >
                 <option value="simple">Simple</option>
@@ -131,7 +166,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="0.9"
                 step="0.01"
                 value={yinParams.threshold}
-                onChange={handleChange("threshold", (t) => parseFloat(t.value))}
+                onChange={handleFloatChange("threshold")}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">
@@ -153,7 +188,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="1.0"
                 step="0.05"
                 value={yinParams.fallbackThreshold}
-                onChange={handleChange("fallbackThreshold", (t) => parseFloat(t.value))}
+                onChange={handleFloatChange("fallbackThreshold")}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">
@@ -174,7 +209,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 type="checkbox"
                 id="yinInterpolation"
                 checked={yinParams.interpolation}
-                onChange={handleChange("interpolation", (t) => t.checked)}
+                onChange={handleBooleanChange("interpolation")}
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
               <label
@@ -199,7 +234,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="200"
                 step="5"
                 value={yinParams.minFreq}
-                onChange={handleChange("minFreq", (t) => parseInt(t.value, 10))}
+                onChange={handleIntChange("minFreq")}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">
@@ -221,7 +256,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="1000"
                 step="10"
                 value={yinParams.maxFreq}
-                onChange={handleChange("maxFreq", (t) => parseInt(t.value, 10))}
+                onChange={handleIntChange("maxFreq")}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">
@@ -242,7 +277,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 type="checkbox"
                 id="yinPowerConfidenceAdjust"
                 checked={yinParams.powerConfidenceAdjust}
-                onChange={handleChange("powerConfidenceAdjust", (t) => t.checked)}
+                onChange={handleBooleanChange("powerConfidenceAdjust")}
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
               <label
@@ -267,7 +302,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="0.1"
                 step="0.001"
                 value={yinParams.minPowerThreshold}
-                onChange={handleChange("minPowerThreshold", (t) => parseFloat(t.value))}
+                onChange={handleFloatChange("minPowerThreshold")}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">
@@ -297,7 +332,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="11"
                 step="2"
                 value={yinParams.medianFilterWindowSize}
-                onChange={handleChange("medianFilterWindowSize", (t) => parseInt(t.value, 10), false)}
+                onChange={handleIntChange("medianFilterWindowSize", false)}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">
@@ -310,7 +345,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 type="checkbox"
                 id="yinOctaveJumpCorrection"
                 checked={yinParams.octaveJumpCorrection}
-                onChange={handleChange("octaveJumpCorrection", (t) => t.checked, false)}
+                onChange={handleBooleanChange("octaveJumpCorrection", false)}
                 className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
               <label
@@ -335,7 +370,7 @@ export function YinControls({ onRecompute, onRedraw }) {
                 max="0.5"
                 step="0.01"
                 value={yinParams.octaveRatioThreshold}
-                onChange={handleChange("octaveRatioThreshold", (t) => parseFloat(t.value), false)}
+                onChange={handleFloatChange("octaveRatioThreshold", false)}
                 className="w-full"
               />
               <div className="text-xs text-gray-400 text-center mt-1">

@@ -15,7 +15,7 @@ import { AudioFilesList } from "./AudioFilesList.tsx";
 import { DebugTools } from "./DebugTools.tsx";
 import { DisplayControls } from "./DisplayControls.tsx";
 import { RecordingControls } from "./RecordingControls.tsx";
-import { YinControls } from "./YinControls.jsx";
+import { YinControls } from "./YinControls.tsx";
 
 function AppContent() {
   const {
