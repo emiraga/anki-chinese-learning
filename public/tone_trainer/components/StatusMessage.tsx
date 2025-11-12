@@ -1,6 +1,18 @@
 import React from "react";
 
-export function StatusMessage({ message, isLoading, spinnerColor = "border-blue-300", backgroundColor }) {
+export interface StatusMessageProps {
+  message: string;
+  isLoading: boolean;
+  spinnerColor?: string;
+  backgroundColor?: string;
+}
+
+export function StatusMessage({
+  message,
+  isLoading,
+  spinnerColor = "border-blue-300",
+  backgroundColor
+}: StatusMessageProps) {
   if (!message) return null;
 
   return (

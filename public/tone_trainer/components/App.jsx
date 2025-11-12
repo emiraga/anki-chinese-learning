@@ -8,7 +8,7 @@ import { performYinAnalysis } from "../utils/yinAlgorithm";
 import { SpectrogramCanvas } from "./SpectrogramCanvas.jsx";
 import { YinPitchCanvas } from "./YinPitchCanvas.jsx";
 import { DropOverlay } from "./DropOverlay.jsx";
-import { StatusMessage } from "./StatusMessage.jsx";
+import { StatusMessage } from "./StatusMessage";
 import { ProgressLine } from "./ProgressLine.jsx";
 import { PlaybackControls } from "./PlaybackControls.jsx";
 import { AudioFilesList } from "./AudioFilesList.jsx";
