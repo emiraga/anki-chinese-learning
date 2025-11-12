@@ -45,16 +45,14 @@ export default function Study() {
 
   return (
     <>
-      <h1 className="text-9xl mx-auto">
-        <HanziText value={current} />
-      </h1>
-      <LearnLink char={current || ""} />
-
       {cardInfo && (
         <div className="mt-8 space-y-6 flex flex-col items-center">
           {cardInfo.fields["Audio"]?.value && (
             <div className="flex justify-center">
-              <AnkiAudioPlayer audioField={cardInfo.fields["Audio"]?.value} pitchVisualisation={true} />
+              <AnkiAudioPlayer
+                audioField={cardInfo.fields["Audio"]?.value}
+                pitchVisualisation={true}
+              />
             </div>
           )}
           <div className="max-w-2xl w-full">
@@ -77,6 +75,11 @@ export default function Study() {
           </div>
         </div>
       )}
+
+      <h1 className="text-9xl mt-5 mx-auto">
+        <HanziText value={current} />
+      </h1>
+      <LearnLink char={current || ""} />
     </>
   );
 }

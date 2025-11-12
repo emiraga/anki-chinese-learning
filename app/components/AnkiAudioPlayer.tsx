@@ -263,12 +263,7 @@ const PitchVisualizationPlayer: React.FC<
         backgroundColor: "#d97706",
       });
     }
-  }, [
-    audioField,
-    audioInstance,
-    ensureAudioContext,
-    setStatusMessage,
-  ]);
+  }, [audioField, audioInstance, ensureAudioContext, setStatusMessage]);
 
   // Load audio on mount
   useEffect(() => {
@@ -308,11 +303,13 @@ const AnkiAudioPlayer: React.FC<AnkiAudioPlayerProps> = ({
   pitchVisualisation = false,
 }) => {
   if (!pitchVisualisation) {
-    return <SimpleAnkiAudioPlayer audioField={audioField} className={className} />;
+    return (
+      <SimpleAnkiAudioPlayer audioField={audioField} className={className} />
+    );
   }
 
   return (
-    <ToneAnalyzerProvider>
+    <ToneAnalyzerProvider key={audioField}>
       <PitchVisualizationPlayer audioField={audioField} />
     </ToneAnalyzerProvider>
   );
