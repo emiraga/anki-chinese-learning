@@ -42,7 +42,7 @@ export function AudioFilesList({ onLoadAudio }: AudioFilesListProps) {
                       <td key={colIndex} className="border border-gray-600 p-2">
                         <button
                           onClick={() => onLoadAudio(file.path, file.maxFreq)}
-                          className="w-full cursor-pointer px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors duration-200"
+                          className="w-full cursor-pointer px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded transition-colors duration-200"
                           title={fileName}
                         >
                           {rowIndex + 1}→{colIndex + 1}

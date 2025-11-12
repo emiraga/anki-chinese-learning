@@ -348,25 +348,58 @@ function AppContent() {
         }
       />
 
-      {/* Recording Instance */}
-      <AudioVisualizerPanel
-        instance={recordingAudio.instance}
-        audioContext={audioContext}
-        visualizationSettings={settings}
-        onPlayStop={recordingAudio.togglePlayStop}
-        onYinParamsChange={recordingAudio.updateYinParams}
-        onRecomputeYin={recordingAudio.recomputeYin}
-        showYinLoadingOverlay={recordingAudio.yinLoading}
-        instructions={
-          <>
-            Hold{" "}
-            <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
-              Space
-            </kbd>{" "}
-            to record
-          </>
-        }
-      />
+      {/* Recording Instance - show instructions or visualizer */}
+      {recordingAudio.instance.audioBuffer ? (
+        <AudioVisualizerPanel
+          instance={recordingAudio.instance}
+          audioContext={audioContext}
+          visualizationSettings={settings}
+          onPlayStop={recordingAudio.togglePlayStop}
+          onYinParamsChange={recordingAudio.updateYinParams}
+          onRecomputeYin={recordingAudio.recomputeYin}
+          showYinLoadingOverlay={recordingAudio.yinLoading}
+          instructions={
+            <>
+              Hold{" "}
+              <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
+                Space
+              </kbd>{" "}
+              to record
+            </>
+          }
+        />
+      ) : (
+        <div className="w-full max-w-4xl mx-auto mt-6">
+          <div className="bg-gray-700/50 p-6 rounded-lg border border-gray-600">
+            <h3 className="text-lg font-medium text-gray-200 mb-3">
+              Record Your Audio
+            </h3>
+            <div className="space-y-3 text-gray-300">
+              <p className="flex items-center gap-2">
+                <span className="text-2xl">🎤</span>
+                <span>
+                  Hold{" "}
+                  <kbd className="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">
+                    Space
+                  </kbd>{" "}
+                  to start recording your audio
+                </span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-2xl">🔴</span>
+                <span>Release the Space key to stop recording</span>
+              </p>
+              <p className="flex items-center gap-2">
+                <span className="text-2xl">📊</span>
+                <span>
+                  Your recording will be analyzed and displayed here with tone
+                  visualization
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Display Controls (shared) */}
       <div className="w-full max-w-4xl mx-auto">
