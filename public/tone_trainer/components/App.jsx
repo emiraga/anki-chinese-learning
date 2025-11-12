@@ -24,10 +24,12 @@ function AppContent() {
     yinParams,
     setYinData,
     spectrogramData,
+    progressPercentage,
+    showProgress,
   } = useToneAnalyzer();
 
   const { startRecording, stopRecording } = useAudioRecording();
-  const { togglePlayStop, progressPercentage, showProgress } = useAudioPlayback();
+  const { togglePlayStop } = useAudioPlayback();
   const { loadAudioFile, loadDroppedAudio } = useAudioLoader();
 
   const [showDropOverlay, setShowDropOverlay] = useState(false);

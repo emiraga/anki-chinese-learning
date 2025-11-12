@@ -22,6 +22,8 @@ export function ToneAnalyzerProvider({ children }) {
   const [yinData, setYinData] = useState([]);
   const [lastAudioBuffer, setLastAudioBuffer] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
 
   // Refs for non-reactive values
   const mediaRecorderRef = useRef(null);
@@ -91,6 +93,10 @@ export function ToneAnalyzerProvider({ children }) {
     setLastAudioBuffer,
     statusMessage,
     setStatusMessage,
+    progressPercentage,
+    setProgressPercentage,
+    showProgress,
+    setShowProgress,
 
     // Settings
     settings,

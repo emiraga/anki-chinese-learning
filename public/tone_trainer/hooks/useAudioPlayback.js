@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext.jsx";
 
 export function useAudioPlayback() {
@@ -10,10 +10,11 @@ export function useAudioPlayback() {
     currentAudioSourceRef,
     progressAnimationFrameRef,
     audioDurationRef,
+    progressPercentage,
+    setProgressPercentage,
+    showProgress,
+    setShowProgress,
   } = useToneAnalyzer();
-
-  const [progressPercentage, setProgressPercentage] = useState(0);
-  const [showProgress, setShowProgress] = useState(false);
 
   const playAudio = useCallback(
     async (audioBuffer) => {
@@ -95,11 +96,12 @@ export function useAudioPlayback() {
     },
     [
       audioContext,
-      isPlaying,
       setIsPlaying,
       currentAudioSourceRef,
       progressAnimationFrameRef,
       audioDurationRef,
+      setProgressPercentage,
+      setShowProgress,
     ]
   );
 
