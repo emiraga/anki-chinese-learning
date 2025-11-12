@@ -5,17 +5,17 @@ import { useAudioPlayback } from "../hooks/useAudioPlayback";
 import { useAudioLoader } from "../hooks/useAudioLoader";
 import { useAudioProcessing } from "../hooks/useAudioProcessing";
 import { performYinAnalysis } from "../utils/yinAlgorithm";
-import { SpectrogramCanvas } from "./SpectrogramCanvas.tsx";
-import { YinPitchCanvas } from "./YinPitchCanvas.tsx";
-import { DropOverlay } from "./DropOverlay.tsx";
+import { SpectrogramCanvas } from "./SpectrogramCanvas";
+import { YinPitchCanvas } from "./YinPitchCanvas";
+import { DropOverlay } from "./DropOverlay";
 import { StatusMessage } from "./StatusMessage";
-import { ProgressLine } from "./ProgressLine.tsx";
-import { PlaybackControls } from "./PlaybackControls.tsx";
-import { AudioFilesList } from "./AudioFilesList.tsx";
-import { DebugTools } from "./DebugTools.tsx";
-import { DisplayControls } from "./DisplayControls.tsx";
-import { RecordingControls } from "./RecordingControls.tsx";
-import { YinControls } from "./YinControls.tsx";
+import { ProgressLine } from "./ProgressLine";
+import { PlaybackControls } from "./PlaybackControls";
+import { AudioFilesList } from "./AudioFilesList";
+import { DebugTools } from "./DebugTools";
+import { DisplayControls } from "./DisplayControls";
+import { RecordingControls } from "./RecordingControls";
+import { YinControls } from "./YinControls";
 
 function AppContent() {
   const {
@@ -39,11 +39,12 @@ function AppContent() {
   // Load default audio on mount
   useEffect(() => {
     loadAudioFile("audio/ai_讀書寫字.mp3");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keyboard event handlers
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
         startRecording();
@@ -55,7 +56,7 @@ function AppContent() {
       }
     };
 
-    const handleKeyUp = (e) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
         stopRecording();
@@ -78,18 +79,18 @@ function AppContent() {
   }, [lastAudioBuffer, startRecording, stopRecording, togglePlayStop]);
 
   // Drag and drop handlers
-  const handleDragEnter = (e) => {
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragCounter((prev) => prev + 1);
     setShowDropOverlay(true);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragCounter((prev) => {
       const newCount = prev - 1;
@@ -100,7 +101,7 @@ function AppContent() {
     });
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setDragCounter(0);
