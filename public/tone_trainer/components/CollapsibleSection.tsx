@@ -1,6 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, type ReactNode } from "react";
 
-export function CollapsibleSection({ title, children, defaultOpen = false }) {
+interface CollapsibleSectionProps {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}
+
+export function CollapsibleSection({ title, children, defaultOpen = false }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (

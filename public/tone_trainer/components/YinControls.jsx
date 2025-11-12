@@ -1,6 +1,6 @@
 import React from "react";
 import { useToneAnalyzer } from "../context/ToneAnalyzerContext";
-import { CollapsibleSection } from "./CollapsibleSection.jsx";
+import { CollapsibleSection } from "./CollapsibleSection.tsx";
 
 export function YinControls({ onRecompute, onRedraw }) {
   const { yinParams, setYinParams } = useToneAnalyzer();
