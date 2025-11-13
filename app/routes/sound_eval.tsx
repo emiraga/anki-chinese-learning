@@ -3,6 +3,7 @@ import type { OutletContext } from "~/data/types";
 import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 import type { DongCharacter } from "~/types/dong_character";
+import type { YellowBridgeCharacter } from "~/types/yellowbridge_character";
 import MainFrame from "~/toolbar/frame";
 import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
@@ -15,6 +16,7 @@ interface SoundComponentCandidate {
   score: number;
   depth: number; // Track recursion depth
   componentType: string[]; // Type of component (sound, meaning, etc.)
+  source: "dong" | "yellowbridge"; // Track data source
 }
 
 // Helper to extract all components from a DongCharacter (non-recursive, single level)
@@ -117,6 +119,68 @@ async function fetchDongCharacter(char: string): Promise<DongCharacter | null> {
   }
 }
 
+// Fetch YellowBridge character data
+async function fetchYellowBridgeCharacter(char: string): Promise<YellowBridgeCharacter | null> {
+  if (!char) return null;
+
+  try {
+    const res = await fetch(`/data/yellowbridge/info/${char}.json`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+// Extract phonetic components from YellowBridge data
+function extractYellowBridgePhoneticComponents(
+  ybChar: YellowBridgeCharacter,
+  charPinyin: string,
+): SoundComponentCandidate[] {
+  const candidates: SoundComponentCandidate[] = [];
+
+  // Extract phonetic components
+  for (const comp of ybChar.functionalComponents.phonetic) {
+    if (comp.pinyin) {
+      // YellowBridge pinyin might have multiple pronunciations separated by comma
+      const firstPinyin = comp.pinyin.split(',')[0].trim();
+      candidates.push({
+        character: comp.character,
+        pinyin: firstPinyin,
+        depth: 0,
+        componentType: ["phonetic"],
+        score: scoreSoundSimilarity(charPinyin, firstPinyin),
+        source: "yellowbridge",
+      });
+    }
+  }
+
+  return candidates;
+}
+
+// Merge candidates from Dong and YellowBridge, removing duplicates
+// When duplicates are found, prefer Dong data for consistency with existing UI
+function mergeCandidates(
+  dongCandidates: SoundComponentCandidate[],
+  yellowBridgeCandidates: SoundComponentCandidate[],
+): SoundComponentCandidate[] {
+  const candidateMap = new Map<string, SoundComponentCandidate>();
+
+  // Add Dong candidates first (they take priority)
+  for (const candidate of dongCandidates) {
+    candidateMap.set(candidate.character, candidate);
+  }
+
+  // Add YellowBridge candidates if not already present
+  for (const candidate of yellowBridgeCandidates) {
+    if (!candidateMap.has(candidate.character)) {
+      candidateMap.set(candidate.character, candidate);
+    }
+  }
+
+  return Array.from(candidateMap.values());
+}
+
 // Recursively gather all components by fetching nested characters
 async function getAllComponentsRecursive(
   dongChar: DongCharacter,
@@ -143,6 +207,7 @@ async function getAllComponentsRecursive(
       depth: comp.depth,
       componentType: comp.componentType,
       score: scoreSoundSimilarity(charPinyin, comp.pinyin),
+      source: "dong",
     });
 
     // Recursively fetch and process nested components
@@ -396,6 +461,16 @@ function CharacterRow({
                       (d{candidate.depth})
                     </span>
                   )}
+                  <span
+                    className={`text-xs px-1 py-0.5 rounded ${
+                      candidate.source === "yellowbridge"
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                        : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                    }`}
+                    title={`Source: ${candidate.source === "yellowbridge" ? "YellowBridge" : "DongChinese"}`}
+                  >
+                    {candidate.source === "yellowbridge" ? "YB" : "DC"}
+                  </span>
                   <button
                     onClick={() => setSoundComponent(candidate.character)}
                     disabled={isUpdating || !ankiId}
@@ -456,35 +531,58 @@ export default function SoundEval() {
         }
 
         const charPinyin = char.pinyin[0].pinyinAccented;
-        const dongChar = await fetchDongCharacter(char.traditional);
 
-        let candidates: SoundComponentCandidate[] = [];
+        // Fetch data from both sources in parallel
+        const [dongChar, ybChar] = await Promise.all([
+          fetchDongCharacter(char.traditional),
+          fetchYellowBridgeCharacter(char.traditional),
+        ]);
 
+        let dongCandidates: SoundComponentCandidate[] = [];
+        let ybCandidates: SoundComponentCandidate[] = [];
+
+        // Get Dong candidates
         if (dongChar) {
           try {
-            const allCandidates = await getAllComponentsRecursive(
+            dongCandidates = await getAllComponentsRecursive(
               dongChar,
               charPinyin,
               0,
               new Set([char.traditional]),
             );
-            // Sort by component type (sound first) and then by score descending
-            allCandidates.sort((a, b) => {
-              const aIsSound = a.componentType.some(type => type.toLowerCase().includes('sound'));
-              const bIsSound = b.componentType.some(type => type.toLowerCase().includes('sound'));
-
-              // If one is sound and the other isn't, sound comes first
-              if (aIsSound && !bIsSound) return -1;
-              if (!aIsSound && bIsSound) return 1;
-
-              // Otherwise, sort by score descending
-              return b.score - a.score;
-            });
-            candidates = allCandidates;
           } catch {
-            // Error loading candidates
+            // Error loading Dong candidates
           }
         }
+
+        // Get YellowBridge candidates
+        if (ybChar) {
+          try {
+            ybCandidates = extractYellowBridgePhoneticComponents(ybChar, charPinyin);
+          } catch {
+            // Error loading YellowBridge candidates
+          }
+        }
+
+        // Merge and deduplicate candidates
+        let candidates = mergeCandidates(dongCandidates, ybCandidates);
+
+        // Sort by component type (sound/phonetic first) and then by score descending
+        candidates.sort((a, b) => {
+          const aIsSound = a.componentType.some(type =>
+            type.toLowerCase().includes('sound') || type.toLowerCase().includes('phonetic')
+          );
+          const bIsSound = b.componentType.some(type =>
+            type.toLowerCase().includes('sound') || type.toLowerCase().includes('phonetic')
+          );
+
+          // If one is sound and the other isn't, sound comes first
+          if (aIsSound && !bIsSound) return -1;
+          if (!aIsSound && bIsSound) return 1;
+
+          // Otherwise, sort by score descending
+          return b.score - a.score;
+        });
 
         const maxScore = candidates.length > 0 ? candidates[0].score : 0;
 

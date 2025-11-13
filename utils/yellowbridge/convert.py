@@ -432,11 +432,33 @@ def process_directory(
     # Write individual files if specified
     if individual_files_dir:
         individual_files_dir.mkdir(parents=True, exist_ok=True)
+        written_count = 0
+        unchanged_count = 0
+
         for char, info in results.items():
             individual_file = individual_files_dir / f"{char}.json"
-            with open(individual_file, 'w', encoding='utf-8') as f:
-                json.dump(info, f, ensure_ascii=False, indent=2)
-        print(f"Individual files written to: {individual_files_dir} ({len(results)} files)")
+
+            # Serialize new content
+            new_content = json.dumps(info, ensure_ascii=False, indent=2)
+
+            # Check if file exists and compare content
+            should_write = True
+            if individual_file.exists():
+                with open(individual_file, 'r', encoding='utf-8') as f:
+                    existing_content = f.read()
+                if existing_content == new_content:
+                    should_write = False
+                    unchanged_count += 1
+
+            if should_write:
+                with open(individual_file, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                written_count += 1
+
+        print(f"\nIndividual files: {individual_files_dir}")
+        print(f"  Updated: {written_count} files")
+        print(f"  Unchanged: {unchanged_count} files")
+        print(f"  Total: {len(results)} files")
 
     return results
 
