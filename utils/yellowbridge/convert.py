@@ -53,25 +53,95 @@ class YellowBridgeHTMLParser(HTMLParser):
         self.data_buffer.append((self.current_tag, data.strip(), self.in_zh0_span, self.in_em_tag))
 
 
+def extract_functional_components(decomp_html: str) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Extract all functional components with their types from the decomposition HTML.
+
+    Returns a dictionary with component types as keys:
+    - phonetic: Components that suggest pronunciation
+    - semantic: Components that suggest meaning (radicals)
+    - primitive: Basic building blocks
+    """
+    components = {
+        'phonetic': [],
+        'semantic': [],
+        'primitive': []
+    }
+
+    # Map image markers to component types
+    component_patterns = [
+        (r"<img src=['\"]//r\.yellowbridge\.com/images/char-phonetic\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"<]*)", 'phonetic'),
+        (r"<img src=['\"]//r\.yellowbridge\.com/images/char-(?:key)?radical\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"<]*)", 'semantic'),
+    ]
+
+    seen_phonetic = set()
+    seen_semantic = set()
+
+    # Extract phonetic and semantic components
+    for pattern, comp_type in component_patterns:
+        matches = re.findall(pattern, decomp_html)
+        for char, pinyin, description in matches:
+            char = char.strip()
+            pinyin_clean = pinyin.strip() if pinyin.strip() else None
+            desc_clean = description.strip()
+
+            # Clean up description
+            desc_clean = re.sub(r'[\s;,]+$', '', desc_clean)
+            desc_clean = re.sub(r'\.\.\.$', '', desc_clean)
+
+            component_data = {
+                'character': char,
+                'pinyin': pinyin_clean,
+                'description': desc_clean
+            }
+
+            if comp_type == 'phonetic':
+                key = f"{char}|{pinyin_clean}"
+                if key not in seen_phonetic:
+                    seen_phonetic.add(key)
+                    components['phonetic'].append(component_data)
+            elif comp_type == 'semantic':
+                key = f"{char}|{pinyin_clean}"
+                if key not in seen_semantic:
+                    seen_semantic.add(key)
+                    components['semantic'].append(component_data)
+
+    # Extract primitive components (those without phonetic or semantic markers)
+    # These are basic building blocks that don't have explicit functional markers
+    primitive_pattern = r'<img id=["\']idt\d+["\'] src=["\']//r\.yellowbridge\.com/images/char-primitive\.gif["\'][^>]*><a[^>]*><span class=["\']zh0["\']>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^<]*)</a>'
+
+    primitive_matches = re.findall(primitive_pattern, decomp_html)
+    seen_primitive = set()
+
+    for char, pinyin, description in primitive_matches:
+        char = char.strip()
+        pinyin_clean = pinyin.strip() if pinyin.strip() else None
+
+        # Skip if already captured as phonetic or semantic
+        key = f"{char}|{pinyin_clean}"
+        if key not in seen_phonetic and key not in seen_semantic and key not in seen_primitive:
+            seen_primitive.add(key)
+            desc_clean = re.sub(r'<[^>]+>', '', description).strip()
+            desc_clean = re.sub(r'[\s;,]+$', '', desc_clean)
+
+            components['primitive'].append({
+                'character': char,
+                'pinyin': pinyin_clean,
+                'description': desc_clean
+            })
+
+    return components
+
+
 def extract_phonetic_components(decomp_html: str) -> List[Dict[str, str]]:
     """
     Extract phonetic components from the decomposition HTML.
+    (Kept for backward compatibility)
 
     Returns a list of dictionaries with 'character' and 'pinyin' keys.
     """
-    phonetic_components = []
-
-    # Look for phonetic component markers
-    phonetic_pattern = r"<img src=['\"]//r\.yellowbridge\.com/images/char-phonetic\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]+)</em>\]"
-
-    matches = re.findall(phonetic_pattern, decomp_html)
-    for char, pinyin in matches:
-        phonetic_components.append({
-            'character': char.strip(),
-            'pinyin': pinyin.strip()
-        })
-
-    return phonetic_components
+    functional = extract_functional_components(decomp_html)
+    return functional['phonetic']
 
 
 def extract_character_info(decomp_html: str) -> Optional[Dict[str, str]]:
@@ -183,11 +253,24 @@ def extract_radical(decomp_html: str) -> Optional[Dict[str, str]]:
 
     match = re.search(radical_pattern, decomp_html)
     if match:
-        return {
+        description = match.group(3).strip()
+
+        # Extract Kangxi radical number if present
+        kangxi_number = None
+        kangxi_match = re.search(r'Kangxi radical (\d+)', description)
+        if kangxi_match:
+            kangxi_number = int(kangxi_match.group(1))
+
+        result = {
             'character': match.group(1).strip(),
             'pinyin': match.group(2).strip() if match.group(2).strip() else None,
-            'description': match.group(3).strip()
+            'description': description
         }
+
+        if kangxi_number:
+            result['kangxi_radical_number'] = kangxi_number
+
+        return result
 
     return None
 
@@ -195,7 +278,8 @@ def extract_radical(decomp_html: str) -> Optional[Dict[str, str]]:
 def extract_simplification(formation_html: str) -> Optional[Dict[str, str]]:
     """Extract simplification information if present."""
     # Look for simplification row
-    pattern = r'<td>Simplification<br>Method[^<]*</td>\s*<td>(.*?)</td>'
+    # Need to handle the <span> tag with onclick that appears after "Method"
+    pattern = r'<td>Simplification<br>Method[^<]*(?:<span[^>]*></span>)?</td>\s*<td>(.*?)</td>'
 
     match = re.search(pattern, formation_html, re.DOTALL)
     if match:
@@ -205,11 +289,26 @@ def extract_simplification(formation_html: str) -> Optional[Dict[str, str]]:
         simplified_pattern = r'Simplified form is <a[^>]*>([^<]+)</a>'
         simplified_match = re.search(simplified_pattern, content)
 
+        # Extract simplification method type (e.g., "generic radical simplification #10")
+        method_type = None
+        generic_pattern = r'(generic (?:character|radical) simplification #\d+)'
+        generic_match = re.search(generic_pattern, content, re.IGNORECASE)
+        if generic_match:
+            method_type = generic_match.group(1).strip()
+        elif 'unique simplification' in content.lower():
+            unique_pattern = r'(unique simplification #\d+)'
+            unique_match = re.search(unique_pattern, content, re.IGNORECASE)
+            if unique_match:
+                method_type = unique_match.group(1).strip()
+
         if simplified_match:
-            return {
+            result = {
                 'simplified_form': simplified_match.group(1).strip(),
                 'method': re.sub(r'<[^>]+>', '', content).strip()
             }
+            if method_type:
+                result['method_type'] = method_type
+            return result
 
     return None
 
@@ -244,17 +343,33 @@ def process_file(file_path: Path) -> Dict:
         )
 
     # Extract all data
+    definition = extract_definition(formation_html)
+
+    # Extract Kangxi radical number from definition if present
+    kangxi_radical = None
+    if definition:
+        kangxi_match = re.search(r'Kangxi radical (\d+)', definition)
+        if kangxi_match:
+            kangxi_radical = int(kangxi_match.group(1))
+
+    # Extract functional components
+    functional_components = extract_functional_components(decomp_html)
+
     result = {
         'character': char_info['character'] if char_info else filename_char,
         'pinyin': char_info['pinyin'] if char_info else None,
-        'definition': extract_definition(formation_html),
-        'phonetic_components': extract_phonetic_components(decomp_html),
+        'definition': definition,
+        'functional_components': functional_components,
+        'phonetic_components': functional_components['phonetic'],  # Keep for backward compatibility
         'radical': extract_radical(decomp_html),
         'formation_methods': extract_formation_methods(formation_html),
         'all_components': extract_components(decomp_html),
         'simplification': extract_simplification(formation_html),
         'source_file': file_path.name
     }
+
+    if kangxi_radical:
+        result['kangxi_radical'] = kangxi_radical
 
     return result
 

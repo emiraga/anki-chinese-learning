@@ -14,14 +14,18 @@ For each character, the script extracts:
    - Character itself
    - Pinyin reading(s)
    - English definition
+   - Kangxi radical number (if the character is a radical itself)
 
-2. **Phonetic Components** (Sound Components)
-   - Characters that suggest the pronunciation
-   - Their pinyin readings
+2. **Functional Components** (NEW!)
+   - **Phonetic components**: Characters that suggest pronunciation (sound)
+   - **Semantic components**: Characters that suggest meaning (radicals)
+   - **Primitive components**: Basic building blocks without explicit functional markers
+   - Each component includes character, pinyin, and description
 
 3. **Radical Information**
    - Key radical component
    - Radical's pinyin and description
+   - Kangxi radical number (if available)
 
 4. **Formation Methods**
    - Chinese name (e.g., 形声, 会意, 象形, 假借)
@@ -35,7 +39,8 @@ For each character, the script extracts:
 
 6. **Simplification Information** (if applicable)
    - Simplified form of traditional characters
-   - Method used for simplification
+   - Full method description
+   - Method type (e.g., "generic radical simplification #10", "unique simplification #259")
 
 ## Usage
 
@@ -91,12 +96,30 @@ The output is a JSON object where keys are characters and values contain extract
     "character": "做",
     "pinyin": "zuò",
     "definition": "work, make; act",
-    "phonetic_components": [
-      {
-        "character": "故",
-        "pinyin": "gù"
-      }
-    ],
+    "functional_components": {
+      "phonetic": [
+        {
+          "character": "故",
+          "pinyin": "gù",
+          "description": "ancient, old; reason, because"
+        }
+      ],
+      "semantic": [
+        {
+          "character": "人",
+          "pinyin": "rén, ren",
+          "description": "man; people; mankind; someone else"
+        }
+      ],
+      "primitive": [
+        {
+          "character": "十",
+          "pinyin": "shí",
+          "description": "ten, tenth; complete; perfect"
+        }
+      ]
+    },
+    "phonetic_components": [...],
     "radical": {
       "character": "人",
       "pinyin": "rén, ren",

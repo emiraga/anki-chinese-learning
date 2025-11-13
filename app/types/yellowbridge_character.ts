@@ -1,7 +1,43 @@
 // Type definitions for YellowBridge character data
 
+export interface ComponentInfo {
+  character: string;
+  pinyin: string | null;
+  description: string;
+}
+
+export interface FunctionalComponents {
+  phonetic: ComponentInfo[];
+  semantic: ComponentInfo[];
+  primitive: ComponentInfo[];
+}
+
+export interface RadicalInfo extends ComponentInfo {
+  kangxiRadicalNumber?: number;
+}
+
+export interface FormationMethod {
+  typeChinese: string;
+  typeEnglish: string;
+  description: string;
+  referencedCharacters: string[];
+}
+
+export interface SimplificationInfo {
+  simplifiedForm: string;
+  method: string;
+  methodType?: string;
+}
+
 export interface YellowBridgeCharacter {
-  decomp: string; // HTML content for character decomposition
-  formation: string; // HTML content for character formation
-  [key: string]: string; // Additional fields may be present as HTML content
+  character: string;
+  pinyin: string | null;
+  definition: string | null;
+  functionalComponents: FunctionalComponents;
+  radical: RadicalInfo | null;
+  formationMethods: FormationMethod[];
+  allComponents: ComponentInfo[];
+  simplification: SimplificationInfo | null;
+  kangxiRadical?: number;
+  sourceFile: string;
 }

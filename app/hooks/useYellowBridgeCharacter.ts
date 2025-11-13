@@ -8,7 +8,7 @@ interface UseYellowBridgeCharacterResult {
 }
 
 /**
- * Custom hook to load YellowBridge character data from JSON file
+ * Custom hook to load YellowBridge character data from processed JSON file
  * @param char - The Chinese character to load (e.g., "成", "城")
  * @returns Object with character data, loading state, and error state
  */
@@ -18,7 +18,7 @@ export function useYellowBridgeCharacter(char: string): UseYellowBridgeCharacter
       throw new Error("No character provided");
     }
 
-    const res = await fetch(`/data/yellowbridge/raw/${character}.json`);
+    const res = await fetch(`/data/yellowbridge/info/${character}.json`);
     if (!res.ok) {
       throw new Error(`Failed to load character "${character}": ${res.statusText}`);
     }
