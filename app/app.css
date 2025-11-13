@@ -301,3 +301,12 @@ tr.row-male > th {
   border-right: 0px;
   font-weight: bold;
 }
+
+/* yellowbridge fixes */
+.dt .dtNode a.node img {
+  display: none;
+}
+
+.dt #decompLegend {
+  display: none;
+}

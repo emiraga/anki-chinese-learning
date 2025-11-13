@@ -5,10 +5,19 @@ interface YellowBridgeDisplayProps {
   character: YellowBridgeCharacter;
 }
 
+function stripScriptTags(html: string | undefined): string | undefined {
+  if (!html) return html;
+  // Remove script tags and their content
+  return html.replace(
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    "",
+  );
+}
+
 export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
-  // Extract the decomp and formation content
-  const decompContent = character.decomp;
-  const formationContent = character.formation;
+  // Extract the decomp and formation content and strip script tags
+  const decompContent = stripScriptTags(character.decomp);
+  const formationContent = stripScriptTags(character.formation);
 
   if (!decompContent && !formationContent) {
     return (
@@ -21,17 +30,6 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <div className="space-y-6">
-        {decompContent && (
-          <div className="prose dark:prose-invert max-w-none">
-            <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">
-              Character Decomposition
-            </h3>
-            <div
-              className="yellowbridge-decomp"
-              dangerouslySetInnerHTML={{ __html: decompContent }}
-            />
-          </div>
-        )}
         {formationContent && (
           <div className="prose dark:prose-invert max-w-none">
             <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">
@@ -40,6 +38,17 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
             <div
               className="yellowbridge-formation"
               dangerouslySetInnerHTML={{ __html: formationContent }}
+            />
+          </div>
+        )}
+        {decompContent && (
+          <div className="prose dark:prose-invert max-w-none">
+            <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">
+              Character Decomposition
+            </h3>
+            <div
+              className="yellowbridge-decomp"
+              dangerouslySetInnerHTML={{ __html: decompContent }}
             />
           </div>
         )}
