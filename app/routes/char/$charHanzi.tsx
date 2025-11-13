@@ -261,10 +261,7 @@ export default function CharDetail() {
               </div>
             )}
             {dongCharacter && (
-              <DongCharacterDisplay
-                character={dongCharacter}
-                filterKnownChars={true}
-              />
+              <DongCharacterDisplay character={dongCharacter} />
             )}
           </>
         )}

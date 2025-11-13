@@ -11,7 +11,6 @@ import styles from "./index.module.css";
 
 interface DongCharacterDisplayProps {
   character: DongCharacter;
-  filterKnownChars?: boolean;
 }
 
 // Helper component for rendering SVG character
@@ -1121,13 +1120,11 @@ function ComponentDetailsSection({ chars }: ComponentDetailsSectionProps) {
 // Component In section - displays characters that use this character as a component
 interface ComponentInSectionProps {
   character: DongCharacter;
-  filterKnownChars: boolean;
   characters: Record<string, unknown>;
 }
 
 function ComponentInSection({
   character,
-  filterKnownChars,
   characters,
 }: ComponentInSectionProps) {
   if (!character.componentIn || character.componentIn.length === 0) {
@@ -1161,9 +1158,6 @@ function ComponentInSection({
     // Separate known and unknown characters
     const knownItems = items.filter((item) => characters[item.char]);
     const unknownItems = items.filter((item) => !characters[item.char]);
-
-    // If filtering is enabled and there are no known items, don't show the section
-    if (filterKnownChars && knownItems.length === 0) return null;
 
     const verifiedCount = items.filter(
       (item) => item.isVerified === true,
@@ -1230,7 +1224,6 @@ function ComponentInSection({
 
 export function DongCharacterDisplay({
   character,
-  filterKnownChars = false,
 }: DongCharacterDisplayProps) {
   // Get known characters from context
   const { characters } = useOutletContext<OutletContext>();
@@ -1338,7 +1331,6 @@ export function DongCharacterDisplay({
       {/* Component In - Characters that use this character as a component */}
       <ComponentInSection
         character={character}
-        filterKnownChars={filterKnownChars}
         characters={characters}
       />
 
