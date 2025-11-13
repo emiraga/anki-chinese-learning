@@ -7,6 +7,7 @@ import {
 import { useAudioInstance } from "../../public/tone_trainer/hooks/useAudioInstance";
 import { AudioVisualizerPanel } from "../../public/tone_trainer/components/AudioVisualizerPanel";
 import { trimSilence } from "../../public/tone_trainer/utils/audioUtils";
+import Modal from "./Modal";
 
 interface AnkiAudioPlayerProps {
   audioField?: string;
@@ -22,6 +23,7 @@ const SimpleAnkiAudioPlayer: React.FC<
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const extractFilename = (audioField: string): string | null => {
@@ -130,37 +132,65 @@ const SimpleAnkiAudioPlayer: React.FC<
   const filename = extractFilename(audioField);
 
   return (
-    <span className={`w-4 ml-1 inline-block rounded-lg ${className}`}>
-      <button
-        onClick={handlePlayPause}
-        disabled={isLoading || !filename}
-        className={`
-          flex items-center justify-center w-4 h-4 rounded-full transition-colors
-          ${
-            isLoading || !filename
-              ? "bg-gray-300 dark:bg-gray-600 cursor-not-allowed"
-              : "bg-blue-200 dark:bg-blue-700 hover:bg-blue-300 dark:hover:bg-blue-600 text-white"
-          }
-        `}
+    <>
+      <span className={`inline-flex items-center ml-1 gap-1 rounded-lg ${className ?? ""}`}>
+        <button
+          onClick={handlePlayPause}
+          disabled={isLoading || !filename}
+          className={`
+            flex items-center justify-center w-4 h-4 rounded-full transition-colors
+            ${
+              isLoading || !filename
+                ? "bg-gray-300 dark:bg-gray-600 cursor-not-allowed"
+                : "bg-blue-200 dark:bg-blue-700 hover:bg-blue-300 dark:hover:bg-blue-600 text-white"
+            }
+          `}
+        >
+          {isLoading ? "o" : "⏵"}
+        </button>
+
+        <button
+          onClick={() => setShowModal(true)}
+          disabled={!filename}
+          className={`
+            flex items-center justify-center w-4 h-4 text-xs transition-opacity
+            ${
+              !filename
+                ? "opacity-30 cursor-not-allowed"
+                : "opacity-70 hover:opacity-100"
+            }
+          `}
+          title="Show pitch visualization"
+        >
+          📊
+        </button>
+
+        <div className="flex-1">
+          {error && (
+            <div className="flex items-center space-x-1 text-red-600 dark:text-red-400 text-xs mt-1">
+              🛑 <span>{error}</span>
+            </div>
+          )}
+        </div>
+
+        <audio
+          ref={audioRef}
+          onEnded={handleAudioEnded}
+          onError={handleAudioError}
+          className="hidden"
+        />
+      </span>
+
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Pitch Visualization"
       >
-        {isLoading ? "o" : "⏵"}
-      </button>
-
-      <div className="flex-1">
-        {error && (
-          <div className="flex items-center space-x-1 text-red-600 dark:text-red-400 text-xs mt-1">
-            🛑 <span>{error}</span>
-          </div>
-        )}
-      </div>
-
-      <audio
-        ref={audioRef}
-        onEnded={handleAudioEnded}
-        onError={handleAudioError}
-        className="hidden"
-      />
-    </span>
+        <ToneAnalyzerProvider key={audioField}>
+          <PitchVisualizationPlayer audioField={audioField} />
+        </ToneAnalyzerProvider>
+      </Modal>
+    </>
   );
 };
 
