@@ -30,6 +30,10 @@ BLACKLISTED_CHARS = {
     '㇆',  # CJK stroke, not a full character
     'フ',  # Japanese Katakana, not a Chinese character
     '㇏',  # CJK stroke, not a full character
+    '屮',
+    '艹',
+    '&amp;R_S7;',
+    '&R_S7;',
 }
 
 
@@ -166,9 +170,9 @@ def extract_referenced_chars(json_data: dict) -> Set[str]:
                     chars.add(char)
 
     # Extract from simplification
-    # if 'simplification' in json_data and json_data['simplification']:
-    #     if 'simplifiedForm' in json_data['simplification']:
-    #         chars.add(json_data['simplification']['simplifiedForm'])
+    if 'simplification' in json_data and json_data['simplification']:
+        if 'simplifiedForm' in json_data['simplification']:
+            chars.add(json_data['simplification']['simplifiedForm'])
 
     return chars
 
@@ -187,13 +191,13 @@ def is_punctuation(char: str) -> bool:
     return char in punctuation
 
 
-def get_anki_characters(note_type="Hanzi", extra_filter="-is:suspended"):
+def get_anki_characters(note_type="Hanzi", extra_filter=""):
     """
     Get all characters from Anki notes with Traditional field
 
     Args:
         note_type (str): The note type to search (default: "Hanzi")
-        extra_filter (str): Additional filter criteria (default: "-is:suspended")
+        extra_filter (str): Additional filter criteria (default: "")
 
     Returns:
         tuple: (set of characters, Counter of character frequency)
@@ -294,7 +298,7 @@ def main():
     parser.add_argument(
         '--delay',
         type=float,
-        default=1.0,
+        default=0.2,
         help='Delay in seconds between opening browser tabs (default: 2.0)'
     )
     parser.add_argument(
@@ -316,8 +320,8 @@ def main():
     parser.add_argument(
         '--anki-filter',
         type=str,
-        default='-is:suspended',
-        help='Additional Anki search filter (default: -is:suspended)'
+        default='',
+        help='Additional Anki search filter (default: "")'
     )
     parser.add_argument(
         '--skip-anki',

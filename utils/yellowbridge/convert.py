@@ -444,6 +444,7 @@ def process_directory(
     """
     results = {}
     errors = []
+    skipped = []
 
     json_files = sorted(input_dir.glob('*.json'))
 
@@ -451,6 +452,30 @@ def process_directory(
 
     for file_path in json_files:
         try:
+            # Check if we should skip processing based on mtime comparison
+            should_skip = False
+            if individual_files_dir:
+                # Try to determine the character from filename to check target file
+                filename_char = file_path.stem
+                target_file = individual_files_dir / f"{filename_char}.json"
+
+                if target_file.exists():
+                    source_mtime = file_path.stat().st_mtime
+                    target_mtime = target_file.stat().st_mtime
+
+                    if source_mtime <= target_mtime:
+                        # Source hasn't been modified since target was created, skip processing
+                        should_skip = True
+                        skipped.append(filename_char)
+
+                        # Still need to load the existing data for the combined output
+                        if output_file:
+                            with open(target_file, 'r', encoding='utf-8') as f:
+                                result = json.load(f)
+                                results[filename_char] = result
+                        continue
+
+            # Process the file
             result = process_file(file_path)
             char = result['character']
             results[char] = result
@@ -470,6 +495,8 @@ def process_directory(
 
     print(f"\n{'='*60}")
     print(f"Processed: {len(results)} characters")
+    if skipped:
+        print(f"Skipped (unchanged): {len(skipped)} characters")
     print(f"Errors: {len(errors)}")
 
     if errors:
