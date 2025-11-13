@@ -189,10 +189,10 @@ def extract_formation_methods(formation_html: str) -> List[Dict[str, str]]:
         clean_desc = re.sub(r'<[^>]+>', '', description).strip()
 
         methods.append({
-            'type_chinese': chinese_name.strip(),
-            'type_english': english_name.strip(),
+            'typeChinese': chinese_name.strip(),
+            'typeEnglish': english_name.strip(),
             'description': clean_desc,
-            'referenced_characters': char_refs
+            'referencedCharacters': char_refs
         })
 
     return methods
@@ -268,7 +268,7 @@ def extract_radical(decomp_html: str) -> Optional[Dict[str, str]]:
         }
 
         if kangxi_number:
-            result['kangxi_radical_number'] = kangxi_number
+            result['kangxiRadicalNumber'] = kangxi_number
 
         return result
 
@@ -303,11 +303,11 @@ def extract_simplification(formation_html: str) -> Optional[Dict[str, str]]:
 
         if simplified_match:
             result = {
-                'simplified_form': simplified_match.group(1).strip(),
+                'simplifiedForm': simplified_match.group(1).strip(),
                 'method': re.sub(r'<[^>]+>', '', content).strip()
             }
             if method_type:
-                result['method_type'] = method_type
+                result['methodType'] = method_type
             return result
 
     return None
@@ -359,17 +359,16 @@ def process_file(file_path: Path) -> Dict:
         'character': char_info['character'] if char_info else filename_char,
         'pinyin': char_info['pinyin'] if char_info else None,
         'definition': definition,
-        'functional_components': functional_components,
-        'phonetic_components': functional_components['phonetic'],  # Keep for backward compatibility
+        'functionalComponents': functional_components,
         'radical': extract_radical(decomp_html),
-        'formation_methods': extract_formation_methods(formation_html),
-        'all_components': extract_components(decomp_html),
+        'formationMethods': extract_formation_methods(formation_html),
+        'allComponents': extract_components(decomp_html),
         'simplification': extract_simplification(formation_html),
-        'source_file': file_path.name
+        'sourceFile': file_path.name
     }
 
     if kangxi_radical:
-        result['kangxi_radical'] = kangxi_radical
+        result['kangxiRadical'] = kangxi_radical
 
     return result
 
@@ -405,8 +404,8 @@ def process_directory(
             print(f"✓ {char} ({file_path.name})")
 
             # Print phonetic components if found
-            if result['phonetic_components']:
-                for pc in result['phonetic_components']:
+            if result['functionalComponents']['phonetic']:
+                for pc in result['functionalComponents']['phonetic']:
                     print(f"  → Phonetic: {pc['character']} [{pc['pinyin']}]")
 
         except Exception as e:
