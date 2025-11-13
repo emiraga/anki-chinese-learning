@@ -34,6 +34,9 @@ BLACKLISTED_CHARS = {
     '艹',
     '&amp;R_S7;',
     '&R_S7;',
+    '◎',
+    '𰻞', # biang?
+    '㇚',
 }
 
 
@@ -239,6 +242,28 @@ def get_anki_characters(note_type="Hanzi", extra_filter=""):
     return anki_chars, char_frequency
 
 
+def get_dong_chars(dong_dir: Path) -> Set[str]:
+    """Get all characters from Dong Chinese filenames."""
+    all_chars = set()
+
+    if not dong_dir.exists():
+        print(f"\nWarning: Dong directory not found: {dong_dir}")
+        return all_chars
+
+    json_files = list(dong_dir.glob('*.json'))
+
+    print(f"\nScanning {len(json_files)} files in {dong_dir}...")
+
+    for file_path in json_files:
+        # Extract character from filename (filename is the character itself)
+        char = file_path.stem
+        if char and not is_punctuation(char):
+            all_chars.add(char)
+
+    print(f"Found {len(all_chars)} unique characters from Dong Chinese filenames")
+    return all_chars
+
+
 def get_all_referenced_chars(info_dir: Path) -> Set[str]:
     """Get all characters referenced across all info files."""
     all_chars = set()
@@ -328,6 +353,12 @@ def main():
         action='store_true',
         help='Skip fetching characters from Anki'
     )
+    parser.add_argument(
+        '--dong-dir',
+        type=Path,
+        default=Path('public/data/dong'),
+        help='Directory containing Dong Chinese JSON files'
+    )
 
     args = parser.parse_args()
 
@@ -337,6 +368,9 @@ def main():
 
     # Get all referenced characters and existing files from YellowBridge JSON
     ref_chars, existing_files = get_all_referenced_chars(args.info_dir)
+
+    # Get characters from Dong Chinese filenames
+    dong_chars = get_dong_chars(args.dong_dir)
 
     # Get characters from Anki (unless skipped)
     anki_chars = set()
@@ -351,11 +385,12 @@ def main():
             print("(Make sure Anki is running with AnkiConnect addon installed)")
 
     # Merge all characters
-    all_chars = ref_chars | anki_chars
+    all_chars = ref_chars | anki_chars | dong_chars
 
     # Find missing characters (not in existing files)
     missing_anki_chars = anki_chars - existing_files
     missing_ref_chars = ref_chars - existing_files
+    missing_dong_chars = dong_chars - existing_files
     missing_chars = all_chars - existing_files
 
     # Filter out blacklisted characters
@@ -363,6 +398,7 @@ def main():
     missing_chars = missing_chars - BLACKLISTED_CHARS
     missing_anki_chars = missing_anki_chars - BLACKLISTED_CHARS
     missing_ref_chars = missing_ref_chars - BLACKLISTED_CHARS
+    missing_dong_chars = missing_dong_chars - BLACKLISTED_CHARS
 
     # Sort missing characters by frequency (most common first)
     missing_sorted = sorted(missing_chars, key=lambda c: char_frequency.get(c, 0), reverse=True)
@@ -370,6 +406,7 @@ def main():
     print(f"\n{'='*60}")
     print(f"Total unique characters from Anki: {len(anki_chars)}")
     print(f"Total referenced characters from YellowBridge: {len(ref_chars)}")
+    print(f"Total unique characters from Dong Chinese: {len(dong_chars)}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Existing files: {len(existing_files)}")
 
@@ -379,6 +416,7 @@ def main():
 
     print(f"\nMissing from Anki: {len(missing_anki_chars)}")
     print(f"Missing from YellowBridge references: {len(missing_ref_chars)}")
+    print(f"Missing from Dong Chinese: {len(missing_dong_chars)}")
     print(f"Total missing characters: {len(missing_chars)}")
 
     if not missing_chars:
@@ -395,6 +433,8 @@ def main():
             sources.append("Anki")
         if char in missing_ref_chars:
             sources.append("Referenced")
+        if char in missing_dong_chars:
+            sources.append("Dong")
         source_str = "+".join(sources)
         freq_str = f"appears {freq} times" if freq > 0 else "referenced"
         print(f"  {i}. {char} ({freq_str}) [{source_str}]")

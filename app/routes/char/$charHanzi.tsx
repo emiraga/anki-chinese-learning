@@ -271,7 +271,6 @@ export default function CharDetail() {
 
         {activeTab === "yellowbridge" && (
           <>
-            <h2 className="text-2xl">YellowBridge Character Decomposition:</h2>
             {yellowBridgeLoading && (
               <div className="text-xl text-gray-600 dark:text-gray-400">
                 Loading YellowBridge data...

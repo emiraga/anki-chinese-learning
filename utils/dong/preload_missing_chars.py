@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 import urllib.parse
 from collections import Counter
+import argparse
 
 
 def anki_connect_request(action, params=None):
@@ -142,6 +143,31 @@ def get_existing_dong_chars(dong_data_dir):
     return existing_chars
 
 
+def get_yellowbridge_chars(yellowbridge_data_dir):
+    """
+    Get set of characters that have yellowbridge data files
+
+    Args:
+        yellowbridge_data_dir (Path): Path to the yellowbridge raw data directory
+
+    Returns:
+        set: Set of characters with existing yellowbridge files
+    """
+    yellowbridge_chars = set()
+
+    if not yellowbridge_data_dir.exists():
+        print(f"Warning: Yellowbridge data directory does not exist: {yellowbridge_data_dir}")
+        return yellowbridge_chars
+
+    for json_file in yellowbridge_data_dir.glob("*.json"):
+        # The filename is the character plus .json extension
+        char = json_file.stem
+        yellowbridge_chars.add(char)
+
+    print(f"Found {len(yellowbridge_chars)} yellowbridge character files")
+    return yellowbridge_chars
+
+
 def get_component_chars_from_dong_files(dong_data_dir, top_words_share_threshold=0.02):
     """
     Extract all component characters referenced in existing dong JSON files
@@ -214,16 +240,37 @@ def get_component_chars_from_dong_files(dong_data_dir, top_words_share_threshold
 
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description='Find and preload missing Chinese characters for dong-chinese data'
+    )
+    parser.add_argument(
+        '--no-yellowbridge',
+        action='store_true',
+        help='Disable scanning yellowbridge files for characters'
+    )
+    args = parser.parse_args()
+
     # Get the project root directory (two levels up from this script)
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent
     dong_data_dir = project_root / "public" / "data" / "dong"
+    yellowbridge_data_dir = project_root / "public" / "data" / "yellowbridge" / "raw"
 
     print(f"Project root: {project_root}")
     print(f"Dong data directory: {dong_data_dir}")
+    if not args.no_yellowbridge:
+        print(f"Yellowbridge data directory: {yellowbridge_data_dir}")
 
     # Get all existing dong character files
     existing_chars = get_existing_dong_chars(dong_data_dir)
+
+    # Get all yellowbridge characters (if enabled)
+    yellowbridge_chars = set()
+    if not args.no_yellowbridge:
+        yellowbridge_chars = get_yellowbridge_chars(yellowbridge_data_dir)
+    else:
+        print("Yellowbridge scanning disabled")
 
     # Collect all characters from Anki
     anki_chars = set()
@@ -264,22 +311,30 @@ def main():
     ref_chars, ref_frequency = get_component_chars_from_dong_files(dong_data_dir)
 
     # Merge all characters and frequencies
-    all_chars = anki_chars | ref_chars
+    all_chars = anki_chars | ref_chars | yellowbridge_chars
     char_frequency.update(ref_frequency)
+    # Add frequency count for yellowbridge chars (count as 1 each since we just have the filename)
+    for char in yellowbridge_chars:
+        char_frequency[char] += 1
 
     print(f"\n{'='*60}")
     print(f"Total unique characters in Anki: {len(anki_chars)}")
     print(f"Referenced characters in dong files (components + descriptions): {len(ref_chars)}")
+    if not args.no_yellowbridge:
+        print(f"Characters from yellowbridge files: {len(yellowbridge_chars)}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with dong data: {len(existing_chars)}")
 
     # Find missing characters
     missing_anki_chars = anki_chars - existing_chars
     missing_ref_chars = ref_chars - existing_chars
+    missing_yellowbridge_chars = yellowbridge_chars - existing_chars
     missing_chars = all_chars - existing_chars
 
     print(f"\nMissing from Anki: {len(missing_anki_chars)}")
     print(f"Missing from dong references (components + descriptions): {len(missing_ref_chars)}")
+    if not args.no_yellowbridge:
+        print(f"Missing from yellowbridge: {len(missing_yellowbridge_chars)}")
     print(f"Total missing characters: {len(missing_chars)}")
 
     if not missing_chars:
@@ -297,6 +352,8 @@ def main():
             sources.append("Anki")
         if char in missing_ref_chars:
             sources.append("Referenced")
+        if not args.no_yellowbridge and char in missing_yellowbridge_chars:
+            sources.append("Yellowbridge")
         source_str = "+".join(sources)
         print(f"  {i}. {char} (appears {char_frequency[char]} times) [{source_str}]")
 

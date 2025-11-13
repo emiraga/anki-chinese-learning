@@ -15,3 +15,4 @@ popd
 ./utils/dong/fill_dong_chinese.py
 ./utils/rtega/fill_rtega_mnemonics.py
 ./utils/yellowbridge/convert.py
+./utils/yellowbridge/fill_yellowbridge_chinese.py
