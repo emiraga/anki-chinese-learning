@@ -14,9 +14,14 @@ function ComponentBadge({ comp }: { comp: ComponentInfo }) {
       <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
         {comp.character}
       </span>
-      {comp.pinyin && (
+      {comp.isAltered && (
+        <span className="text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 px-1.5 py-0.5 rounded">
+          altered
+        </span>
+      )}
+      {comp.pinyin.length > 0 && (
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          [{comp.pinyin}]
+          [{comp.pinyin.join(', ')}]
         </span>
       )}
       {comp.description && (
@@ -42,9 +47,9 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             {character.character}
           </h2>
-          {character.pinyin && (
+          {character.pinyin.length > 0 && (
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
-              Pinyin: {character.pinyin}
+              Pinyin: {character.pinyin.join(', ')}
             </p>
           )}
           {character.definition && (

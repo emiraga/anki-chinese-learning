@@ -141,9 +141,9 @@ function extractYellowBridgePhoneticComponents(
 
   // Extract phonetic components
   for (const comp of ybChar.functionalComponents.phonetic) {
-    if (comp.pinyin) {
-      // YellowBridge pinyin might have multiple pronunciations separated by comma
-      const firstPinyin = comp.pinyin.split(',')[0].trim();
+    if (comp.pinyin.length > 0) {
+      // YellowBridge pinyin might have multiple pronunciations - use the first one
+      const firstPinyin = comp.pinyin[0];
       candidates.push({
         character: comp.character,
         pinyin: firstPinyin,

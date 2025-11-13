@@ -2,8 +2,9 @@
 
 export interface ComponentInfo {
   character: string;
-  pinyin: string | null;
+  pinyin: string[];
   description: string;
+  isAltered?: boolean;
 }
 
 export interface FunctionalComponents {
@@ -31,7 +32,7 @@ export interface SimplificationInfo {
 
 export interface YellowBridgeCharacter {
   character: string;
-  pinyin: string | null;
+  pinyin: string[];
   definition: string | null;
   functionalComponents: FunctionalComponents;
   radical: RadicalInfo | null;

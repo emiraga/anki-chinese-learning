@@ -27,6 +27,8 @@ from collections import Counter
 BLACKLISTED_CHARS = {
     '∋',  # Mathematical symbol, not a Chinese character
     '㇆',  # CJK stroke, not a full character
+    'フ',  # Japanese Katakana, not a Chinese character
+    '㇏',  # CJK stroke, not a full character
 }
 
 
@@ -291,7 +293,7 @@ def main():
     parser.add_argument(
         '--delay',
         type=float,
-        default=2.0,
+        default=1.0,
         help='Delay in seconds between opening browser tabs (default: 2.0)'
     )
     parser.add_argument(
@@ -392,7 +394,7 @@ def main():
         freq_str = f"appears {freq} times" if freq > 0 else "referenced"
         print(f"  {i}. {char} ({freq_str}) [{source_str}]")
 
-    if len(missing_chars) > 30:
+    if len(missing_chars) > 100:
         print(f"\n... and {len(missing_chars) - 30} more")
 
     if args.dry_run:
@@ -411,7 +413,7 @@ def main():
     print("(You may need to allow pop-ups in your browser)")
 
     # Confirm before opening many tabs
-    if len(chars_to_open) > 30:
+    if len(chars_to_open) > 300:
         response = input(f"\nAbout to open {len(chars_to_open)} browser tabs. Continue? [y/N] ")
         if response.lower() != 'y':
             print("Cancelled.")
@@ -424,8 +426,8 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"Opened {len(chars_to_open)} browser tabs")
-    print("\nWaiting 3 seconds for data collection...")
-    time.sleep(3)
+    print("\nWaiting 2 seconds for data collection...")
+    time.sleep(2)
 
     # Verify that raw JSON files were created
     raw_dir = Path('public/data/yellowbridge/raw')

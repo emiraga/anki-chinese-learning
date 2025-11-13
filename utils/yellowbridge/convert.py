@@ -82,26 +82,36 @@ def extract_functional_components(decomp_html: str) -> Dict[str, List[Dict[str, 
         matches = re.findall(pattern, decomp_html)
         for char, pinyin, description in matches:
             char = char.strip()
-            pinyin_clean = pinyin.strip() if pinyin.strip() else None
+            # Split pinyin by comma to get multiple readings
+            pinyin_list = [p.strip() for p in pinyin.split(',')] if pinyin.strip() else []
             desc_clean = description.strip()
 
             # Clean up description
             desc_clean = re.sub(r'[\s;,]+$', '', desc_clean)
             desc_clean = re.sub(r'\.\.\.$', '', desc_clean)
 
+            # Check if this component is marked as altered (has delta.gif before it)
+            is_altered = bool(re.search(
+                rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",
+                decomp_html
+            ))
+
             component_data = {
                 'character': char,
-                'pinyin': pinyin_clean,
+                'pinyin': pinyin_list,
                 'description': desc_clean
             }
 
+            if is_altered:
+                component_data['isAltered'] = True
+
             if comp_type == 'phonetic':
-                key = f"{char}|{pinyin_clean}"
+                key = f"{char}|{','.join(pinyin_list)}"
                 if key not in seen_phonetic:
                     seen_phonetic.add(key)
                     components['phonetic'].append(component_data)
             elif comp_type == 'semantic':
-                key = f"{char}|{pinyin_clean}"
+                key = f"{char}|{','.join(pinyin_list)}"
                 if key not in seen_semantic:
                     seen_semantic.add(key)
                     components['semantic'].append(component_data)
@@ -115,20 +125,32 @@ def extract_functional_components(decomp_html: str) -> Dict[str, List[Dict[str, 
 
     for char, pinyin, description in primitive_matches:
         char = char.strip()
-        pinyin_clean = pinyin.strip() if pinyin.strip() else None
+        # Split pinyin by comma to get multiple readings
+        pinyin_list = [p.strip() for p in pinyin.split(',')] if pinyin.strip() else []
 
         # Skip if already captured as phonetic or semantic
-        key = f"{char}|{pinyin_clean}"
+        key = f"{char}|{','.join(pinyin_list)}"
         if key not in seen_phonetic and key not in seen_semantic and key not in seen_primitive:
             seen_primitive.add(key)
             desc_clean = re.sub(r'<[^>]+>', '', description).strip()
             desc_clean = re.sub(r'[\s;,]+$', '', desc_clean)
 
-            components['primitive'].append({
+            # Check if this component is marked as altered
+            is_altered = bool(re.search(
+                rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",
+                decomp_html
+            ))
+
+            component_data = {
                 'character': char,
-                'pinyin': pinyin_clean,
+                'pinyin': pinyin_list,
                 'description': desc_clean
-            })
+            }
+
+            if is_altered:
+                component_data['isAltered'] = True
+
+            components['primitive'].append(component_data)
 
     return components
 
@@ -148,7 +170,7 @@ def extract_character_info(decomp_html: str) -> Optional[Dict[str, str]]:
     """
     Extract the main character information from decomposition HTML.
 
-    Returns a dictionary with 'character', 'pinyin', and 'definition' keys.
+    Returns a dictionary with 'character', 'pinyin' (as list), and 'definition' keys.
     """
     # Pattern for main character line - look for the dt.add call with index 1
     # The character info is in the format: <span class="zh0">支</span> [<em>zhī</em>] definition
@@ -157,9 +179,13 @@ def extract_character_info(decomp_html: str) -> Optional[Dict[str, str]]:
 
     match = re.search(pattern, decomp_html)
     if match:
+        # Split pinyin by comma to get multiple readings
+        pinyin_str = match.group(2).strip()
+        pinyin_list = [p.strip() for p in pinyin_str.split(',')] if pinyin_str else []
+
         return {
             'character': match.group(1).strip(),
-            'pinyin': match.group(2).strip(),
+            'pinyin': pinyin_list,
             'definition': match.group(3).strip()
         }
 
@@ -228,20 +254,33 @@ def extract_components(decomp_html: str) -> List[Dict[str, str]]:
     matches = re.findall(component_pattern, decomp_html)
     for char, pinyin, description in matches:
         char = char.strip()
-        pinyin_clean = pinyin.strip() if pinyin.strip() else None
+        # Split pinyin by comma to get multiple readings
+        pinyin_list = [p.strip() for p in pinyin.split(',')] if pinyin.strip() else []
         # Clean description - remove trailing characters and HTML entities
         desc_clean = re.sub(r'[\s;,]+$', '', description.strip())
         desc_clean = re.sub(r'\.\.\.$', '', desc_clean)
 
         # Create a unique key to avoid duplicates
-        key = f"{char}|{pinyin_clean}"
+        key = f"{char}|{','.join(pinyin_list)}"
         if key not in seen:
             seen.add(key)
-            components.append({
+
+            # Check if this component is marked as altered
+            is_altered = bool(re.search(
+                rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",
+                decomp_html
+            ))
+
+            component_data = {
                 'character': char,
-                'pinyin': pinyin_clean,
+                'pinyin': pinyin_list,
                 'description': desc_clean
-            })
+            }
+
+            if is_altered:
+                component_data['isAltered'] = True
+
+            components.append(component_data)
 
     return components
 
@@ -254,6 +293,11 @@ def extract_radical(decomp_html: str) -> Optional[Dict[str, str]]:
     match = re.search(radical_pattern, decomp_html)
     if match:
         description = match.group(3).strip()
+        char = match.group(1).strip()
+        pinyin_str = match.group(2).strip()
+
+        # Split pinyin by comma to get multiple readings
+        pinyin_list = [p.strip() for p in pinyin_str.split(',')] if pinyin_str else []
 
         # Extract Kangxi radical number if present
         kangxi_number = None
@@ -261,14 +305,23 @@ def extract_radical(decomp_html: str) -> Optional[Dict[str, str]]:
         if kangxi_match:
             kangxi_number = int(kangxi_match.group(1))
 
+        # Check if this component is marked as altered
+        is_altered = bool(re.search(
+            rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin_str)}</em>\]",
+            decomp_html
+        ))
+
         result = {
-            'character': match.group(1).strip(),
-            'pinyin': match.group(2).strip() if match.group(2).strip() else None,
+            'character': char,
+            'pinyin': pinyin_list,
             'description': description
         }
 
         if kangxi_number:
             result['kangxiRadicalNumber'] = kangxi_number
+
+        if is_altered:
+            result['isAltered'] = True
 
         return result
 
@@ -357,7 +410,7 @@ def process_file(file_path: Path) -> Dict:
 
     result = {
         'character': char_info['character'] if char_info else filename_char,
-        'pinyin': char_info['pinyin'] if char_info else None,
+        'pinyin': char_info['pinyin'] if char_info else [],
         'definition': definition,
         'functionalComponents': functional_components,
         'radical': extract_radical(decomp_html),
@@ -406,7 +459,9 @@ def process_directory(
             # Print phonetic components if found
             if result['functionalComponents']['phonetic']:
                 for pc in result['functionalComponents']['phonetic']:
-                    print(f"  → Phonetic: {pc['character']} [{pc['pinyin']}]")
+                    pinyin_str = ', '.join(pc['pinyin']) if pc['pinyin'] else ''
+                    altered_marker = ' (altered)' if pc.get('isAltered') else ''
+                    print(f"  → Phonetic: {pc['character']} [{pinyin_str}]{altered_marker}")
 
         except Exception as e:
             error_msg = f"✗ {file_path.name}: {e}"
