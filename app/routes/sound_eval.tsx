@@ -9,6 +9,7 @@ import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
 import anki from "~/apis/anki";
 import { getNewCharacter } from "~/data/characters";
+import { Tabs } from "~/components/Tabs";
 
 interface SoundComponentCandidate {
   character: string;
@@ -139,7 +140,7 @@ function extractYellowBridgePhoneticComponents(
 ): SoundComponentCandidate[] {
   const candidates: SoundComponentCandidate[] = [];
 
-  // Extract phonetic components
+  // Extract phonetic components (convert to "sound" for consistency)
   for (const comp of ybChar.functionalComponents.phonetic) {
     if (comp.pinyin.length > 0) {
       // YellowBridge pinyin might have multiple pronunciations - use the first one
@@ -148,7 +149,7 @@ function extractYellowBridgePhoneticComponents(
         character: comp.character,
         pinyin: firstPinyin,
         depth: 0,
-        componentType: ["phonetic"],
+        componentType: ["sound"], // YellowBridge "phonetic" is the same as "sound"
         score: scoreSoundSimilarity(charPinyin, firstPinyin),
         source: "yellowbridge",
       });
@@ -359,23 +360,6 @@ function CharacterRow({
     soundCompScore !== null &&
     candidates.some((candidate) => candidate.score > soundCompScore);
 
-  // Check if Anki sound component matches the highest-scoring candidate
-  const topCandidate = candidates.length > 0 ? candidates[0] : null;
-  const ankiMatchesTopCandidate =
-    soundComponentChar &&
-    topCandidate &&
-    soundComponentChar === topCandidate.character;
-
-  // Don't render rows with no sound components found
-  if (!isLoadingCandidates && candidates.length === 0 && !soundComponentChar) {
-    return null;
-  }
-
-  // Don't render rows where Anki sound component matches the top candidate
-  if (!isLoadingCandidates && ankiMatchesTopCandidate) {
-    return null;
-  }
-
   return (
     <tr
       className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 ${
@@ -493,6 +477,7 @@ function CharacterRow({
 
 export default function SoundEval() {
   const { characters } = useOutletContext<OutletContext>();
+  const [activeTab, setActiveTab] = useState<string>("needs-review");
 
   // Filter characters that have pinyin
   const charsWithPinyin = useMemo(() => {
@@ -617,26 +602,49 @@ export default function SoundEval() {
     };
   }, [charsWithPinyin]);
 
-  // Filter out characters that should not be displayed
-  const filteredCharacterData = characterDataList.filter((data) => {
-    // Don't render rows with no sound components found
-    if (data.candidates.length === 0 && !data.soundComponentChar) {
-      return false;
+  // Categorize character data into three groups
+  const categorizedData = useMemo(() => {
+    const needsReview: CharacterData[] = [];
+    const noSoundComponent: CharacterData[] = [];
+    const alreadyCorrect: CharacterData[] = [];
+
+    for (const data of characterDataList) {
+      const topCandidate = data.candidates.length > 0 ? data.candidates[0] : null;
+      const ankiMatchesTopCandidate =
+        data.soundComponentChar &&
+        topCandidate &&
+        data.soundComponentChar === topCandidate.character;
+
+      // Already correct: Anki sound component matches top candidate
+      if (ankiMatchesTopCandidate) {
+        alreadyCorrect.push(data);
+      }
+      // No sound component: Character has no sound component in Anki
+      else if (!data.soundComponentChar) {
+        noSoundComponent.push(data);
+      }
+      // Needs review: Has sound component but doesn't match top candidate, or has candidates
+      else if (data.candidates.length > 0) {
+        needsReview.push(data);
+      }
     }
 
-    // Don't render rows where Anki sound component matches the top candidate
-    const topCandidate = data.candidates.length > 0 ? data.candidates[0] : null;
-    const ankiMatchesTopCandidate =
-      data.soundComponentChar &&
-      topCandidate &&
-      data.soundComponentChar === topCandidate.character;
+    return { needsReview, noSoundComponent, alreadyCorrect };
+  }, [characterDataList]);
 
-    if (ankiMatchesTopCandidate) {
-      return false;
+  // Get the data for the active tab
+  const activeTabData = useMemo(() => {
+    switch (activeTab) {
+      case "needs-review":
+        return categorizedData.needsReview;
+      case "no-sound-component":
+        return categorizedData.noSoundComponent;
+      case "already-correct":
+        return categorizedData.alreadyCorrect;
+      default:
+        return categorizedData.needsReview;
     }
-
-    return true;
-  });
+  }, [activeTab, categorizedData]);
 
   return (
     <MainFrame>
@@ -647,7 +655,7 @@ export default function SoundEval() {
           <p>
             {isLoadingAll
               ? `Loading... ${characterDataList.length} / ${charsWithPinyin.length} characters processed`
-              : `Showing ${filteredCharacterData.length} of ${charsWithPinyin.length} characters (sorted by max candidate score)`}
+              : `Total: ${charsWithPinyin.length} characters`}
           </p>
           <p className="text-sm mt-1">
             Score:{" "}
@@ -662,6 +670,28 @@ export default function SoundEval() {
             </span>
           </p>
         </div>
+
+        <Tabs
+          tabs={[
+            {
+              id: "needs-review",
+              label: "Needs Review",
+              count: categorizedData.needsReview.length,
+            },
+            {
+              id: "no-sound-component",
+              label: "No Sound Component",
+              count: categorizedData.noSoundComponent.length,
+            },
+            {
+              id: "already-correct",
+              label: "Already Correct",
+              count: categorizedData.alreadyCorrect.length,
+            },
+          ]}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
 
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700">
@@ -685,7 +715,7 @@ export default function SoundEval() {
               </tr>
             </thead>
             <tbody>
-              {filteredCharacterData.map((data) => (
+              {activeTabData.map((data) => (
                 <CharacterRow
                   key={data.character}
                   character={data.character}
