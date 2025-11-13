@@ -26,6 +26,7 @@ from collections import Counter
 # Characters that cannot be loaded from YellowBridge
 BLACKLISTED_CHARS = {
     '∋',  # Mathematical symbol, not a Chinese character
+    '∈',  # Mathematical symbol, not a Chinese character
     '㇆',  # CJK stroke, not a full character
     'フ',  # Japanese Katakana, not a Chinese character
     '㇏',  # CJK stroke, not a full character
