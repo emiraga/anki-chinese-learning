@@ -533,8 +533,6 @@ def main():
         if i % 10 == 0:
             print(f"  Downloaded {i} files, pausing for longer...")
             time.sleep(1)
-        else:
-            time.sleep(0.001)
 
     print(f"\n{'='*60}")
     print("Done!")
