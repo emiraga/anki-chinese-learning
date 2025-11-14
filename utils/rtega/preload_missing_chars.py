@@ -319,13 +319,12 @@ def download_rtega_data(char, rtega_data_dir):
         )
 
         if result.returncode == 0 and output_file.exists():
-            # Check if file has content
-            if output_file.stat().st_size > 0:
-                return True
-            else:
-                print(f"  Error: Downloaded file is empty, not saving")
-                output_file.unlink()  # Remove empty file
-                return False
+            # Check if file meets minimum size requirement
+            file_size = output_file.stat().st_size
+            if file_size < 9500:
+                output_file.unlink()  # Remove undersized file
+                raise Exception(f"Downloaded file for '{char}' is too small ({file_size} bytes, minimum 9500 bytes required). This likely indicates an error page or missing data.")
+            return True
         else:
             print(f"  Error: wget failed with return code {result.returncode}")
             if result.stderr:
@@ -364,7 +363,14 @@ def download_char_with_progress(char, rtega_data_dir, index=None, total=None):
 
     success = download_rtega_data(char, rtega_data_dir)
 
-    if not success:
+    if success:
+        # Show file size after successful download
+        output_file = rtega_data_dir / f"{char}.html"
+        file_size = output_file.stat().st_size
+        # Format size in KB for readability
+        size_kb = file_size / 1024
+        print(f"  ✓ Downloaded {file_size:,} bytes ({size_kb:.1f} KB)")
+    else:
         print(f"  Failed to download data for {char}")
 
     return success
@@ -526,9 +532,9 @@ def main():
         # Add a small delay to avoid overwhelming the server
         if i % 10 == 0:
             print(f"  Downloaded {i} files, pausing for longer...")
-            time.sleep(3)
+            time.sleep(1)
         else:
-            time.sleep(0.01)
+            time.sleep(0.001)
 
     print(f"\n{'='*60}")
     print("Done!")

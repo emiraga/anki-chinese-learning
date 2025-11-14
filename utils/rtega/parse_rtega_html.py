@@ -560,6 +560,14 @@ def main():
     skipped_count = 0
 
     for i, html_file in enumerate(html_files, 1):
+        # Check if file is empty
+        if html_file.stat().st_size == 0:
+            progress_pct = (i / len(html_files)) * 100
+            print(f"[{progress_pct:5.1f}%] Deleting empty file: {html_file.name}")
+            html_file.unlink()
+            skipped_count += 1
+            continue
+
         # Check if file needs processing
         if not should_process_file(html_file, output_dir):
             progress_pct = (i / len(html_files)) * 100
