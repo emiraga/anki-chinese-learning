@@ -480,6 +480,32 @@ def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Di
     return characters
 
 
+def get_marker_file(html_file: Path, output_dir: Path) -> Path:
+    """Get the marker file path for an HTML file."""
+    return output_dir / f".{html_file.stem}.processed"
+
+
+def should_process_file(html_file: Path, output_dir: Path) -> bool:
+    """Check if HTML file needs to be processed based on mtime comparison."""
+    marker_file = get_marker_file(html_file, output_dir)
+
+    # If marker file doesn't exist, we need to process
+    if not marker_file.exists():
+        return True
+
+    # Compare modification times - process if HTML is newer than marker
+    html_mtime = html_file.stat().st_mtime
+    marker_mtime = marker_file.stat().st_mtime
+
+    return html_mtime > marker_mtime
+
+
+def update_marker_file(html_file: Path, output_dir: Path):
+    """Touch marker file after processing to update its mtime."""
+    marker_file = get_marker_file(html_file, output_dir)
+    marker_file.touch()
+
+
 def save_character_json(char_data: Dict, output_dir: Path):
     """Save character data to a JSON file."""
     char = char_data['character']
@@ -531,44 +557,31 @@ def main():
 
     # Process all files
     all_characters = []
+    skipped_count = 0
 
     for i, html_file in enumerate(html_files, 1):
+        # Check if file needs processing
+        if not should_process_file(html_file, output_dir):
+            progress_pct = (i / len(html_files)) * 100
+            skipped_count += 1
+            continue
+
         characters = parse_html_file(html_file, i, len(html_files))
         all_characters.extend(characters)
 
+        # Save individual JSON files for this HTML file
+        for char_data in characters:
+            save_character_json(char_data, output_dir)
+
+        # Update marker file after successful processing
+        update_marker_file(html_file, output_dir)
+
     print()
-    print(f"Total characters extracted: {len(all_characters)}")
-    print([char["character"] for char in all_characters])
-    print()
-
-    # Save individual JSON files
-    print("Saving JSON files...")
-    total_chars = len(all_characters)
-    for i, char_data in enumerate(all_characters, 1):
-        progress_pct = (i / total_chars) * 100
-        if i % 10 == 0 or i == total_chars:  # Print every 10 files or the last one
-            print(f"  [{progress_pct:5.1f}%] Saved {i}/{total_chars} files...")
-        save_character_json(char_data, output_dir)
-
-    # Also save a combined index file
-    index_file = output_dir / 'index.json'
-    index_data = {
-        'total_characters': len(all_characters),
-        'characters': [
-            {
-                'id': char['id'],
-                'character': char['character'],
-                'meaning': char['meaning']
-            }
-            for char in all_characters
-        ]
-    }
-
-    with open(index_file, 'w', encoding='utf-8') as f:
-        json.dump(index_data, f, ensure_ascii=False, indent=2)
-
-    print(f"Saved {len(all_characters)} character JSON files")
-    print(f"Saved index file: {index_file}")
+    print(f"Processed: {len(html_files) - skipped_count} files")
+    print(f"Skipped: {skipped_count} files (already up to date)")
+    print(f"Total characters extracted from processed files: {len(all_characters)}")
+    if all_characters:
+        print([char["character"] for char in all_characters])
     print()
     print("Done!")
 

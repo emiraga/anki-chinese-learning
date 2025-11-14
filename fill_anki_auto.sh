@@ -13,6 +13,7 @@ popd
 ./utils/dong/translate.py
 ./utils/dong/download_images.py
 ./utils/dong/fill_dong_chinese.py
+./utils/rtega/parse_rtega_html.py
 ./utils/rtega/fill_rtega_mnemonics.py
 ./utils/yellowbridge/convert.py
 ./utils/yellowbridge/fill_yellowbridge_chinese.py

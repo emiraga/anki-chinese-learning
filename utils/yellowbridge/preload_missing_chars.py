@@ -35,8 +35,10 @@ BLACKLISTED_CHARS = {
     '&amp;R_S7;',
     '&R_S7;',
     '◎',
-    '𰻞', # biang?
+    '𰻞', # biang :-(
     '㇚',
+    '𬜯',
+    '𭕆',
 }
 
 

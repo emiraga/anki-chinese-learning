@@ -14,6 +14,7 @@ from pathlib import Path
 import urllib.parse
 from collections import Counter
 import unicodedata
+import argparse
 
 
 def normalize_cjk_char(char: str) -> str:
@@ -235,6 +236,61 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
     return component_chars, component_frequency
 
 
+def get_chars_from_other_data_sources(project_root):
+    """
+    Extract characters from filenames in dong and yellowbridge directories
+
+    Args:
+        project_root (Path): Path to the project root directory
+
+    Returns:
+        tuple: (set of characters, Counter of character frequency)
+    """
+    source_chars = set()
+    source_frequency = Counter()
+
+    # Check dong directory
+    dong_dir = project_root / "public" / "data" / "dong"
+    if dong_dir.exists():
+        dong_files = list(dong_dir.glob("*"))
+        print(f"\nScanning {len(dong_files)} files in dong directory...")
+
+        for file_path in dong_files:
+            if file_path.is_file():
+                # Extract filename without extension
+                filename = file_path.stem
+                # Extract Chinese characters from filename
+                chars = extract_all_characters(filename)
+                # Normalize each character
+                normalized_chars = {normalize_cjk_char(c) for c in chars}
+                source_chars.update(normalized_chars)
+                source_frequency.update(normalized_chars)
+    else:
+        print(f"Warning: Dong directory does not exist: {dong_dir}")
+
+    # Check yellowbridge raw directory
+    yellowbridge_dir = project_root / "public" / "data" / "yellowbridge" / "raw"
+    if yellowbridge_dir.exists():
+        yellowbridge_files = list(yellowbridge_dir.glob("*"))
+        print(f"Scanning {len(yellowbridge_files)} files in yellowbridge/raw directory...")
+
+        for file_path in yellowbridge_files:
+            if file_path.is_file():
+                # Extract filename without extension
+                filename = file_path.stem
+                # Extract Chinese characters from filename
+                chars = extract_all_characters(filename)
+                # Normalize each character
+                normalized_chars = {normalize_cjk_char(c) for c in chars}
+                source_chars.update(normalized_chars)
+                source_frequency.update(normalized_chars)
+    else:
+        print(f"Warning: Yellowbridge raw directory does not exist: {yellowbridge_dir}")
+
+    print(f"Found {len(source_chars)} unique characters in dong and yellowbridge directories")
+    return source_chars, source_frequency
+
+
 def download_rtega_data(char, rtega_data_dir):
     """
     Download RTEGA HTML data for a character using wget
@@ -267,7 +323,7 @@ def download_rtega_data(char, rtega_data_dir):
             if output_file.stat().st_size > 0:
                 return True
             else:
-                print(f"  Warning: Downloaded file is empty")
+                print(f"  Error: Downloaded file is empty, not saving")
                 output_file.unlink()  # Remove empty file
                 return False
         else:
@@ -285,7 +341,45 @@ def download_rtega_data(char, rtega_data_dir):
         return False
 
 
+def download_char_with_progress(char, rtega_data_dir, index=None, total=None):
+    """
+    Download a single character with progress reporting
+
+    Args:
+        char (str): The character to download
+        rtega_data_dir (Path): Path to the rtega data directory
+        index (int, optional): Current index in batch (1-based)
+        total (int, optional): Total number of characters to download
+
+    Returns:
+        bool: True if download successful, False otherwise
+    """
+    encoded_char = urllib.parse.quote(char)
+    url = f"http://rtega.be/chmn/?c={encoded_char}"
+
+    if index is not None and total is not None:
+        print(f"{index}/{total}: Downloading {char} - {url}")
+    else:
+        print(f"Downloading {char} - {url}")
+
+    success = download_rtega_data(char, rtega_data_dir)
+
+    if not success:
+        print(f"  Failed to download data for {char}")
+
+    return success
+
+
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Preload missing RTEGA character data")
+    parser.add_argument(
+        "--char", "-c",
+        type=str,
+        help="Download data for a single character instead of scanning for missing ones"
+    )
+    args = parser.parse_args()
+
     # Get the project root directory (two levels up from this script)
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent
@@ -296,6 +390,27 @@ def main():
 
     # Create rtega data directory if it doesn't exist
     rtega_data_dir.mkdir(parents=True, exist_ok=True)
+
+    # If single character mode, download just that character
+    if args.char:
+        char = normalize_cjk_char(args.char)
+        print(f"\nSingle character mode: '{char}'")
+
+        # Check if file already exists
+        output_file = rtega_data_dir / f"{char}.html"
+        if output_file.exists():
+            print(f"Warning: Data file already exists: {output_file}")
+            response = input("Overwrite existing file? (y/N): ")
+            if response.lower() != 'y':
+                print("Cancelled.")
+                return
+
+        if download_char_with_progress(char, rtega_data_dir):
+            print(f"✓ Successfully downloaded data for '{char}'")
+            print(f"Data saved to: {output_file}")
+        else:
+            print(f"✗ Failed to download data for '{char}'")
+        return
 
     # Get all existing rtega character files
     existing_chars = get_existing_rtega_chars(rtega_data_dir)
@@ -335,23 +450,30 @@ def main():
     # Get component characters from existing rtega files
     component_chars, component_frequency = get_component_chars_from_rtega_files(rtega_data_dir)
 
+    # Get characters from dong and yellowbridge data sources
+    other_source_chars, other_source_frequency = get_chars_from_other_data_sources(project_root)
+
     # Merge all characters and frequencies
-    all_chars = anki_chars | component_chars
+    all_chars = anki_chars | component_chars | other_source_chars
     char_frequency.update(component_frequency)
+    char_frequency.update(other_source_frequency)
 
     print(f"\n{'='*60}")
     print(f"Total unique characters in Anki: {len(anki_chars)}")
     print(f"Referenced/related characters in rtega files: {len(component_chars)}")
+    print(f"Characters from dong/yellowbridge: {len(other_source_chars)}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with rtega data: {len(existing_chars)}")
 
     # Find missing characters
     missing_anki_chars = anki_chars - existing_chars
     missing_component_chars = component_chars - existing_chars
+    missing_other_source_chars = other_source_chars - existing_chars
     missing_chars = all_chars - existing_chars
 
     print(f"\nMissing from Anki: {len(missing_anki_chars)}")
     print(f"Missing from referenced/related: {len(missing_component_chars)}")
+    print(f"Missing from dong/yellowbridge: {len(missing_other_source_chars)}")
     print(f"Total missing characters: {len(missing_chars)}")
 
     if not missing_chars:
@@ -369,6 +491,8 @@ def main():
             sources.append("Anki")
         if char in missing_component_chars:
             sources.append("Referenced/Related")
+        if char in missing_other_source_chars:
+            sources.append("Dong/Yellowbridge")
         source_str = "+".join(sources)
         print(f"  {i}. {char} (appears {char_frequency[char]} times) [{source_str}]")
 
@@ -394,16 +518,10 @@ def main():
     failure_count = 0
 
     for i, char in enumerate(missing_sorted, 1):
-        encoded_char = urllib.parse.quote(char)
-        url = f"http://rtega.be/chmn/?c={encoded_char}"
-
-        print(f"{i}/{len(missing_chars)}: Downloading {char} - {url}")
-
-        if download_rtega_data(char, rtega_data_dir):
+        if download_char_with_progress(char, rtega_data_dir, i, len(missing_chars)):
             success_count += 1
         else:
             failure_count += 1
-            print(f"  Failed to download data for {char}")
 
         # Add a small delay to avoid overwhelming the server
         if i % 10 == 0:

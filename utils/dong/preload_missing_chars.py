@@ -240,6 +240,9 @@ def get_component_chars_from_dong_files(dong_data_dir, top_words_share_threshold
 
 
 def main():
+    # Blacklist of characters to skip (e.g., special radicals, punctuation)
+    BLACKLIST_CHARS = {'⺁', '⺀', '〢'}
+
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description='Find and preload missing Chinese characters for dong-chinese data'
@@ -248,6 +251,17 @@ def main():
         '--no-yellowbridge',
         action='store_true',
         help='Disable scanning yellowbridge files for characters'
+    )
+    parser.add_argument(
+        '--no-anki',
+        action='store_true',
+        help='Disable scanning Anki for characters'
+    )
+    parser.add_argument(
+        '--limit',
+        type=int,
+        default=None,
+        help='Limit the number of characters to preload (processes most frequent first)'
     )
     args = parser.parse_args()
 
@@ -276,36 +290,39 @@ def main():
     anki_chars = set()
     char_frequency = Counter()
 
-    note_types = [
-        ("TOCFL", ""),
-        ("MyWords", ""),
-        ("Hanzi", ""),
-        ("Dangdai", "")
-    ]
-    BATCH_SIZE = 100  # Process 100 notes at a time
+    if not args.no_anki:
+        note_types = [
+            ("TOCFL", ""),
+            ("MyWords", ""),
+            ("Hanzi", ""),
+            ("Dangdai", "")
+        ]
+        BATCH_SIZE = 100  # Process 100 notes at a time
 
-    for note_type, extra_filter in note_types:
-        print(f"\nProcessing note type: {note_type}")
-        note_ids = find_all_notes_with_traditional(note_type, extra_filter)
+        for note_type, extra_filter in note_types:
+            print(f"\nProcessing note type: {note_type}")
+            note_ids = find_all_notes_with_traditional(note_type, extra_filter)
 
-        # Process notes in batches
-        for i in range(0, len(note_ids), BATCH_SIZE):
-            batch = note_ids[i:i + BATCH_SIZE]
-            print(f"  Processing batch {i // BATCH_SIZE + 1}/{(len(note_ids) + BATCH_SIZE - 1) // BATCH_SIZE} ({i + len(batch)}/{len(note_ids)} notes)...")
+            # Process notes in batches
+            for i in range(0, len(note_ids), BATCH_SIZE):
+                batch = note_ids[i:i + BATCH_SIZE]
+                print(f"  Processing batch {i // BATCH_SIZE + 1}/{(len(note_ids) + BATCH_SIZE - 1) // BATCH_SIZE} ({i + len(batch)}/{len(note_ids)} notes)...")
 
-            try:
-                notes_info = get_notes_info_batch(batch)
+                try:
+                    notes_info = get_notes_info_batch(batch)
 
-                for note_info in notes_info:
-                    traditional = note_info['fields'].get('Traditional', {}).get('value', '')
+                    for note_info in notes_info:
+                        traditional = note_info['fields'].get('Traditional', {}).get('value', '')
 
-                    if traditional:
-                        # Extract individual characters
-                        chars = extract_all_characters(traditional)
-                        anki_chars.update(chars)
-                        char_frequency.update(chars)
-            except Exception as e:
-                print(f"  Error processing batch starting at note {i}: {e}")
+                        if traditional:
+                            # Extract individual characters
+                            chars = extract_all_characters(traditional)
+                            anki_chars.update(chars)
+                            char_frequency.update(chars)
+                except Exception as e:
+                    print(f"  Error processing batch starting at note {i}: {e}")
+    else:
+        print("Anki scanning disabled")
 
     # Get component and description characters from existing dong files
     ref_chars, ref_frequency = get_component_chars_from_dong_files(dong_data_dir)
@@ -318,7 +335,8 @@ def main():
         char_frequency[char] += 1
 
     print(f"\n{'='*60}")
-    print(f"Total unique characters in Anki: {len(anki_chars)}")
+    if not args.no_anki:
+        print(f"Total unique characters in Anki: {len(anki_chars)}")
     print(f"Referenced characters in dong files (components + descriptions): {len(ref_chars)}")
     if not args.no_yellowbridge:
         print(f"Characters from yellowbridge files: {len(yellowbridge_chars)}")
@@ -331,7 +349,17 @@ def main():
     missing_yellowbridge_chars = yellowbridge_chars - existing_chars
     missing_chars = all_chars - existing_chars
 
-    print(f"\nMissing from Anki: {len(missing_anki_chars)}")
+    # Filter out blacklisted characters
+    blacklisted_found = missing_chars & BLACKLIST_CHARS
+    if blacklisted_found:
+        print(f"\nFiltering out {len(blacklisted_found)} blacklisted characters: {''.join(sorted(blacklisted_found))}")
+        missing_anki_chars -= BLACKLIST_CHARS
+        missing_ref_chars -= BLACKLIST_CHARS
+        missing_yellowbridge_chars -= BLACKLIST_CHARS
+        missing_chars -= BLACKLIST_CHARS
+
+    if not args.no_anki:
+        print(f"\nMissing from Anki: {len(missing_anki_chars)}")
     print(f"Missing from dong references (components + descriptions): {len(missing_ref_chars)}")
     if not args.no_yellowbridge:
         print(f"Missing from yellowbridge: {len(missing_yellowbridge_chars)}")
@@ -344,8 +372,13 @@ def main():
     # Sort missing characters by frequency (most common first)
     missing_sorted = sorted(missing_chars, key=lambda c: char_frequency[c], reverse=True)
 
+    # Apply limit if specified
+    if args.limit is not None and args.limit > 0:
+        missing_sorted = missing_sorted[:args.limit]
+        print(f"\nLimiting to top {args.limit} most frequent characters")
+
     print(f"\n{'='*60}")
-    print("Top 20 most frequent missing characters:")
+    print(f"Top {min(20, len(missing_sorted))} most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:20], 1):
         sources = []
         if char in missing_anki_chars:
@@ -359,7 +392,7 @@ def main():
 
     # Ask user if they want to open browser tabs
     print(f"\n{'='*60}")
-    response = input(f"Open browser tabs for {len(missing_chars)} missing characters? (y/N): ")
+    response = input(f"Open browser tabs for {len(missing_sorted)} missing characters? (y/N): ")
 
     if response.lower() != 'y':
         print("Cancelled. Here are all missing characters:")
@@ -367,8 +400,8 @@ def main():
         return
 
     # Confirm if there are many characters
-    if len(missing_chars) > 50:
-        response = input(f"WARNING: This will open {len(missing_chars)} browser tabs. Continue? (y/N): ")
+    if len(missing_sorted) > 50:
+        response = input(f"WARNING: This will open {len(missing_sorted)} browser tabs. Continue? (y/N): ")
         if response.lower() != 'y':
             print("Cancelled.")
             return
@@ -379,19 +412,19 @@ def main():
         encoded_char = urllib.parse.quote(char)
         url = f"https://www.dong-chinese.com/dictionary/search/{encoded_char}"
 
-        print(f"{i}/{len(missing_chars)}: Opening {char} - {url}")
+        print(f"{i}/{len(missing_sorted)}: Opening {char} - {url}")
         webbrowser.open_new_tab(url)
 
         # Add a small delay to avoid overwhelming the browser
         if i % 10 == 0:
             print(f"  Opened {i} tabs, pausing for longer...")
-            time.sleep(3)
+            time.sleep(2)
         else:
-            time.sleep(1)
+            time.sleep(0.4)
 
     print(f"\n{'='*60}")
     print("Done! All browser tabs opened.")
-    print(f"Please download the data for these {len(missing_chars)} characters.")
+    print(f"Please download the data for these {len(missing_sorted)} characters.")
     print(f"Data should be saved to: {dong_data_dir}/")
 
 
