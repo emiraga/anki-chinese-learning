@@ -40,6 +40,48 @@ def open_hanziyuan_url(char: str, delay: float = 2.0):
     time.sleep(delay)
 
 
+def extract_components_from_json(json_file: Path) -> Set[str]:
+    """Extract all component characters from a converted JSON file."""
+    components = set()
+
+    try:
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # Extract components from characterDecomposition
+        char_decomp = data.get('characterDecomposition', {})
+        comp_list = char_decomp.get('components', [])
+
+        for comp in comp_list:
+            component = comp.get('component', '')
+            if component:
+                # Extract only CJK characters from the component field
+                # (component may contain English descriptions or pinyin)
+                chars = extract_all_characters(component, normalize=False)
+                components.update(chars)
+
+    except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
+        print(f"Warning: Error reading {json_file}: {e}")
+
+    return components
+
+
+def get_all_components_from_converted(converted_dir: Path) -> Set[str]:
+    """Get all component characters from all converted JSON files."""
+    all_components = set()
+
+    if not converted_dir.exists():
+        return all_components
+
+    json_files = list(converted_dir.glob("*.json"))
+
+    for json_file in json_files:
+        components = extract_components_from_json(json_file)
+        all_components.update(components)
+
+    return all_components
+
+
 def main():
     """Main entry point."""
     import argparse
@@ -74,6 +116,11 @@ def main():
         action='store_true',
         help='Skip fetching characters from Anki'
     )
+    parser.add_argument(
+        '--skip-folders',
+        action='store_true',
+        help='Skip loading characters from data directories'
+    )
 
     args = parser.parse_args()
 
@@ -88,8 +135,15 @@ def main():
     all_chars, char_frequency = discover_all_characters(
         project_root,
         include_anki=not args.skip_anki,
+        include_folders=not args.skip_folders,
         normalize=False
     )
+
+    # Extract components from existing converted JSON files
+    component_chars = get_all_components_from_converted(args.info_dir)
+
+    # Combine all characters with components
+    all_chars = all_chars | component_chars
 
     # Get existing info files to find what's missing
     existing_files = set()
@@ -99,6 +153,7 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"Total unique characters (combined): {len(all_chars)}")
+    print(f"  - Component characters from converted files: {len(component_chars)}")
     print(f"Existing files: {len(existing_files)}")
     # print(f"Referenced characters from YellowBridge: {len(ref_chars)}")
 

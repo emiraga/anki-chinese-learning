@@ -170,6 +170,7 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple
 def discover_all_characters(
     project_root: Path,
     include_anki: bool = True,
+    include_folders: bool = True,
     normalize: bool = False
 ) -> Tuple[Set[str], Counter]:
     """
@@ -184,6 +185,7 @@ def discover_all_characters(
     Args:
         project_root (Path): Project root directory
         include_anki (bool): Whether to include Anki characters (default: True)
+        include_folders (bool): Whether to include data directory characters (default: True)
         normalize (bool): Whether to normalize characters (default: False)
 
     Returns:
@@ -208,12 +210,15 @@ def discover_all_characters(
         print("Skipping Anki scan")
 
     # Get characters from data directories
-    print(f"\n{'='*60}")
-    print("SCANNING DATA DIRECTORIES")
-    print(f"{'='*60}")
-    dir_chars, dir_freq = _scan_data_directories(project_root, normalize=normalize)
-    all_chars.update(dir_chars)
-    char_frequency.update(dir_freq)
+    if include_folders:
+        print(f"\n{'='*60}")
+        print("SCANNING DATA DIRECTORIES")
+        print(f"{'='*60}")
+        dir_chars, dir_freq = _scan_data_directories(project_root, normalize=normalize)
+        all_chars.update(dir_chars)
+        char_frequency.update(dir_freq)
+    else:
+        print("Skipping data directories scan")
 
     print(f"\n{'='*60}")
     print(f"TOTAL: {len(all_chars)} unique characters discovered")
