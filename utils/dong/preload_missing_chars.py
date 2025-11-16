@@ -7,7 +7,6 @@
 # ///
 
 import os
-import requests
 import webbrowser
 import time
 import json
@@ -16,157 +15,11 @@ import urllib.parse
 from collections import Counter
 import argparse
 import subprocess
+import sys
 
-
-def anki_connect_request(action, params=None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
-
-
-def get_notes_info_batch(note_ids):
-    """
-    Get detailed information about multiple notes in a batch
-
-    Args:
-        note_ids (list): List of note IDs
-
-    Returns:
-        list: List of note information dictionaries
-    """
-    if not note_ids:
-        return []
-
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise Exception("Failed to fetch notes")
-
-
-def find_all_notes_with_traditional(note_type, extra_filter):
-    """
-    Find all notes with Traditional field
-
-    Args:
-        note_type (str): The note type to search
-
-    Returns:
-        list: List of note IDs
-    """
-    search_query = f'note:{note_type} Traditional:_* ' + extra_filter
-
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) in {note_type}")
-            return note_ids
-
-    print(f"No notes found in {note_type}")
-    return []
-
-
-def extract_all_characters(text):
-    """
-    Extract all Chinese characters from a text string
-
-    Args:
-        text (str): Text containing Chinese characters
-
-    Returns:
-        set: Set of individual Chinese characters
-    """
-    chars = set()
-    for char in text:
-        # Check if character is in CJK Unified Ideographs ranges
-        code_point = ord(char)
-        if (0x4E00 <= code_point <= 0x9FFF or  # CJK Unified Ideographs
-            0x3400 <= code_point <= 0x4DBF or  # CJK Unified Ideographs Extension A
-            0x20000 <= code_point <= 0x2A6DF or  # CJK Unified Ideographs Extension B
-            0x2A700 <= code_point <= 0x2B73F or  # CJK Unified Ideographs Extension C
-            0x2B740 <= code_point <= 0x2B81F or  # CJK Unified Ideographs Extension D
-            0x2B820 <= code_point <= 0x2CEAF or  # CJK Unified Ideographs Extension E
-            0x2CEB0 <= code_point <= 0x2EBEF or  # CJK Unified Ideographs Extension F
-            0xF900 <= code_point <= 0xFAFF or    # CJK Compatibility Ideographs
-            0x2F800 <= code_point <= 0x2FA1F):   # CJK Compatibility Ideographs Supplement
-            chars.add(char)
-    return chars
-
-
-def get_existing_dong_chars(dong_data_dir):
-    """
-    Get set of characters that already have dong data files
-
-    Args:
-        dong_data_dir (Path): Path to the dong data directory
-
-    Returns:
-        set: Set of characters with existing data files
-    """
-    existing_chars = set()
-
-    if not dong_data_dir.exists():
-        print(f"Warning: Dong data directory does not exist: {dong_data_dir}")
-        return existing_chars
-
-    for json_file in dong_data_dir.glob("*.json"):
-        # The filename is the character plus .json extension
-        char = json_file.stem
-        existing_chars.add(char)
-
-    print(f"Found {len(existing_chars)} existing dong character files")
-    return existing_chars
-
-
-def get_yellowbridge_chars(yellowbridge_data_dir):
-    """
-    Get set of characters that have yellowbridge data files
-
-    Args:
-        yellowbridge_data_dir (Path): Path to the yellowbridge raw data directory
-
-    Returns:
-        set: Set of characters with existing yellowbridge files
-    """
-    yellowbridge_chars = set()
-
-    if not yellowbridge_data_dir.exists():
-        print(f"Warning: Yellowbridge data directory does not exist: {yellowbridge_data_dir}")
-        return yellowbridge_chars
-
-    for json_file in yellowbridge_data_dir.glob("*.json"):
-        # The filename is the character plus .json extension
-        char = json_file.stem
-        yellowbridge_chars.add(char)
-
-    print(f"Found {len(yellowbridge_chars)} yellowbridge character files")
-    return yellowbridge_chars
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from shared.character_discovery import discover_all_characters, extract_all_characters
 
 
 def get_component_chars_from_dong_files(dong_data_dir, top_words_share_threshold=0.02):
@@ -249,11 +102,6 @@ def main():
         description='Find and preload missing Chinese characters for dong-chinese data'
     )
     parser.add_argument(
-        '--no-yellowbridge',
-        action='store_true',
-        help='Disable scanning yellowbridge files for characters'
-    )
-    parser.add_argument(
         '--no-anki',
         action='store_true',
         help='Disable scanning Anki for characters'
@@ -270,100 +118,42 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent
     dong_data_dir = project_root / "public" / "data" / "dong"
-    yellowbridge_data_dir = project_root / "public" / "data" / "yellowbridge" / "raw"
 
     print(f"Project root: {project_root}")
     print(f"Dong data directory: {dong_data_dir}")
-    if not args.no_yellowbridge:
-        print(f"Yellowbridge data directory: {yellowbridge_data_dir}")
 
-    # Get all existing dong character files
-    existing_chars = get_existing_dong_chars(dong_data_dir)
+    # Use shared utility to discover all characters from Anki and data directories
+    all_chars, char_frequency = discover_all_characters(
+        project_root,
+        include_anki=not args.no_anki,
+        normalize=False
+    )
 
-    # Get all yellowbridge characters (if enabled)
-    yellowbridge_chars = set()
-    if not args.no_yellowbridge:
-        yellowbridge_chars = get_yellowbridge_chars(yellowbridge_data_dir)
-    else:
-        print("Yellowbridge scanning disabled")
-
-    # Collect all characters from Anki
-    anki_chars = set()
-    char_frequency = Counter()
-
-    if not args.no_anki:
-        note_types = [
-            ("TOCFL", ""),
-            ("MyWords", ""),
-            ("Hanzi", ""),
-            ("Dangdai", "")
-        ]
-        BATCH_SIZE = 100  # Process 100 notes at a time
-
-        for note_type, extra_filter in note_types:
-            print(f"\nProcessing note type: {note_type}")
-            note_ids = find_all_notes_with_traditional(note_type, extra_filter)
-
-            # Process notes in batches
-            for i in range(0, len(note_ids), BATCH_SIZE):
-                batch = note_ids[i:i + BATCH_SIZE]
-                print(f"  Processing batch {i // BATCH_SIZE + 1}/{(len(note_ids) + BATCH_SIZE - 1) // BATCH_SIZE} ({i + len(batch)}/{len(note_ids)} notes)...")
-
-                try:
-                    notes_info = get_notes_info_batch(batch)
-
-                    for note_info in notes_info:
-                        traditional = note_info['fields'].get('Traditional', {}).get('value', '')
-
-                        if traditional:
-                            # Extract individual characters
-                            chars = extract_all_characters(traditional)
-                            anki_chars.update(chars)
-                            char_frequency.update(chars)
-                except Exception as e:
-                    print(f"  Error processing batch starting at note {i}: {e}")
-    else:
-        print("Anki scanning disabled")
-
-    # Get component and description characters from existing dong files
+    # Get component and description characters from existing dong files (script-specific)
     ref_chars, ref_frequency = get_component_chars_from_dong_files(dong_data_dir)
-
-    # Merge all characters and frequencies
-    all_chars = anki_chars | ref_chars | yellowbridge_chars
+    all_chars.update(ref_chars)
     char_frequency.update(ref_frequency)
-    # Add frequency count for yellowbridge chars (count as 1 each since we just have the filename)
-    for char in yellowbridge_chars:
-        char_frequency[char] += 1
+
+    # Get existing dong characters to find what's missing
+    existing_chars = set()
+    if dong_data_dir.exists():
+        for json_file in dong_data_dir.glob("*.json"):
+            existing_chars.add(json_file.stem)
 
     print(f"\n{'='*60}")
-    if not args.no_anki:
-        print(f"Total unique characters in Anki: {len(anki_chars)}")
-    print(f"Referenced characters in dong files (components + descriptions): {len(ref_chars)}")
-    if not args.no_yellowbridge:
-        print(f"Characters from yellowbridge files: {len(yellowbridge_chars)}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with dong data: {len(existing_chars)}")
+    print(f"Referenced characters in dong files (components + descriptions): {len(ref_chars)}")
 
     # Find missing characters
-    missing_anki_chars = anki_chars - existing_chars
-    missing_ref_chars = ref_chars - existing_chars
-    missing_yellowbridge_chars = yellowbridge_chars - existing_chars
     missing_chars = all_chars - existing_chars
 
     # Filter out blacklisted characters
     blacklisted_found = missing_chars & BLACKLIST_CHARS
     if blacklisted_found:
         print(f"\nFiltering out {len(blacklisted_found)} blacklisted characters: {''.join(sorted(blacklisted_found))}")
-        missing_anki_chars -= BLACKLIST_CHARS
-        missing_ref_chars -= BLACKLIST_CHARS
-        missing_yellowbridge_chars -= BLACKLIST_CHARS
         missing_chars -= BLACKLIST_CHARS
 
-    if not args.no_anki:
-        print(f"\nMissing from Anki: {len(missing_anki_chars)}")
-    print(f"Missing from dong references (components + descriptions): {len(missing_ref_chars)}")
-    if not args.no_yellowbridge:
-        print(f"Missing from yellowbridge: {len(missing_yellowbridge_chars)}")
     print(f"Total missing characters: {len(missing_chars)}")
 
     if not missing_chars:
@@ -381,15 +171,7 @@ def main():
     print(f"\n{'='*60}")
     print(f"Top {min(20, len(missing_sorted))} most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:20], 1):
-        sources = []
-        if char in missing_anki_chars:
-            sources.append("Anki")
-        if char in missing_ref_chars:
-            sources.append("Referenced")
-        if not args.no_yellowbridge and char in missing_yellowbridge_chars:
-            sources.append("Yellowbridge")
-        source_str = "+".join(sources)
-        print(f"  {i}. {char} (appears {char_frequency[char]} times) [{source_str}]")
+        print(f"  {i}. {char} (appears {char_frequency[char]} times)")
 
     # Ask user if they want to open browser tabs
     print(f"\n{'='*60}")

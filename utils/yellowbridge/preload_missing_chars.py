@@ -18,12 +18,15 @@ import json
 import time
 import webbrowser
 from pathlib import Path
-from typing import Set
+from typing import Set, Tuple
 from urllib.parse import quote
-import requests
 from collections import Counter
 import subprocess
 import sys
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from shared.character_discovery import discover_all_characters, extract_all_characters
 
 # Characters that cannot be loaded from YellowBridge
 BLACKLISTED_CHARS = {
@@ -41,109 +44,11 @@ BLACKLISTED_CHARS = {
     '㇚',
     '𬜯',
     '𭕆',
+    '（',
+    '，',
+    '）',
+    '。',
 }
-
-
-def anki_connect_request(action, params=None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
-
-
-def get_notes_info_batch(note_ids):
-    """
-    Get detailed information about multiple notes in a batch
-
-    Args:
-        note_ids (list): List of note IDs
-
-    Returns:
-        list: List of note information dictionaries
-    """
-    if not note_ids:
-        return []
-
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise Exception("Failed to fetch notes")
-
-
-def find_all_notes_with_traditional(note_type, extra_filter):
-    """
-    Find all notes with Traditional field
-
-    Args:
-        note_type (str): The note type to search
-        extra_filter (str): Additional filter criteria
-
-    Returns:
-        list: List of note IDs
-    """
-    search_query = f'note:{note_type} Traditional:_* ' + extra_filter
-
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) in {note_type}")
-            return note_ids
-
-    print(f"No notes found in {note_type}")
-    return []
-
-
-def extract_all_characters(text):
-    """
-    Extract all Chinese characters from a text string
-
-    Args:
-        text (str): Text containing Chinese characters
-
-    Returns:
-        set: Set of individual Chinese characters
-    """
-    chars = set()
-    for char in text:
-        # Check if character is in CJK Unified Ideographs ranges
-        code_point = ord(char)
-        if (0x4E00 <= code_point <= 0x9FFF or  # CJK Unified Ideographs
-            0x3400 <= code_point <= 0x4DBF or  # CJK Unified Ideographs Extension A
-            0x20000 <= code_point <= 0x2A6DF or  # CJK Unified Ideographs Extension B
-            0x2A700 <= code_point <= 0x2B73F or  # CJK Unified Ideographs Extension C
-            0x2B740 <= code_point <= 0x2B81F or  # CJK Unified Ideographs Extension D
-            0x2B820 <= code_point <= 0x2CEAF or  # CJK Unified Ideographs Extension E
-            0x2CEB0 <= code_point <= 0x2EBEF or  # CJK Unified Ideographs Extension F
-            0xF900 <= code_point <= 0xFAFF or    # CJK Compatibility Ideographs
-            0x2F800 <= code_point <= 0x2FA1F):   # CJK Compatibility Ideographs Supplement
-            chars.add(char)
-    return chars
 
 
 def extract_referenced_chars(json_data: dict) -> Set[str]:
@@ -184,118 +89,34 @@ def extract_referenced_chars(json_data: dict) -> Set[str]:
     return chars
 
 
-def is_punctuation(char: str) -> bool:
-    """Check if a character is punctuation that should be skipped."""
-    # Common Chinese and Western punctuation marks
-    punctuation = {
-        '，', '。', '！', '？', '；', '：', '、', '（', '）', '【', '】',
-        '「', '」', '『', '』', '〈', '〉', '《', '》', '〔', '〕', '〖', '〗',
-        '–', '—', '…', '·', '～', '＂', '＇', '‧', '･',
-        ',', '.', '!', '?', ';', ':', '(', ')', '[', ']', '{', '}',
-        '"', "'", '-', '_', '/', '\\', '|', '<', '>', '~', '`',
-        '@', '#', '$', '%', '^', '&', '*', '+', '=',
-    }
-    return char in punctuation
-
-
-def get_anki_characters(note_type="Hanzi", extra_filter=""):
-    """
-    Get all characters from Anki notes with Traditional field
-
-    Args:
-        note_type (str): The note type to search (default: "Hanzi")
-        extra_filter (str): Additional filter criteria (default: "")
-
-    Returns:
-        tuple: (set of characters, Counter of character frequency)
-    """
-    anki_chars = set()
-    char_frequency = Counter()
-    BATCH_SIZE = 100  # Process 100 notes at a time
-
-    print(f"\nFetching characters from Anki note type: {note_type}")
-    print(f"Filter: {extra_filter}")
-
-    note_ids = find_all_notes_with_traditional(note_type, extra_filter)
-
-    if not note_ids:
-        return anki_chars, char_frequency
-
-    # Process notes in batches
-    for i in range(0, len(note_ids), BATCH_SIZE):
-        batch = note_ids[i:i + BATCH_SIZE]
-        print(f"  Processing batch {i // BATCH_SIZE + 1}/{(len(note_ids) + BATCH_SIZE - 1) // BATCH_SIZE} ({i + len(batch)}/{len(note_ids)} notes)...")
-
-        try:
-            notes_info = get_notes_info_batch(batch)
-
-            for note_info in notes_info:
-                traditional = note_info['fields'].get('Traditional', {}).get('value', '')
-
-                if traditional:
-                    # Extract individual characters
-                    chars = extract_all_characters(traditional)
-                    # Filter out punctuation
-                    chars = {char for char in chars if not is_punctuation(char)}
-                    anki_chars.update(chars)
-                    char_frequency.update(chars)
-        except Exception as e:
-            print(f"  Error processing batch starting at note {i}: {e}")
-
-    print(f"Extracted {len(anki_chars)} unique characters from {len(note_ids)} Anki notes")
-    return anki_chars, char_frequency
-
-
-def get_dong_chars(dong_dir: Path) -> Set[str]:
-    """Get all characters from Dong Chinese filenames."""
-    all_chars = set()
-
-    if not dong_dir.exists():
-        print(f"\nWarning: Dong directory not found: {dong_dir}")
-        return all_chars
-
-    json_files = list(dong_dir.glob('*.json'))
-
-    print(f"\nScanning {len(json_files)} files in {dong_dir}...")
-
-    for file_path in json_files:
-        # Extract character from filename (filename is the character itself)
-        char = file_path.stem
-        if char and not is_punctuation(char):
-            all_chars.add(char)
-
-    print(f"Found {len(all_chars)} unique characters from Dong Chinese filenames")
-    return all_chars
-
-
-def get_all_referenced_chars(info_dir: Path) -> Set[str]:
+def get_all_referenced_chars(info_dir: Path) -> Tuple[Set[str], Counter]:
     """Get all characters referenced across all info files."""
     all_chars = set()
-    existing_files = set()
+    char_frequency = Counter()
+
+    if not info_dir.exists():
+        print(f"Warning: YellowBridge info directory does not exist: {info_dir}")
+        return all_chars, char_frequency
 
     json_files = sorted(info_dir.glob('*.json'))
 
     print(f"\nScanning {len(json_files)} files in {info_dir}...")
 
     for file_path in json_files:
-        # Track which characters already have files
-        existing_files.add(file_path.stem)
-
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
             # Extract all referenced characters
             referenced = extract_referenced_chars(data)
-            # Filter out punctuation
-            referenced = {char for char in referenced if not is_punctuation(char)}
             all_chars.update(referenced)
+            char_frequency.update(referenced)
 
         except Exception as e:
             print(f"Error processing {file_path.name}: {e}")
 
     print(f"Found {len(all_chars)} unique referenced characters in YellowBridge files")
-    return all_chars, existing_files
+    return all_chars, char_frequency
 
 
 def open_yellowbridge_url(char: str, delay: float = 2.0):
@@ -341,27 +162,9 @@ def main():
         help='Show what would be opened without actually opening browser'
     )
     parser.add_argument(
-        '--note-type',
-        type=str,
-        default='Hanzi',
-        help='Anki note type to search (default: Hanzi)'
-    )
-    parser.add_argument(
-        '--anki-filter',
-        type=str,
-        default='',
-        help='Additional Anki search filter (default: "")'
-    )
-    parser.add_argument(
         '--skip-anki',
         action='store_true',
         help='Skip fetching characters from Anki'
-    )
-    parser.add_argument(
-        '--dong-dir',
-        type=Path,
-        default=Path('public/data/dong'),
-        help='Directory containing Dong Chinese JSON files'
     )
 
     args = parser.parse_args()
@@ -370,58 +173,46 @@ def main():
         print(f"Error: Directory not found: {args.info_dir}")
         return 1
 
-    # Get all referenced characters and existing files from YellowBridge JSON
-    ref_chars, existing_files = get_all_referenced_chars(args.info_dir)
+    # Get the project root
+    project_root = Path.cwd()
 
-    # Get characters from Dong Chinese filenames
-    dong_chars = get_dong_chars(args.dong_dir)
+    # Use shared utility to discover all characters from Anki and data directories
+    all_chars, char_frequency = discover_all_characters(
+        project_root,
+        include_anki=not args.skip_anki,
+        normalize=False
+    )
 
-    # Get characters from Anki (unless skipped)
-    anki_chars = set()
-    char_frequency = Counter()
+    # Get referenced characters from YellowBridge JSON files (script-specific)
+    ref_chars, ref_frequency = get_all_referenced_chars(args.info_dir)
+    all_chars.update(ref_chars)
+    char_frequency.update(ref_frequency)
 
-    if not args.skip_anki:
-        try:
-            anki_chars, char_frequency = get_anki_characters(args.note_type, args.anki_filter)
-        except Exception as e:
-            print(f"\nWarning: Could not fetch Anki characters: {e}")
-            print("Continuing with only referenced characters from YellowBridge files...")
-            print("(Make sure Anki is running with AnkiConnect addon installed)")
+    # Get existing yellowbridge info files to find what's missing
+    existing_files = set()
+    if args.info_dir.exists():
+        for json_file in args.info_dir.glob("*.json"):
+            existing_files.add(json_file.stem)
 
-    # Merge all characters
-    all_chars = ref_chars | anki_chars | dong_chars
+    print(f"\n{'='*60}")
+    print(f"Total unique characters (combined): {len(all_chars)}")
+    print(f"Existing files: {len(existing_files)}")
+    print(f"Referenced characters from YellowBridge: {len(ref_chars)}")
 
-    # Find missing characters (not in existing files)
-    missing_anki_chars = anki_chars - existing_files
-    missing_ref_chars = ref_chars - existing_files
-    missing_dong_chars = dong_chars - existing_files
+    # Find missing characters
     missing_chars = all_chars - existing_files
 
     # Filter out blacklisted characters
     blacklisted_found = missing_chars & BLACKLISTED_CHARS
-    missing_chars = missing_chars - BLACKLISTED_CHARS
-    missing_anki_chars = missing_anki_chars - BLACKLISTED_CHARS
-    missing_ref_chars = missing_ref_chars - BLACKLISTED_CHARS
-    missing_dong_chars = missing_dong_chars - BLACKLISTED_CHARS
-
-    # Sort missing characters by frequency (most common first)
-    missing_sorted = sorted(missing_chars, key=lambda c: char_frequency.get(c, 0), reverse=True)
-
-    print(f"\n{'='*60}")
-    print(f"Total unique characters from Anki: {len(anki_chars)}")
-    print(f"Total referenced characters from YellowBridge: {len(ref_chars)}")
-    print(f"Total unique characters from Dong Chinese: {len(dong_chars)}")
-    print(f"Total unique characters (combined): {len(all_chars)}")
-    print(f"Existing files: {len(existing_files)}")
-
     if blacklisted_found:
         print(f"\nBlacklisted characters found (skipping): {len(blacklisted_found)}")
         print(f"  {' '.join(sorted(blacklisted_found))}")
+    missing_chars -= BLACKLISTED_CHARS
 
-    print(f"\nMissing from Anki: {len(missing_anki_chars)}")
-    print(f"Missing from YellowBridge references: {len(missing_ref_chars)}")
-    print(f"Missing from Dong Chinese: {len(missing_dong_chars)}")
     print(f"Total missing characters: {len(missing_chars)}")
+
+    # Sort missing characters by frequency (most common first)
+    missing_sorted = sorted(missing_chars, key=lambda c: char_frequency.get(c, 0), reverse=True)
 
     if not missing_chars:
         print("\nNo missing characters found! All characters have data files.")
@@ -432,16 +223,8 @@ def main():
     print("Top 30 most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:30], 1):
         freq = char_frequency.get(char, 0)
-        sources = []
-        if char in missing_anki_chars:
-            sources.append("Anki")
-        if char in missing_ref_chars:
-            sources.append("Referenced")
-        if char in missing_dong_chars:
-            sources.append("Dong")
-        source_str = "+".join(sources)
         freq_str = f"appears {freq} times" if freq > 0 else "referenced"
-        print(f"  {i}. {char} ({freq_str}) [{source_str}]")
+        print(f"  {i}. {char} ({freq_str})")
 
     if len(missing_chars) > 100:
         print(f"\n... and {len(missing_chars) - 30} more")

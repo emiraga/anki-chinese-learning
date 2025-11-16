@@ -1,101 +1,25 @@
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { useDongCharacter } from "~/hooks/useDongCharacter";
-import { scoreSoundSimilarity } from "~/utils/sound_similarity";
-import type { DongCharacter } from "~/types/dong_character";
-import type { YellowBridgeCharacter } from "~/types/yellowbridge_character";
 import MainFrame from "~/toolbar/frame";
 import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
 import anki from "~/apis/anki";
-import { getNewCharacter } from "~/data/characters";
 import { Tabs } from "~/components/Tabs";
-
-interface SoundComponentCandidate {
-  character: string;
-  pinyin: string;
-  score: number;
-  depth: number; // Track recursion depth
-  componentType: string[]; // Type of component (sound, meaning, etc.)
-  source: "dong" | "yellowbridge"; // Track data source
-}
-
-// Helper to extract all components from a DongCharacter (non-recursive, single level)
-function extractAllComponents(
-  dongChar: DongCharacter | null,
-  depth: number,
-): Array<{ character: string; pinyin: string; depth: number; componentType: string[] }> {
-  if (!dongChar) return [];
-
-  const allComponents = dongChar.components || [];
-
-  const results: Array<{ character: string; pinyin: string; depth: number; componentType: string[] }> =
-    [];
-
-  for (const comp of allComponents) {
-    const componentChar = comp.character;
-    const componentPinyin = getPrimaryPinyin(componentChar, dongChar);
-
-    if (componentPinyin) {
-      results.push({
-        character: componentChar,
-        pinyin: componentPinyin,
-        depth,
-        componentType: comp.type,
-      });
-    }
-  }
-
-  return results;
-}
-
-function getPrimaryPinyin(char: string, dongChar: DongCharacter): string {
-  // First, check if this is the main character
-  if (
-    char === dongChar.char &&
-    dongChar.pinyinFrequencies &&
-    dongChar.pinyinFrequencies.length > 0
-  ) {
-    return dongChar.pinyinFrequencies[0].pinyin;
-  }
-
-  // Try to get pinyin from the chars array (component character data)
-  const componentChar = dongChar.chars?.find((c) => c.char === char);
-  if (
-    componentChar?.pinyinFrequencies &&
-    componentChar.pinyinFrequencies.length > 0
-  ) {
-    return componentChar.pinyinFrequencies[0].pinyin;
-  }
-
-  // Try to get from oldPronunciations
-  if (
-    componentChar?.oldPronunciations &&
-    componentChar.oldPronunciations.length > 0
-  ) {
-    return componentChar.oldPronunciations[0].pinyin;
-  }
-
-  // Try to get from words array
-  const componentWord = dongChar.words?.find(
-    (w) => w.simp === char || w.trad === char,
-  );
-  if (componentWord?.items && componentWord.items.length > 0) {
-    return componentWord.items[0].pinyin;
-  }
-
-  // Fallback to library to get approximate pinyin
-  const newChar = getNewCharacter(char);
-  if (newChar?.pinyin && newChar.pinyin.length > 0) {
-    const firstPinyin = newChar.pinyin[0];
-    return typeof firstPinyin === "string"
-      ? firstPinyin
-      : firstPinyin?.pinyinAccented || "";
-  }
-
-  // Return empty if we still can't determine
-  return "";
-}
+import {
+  type SoundComponentCandidate,
+  fetchDongCharacter,
+  fetchYellowBridgeCharacter,
+  getAllComponentsRecursive,
+  extractYellowBridgePhoneticComponents,
+  mergeCandidates,
+  sortCandidates,
+  getScoreBadgeClasses,
+  getCharacterPinyin,
+} from "~/utils/sound_component_helpers";
+import { scoreSoundSimilarity } from "~/utils/sound_similarity";
+import { CandidateBadge } from "~/components/CandidateBadge";
+import { ScoreLegend } from "~/components/ScoreLegend";
 
 interface CharacterRowProps {
   character: string;
@@ -105,192 +29,6 @@ interface CharacterRowProps {
   isLoadingCandidates: boolean;
   ankiId: number | null;
   onSoundComponentUpdate: (character: string) => void;
-}
-
-// Fetch DongCharacter data directly (inlined hook implementation)
-async function fetchDongCharacter(char: string): Promise<DongCharacter | null> {
-  if (!char) return null;
-
-  try {
-    const res = await fetch(`/data/dong/${char}.json`);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-// Fetch YellowBridge character data
-async function fetchYellowBridgeCharacter(char: string): Promise<YellowBridgeCharacter | null> {
-  if (!char) return null;
-
-  try {
-    const res = await fetch(`/data/yellowbridge/info/${char}.json`);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-// Extract phonetic components from YellowBridge data
-function extractYellowBridgePhoneticComponents(
-  ybChar: YellowBridgeCharacter,
-  charPinyin: string,
-): SoundComponentCandidate[] {
-  const candidates: SoundComponentCandidate[] = [];
-
-  // Extract phonetic components (convert to "sound" for consistency)
-  for (const comp of ybChar.functionalComponents.phonetic) {
-    if (comp.pinyin.length > 0) {
-      // YellowBridge pinyin might have multiple pronunciations - use the first one
-      const firstPinyin = comp.pinyin[0];
-      candidates.push({
-        character: comp.character,
-        pinyin: firstPinyin,
-        depth: 0,
-        componentType: ["sound"], // YellowBridge "phonetic" is the same as "sound"
-        score: scoreSoundSimilarity(charPinyin, firstPinyin),
-        source: "yellowbridge",
-      });
-    }
-  }
-
-  return candidates;
-}
-
-// Merge candidates from Dong and YellowBridge, removing duplicates
-// When duplicates are found, prefer Dong data for consistency with existing UI
-function mergeCandidates(
-  dongCandidates: SoundComponentCandidate[],
-  yellowBridgeCandidates: SoundComponentCandidate[],
-): SoundComponentCandidate[] {
-  const candidateMap = new Map<string, SoundComponentCandidate>();
-
-  // Add Dong candidates first (they take priority)
-  for (const candidate of dongCandidates) {
-    candidateMap.set(candidate.character, candidate);
-  }
-
-  // Add YellowBridge candidates if not already present
-  for (const candidate of yellowBridgeCandidates) {
-    if (!candidateMap.has(candidate.character)) {
-      candidateMap.set(candidate.character, candidate);
-    }
-  }
-
-  return Array.from(candidateMap.values());
-}
-
-// Recursively gather all components by fetching nested characters
-async function getAllComponentsRecursive(
-  dongChar: DongCharacter,
-  charPinyin: string,
-  depth: number = 0,
-  visited: Set<string> = new Set(),
-): Promise<SoundComponentCandidate[]> {
-  visited.add(dongChar.char);
-  const allCandidates: SoundComponentCandidate[] = [];
-
-  // Get immediate components (all types)
-  const immediate = extractAllComponents(dongChar, depth);
-
-  // Process each component
-  for (const comp of immediate) {
-    // Skip if already visited (prevents self-reference and cycles)
-    if (visited.has(comp.character)) {
-      continue;
-    }
-
-    allCandidates.push({
-      character: comp.character,
-      pinyin: comp.pinyin,
-      depth: comp.depth,
-      componentType: comp.componentType,
-      score: scoreSoundSimilarity(charPinyin, comp.pinyin),
-      source: "dong",
-    });
-
-    // Recursively fetch and process nested components
-    if (depth < 5) {
-      const nestedChar = await fetchDongCharacter(comp.character);
-      if (nestedChar) {
-        const nestedCandidates = await getAllComponentsRecursive(
-          nestedChar,
-          charPinyin,
-          depth + 1,
-          visited,
-        );
-        allCandidates.push(...nestedCandidates);
-      }
-    }
-  }
-
-  return allCandidates;
-}
-
-// Component type configuration (matching DongCharacterDisplay.tsx)
-const COMPONENT_TYPE_CONFIG = {
-  deleted: {
-    borderColor: "border-gray-300 dark:border-gray-600",
-    bgColor: "bg-gray-50 dark:bg-gray-800",
-    badgeColor: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-  },
-  sound: {
-    borderColor: "border-blue-300 dark:border-blue-700",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-  },
-  iconic: {
-    borderColor: "border-green-300 dark:border-green-700",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-    badgeColor: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-  },
-  meaning: {
-    borderColor: "border-red-300 dark:border-red-700",
-    bgColor: "bg-red-50 dark:bg-red-900/20",
-    badgeColor: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-  },
-  remnant: {
-    borderColor: "border-purple-300 dark:border-purple-700",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-  },
-  distinguishing: {
-    borderColor: "border-cyan-300 dark:border-cyan-700",
-    bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
-    badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
-  },
-  simplified: {
-    borderColor: "border-pink-300 dark:border-pink-700",
-    bgColor: "bg-pink-50 dark:bg-pink-900/20",
-    badgeColor: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
-  },
-} as const;
-
-const DEFAULT_TYPE_CONFIG = {
-  borderColor: "border-gray-300 dark:border-gray-600",
-  bgColor: "bg-gray-50 dark:bg-gray-800",
-  badgeColor: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-};
-
-// Helper to get component type styling
-function getComponentTypeStyle(componentType: string[]): {
-  borderColor: string;
-  bgColor: string;
-  badgeColor: string;
-} {
-  // Check for each type in the component type array
-  for (const type of componentType) {
-    const typeLower = type.toLowerCase();
-    for (const [key, config] of Object.entries(COMPONENT_TYPE_CONFIG)) {
-      if (typeLower.includes(key)) {
-        return config;
-      }
-    }
-  }
-
-  return DEFAULT_TYPE_CONFIG;
 }
 
 interface CharacterData {
@@ -317,18 +55,9 @@ function CharacterRow({
     useDongCharacter(soundComponentChar || "");
 
   // Get pinyin from Dong data, or fallback to library
-  let soundCompPinyin = soundCompDong?.pinyinFrequencies?.[0]?.pinyin || "";
-
-  // If no pinyin from Dong data, try to get from library
-  if (!soundCompPinyin && soundComponentChar) {
-    const newChar = getNewCharacter(soundComponentChar);
-    if (newChar?.pinyin && newChar.pinyin.length > 0) {
-      const firstPinyin = newChar.pinyin[0];
-      soundCompPinyin = typeof firstPinyin === "string"
-        ? firstPinyin
-        : firstPinyin?.pinyinAccented || "";
-    }
-  }
+  const soundCompPinyin = soundComponentChar
+    ? getCharacterPinyin(soundComponentChar, soundCompDong)
+    : "";
 
   const soundCompScore = soundCompPinyin
     ? scoreSoundSimilarity(charPinyin, soundCompPinyin)
@@ -385,13 +114,7 @@ function CharacterRow({
             <span>{soundCompPinyin}</span>
             {soundCompScore !== null && (
               <span
-                className={`ml-2 px-2 py-1 rounded text-sm font-semibold ${
-                  soundCompScore >= 8
-                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                    : soundCompScore >= 6
-                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                }`}
+                className={`ml-2 px-2 py-1 rounded text-sm font-semibold ${getScoreBadgeClasses(soundCompScore)}`}
               >
                 {soundCompScore.toFixed(1)}
               </span>
@@ -406,66 +129,15 @@ function CharacterRow({
           <span className="text-gray-400 dark:text-gray-500">Loading...</span>
         ) : candidates.length > 0 ? (
           <div className="flex flex-nowrap gap-2 overflow-x-auto">
-            {candidates.map((candidate, idx) => {
-              const typeStyle = getComponentTypeStyle(candidate.componentType);
-              return (
-                <div
-                  key={`${candidate.character}-${idx}`}
-                  className={`inline-flex items-center gap-1 border ${typeStyle.borderColor} ${typeStyle.bgColor} rounded px-2 py-1`}
-                >
-                  <CharLink
-                    traditional={candidate.character}
-                    className="font-bold"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {candidate.pinyin}
-                  </span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                      candidate.score >= 8
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        : candidate.score >= 6
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                    }`}
-                  >
-                    {candidate.score.toFixed(1)}
-                  </span>
-                  <span
-                    className={`text-xs px-1 py-0.5 rounded ${typeStyle.badgeColor}`}
-                    title={`Component type: ${candidate.componentType.join(", ")}`}
-                  >
-                    {candidate.componentType[0]}
-                  </span>
-                  {candidate.depth > 0 && (
-                    <span
-                      className="text-xs text-gray-400 dark:text-gray-500"
-                      title={`Recursion depth: ${candidate.depth}`}
-                    >
-                      (d{candidate.depth})
-                    </span>
-                  )}
-                  <span
-                    className={`text-xs px-1 py-0.5 rounded ${
-                      candidate.source === "yellowbridge"
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                        : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
-                    }`}
-                    title={`Source: ${candidate.source === "yellowbridge" ? "YellowBridge" : "DongChinese"}`}
-                  >
-                    {candidate.source === "yellowbridge" ? "YB" : "DC"}
-                  </span>
-                  <button
-                    onClick={() => setSoundComponent(candidate.character)}
-                    disabled={isUpdating || !ankiId}
-                    className="ml-1 px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-                    title="Set as sound component"
-                  >
-                    +
-                  </button>
-                </div>
-              );
-            })}
+            {candidates.map((candidate, idx) => (
+              <CandidateBadge
+                key={`${candidate.character}-${idx}`}
+                candidate={candidate}
+                onSelect={setSoundComponent}
+                isUpdating={isUpdating}
+                disabled={!ankiId}
+              />
+            ))}
           </div>
         ) : (
           <span className="text-gray-400 dark:text-gray-500">No sound components found</span>
@@ -549,25 +221,9 @@ export default function SoundEval() {
           }
         }
 
-        // Merge and deduplicate candidates
-        let candidates = mergeCandidates(dongCandidates, ybCandidates);
-
-        // Sort by component type (sound/phonetic first) and then by score descending
-        candidates.sort((a, b) => {
-          const aIsSound = a.componentType.some(type =>
-            type.toLowerCase().includes('sound') || type.toLowerCase().includes('phonetic')
-          );
-          const bIsSound = b.componentType.some(type =>
-            type.toLowerCase().includes('sound') || type.toLowerCase().includes('phonetic')
-          );
-
-          // If one is sound and the other isn't, sound comes first
-          if (aIsSound && !bIsSound) return -1;
-          if (!aIsSound && bIsSound) return 1;
-
-          // Otherwise, sort by score descending
-          return b.score - a.score;
-        });
+        // Merge, deduplicate, and sort candidates
+        const mergedCandidates = mergeCandidates(dongCandidates, ybCandidates);
+        const candidates = sortCandidates(mergedCandidates);
 
         const maxScore = candidates.length > 0 ? candidates[0].score : 0;
 
@@ -657,18 +313,9 @@ export default function SoundEval() {
               ? `Loading... ${characterDataList.length} / ${charsWithPinyin.length} characters processed`
               : `Total: ${charsWithPinyin.length} characters`}
           </p>
-          <p className="text-sm mt-1">
-            Score:{" "}
-            <span className="text-green-600 dark:text-green-400 font-semibold">≥8 = Excellent</span>
-            ,
-            <span className="text-yellow-600 dark:text-yellow-400 font-semibold ml-2">
-              ≥6 = Good
-            </span>
-            ,
-            <span className="text-red-600 dark:text-red-400 font-semibold ml-2">
-              &lt;6 = Poor
-            </span>
-          </p>
+          <div className="mt-1">
+            <ScoreLegend />
+          </div>
         </div>
 
         <Tabs

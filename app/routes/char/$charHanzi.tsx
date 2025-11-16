@@ -23,6 +23,7 @@ import { useYellowBridgeCharacter } from "~/hooks/useYellowBridgeCharacter";
 import { YellowBridgeDisplay } from "~/components/YellowBridgeDisplay";
 import { Tabs } from "~/components/Tabs";
 import { useState } from "react";
+import { SoundComponentCandidates } from "~/components/SoundComponentCandidates";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -146,6 +147,27 @@ export default function CharDetail() {
             <PromptsLink char={char.traditional} />
             <hr className="my-4" />
             <CharCardDetails char={char} />
+            <hr className="my-4" />
+            <h2 className="text-2xl mb-2">Sound Component Candidates:</h2>
+            <SoundComponentCandidates
+              mainCharacter={char.traditional}
+              mainCharPinyin={
+                char.pinyin.length > 0
+                  ? typeof char.pinyin[0] === "string"
+                    ? char.pinyin[0]
+                    : char.pinyin[0].pinyinAccented
+                  : ""
+              }
+              dongCharacter={dongCharacter}
+              yellowBridgeCharacter={yellowBridgeCharacter}
+              currentSoundComponent={char.soundComponentCharacter}
+              ankiId={char.ankiId}
+              onUpdate={() => {
+                // Reload the page to show updated data
+                window.location.reload();
+              }}
+            />
+            <hr className="my-4" />
             <div>
               <span className="tw-kai text-8xl">{char.traditional}</span>
               {/*<span className="font-mono text-8xl">{char.traditional}</span>*/}
