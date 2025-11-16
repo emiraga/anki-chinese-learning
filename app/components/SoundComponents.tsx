@@ -8,6 +8,8 @@ import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { getNewCharacter } from "~/data/characters";
 import { PinyinList } from "~/components/PinyinText";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
+import { useYellowBridgeIndexes } from "~/hooks/useYellowBridgeIndexes";
+import type { YellowBridgeIndexes } from "~/types/yellowbridge_character";
 
 // Helper function to get background color for score badge
 function getScoreBgColor(score: number): string {
@@ -23,6 +25,7 @@ interface SoundComponentGroupProps {
   soundComponent: string;
   chars: CharacterType[];
   characters: OutletContext["characters"];
+  yellowBridgeIndexes: YellowBridgeIndexes | null;
   showZhuyin?: boolean;
   compact?: boolean; // For unknown singular display
 }
@@ -31,6 +34,7 @@ function SoundComponentGroup({
   soundComponent,
   chars,
   characters,
+  yellowBridgeIndexes,
   showZhuyin,
   compact = false,
 }: SoundComponentGroupProps) {
@@ -147,18 +151,29 @@ function SoundComponentGroup({
           soundComponentPinyin={soundPinyin}
           characters={characters}
           existingChars={chars}
+          yellowBridgeIndexes={yellowBridgeIndexes}
         />
       </div>
     </div>
   );
 }
 
-// Component to display sound component candidates from Dong Chinese data
+// Component to display sound component candidates from Dong Chinese and YellowBridge data
 interface SoundComponentCandidatesProps {
   soundComponent: string;
   soundComponentPinyin: string;
   characters: OutletContext["characters"];
   existingChars: CharacterType[];
+  yellowBridgeIndexes: YellowBridgeIndexes | null;
+}
+
+type CandidateSource = "dong" | "yellowbridge" | "both";
+
+interface MergedCandidate {
+  char: string;
+  source: CandidateSource;
+  bookCharCount?: number;
+  isVerified?: boolean;
 }
 
 function SoundComponentCandidates({
@@ -166,6 +181,7 @@ function SoundComponentCandidates({
   soundComponentPinyin,
   characters,
   existingChars,
+  yellowBridgeIndexes,
 }: SoundComponentCandidatesProps) {
   const { character, loading, error } = useDongCharacter(soundComponent);
 
@@ -177,38 +193,81 @@ function SoundComponentCandidates({
     );
   }
 
-  if (error || !character?.componentIn) {
-    return null;
-  }
-
   // Create a Set of existing character traditional forms for fast lookup
   const existingCharSet = new Set(existingChars.map((c) => c.traditional));
 
-  // Filter for characters where this is a sound component
-  // and exclude characters that are already in the main list
-  const soundCandidates = character.componentIn.filter((item) => {
-    const hasSound = item.components
-      .find((c) => c.character === soundComponent)
-      ?.type.includes("sound");
-    return hasSound && !existingCharSet.has(item.char);
+  // Get candidates from Dong Chinese
+  const dongCandidates = new Map<string, MergedCandidate>();
+  if (!error && character?.componentIn) {
+    character.componentIn
+      .filter((item) => {
+        const hasSound = item.components
+          .find((c) => c.character === soundComponent)
+          ?.type.includes("sound");
+        return hasSound && !existingCharSet.has(item.char);
+      })
+      .forEach((item) => {
+        dongCandidates.set(item.char, {
+          char: item.char,
+          source: "dong",
+          bookCharCount: item.statistics?.bookCharCount,
+          isVerified: item.isVerified,
+        });
+      });
+  }
+
+  // Get candidates from YellowBridge
+  const yellowBridgeCandidates = new Set<string>();
+  if (yellowBridgeIndexes?.soundsComponentIn?.[soundComponent]) {
+    const ybEntry = yellowBridgeIndexes.soundsComponentIn[soundComponent];
+    ybEntry.appearsIn.forEach((usage) => {
+      if (!existingCharSet.has(usage.character)) {
+        yellowBridgeCandidates.add(usage.character);
+      }
+    });
+  }
+
+  // Merge candidates and track sources
+  const mergedCandidates: MergedCandidate[] = [];
+
+  // Add all Dong candidates
+  dongCandidates.forEach((candidate) => {
+    if (yellowBridgeCandidates.has(candidate.char)) {
+      // Character is in both sources
+      mergedCandidates.push({ ...candidate, source: "both" });
+    } else {
+      // Character is only in Dong
+      mergedCandidates.push(candidate);
+    }
   });
 
-  if (soundCandidates.length === 0) {
+  // Add YellowBridge-only candidates
+  yellowBridgeCandidates.forEach((char) => {
+    if (!dongCandidates.has(char)) {
+      mergedCandidates.push({
+        char,
+        source: "yellowbridge",
+      });
+    }
+  });
+
+  if (mergedCandidates.length === 0) {
     return null;
   }
 
-  // Sort by bookCharCount (frequency)
-  const sortedCandidates = [...soundCandidates].sort((a, b) => {
-    const aCount = a.statistics?.bookCharCount || 0;
-    const bCount = b.statistics?.bookCharCount || 0;
-    return bCount - aCount;
+  // Sort by bookCharCount (frequency) for known stats, then alphabetically
+  const sortedCandidates = [...mergedCandidates].sort((a, b) => {
+    const aCount = a.bookCharCount || 0;
+    const bCount = b.bookCharCount || 0;
+    if (bCount !== aCount) return bCount - aCount;
+    return a.char.localeCompare(b.char);
   });
 
   return (
     <div className="pt-3">
       <div className="flex flex-wrap gap-2">
-        {sortedCandidates.map((item) => {
-          const isKnown = characters[item.char];
+        {sortedCandidates.map((candidate) => {
+          const isKnown = characters[candidate.char];
 
           // Calculate score only for known characters
           let score: number | null = null;
@@ -223,14 +282,39 @@ function SoundComponentCandidates({
             }
           }
 
+          // Determine border style based on source
+          let borderClass = "";
+          let sourceLabel = "";
+          if (candidate.source === "dong") {
+            borderClass = "border-b-2 border-blue-500";
+            sourceLabel = "Dong Chinese only";
+          } else if (candidate.source === "yellowbridge") {
+            borderClass = "border-b-2 border-yellow-500";
+            sourceLabel = "YellowBridge only";
+          } else {
+            borderClass = ""; // No border for characters in both sources
+            sourceLabel = "Both sources";
+          }
+
+          const tooltipParts = [
+            candidate.char,
+            !isKnown ? "(Unknown)" : "",
+            candidate.bookCharCount
+              ? `${candidate.bookCharCount.toLocaleString()} uses`
+              : "",
+            candidate.isVerified ? "✓" : "",
+            score !== null ? `Score: ${score.toFixed(1)}/10` : "",
+            `Source: ${sourceLabel}`,
+          ].filter(Boolean);
+
           return (
-            <div key={item.char} className="relative">
+            <div key={candidate.char} className="relative">
               <CharLink
-                traditional={item.char}
-                className={`text-2xl font-serif hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${!isKnown ? "opacity-30" : ""}`}
-                title={`${item.char}${!isKnown ? " (Unknown)" : ""}${item.statistics?.bookCharCount ? ` - ${item.statistics.bookCharCount.toLocaleString()} uses` : ""}${item.isVerified ? " ✓" : ""}${score !== null ? ` - Score: ${score.toFixed(1)}/10` : ""}`}
+                traditional={candidate.char}
+                className={`text-2xl font-serif hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${!isKnown ? "opacity-30" : ""} ${borderClass}`}
+                title={tooltipParts.join(" - ")}
               >
-                {item.char}
+                {candidate.char}
               </CharLink>
               {score !== null && (
                 <div
@@ -258,6 +342,9 @@ export default function SoundComponents({
   const {
     settings: { features },
   } = useSettings();
+
+  // Load YellowBridge indexes
+  const { indexes: yellowBridgeIndexes } = useYellowBridgeIndexes();
 
   // Group characters by their sound component
   const soundComponentGroups = new Map<string, CharacterType[]>();
@@ -312,6 +399,7 @@ export default function SoundComponents({
               soundComponent={soundComponent}
               chars={chars}
               characters={characters}
+              yellowBridgeIndexes={yellowBridgeIndexes}
               showZhuyin={features?.showZhuyin}
             />
           ))}
@@ -347,6 +435,7 @@ export default function SoundComponents({
                     soundComponent={soundComponent}
                     chars={chars}
                     characters={characters}
+                    yellowBridgeIndexes={yellowBridgeIndexes}
                     showZhuyin={features?.showZhuyin}
                     compact
                   />
