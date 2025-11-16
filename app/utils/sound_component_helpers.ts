@@ -297,15 +297,21 @@ export function sortCandidates(candidates: SoundComponentCandidate[]): SoundComp
   });
 }
 
-// Get CSS classes for score badge based on score value
+// Get CSS classes for score badge based on score value (5-level granular system)
 export function getScoreBadgeClasses(score: number): string {
-  if (score >= 8) {
-    return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
+  if (score >= 9) {
+    return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"; // Excellent
   }
-  if (score >= 6) {
-    return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
+  if (score >= 7) {
+    return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"; // Good
   }
-  return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
+  if (score >= 5) {
+    return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"; // Moderate
+  }
+  if (score >= 3) {
+    return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300"; // Poor
+  }
+  return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"; // Very poor
 }
 
 // Get pinyin for a character with fallback to library

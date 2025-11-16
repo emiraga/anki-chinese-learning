@@ -8,17 +8,9 @@ import { useDongCharacter } from "~/hooks/useDongCharacter";
 import { getNewCharacter } from "~/data/characters";
 import { PinyinList } from "~/components/PinyinText";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
+import { getScoreBadgeClasses } from "~/utils/sound_component_helpers";
 import { useYellowBridgeIndexes } from "~/hooks/useYellowBridgeIndexes";
 import type { YellowBridgeIndexes } from "~/types/yellowbridge_character";
-
-// Helper function to get background color for score badge
-function getScoreBgColor(score: number): string {
-  if (score >= 9) return "bg-green-100 dark:bg-green-900/30"; // Excellent
-  if (score >= 7) return "bg-blue-100 dark:bg-blue-900/30"; // Good
-  if (score >= 5) return "bg-yellow-100 dark:bg-yellow-900/30"; // Moderate
-  if (score >= 3) return "bg-orange-100 dark:bg-orange-900/30"; // Poor
-  return "bg-red-100 dark:bg-red-900/30"; // Very poor
-}
 
 type CandidateSource = "dong" | "yellowbridge" | "both";
 
@@ -170,7 +162,7 @@ function SoundComponentGroup({
             >
               {score !== null && (
                 <div
-                  className={`px-1.5 py-0.5 rounded text-xs ${getScoreBgColor(score)}`}
+                  className={`px-1.5 py-0.5 rounded text-xs ${getScoreBadgeClasses(score)}`}
                   title={`Sound similarity: ${score}/10`}
                 >
                   <span className="font-bold">{score.toFixed(1)}</span>
@@ -231,11 +223,11 @@ function SoundComponentGroup({
               <div key={char.traditional} className="relative w-52">
                 {score !== null && (
                   <div
-                    className={`px-1.5 py-0.5 w-26 rounded text-xs  ${getScoreBgColor(score)} `}
+                    className={`px-1.5 py-0.5 w-26 rounded text-xs ${getScoreBadgeClasses(score)}`}
                     title={`Sound similarity: ${score}/10`}
                   >
                     Score:{" "}
-                    <span className={`font-bold`}>{score.toFixed(1)}</span>
+                    <span className="font-bold">{score.toFixed(1)}</span>
                   </div>
                 )}
                 <CharCard v={char} showZhuyin={showZhuyin} hideMnemonic />
@@ -332,7 +324,7 @@ function SoundComponentCandidates({
               </CharLink>
               {score !== null && (
                 <div
-                  className={`rounded text-xs font-bold ${getScoreBgColor(score)}`}
+                  className={`rounded text-xs font-bold ${getScoreBadgeClasses(score)}`}
                   title={`Sound similarity: ${score}/10`}
                 >
                   {score.toFixed(1)}

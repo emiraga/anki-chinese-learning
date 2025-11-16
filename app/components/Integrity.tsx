@@ -6,10 +6,7 @@ import anki, {
   useAnkiCards,
   type NoteWithCards,
 } from "~/apis/anki";
-import {
-  ACTOR_TAGS_MAP,
-  REVERSE_FULL_MAP,
-} from "~/data/pinyin_table";
+import { ACTOR_TAGS_MAP, REVERSE_FULL_MAP } from "~/data/pinyin_table";
 import { PropCard } from "./PropCard";
 import { useEffect, useMemo, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
@@ -612,123 +609,6 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
   );
 }
 
-function MixedNew({
-  noteType,
-  notesByCards,
-}: {
-  noteType: string;
-  notesByCards: NoteWithCards[];
-}) {
-  const myNotes = notesByCards
-    .filter((note) => note.modelName === noteType)
-    .map((note) => ({
-      ...note,
-      learningCards: note.cardDetails.filter(
-        (c) => c.due !== 0 && c.due < 3000,
-      ),
-      newCards: note.cardDetails.filter(
-        (c) =>
-          (c.due === 0 || c.due > 3000) &&
-          !note.tags.includes(`card-${c.ord}-ignored-on-purpose`),
-      ),
-    }))
-    .filter(
-      (note) => note.learningCards.length > 0 && note.newCards.length > 0,
-    );
-  if (myNotes.length === 0) {
-    return undefined;
-  }
-  return (
-    <>
-      <h3 className="font-serif text-3xl">Mixed new {noteType}:</h3>
-      {myNotes.map((note, i) => (
-        <div key={i}>
-          🚨 Some are new {noteType} |{note.fields["Traditional"].value}
-          <button
-            className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-            onClick={async () => {
-              await ankiOpenBrowse(
-                `note:${noteType} ID:${note.fields["ID"].value}`,
-              );
-            }}
-          >
-            anki
-          </button>
-          <button
-            className="rounded-2xl bg-green-100 dark:bg-green-900 p-1 ml-2 inline text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-            onClick={async () => {
-              const newCardIds = note.newCards.map((card) => card.cardId);
-              await anki.card.unsuspend({ cards: newCardIds });
-              await anki.card.setDueDate({ cards: newCardIds, days: "0" });
-              alert("Enabled " + note.fields["Traditional"]?.value);
-            }}
-          >
-            enable
-          </button>
-        </div>
-      ))}
-    </>
-  );
-}
-
-function MyWordsNewAndNotSuspended({
-  notesByCards,
-}: {
-  notesByCards: NoteWithCards[];
-}) {
-  const myWordsNotes = notesByCards
-    .filter((note) => note.modelName === "MyWords")
-    .map((note) => ({
-      ...note,
-      newNotSuspendedCards: note.cardDetails.filter(
-        (c) => c.queue !== -1 && (c.due === 0 || c.due > 3000),
-      ),
-    }))
-    .filter((note) => note.newNotSuspendedCards.length > 0);
-
-  if (myWordsNotes.length === 0) {
-    return undefined;
-  }
-
-  return (
-    <>
-      <h3 className="font-serif text-3xl">
-        MyWords with new unsuspended cards:
-      </h3>
-      {myWordsNotes.map((note, i) => (
-        <div key={i}>
-          🚨 MyWords with new cards:{" "}
-          {note.fields["Traditional"]?.value || note.fields["Hanzi"]?.value}
-          <button
-            className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-            onClick={async () => {
-              await ankiOpenBrowse("note:MyWords is:new -is:suspended");
-            }}
-          >
-            anki
-          </button>
-          <button
-            className="rounded-2xl bg-green-100 dark:bg-green-900 p-1 ml-2 inline text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-            onClick={async () => {
-              const newCardIds = note.newNotSuspendedCards.map(
-                (card) => card.cardId,
-              );
-              await anki.card.setDueDate({ cards: newCardIds, days: "0" });
-              alert(
-                "Set due date to today for " +
-                  (note.fields["Traditional"]?.value ||
-                    note.fields["Hanzi"]?.value),
-              );
-            }}
-          >
-            fix due date
-          </button>
-        </div>
-      ))}
-    </>
-  );
-}
-
 function IntegrityPinyinZhuyinConsistency() {
   const { phrases } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1052,17 +932,6 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
         ) : undefined}
         {error ? <div>error loading cards: {error}</div> : undefined}
       </section>
-      {!loading && (
-        <section className="block m-4">
-          <MixedNew noteType="TOCFL" notesByCards={notesByCards} />
-          {/* <MixedNew noteType="Hanzi" notesByCards={notesByCards} /> */}
-        </section>
-      )}
-      {!loading && (
-        <section className="block m-4">
-          <MyWordsNewAndNotSuspended notesByCards={notesByCards} />
-        </section>
-      )}
       {!loading && (
         <section className="block m-4">
           <MixedSuspension noteType="TOCFL" notesByCards={notesByCards} />

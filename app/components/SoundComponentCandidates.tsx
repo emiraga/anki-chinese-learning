@@ -1,7 +1,6 @@
-import { useState } from "react";
 import type { DongCharacter } from "~/types/dong_character";
 import type { YellowBridgeCharacter } from "~/types/yellowbridge_character";
-import { updateSoundComponentInAnki } from "~/utils/sound_component_helpers";
+import { useSoundComponentUpdate } from "~/hooks/useSoundComponentUpdate";
 import { CandidateBadge } from "~/components/CandidateBadge";
 import { ScoreLegend } from "~/components/ScoreLegend";
 import { useSoundComponentCandidates } from "~/hooks/useSoundComponentCandidates";
@@ -25,8 +24,6 @@ export function SoundComponentCandidates({
   ankiId,
   onUpdate,
 }: SoundComponentCandidatesProps) {
-  const [isUpdating, setIsUpdating] = useState(false);
-
   // Load candidates using custom hook
   const { candidates, isLoading } = useSoundComponentCandidates({
     mainCharacter,
@@ -35,24 +32,10 @@ export function SoundComponentCandidates({
     yellowBridgeCharacter,
   });
 
-  const setSoundComponent = async (candidateChar: string) => {
-    if (!ankiId) {
-      alert("No Anki note found for this character");
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      await updateSoundComponentInAnki(ankiId, candidateChar);
-      if (onUpdate) {
-        onUpdate();
-      }
-    } catch (error) {
-      alert(`Failed to update sound component: ${error}`);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const { updateSoundComponent, isUpdating } = useSoundComponentUpdate({
+    ankiId,
+    onUpdate,
+  });
 
   if (isLoading) {
     return (
@@ -78,7 +61,7 @@ export function SoundComponentCandidates({
             key={`${candidate.character}-${idx}`}
             candidate={candidate}
             isCurrent={currentSoundComponent === candidate.character}
-            onSelect={setSoundComponent}
+            onSelect={updateSoundComponent}
             isUpdating={isUpdating}
             disabled={!ankiId}
           />
