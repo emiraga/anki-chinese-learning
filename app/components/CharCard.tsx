@@ -50,10 +50,11 @@ const CharPinyinSoundMeaning: React.FC<{
   );
 };
 
-export const CharCard: React.FC<{ v: CharacterType; showZhuyin?: boolean }> = ({
-  v,
-  showZhuyin,
-}) => {
+export const CharCard: React.FC<{
+  v: CharacterType;
+  showZhuyin?: boolean;
+  hideMnemonic?: boolean;
+}> = ({ v, showZhuyin, hideMnemonic = false }) => {
   return (
     <div>
       <div className="flex w-full">
@@ -64,10 +65,12 @@ export const CharCard: React.FC<{ v: CharacterType; showZhuyin?: boolean }> = ({
           <CharPinyinSoundMeaning char={v} showZhuyin={showZhuyin} />
         </div>
       </div>
-      <AnkiContentRenderer
-        htmlContent={v.mnemonic}
-        className="text-xs w-52 max-h-32 overflow-scroll bg-gray-100 dark:bg-gray-800 dark:text-gray-100"
-      />
+      {!hideMnemonic && (
+        <AnkiContentRenderer
+          htmlContent={v.mnemonic}
+          className="text-xs w-52 max-h-32 overflow-scroll bg-gray-100 dark:bg-gray-800 dark:text-gray-100"
+        />
+      )}
     </div>
   );
 };

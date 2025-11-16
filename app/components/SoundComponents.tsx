@@ -176,7 +176,7 @@ function SoundComponentGroup({
                   <span className="font-bold">{score.toFixed(1)}</span>
                 </div>
               )}
-              <CharCard v={char} showZhuyin={showZhuyin} />
+              <CharCard v={char} showZhuyin={showZhuyin} hideMnemonic />
             </div>
           );
         })}
@@ -238,7 +238,7 @@ function SoundComponentGroup({
                     <span className={`font-bold`}>{score.toFixed(1)}</span>
                   </div>
                 )}
-                <CharCard v={char} showZhuyin={showZhuyin} />
+                <CharCard v={char} showZhuyin={showZhuyin} hideMnemonic />
               </div>
             );
           })}
@@ -476,6 +476,7 @@ export default function SoundComponents({
                     key={char.traditional}
                     v={char}
                     showZhuyin={features?.showZhuyin}
+                    hideMnemonic
                   />
                 ))}
               </div>
