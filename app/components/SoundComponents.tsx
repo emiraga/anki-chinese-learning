@@ -20,6 +20,82 @@ function getScoreBgColor(score: number): string {
   return "bg-red-100 dark:bg-red-900/30"; // Very poor
 }
 
+type CandidateSource = "dong" | "yellowbridge" | "both";
+
+interface MergedCandidate {
+  char: string;
+  source: CandidateSource;
+  bookCharCount?: number;
+  isVerified?: boolean;
+}
+
+// Helper function to merge candidates from all sources
+function getMergedCandidates(
+  soundComponent: string,
+  existingChars: CharacterType[],
+  dongCharacter: ReturnType<typeof useDongCharacter>["character"],
+  yellowBridgeIndexes: YellowBridgeIndexes | null,
+): MergedCandidate[] {
+  const existingCharSet = new Set(existingChars.map((c) => c.traditional));
+
+  // Get candidates from Dong Chinese
+  const dongCandidates = new Map<string, MergedCandidate>();
+  if (dongCharacter?.componentIn) {
+    dongCharacter.componentIn
+      .filter((item) => {
+        const hasSound = item.components
+          .find((c) => c.character === soundComponent)
+          ?.type.includes("sound");
+        return hasSound && !existingCharSet.has(item.char);
+      })
+      .forEach((item) => {
+        dongCandidates.set(item.char, {
+          char: item.char,
+          source: "dong",
+          bookCharCount: item.statistics?.bookCharCount,
+          isVerified: item.isVerified,
+        });
+      });
+  }
+
+  // Get candidates from YellowBridge
+  const yellowBridgeCandidates = new Set<string>();
+  if (yellowBridgeIndexes?.soundsComponentIn?.[soundComponent]) {
+    const ybEntry = yellowBridgeIndexes.soundsComponentIn[soundComponent];
+    ybEntry.appearsIn.forEach((usage) => {
+      if (!existingCharSet.has(usage.character)) {
+        yellowBridgeCandidates.add(usage.character);
+      }
+    });
+  }
+
+  // Merge candidates and track sources
+  const mergedCandidates: MergedCandidate[] = [];
+
+  // Add all Dong candidates
+  dongCandidates.forEach((candidate) => {
+    if (yellowBridgeCandidates.has(candidate.char)) {
+      // Character is in both sources
+      mergedCandidates.push({ ...candidate, source: "both" });
+    } else {
+      // Character is only in Dong
+      mergedCandidates.push(candidate);
+    }
+  });
+
+  // Add YellowBridge-only candidates
+  yellowBridgeCandidates.forEach((char) => {
+    if (!dongCandidates.has(char)) {
+      mergedCandidates.push({
+        char,
+        source: "yellowbridge",
+      });
+    }
+  });
+
+  return mergedCandidates;
+}
+
 // Component to display a single sound component group
 interface SoundComponentGroupProps {
   soundComponent: string;
@@ -52,6 +128,19 @@ function SoundComponentGroup({
 
   // Check if sound component is a known character
   const isSoundComponentKnown = !!soundCompChar;
+
+  // Get merged candidates from all sources
+  const { character: dongCharacter } = useDongCharacter(soundComponent);
+  const mergedCandidates = getMergedCandidates(
+    soundComponent,
+    chars,
+    dongCharacter,
+    yellowBridgeIndexes,
+  );
+
+  // Calculate total unique characters (existing + candidates)
+  const totalChars = chars.length + mergedCandidates.length;
+  const hasLowCandidates = totalChars < 2;
 
   if (compact) {
     // Compact layout for unknown singular
@@ -119,6 +208,14 @@ function SoundComponentGroup({
             ⚠ Unknown component
           </span>
         )}
+        {hasLowCandidates && (
+          <span
+            className="text-sm text-orange-600 dark:text-orange-400 font-medium"
+            title={`Only ${totalChars} character${totalChars !== 1 ? "s" : ""} found with this sound component across all sources`}
+          >
+            ⚠ Low candidates ({totalChars})
+          </span>
+        )}
       </div>
       <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-wrap gap-2 ">
@@ -147,11 +244,9 @@ function SoundComponentGroup({
           })}
         </div>
         <SoundComponentCandidates
-          soundComponent={soundComponent}
           soundComponentPinyin={soundPinyin}
           characters={characters}
-          existingChars={chars}
-          yellowBridgeIndexes={yellowBridgeIndexes}
+          mergedCandidates={mergedCandidates}
         />
       </div>
     </div>
@@ -160,97 +255,16 @@ function SoundComponentGroup({
 
 // Component to display sound component candidates from Dong Chinese and YellowBridge data
 interface SoundComponentCandidatesProps {
-  soundComponent: string;
   soundComponentPinyin: string;
   characters: OutletContext["characters"];
-  existingChars: CharacterType[];
-  yellowBridgeIndexes: YellowBridgeIndexes | null;
-}
-
-type CandidateSource = "dong" | "yellowbridge" | "both";
-
-interface MergedCandidate {
-  char: string;
-  source: CandidateSource;
-  bookCharCount?: number;
-  isVerified?: boolean;
+  mergedCandidates: MergedCandidate[];
 }
 
 function SoundComponentCandidates({
-  soundComponent,
   soundComponentPinyin,
   characters,
-  existingChars,
-  yellowBridgeIndexes,
+  mergedCandidates,
 }: SoundComponentCandidatesProps) {
-  const { character, loading, error } = useDongCharacter(soundComponent);
-
-  if (loading) {
-    return (
-      <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-        Loading candidates...
-      </div>
-    );
-  }
-
-  // Create a Set of existing character traditional forms for fast lookup
-  const existingCharSet = new Set(existingChars.map((c) => c.traditional));
-
-  // Get candidates from Dong Chinese
-  const dongCandidates = new Map<string, MergedCandidate>();
-  if (!error && character?.componentIn) {
-    character.componentIn
-      .filter((item) => {
-        const hasSound = item.components
-          .find((c) => c.character === soundComponent)
-          ?.type.includes("sound");
-        return hasSound && !existingCharSet.has(item.char);
-      })
-      .forEach((item) => {
-        dongCandidates.set(item.char, {
-          char: item.char,
-          source: "dong",
-          bookCharCount: item.statistics?.bookCharCount,
-          isVerified: item.isVerified,
-        });
-      });
-  }
-
-  // Get candidates from YellowBridge
-  const yellowBridgeCandidates = new Set<string>();
-  if (yellowBridgeIndexes?.soundsComponentIn?.[soundComponent]) {
-    const ybEntry = yellowBridgeIndexes.soundsComponentIn[soundComponent];
-    ybEntry.appearsIn.forEach((usage) => {
-      if (!existingCharSet.has(usage.character)) {
-        yellowBridgeCandidates.add(usage.character);
-      }
-    });
-  }
-
-  // Merge candidates and track sources
-  const mergedCandidates: MergedCandidate[] = [];
-
-  // Add all Dong candidates
-  dongCandidates.forEach((candidate) => {
-    if (yellowBridgeCandidates.has(candidate.char)) {
-      // Character is in both sources
-      mergedCandidates.push({ ...candidate, source: "both" });
-    } else {
-      // Character is only in Dong
-      mergedCandidates.push(candidate);
-    }
-  });
-
-  // Add YellowBridge-only candidates
-  yellowBridgeCandidates.forEach((char) => {
-    if (!dongCandidates.has(char)) {
-      mergedCandidates.push({
-        char,
-        source: "yellowbridge",
-      });
-    }
-  });
-
   if (mergedCandidates.length === 0) {
     return null;
   }
