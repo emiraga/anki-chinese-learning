@@ -138,6 +138,7 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple
         project_root / "public" / "data" / "dong",
         project_root / "public" / "data" / "yellowbridge" / "raw",
         # project_root / "data" / "rtega"
+        project_root / "public" / "data" / "hanziyuan" / "converted"
     ]
 
     all_chars = set()
