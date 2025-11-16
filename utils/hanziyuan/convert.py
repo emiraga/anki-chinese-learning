@@ -247,6 +247,427 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
     return result
 
 
+def extract_best_character(char_string: str) -> str:
+    """
+    Extract the best single character from a string containing multiple character variants.
+
+    Prefers traditional Chinese characters over simplified, and filters out
+    non-standard or archaic variants. Uses the pattern that characters in parentheses
+    are typically simplified forms: "(simplified)traditional".
+
+    Args:
+        char_string: String containing Chinese characters, possibly with parentheses
+                    and multiple variants (e.g., "(车)車" or "艮𥃩")
+
+    Returns:
+        Single best character, or original string if no suitable character found
+    """
+    # Check if there are parentheses - if so, prefer characters NOT in parentheses
+    # Pattern: "(simplified)traditional" or "(simplified)variant1variant2" - we want the last traditional
+    if '(' in char_string and ')' in char_string:
+        # Extract characters outside parentheses
+        outside_parens = ""
+        inside_parens = False
+        for char in char_string:
+            if char == '(':
+                inside_parens = True
+            elif char == ')':
+                inside_parens = False
+            elif not inside_parens:
+                outside_parens += char
+
+        # Collect all candidates outside parentheses in the main CJK block
+        candidates_outside = []
+        for char in outside_parens:
+            code_point = ord(char)
+            # Main CJK block is preferred
+            if 0x4E00 <= code_point <= 0x9FFF:
+                candidates_outside.append(char)
+
+        # If we found candidates, prefer the LAST one (most standard traditional form)
+        if candidates_outside:
+            return candidates_outside[-1]
+
+    # If no parentheses or no character found outside, use all characters
+    # Extract all Chinese characters (CJK Unified Ideographs and extensions)
+    # Main block: U+4E00-U+9FFF
+    # Extension A: U+3400-U+4DBF
+    # Extension B and beyond: U+20000-U+2EBEF (but these are rare/archaic)
+    candidates = []
+    for char in char_string:
+        if char in ('(', ')'):
+            continue
+        code_point = ord(char)
+        # Prefer characters in the main CJK block
+        if 0x4E00 <= code_point <= 0x9FFF:
+            candidates.append((char, 0))  # Priority 0 (highest)
+        # Extension A is also acceptable (contains some traditional forms)
+        elif 0x3400 <= code_point <= 0x4DBF:
+            candidates.append((char, 1))  # Priority 1
+        # Extension B and beyond are less common, lower priority
+        elif 0x20000 <= code_point <= 0x2EBEF:
+            candidates.append((char, 2))  # Priority 2 (lowest)
+
+    if not candidates:
+        # No Chinese characters found, return original
+        return char_string.strip()
+
+    # Sort by priority (lower number = higher priority)
+    candidates.sort(key=lambda x: x[1])
+
+    # Return the highest priority character
+    return candidates[0][0]
+
+
+def extract_character_variants(char_field: str) -> Dict[str, Any]:
+    """
+    Extract variant information from the character field.
+
+    Patterns:
+    - "char older 𣂺" -> olderForms: ["𣂺"]
+    - "char mutant 緫" -> mutants: ["緫"]
+    - "char mutants 镸𠑿" -> mutants: ["镸", "𠑿"]
+
+    Args:
+        char_field: The character field from the first line
+
+    Returns:
+        Dictionary with character, olderForms, and mutants
+    """
+    result: Dict[str, Any] = {"character": ""}
+    parts = char_field.split()
+
+    if not parts:
+        return result
+
+    # The first part is always the main character
+    result["character"] = parts[0]
+
+    # Look for "older", "mutant", or "mutants" keywords
+    i = 1
+    while i < len(parts):
+        if parts[i] == "older" and i + 1 < len(parts):
+            if "olderForms" not in result:
+                result["olderForms"] = []
+            # Collect all characters after "older" until we hit another keyword
+            i += 1
+            while i < len(parts) and parts[i] not in ["mutant", "mutants", "older"]:
+                # Each character in the string is a separate older form
+                for char in parts[i]:
+                    if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
+                        result["olderForms"].append(char)
+                i += 1
+        elif parts[i] == "mutant" and i + 1 < len(parts):
+            if "mutants" not in result:
+                result["mutants"] = []
+            i += 1
+            for char in parts[i]:
+                if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
+                    result["mutants"].append(char)
+            i += 1
+        elif parts[i] == "mutants" and i + 1 < len(parts):
+            if "mutants" not in result:
+                result["mutants"] = []
+            i += 1
+            # "mutants" can have multiple characters in one string
+            while i < len(parts) and parts[i] not in ["older", "mutant", "mutants"]:
+                for char in parts[i]:
+                    if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
+                        result["mutants"].append(char)
+                i += 1
+        else:
+            i += 1
+
+    return result
+
+
+def extract_simplification_rules(line: str) -> Dict[str, Any]:
+    """
+    Extract simplification rule information from a line.
+
+    Patterns:
+    - "A037 处[處] simp 处" -> rule: "A037", simplified: "处"
+    - "B012 长[長] new-char 长" -> rule: "B012", newChar: "长"
+    - "F003 (内)內" -> rule: "F003"
+
+    Args:
+        line: A line potentially containing rule information
+
+    Returns:
+        Dictionary with rule information
+    """
+    result: Dict[str, Any] = {}
+
+    # Pattern: Letter followed by digits (A037, B012, F003, etc.)
+    rule_match = re.match(r'^([A-Z]\d+)\s+(.+)', line)
+    if rule_match:
+        result["rule"] = rule_match.group(1)
+        rest = rule_match.group(2)
+
+        # Look for "simp X" pattern
+        simp_match = re.search(r'simp\s+(\S+)', rest)
+        if simp_match:
+            result["simplified"] = simp_match.group(1).rstrip('.')
+
+        # Look for "new-char X" pattern
+        newchar_match = re.search(r'new-char\s+(\S+)', rest)
+        if newchar_match:
+            result["newChar"] = newchar_match.group(1).rstrip('.')
+
+    return result
+
+
+def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
+    """
+    Parse the "Character decomposition 字形分解" field into a structured format.
+
+    Args:
+        decomposition_text: The plain text decomposition string
+
+    Returns:
+        Structured dictionary with type, character, components, and names, plus:
+        - olderForms: Historical character forms
+        - mutants: Variant/mutant forms
+        - variantOf: Characters this is a variant of
+        - simplificationRules: Rule references (A037, B012, etc.)
+        - simplifiedForm/newCharForm: Simplified character forms
+        - crossReferences: Related character references
+    """
+    if not decomposition_text or decomposition_text.strip() == "":
+        return {}
+
+    lines = decomposition_text.strip().split('\n')
+    if not lines:
+        return {}
+
+    # Parse the first line to get type and character with variants
+    first_line = lines[0].strip()
+    decomp_type = None
+    char_field = ""
+
+    if first_line.startswith("Compound "):
+        decomp_type = "Compound"
+        char_field = first_line[9:].strip()  # Remove "Compound "
+    elif first_line.startswith("Component "):
+        decomp_type = "Component"
+        char_field = first_line[10:].strip()  # Remove "Component "
+    elif first_line == "Compound" or first_line == "Component":
+        # Handle missing character name
+        decomp_type = first_line
+        char_field = ""
+    else:
+        # Unknown format, return raw text
+        return {"raw": decomposition_text}
+
+    # Extract character and variants from char_field
+    variant_info = extract_character_variants(char_field) if char_field else {"character": ""}
+
+    result: Dict[str, Any] = {
+        "type": decomp_type,
+        "character": variant_info.get("character", ""),
+        "components": [],
+        "names": []
+    }
+
+    # Add variant information if present
+    if "olderForms" in variant_info:
+        result["olderForms"] = variant_info["olderForms"]
+    if "mutants" in variant_info:
+        result["mutants"] = variant_info["mutants"]
+
+    notes_lines = []
+    simplification_rules = []
+    cross_references = []
+
+    # Parse remaining lines - combine multi-line component descriptions
+    i = 1
+    while i < len(lines):
+        line = lines[i].strip()
+        i += 1
+
+        if not line:
+            continue
+
+        # Check for simplification rules (A037, B012, etc.)
+        if re.match(r'^[A-Z]\d+', line):
+            rule_info = extract_simplification_rules(line)
+            if rule_info:
+                simplification_rules.append(rule_info)
+            continue
+
+        # Check for cross-references (See X or see X)
+        if line.startswith("See ") or line.startswith("see "):
+            # Extract the referenced characters
+            ref_chars = line[4:].strip()
+            cross_references.append(ref_chars)
+            continue
+
+        # Check for variant-of pattern
+        if line.startswith("(variant-of ") and line.endswith(")"):
+            variant_of = line[12:-1].strip()  # Remove "(variant-of " and ")"
+            result["variantOf"] = variant_of
+            continue
+
+        # Check for standalone "simp X" or "new-char X" lines
+        simp_match = re.match(r'^simp\s+(\S+)', line)
+        if simp_match:
+            result["simplifiedForm"] = simp_match.group(1).rstrip('.')
+            continue
+
+        newchar_match = re.match(r'^new-char\s+(\S+)', line)
+        if newchar_match:
+            result["newCharForm"] = newchar_match.group(1).rstrip('.')
+            continue
+
+        # Check for name entries like "(name- heart 忄 xīn)"
+        if line.startswith("(name-") and line.endswith(")"):
+            # Extract content between "(name-" and ")"
+            name_content = line[6:-1].strip()  # Remove "(name-" and ")"
+
+            # Try to parse: "description char pronunciation"
+            # Split by spaces to find components
+            parts = name_content.split()
+            if len(parts) >= 2:
+                # Last part might be pronunciation, second to last is character
+                char = parts[-2]
+                pronunciation = parts[-1] if len(parts) >= 2 else None
+
+                # Everything before character is the description
+                description = " ".join(parts[:-2]) if len(parts) > 2 else parts[0]
+
+                result["names"].append({
+                    "name": description,
+                    "character": char,
+                    "pronunciation": pronunciation
+                })
+
+        # Check for component entries like "from door 户戶戸 hù and"
+        elif line.startswith("from "):
+            # Collect all parts of this component (may span multiple lines)
+            component_lines = [line]
+
+            # If this line ends with "and", the next line continues the component description
+            while line.endswith(" and") and i < len(lines):
+                line = lines[i].strip()
+                i += 1
+                if line and not line.startswith("(") and not re.match(r'^[A-Z]\d+', line):
+                    component_lines.append(line)
+                else:
+                    # This line is not part of the component, put it back
+                    i -= 1
+                    break
+
+            # Parse each component line
+            for comp_line in component_lines:
+                comp_text = comp_line
+
+                # Remove "from " prefix from first line
+                if comp_text.startswith("from "):
+                    comp_text = comp_text[5:].strip()
+
+                # Remove trailing "and" or "." if present
+                if comp_text.endswith(" and"):
+                    comp_text = comp_text[:-4].strip()
+                elif comp_text.endswith("."):
+                    comp_text = comp_text[:-1].strip()
+
+                # Check for markers in parentheses (rem-, rem+, not-)
+                markers: Dict[str, Any] = {}
+
+                # Extract (rem- X) pattern
+                rem_minus_match = re.search(r'\(rem-\s+([^)]+)\)', comp_text)
+                if rem_minus_match:
+                    markers["removed"] = rem_minus_match.group(1).strip()
+
+                # Extract (rem+ X) pattern
+                rem_plus_match = re.search(r'\(rem\+\s+([^)]+)\)', comp_text)
+                if rem_plus_match:
+                    markers["added"] = rem_plus_match.group(1).strip()
+
+                # Extract (not- X) pattern
+                not_match = re.search(r'\(not-\s+([^)]+)\)', comp_text)
+                if not_match:
+                    markers["not"] = not_match.group(1).strip()
+
+                # Remove all parenthetical notes for cleaner parsing
+                comp_text = re.sub(r'\([^)]+\)', '', comp_text).strip()
+
+                # Check if this is a phonetic component (contains "phonetic" anywhere)
+                is_phonetic = "phonetic" in comp_text.lower()
+
+                # If it starts with "phonetic ", remove that prefix for cleaner description
+                if comp_text.startswith("phonetic "):
+                    comp_text = comp_text[9:].strip()
+                # Also handle "related phonetic" by removing just "related " prefix
+                elif comp_text.startswith("related phonetic "):
+                    comp_text = comp_text[8:].strip()  # Remove "related "
+
+                # Parse the component text
+                # Pattern: "quantity description characters pronunciation"
+                # e.g., "three tree 木 mù" or "two person-right 匕 bǐ"
+
+                # Split into parts
+                parts = comp_text.split()
+                if len(parts) >= 2:
+                    # Check for quantity words at the start
+                    quantity = None
+                    quantity_words = ["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
+                    if parts[0].lower() in quantity_words:
+                        quantity = parts[0]
+                        parts = parts[1:]  # Remove quantity from parts
+
+                    # Last part is likely pronunciation (pinyin)
+                    pronunciation = parts[-1] if parts else ""
+
+                    # Find where Chinese characters start (they'll be consecutive)
+                    # Work backwards from second-to-last part
+                    char_start_idx = len(parts) - 2 if len(parts) >= 2 else 0
+                    while char_start_idx > 0 and any('\u4e00' <= c <= '\u9fff' for c in parts[char_start_idx - 1]):
+                        char_start_idx -= 1
+
+                    # Everything from char_start_idx to -1 (exclusive) is characters
+                    characters = " ".join(parts[char_start_idx:-1]) if len(parts) >= 2 else ""
+                    # Everything before is description
+                    description = " ".join(parts[:char_start_idx]) if char_start_idx > 0 else parts[0] if parts else ""
+
+                    component_entry: Dict[str, Any] = {
+                        "description": description,
+                        "characters": characters,
+                        "component": extract_best_character(characters) if characters else "",
+                        "pronunciation": pronunciation
+                    }
+
+                    if quantity:
+                        component_entry["quantity"] = quantity
+
+                    if is_phonetic:
+                        component_entry["role"] = "phonetic"
+
+                    # Add markers if present
+                    if markers:
+                        component_entry["markers"] = markers
+
+                    result["components"].append(component_entry)
+
+        # Lines starting with capital letters followed by numbers are likely reference codes
+        elif re.match(r'^[A-Z]\d+', line):
+            notes_lines.append(line)
+
+    # Add notes if any
+    if notes_lines:
+        result["notes"] = " ".join(notes_lines)
+
+    # Add simplification rules if any
+    if simplification_rules:
+        result["simplificationRules"] = simplification_rules
+
+    # Add cross-references if any
+    if cross_references:
+        result["crossReferences"] = cross_references
+
+    return result
+
+
 def convert_character_info(character_info: list[str]) -> Dict[str, str]:
     """
     Convert characterInfo array into a dictionary with plain text values.
@@ -272,6 +693,29 @@ def convert_character_info(character_info: list[str]) -> Dict[str, str]:
                 result[f"_unlabeled_{i}"] = text
 
     return result
+
+
+def needs_rebuild(input_path: Path, output_path: Path) -> bool:
+    """
+    Check if the output file needs to be rebuilt based on modification times.
+
+    Args:
+        input_path: Path to input JSON file
+        output_path: Path to output JSON file
+
+    Returns:
+        True if the file needs to be rebuilt, False otherwise
+    """
+    # If output doesn't exist, we need to rebuild
+    if not output_path.exists():
+        return True
+
+    # Compare modification times
+    input_mtime = input_path.stat().st_mtime
+    output_mtime = output_path.stat().st_mtime
+
+    # Rebuild if input is newer than output
+    return input_mtime > output_mtime
 
 
 def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
@@ -307,10 +751,15 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         etymology_chars = data.get('etymologyCharacters', '')
         converted_etymology = convert_etymology_characters(etymology_chars, etymology_images) if etymology_chars else {}
 
+        # Parse character decomposition
+        decomposition_text = converted.get('Character decomposition 字形分解', '')
+        character_decomposition = parse_character_decomposition(decomposition_text)
+
         # Create output structure
         output_data = {
             'characterInfo': converted,
-            'etymologyCharacters': converted_etymology
+            'etymologyCharacters': converted_etymology,
+            'characterDecomposition': character_decomposition
         }
 
         # Write output
@@ -345,19 +794,28 @@ def main():
         print(f"No JSON files found in {raw_dir}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Found {len(json_files)} JSON files to process\n")
+    print(f"Found {len(json_files)} JSON files\n")
 
     # Process each file
     errors = 0
-    total_images = 0
+    processed = 0
+    skipped = 0
     for json_file in json_files:
         output_file = output_dir / json_file.name
+
+        # Check if rebuild is needed
+        if not needs_rebuild(json_file, output_file):
+            skipped += 1
+            continue
+
         try:
             process_file(json_file, output_file, images_dir)
+            processed += 1
         except Exception:
             errors += 1
 
-    print(f"\nProcessed {len(json_files)} files")
+    print(f"\nProcessed: {processed} files")
+    print(f"Skipped: {skipped} files (already up-to-date)")
     if errors:
         print(f"Errors: {errors}", file=sys.stderr)
         sys.exit(1)
