@@ -18,7 +18,7 @@ export function useHanziYuanCharacter(char: string): UseHanziYuanCharacterResult
       throw new Error("No character provided");
     }
 
-    const res = await fetch(`/data/hanziyuan/raw/${character}.json`);
+    const res = await fetch(`/data/hanziyuan/converted/${character}.json`);
     if (!res.ok) {
       throw new Error(`Failed to load character "${character}": ${res.statusText}`);
     }

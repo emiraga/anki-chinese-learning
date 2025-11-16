@@ -451,6 +451,99 @@ def extract_simplification_rules(line: str) -> Dict[str, Any]:
     return result
 
 
+def parse_decomposition_notes(notes_text: str) -> Dict[str, Any]:
+    """
+    Parse the "Decomposition notes" field into structured data.
+
+    Patterns found:
+    - (- explanation) - Parenthetical explanatory notes
+    - A### characters - Rule references with related characters
+    - see characters - Cross-references
+    - (original-, inversion-, Kangxi, etc.) - Special markers
+    - char pinyin - Related character references
+    - Plain text - General explanations
+
+    Args:
+        notes_text: The decomposition notes text
+
+    Returns:
+        Dictionary with structured notes data
+    """
+    if not notes_text or notes_text.strip() in ["Not applicable.", "Not applicable", "/"]:
+        return {}
+
+    lines = notes_text.strip().split('\n')
+    result: Dict[str, Any] = {}
+    explanatory_notes = []
+    rule_references = []
+    cross_references = []
+    related_characters = []
+    special_markers = []
+    plain_text = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Check for explanatory notes: (- text)
+        if line.startswith('(-'):
+            # Extract the note content
+            note = line.strip('()')
+            if note.startswith('- '):
+                note = note[2:].strip()
+            explanatory_notes.append(note)
+
+        # Check for rule references: A### or similar pattern
+        elif re.match(r'^[A-Z]\d+\s+', line):
+            # Parse rule reference line
+            match = re.match(r'^([A-Z]\d+)\s+(.+)', line)
+            if match:
+                rule_code = match.group(1)
+                characters_part = match.group(2).strip()
+                rule_references.append({
+                    "code": rule_code,
+                    "characters": characters_part
+                })
+
+        # Check for cross-references: "see characters" or "(- see characters)"
+        elif 'see ' in line.lower():
+            # Extract the referenced characters
+            see_match = re.search(r'see\s+([^\)]+)', line, re.IGNORECASE)
+            if see_match:
+                ref_chars = see_match.group(1).strip()
+                cross_references.append(ref_chars)
+
+        # Check for special markers in parentheses
+        elif line.startswith('(') and line.endswith(')'):
+            marker = line.strip('()')
+            special_markers.append(marker)
+
+        # Check for character references: char pinyin (single line)
+        elif re.search(r'[\u4e00-\u9fff]\s+[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛ]+', line):
+            related_characters.append(line)
+
+        # Plain text explanation
+        else:
+            plain_text.append(line)
+
+    # Build result structure
+    if explanatory_notes:
+        result["explanations"] = explanatory_notes
+    if rule_references:
+        result["ruleReferences"] = rule_references
+    if cross_references:
+        result["crossReferences"] = cross_references
+    if related_characters:
+        result["relatedCharacters"] = related_characters
+    if special_markers:
+        result["specialMarkers"] = special_markers
+    if plain_text:
+        result["notes"] = plain_text
+
+    return result
+
+
 def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
     """
     Parse the "Character decomposition 字形分解" field into a structured format.
@@ -582,10 +675,15 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
 
             # If this line ends with "and", the next line continues the component description
             while line.endswith(" and") and i < len(lines):
-                line = lines[i].strip()
+                next_line = lines[i].strip()
                 i += 1
-                if line and not line.startswith("(") and not re.match(r'^[A-Z]\d+', line):
-                    component_lines.append(line)
+                # Continue collecting if it's a component line (even if it starts with parentheses)
+                # Stop if we hit a rule reference, variant-of, or other metadata
+                if next_line and not re.match(r'^[A-Z]\d+', next_line) and \
+                   not next_line.startswith("See ") and not next_line.startswith("see ") and \
+                   not next_line.startswith("(variant-of "):
+                    component_lines.append(next_line)
+                    line = next_line  # Update line for next iteration
                 else:
                     # This line is not part of the component, put it back
                     i -= 1
@@ -608,23 +706,62 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                 # Check for markers in parentheses (rem-, rem+, not-)
                 markers: Dict[str, Any] = {}
 
-                # Extract (rem- X) pattern
+                # Extract (rem- X) pattern - this extracts the character info from the marker
                 rem_minus_match = re.search(r'\(rem-\s+([^)]+)\)', comp_text)
                 if rem_minus_match:
-                    markers["removed"] = rem_minus_match.group(1).strip()
+                    marker_content = rem_minus_match.group(1).strip()
+                    # Parse the marker content: "char pronunciation" (e.g., "一 yī")
+                    marker_parts = marker_content.split()
+                    if len(marker_parts) >= 2:
+                        markers["removed"] = {
+                            "character": marker_parts[0],
+                            "pronunciation": marker_parts[1]
+                        }
+                    else:
+                        markers["removed"] = marker_content
 
                 # Extract (rem+ X) pattern
                 rem_plus_match = re.search(r'\(rem\+\s+([^)]+)\)', comp_text)
                 if rem_plus_match:
-                    markers["added"] = rem_plus_match.group(1).strip()
+                    marker_content = rem_plus_match.group(1).strip()
+                    marker_parts = marker_content.split()
+                    if len(marker_parts) >= 2:
+                        markers["added"] = {
+                            "character": marker_parts[0],
+                            "pronunciation": marker_parts[1]
+                        }
+                    else:
+                        markers["added"] = marker_content
 
                 # Extract (not- X) pattern
                 not_match = re.search(r'\(not-\s+([^)]+)\)', comp_text)
                 if not_match:
-                    markers["not"] = not_match.group(1).strip()
+                    marker_content = not_match.group(1).strip()
+                    marker_parts = marker_content.split()
+                    if len(marker_parts) >= 2:
+                        markers["not"] = {
+                            "character": marker_parts[0],
+                            "pronunciation": marker_parts[1]
+                        }
+                    else:
+                        markers["not"] = marker_content
 
                 # Remove all parenthetical notes for cleaner parsing
                 comp_text = re.sub(r'\([^)]+\)', '', comp_text).strip()
+
+                # If after removing markers, the line is empty, this was a marker-only component
+                # We still want to add it to show what was removed/added/negated
+                if not comp_text and markers:
+                    # Create a marker-only entry
+                    component_entry: Dict[str, Any] = {
+                        "description": "",
+                        "characters": "",
+                        "component": "",
+                        "pronunciation": "",
+                        "markers": markers
+                    }
+                    result["components"].append(component_entry)
+                    continue
 
                 # Check if this is a phonetic component (contains "phonetic" anywhere)
                 is_phonetic = "phonetic" in comp_text.lower()
@@ -823,11 +960,16 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         decomposition_text = converted.get('Character decomposition 字形分解', '')
         character_decomposition = parse_character_decomposition(decomposition_text)
 
+        # Parse decomposition notes
+        notes_text = converted.get('Decomposition notes 字形分解说明', '')
+        decomposition_notes = parse_decomposition_notes(notes_text)
+
         # Create output structure
         output_data = {
             'characterInfo': converted,
             'etymologyCharacters': converted_etymology,
-            'characterDecomposition': character_decomposition
+            'characterDecomposition': character_decomposition,
+            'decompositionNotes': decomposition_notes
         }
 
         # Write output
