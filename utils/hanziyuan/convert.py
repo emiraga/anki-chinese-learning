@@ -15,6 +15,11 @@ This script processes JSON files in public/data/hanziyuan/raw/ and converts:
    and liushutong character IDs organized by type
 3. "etymologyStyles" - extracts base64-encoded SVG images from inline CSS, saves them to
    public/data/hanziyuan/images/etymology/, and creates a mapping of etymology IDs to image paths
+
+Command line options:
+- --overwrite: Force rebuild all files, ignoring modification times
+- --character CHAR: Process only the specified character
+- --delete-invalid: Delete files that fail processing due to exceptions
 """
 
 import argparse
@@ -706,15 +711,30 @@ def convert_character_info(character_info: list[str]) -> Dict[str, str]:
 
     Returns:
         Dictionary mapping labels to plain text content
+
+    Raises:
+        ValueError: If duplicate labels are found (indicates multiple characters in one file)
     """
     result: Dict[str, Any] = {}
+    seen_labels: Dict[str, int] = {}  # Track labels and their first occurrence index
 
     for i, item in enumerate(character_info):
         extracted = extract_label_and_content(item)
 
         if extracted:
             label, content = extracted
+
+            # Check for duplicate labels
+            if label in result:
+                raise ValueError(
+                    f"Duplicate label '{label}' found in characterInfo at index {i}. "
+                    f"First occurrence at index {seen_labels[label]}. "
+                    f"This indicates the file contains data for multiple characters. "
+                    f"Previous value: '{result[label][:50]}...', New value: '{content[:50]}...'"
+                )
+
             result[label] = content
+            seen_labels[label] = i
         else:
             # If no label found, convert to plain text and store under numbered key
             text = html_to_text(item)
@@ -772,14 +792,23 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         character_info = data['characterInfo']
         converted = convert_character_info(character_info)
 
-        # Validate that filename character matches the traditional or simplified field
+        # Validate that filename character matches the traditional, simplified, or older traditional field
         traditional_field = converted.get('Traditional in your browser 繁体字的浏览器显示', '')
         simplified_field = converted.get('Simplified in your browser 简体字的浏览器显示', '')
+        older_traditional_field = converted.get('Older traditional characters 旧繁体字/异体字', '')
 
-        if character != traditional_field and character != simplified_field:
+        # Check if character matches exactly or is contained within the older traditional variants
+        is_valid = (
+            character == traditional_field or
+            character == simplified_field
+            or (character in older_traditional_field and character in ["裡", "眾"])
+        )
+
+        if not is_valid:
             raise ValueError(
                 f"Character mismatch in {input_path.name}: filename character '{character}' "
-                f"does not match traditional '{traditional_field}' or simplified '{simplified_field}'"
+                f"does not match traditional '{traditional_field}', simplified '{simplified_field}', "
+                f"or is not found in older traditional '{older_traditional_field}'"
             )
 
         # Extract and save etymology images first (to get the image map)
@@ -829,6 +858,11 @@ def main():
         type=str,
         help="Process only the specified character (e.g., --character 車)"
     )
+    parser.add_argument(
+        "--delete-invalid",
+        action="store_true",
+        help="Delete files that fail processing due to exceptions"
+    )
     args = parser.parse_args()
 
     # Set up paths
@@ -869,6 +903,7 @@ def main():
     errors = 0
     processed = 0
     skipped = 0
+    deleted = 0
     ignored_files = {"home.json", "news.json"}  # Non-character files to ignore
 
     for json_file in json_files:
@@ -889,10 +924,19 @@ def main():
             processed += 1
         except Exception:
             errors += 1
+            if args.delete_invalid:
+                try:
+                    json_file.unlink()
+                    deleted += 1
+                    print(f"✗ Deleted invalid file: {json_file.name}", file=sys.stderr)
+                except Exception as delete_error:
+                    print(f"Failed to delete {json_file.name}: {delete_error}", file=sys.stderr)
 
     print(f"\nProcessed: {processed} files")
     if not args.overwrite:
         print(f"Skipped: {skipped} files (already up-to-date)")
+    if args.delete_invalid and deleted > 0:
+        print(f"Deleted: {deleted} invalid files", file=sys.stderr)
     if errors:
         print(f"Errors: {errors}", file=sys.stderr)
         sys.exit(1)
