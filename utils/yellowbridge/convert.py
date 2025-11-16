@@ -426,6 +426,54 @@ def process_file(file_path: Path) -> Dict:
     return result
 
 
+def build_sounds_component_index(results: Dict[str, Dict]) -> Dict[str, Dict]:
+    """
+    Build an index mapping phonetic/sound components to characters that use them.
+
+    Args:
+        results: Dictionary mapping characters to their extracted data
+
+    Returns:
+        Dictionary mapping phonetic components to their usage information.
+    """
+    sounds_index = {}
+
+    for char, data in results.items():
+        phonetic_components = data.get('functionalComponents', {}).get('phonetic', [])
+
+        for phonetic in phonetic_components:
+            component_char = phonetic['character']
+
+            # Initialize entry for this phonetic component if not exists
+            if component_char not in sounds_index:
+                sounds_index[component_char] = {
+                    'component': {
+                        'character': component_char,
+                        'pinyin': phonetic.get('pinyin', []),
+                        'description': phonetic.get('description', '')
+                    },
+                    'appearsIn': []
+                }
+
+            # Add this character to the list of characters using this phonetic component
+            usage_info = {
+                'character': char,
+                'pinyin': data.get('pinyin', [])
+            }
+
+            # Include component-specific info if present
+            if phonetic.get('description'):
+                usage_info['componentDescription'] = phonetic['description']
+
+            sounds_index[component_char]['appearsIn'].append(usage_info)
+
+    # Sort the appearsIn lists by character for consistency
+    for component_data in sounds_index.values():
+        component_data['appearsIn'].sort(key=lambda x: x['character'])
+
+    return sounds_index
+
+
 def process_directory(
     input_dir: Path,
     output_file: Optional[Path] = None,
@@ -436,7 +484,7 @@ def process_directory(
 
     Args:
         input_dir: Directory containing raw JSON files
-        output_file: Optional output file path for processed data
+        output_file: Optional output file path for processed data (indexes only)
         individual_files_dir: Optional directory to write individual character files
 
     Returns:
@@ -504,12 +552,23 @@ def process_directory(
         for error in errors:
             print(f"  {error}")
 
-    # Write combined output if specified
+    # Build aggregated indexes
+    print(f"\nBuilding aggregated indexes...")
+    sounds_component_in = build_sounds_component_index(results)
+    print(f"  → soundsComponentIn: {len(sounds_component_in)} phonetic components")
+
+    # Write indexes to combined output file (not character data - that's in individual files)
     if output_file:
         output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Only output aggregated indexes, not individual character data
+        output_data = {
+            'soundsComponentIn': sounds_component_in
+        }
+
         with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, ensure_ascii=False, indent=2)
-        print(f"\nCombined output written to: {output_file}")
+            json.dump(output_data, f, ensure_ascii=False, indent=2)
+        print(f"\nIndexes written to: {output_file}")
 
     # Write individual files if specified
     if individual_files_dir:

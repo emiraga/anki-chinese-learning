@@ -7,6 +7,26 @@ export interface ComponentInfo {
   isAltered?: boolean;
 }
 
+export interface CharacterUsage {
+  character: string;
+  pinyin: string[];
+  componentDescription?: string;
+  isAltered?: boolean;
+}
+
+export interface SoundComponentEntry {
+  component: {
+    character: string;
+    pinyin: string[];
+    description: string;
+  };
+  appearsIn: CharacterUsage[];
+}
+
+export interface YellowBridgeIndexes {
+  soundsComponentIn: Record<string, SoundComponentEntry>;
+}
+
 export interface FunctionalComponents {
   phonetic: ComponentInfo[];
   semantic: ComponentInfo[];

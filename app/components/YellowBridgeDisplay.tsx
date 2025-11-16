@@ -2,7 +2,9 @@ import React from "react";
 import type {
   YellowBridgeCharacter,
   ComponentInfo,
+  CharacterUsage,
 } from "~/types/yellowbridge_character";
+import { useYellowBridgeIndexes } from "~/hooks/useYellowBridgeIndexes";
 
 interface YellowBridgeDisplayProps {
   character: YellowBridgeCharacter;
@@ -33,11 +35,36 @@ function ComponentBadge({ comp }: { comp: ComponentInfo }) {
   );
 }
 
+function CharacterUsageBadge({ usage }: { usage: CharacterUsage }) {
+  return (
+    <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+      <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
+        {usage.character}
+      </span>
+      {usage.isAltered && (
+        <span className="text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 px-1.5 py-0.5 rounded">
+          altered
+        </span>
+      )}
+      {usage.pinyin.length > 0 && (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          [{usage.pinyin.join(', ')}]
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
+  const { indexes, loading: indexesLoading } = useYellowBridgeIndexes();
   const hasPhonetic = character.functionalComponents.phonetic.length > 0;
   const hasSemantic = character.functionalComponents.semantic.length > 0;
   const hasPrimitive = character.functionalComponents.primitive.length > 0;
   const hasFormation = character.formationMethods.length > 0;
+
+  // Check if this character is used as a phonetic component in other characters
+  const soundComponentEntry = indexes?.soundsComponentIn[character.character];
+  const isPhoneticComponent = soundComponentEntry && soundComponentEntry.appearsIn.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
@@ -191,6 +218,25 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
                 Kangxi Radical #{character.radical.kangxiRadicalNumber}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Used as Phonetic Component */}
+        {!indexesLoading && isPhoneticComponent && soundComponentEntry && (
+          <div>
+            <h3 className="text-xl font-semibold mb-3 text-gray-800 dark:text-gray-200">
+              Used as Phonetic Component
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              This character appears as a phonetic (sound) component in{" "}
+              <span className="font-semibold">{soundComponentEntry.appearsIn.length}</span>{" "}
+              {soundComponentEntry.appearsIn.length === 1 ? "character" : "characters"}:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {soundComponentEntry.appearsIn.map((usage, idx) => (
+                <CharacterUsageBadge key={idx} usage={usage} />
+              ))}
+            </div>
           </div>
         )}
       </div>
