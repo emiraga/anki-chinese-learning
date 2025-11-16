@@ -116,8 +116,6 @@ def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter]:
 
         for i in range(0, len(note_ids), batch_size):
             batch = note_ids[i:i + batch_size]
-            print(f"  Processing batch {i // batch_size + 1}/{(len(note_ids) + batch_size - 1) // batch_size} ({i + len(batch)}/{len(note_ids)} notes)...")
-
             try:
                 notes_info = get_notes_info_batch(batch)
 
