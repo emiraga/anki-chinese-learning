@@ -17,6 +17,7 @@ This script processes JSON files in public/data/hanziyuan/raw/ and converts:
    public/data/hanziyuan/images/etymology/, and creates a mapping of etymology IDs to image paths
 """
 
+import argparse
 import base64
 import json
 import re
@@ -171,7 +172,7 @@ def convert_etymology_characters(etymology_html: str, image_map: Dict[str, str])
         each containing items with id and image path
 
     Raises:
-        ValueError: If an unexpected character type is found
+        ValueError: If an unexpected character type is found or if images are missing for etymology IDs
     """
     soup = BeautifulSoup(etymology_html, 'lxml')
 
@@ -195,10 +196,27 @@ def convert_etymology_characters(etymology_html: str, image_map: Dict[str, str])
             )
 
     # Parse each section using the defined types
-    return {
+    result = {
         key: parse_etymology_section(soup, header_text, image_map)
         for key, header_text in character_types.items()
     }
+
+    # Validate: Check if any etymology IDs are missing images
+    missing_images = []
+    for section_name, section_data in result.items():
+        for item in section_data.get("items", []):
+            if item["id"] and not item["image"]:
+                missing_images.append((section_name, item["id"]))
+
+    if missing_images:
+        missing_list = ", ".join(f"{section}:{id}" for section, id in missing_images)
+        raise ValueError(
+            f"Missing images for etymology IDs in etymologyStyles CSS: {missing_list}. "
+            f"Found {len(missing_images)} etymology ID(s) in HTML that don't have corresponding "
+            f"inline style definitions."
+        )
+
+    return result
 
 
 def extract_etymology_images(etymology_styles: str, character: str, images_dir: Path) -> Dict[str, str]:
@@ -212,6 +230,9 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
 
     Returns:
         Dictionary mapping etymology IDs to image paths (relative to public/)
+
+    Raises:
+        ValueError: If character is not '車' and image ID 'J29285' is found (indicates wrong file)
     """
     if not etymology_styles:
         return {}
@@ -243,6 +264,14 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
 
         except Exception as e:
             print(f"Warning: Failed to decode image for {etymology_id}: {e}", file=sys.stderr)
+
+    # Validate: J29285 should only appear for character '車'
+    if "J29285" in result and character != "車":
+        raise ValueError(
+            f"Image ID 'J29285' found for character '{character}'. "
+            f"This ID should only appear for character '車'. "
+            f"This indicates the wrong file data was loaded."
+        )
 
     return result
 
@@ -743,6 +772,16 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         character_info = data['characterInfo']
         converted = convert_character_info(character_info)
 
+        # Validate that filename character matches the traditional or simplified field
+        traditional_field = converted.get('Traditional in your browser 繁体字的浏览器显示', '')
+        simplified_field = converted.get('Simplified in your browser 简体字的浏览器显示', '')
+
+        if character != traditional_field and character != simplified_field:
+            raise ValueError(
+                f"Character mismatch in {input_path.name}: filename character '{character}' "
+                f"does not match traditional '{traditional_field}' or simplified '{simplified_field}'"
+            )
+
         # Extract and save etymology images first (to get the image map)
         etymology_styles = data.get('etymologyStyles', '')
         etymology_images = extract_etymology_images(etymology_styles, character, images_dir)
@@ -776,6 +815,22 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
 
 def main():
     """Main function to process all JSON files in the raw directory."""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Convert Hanziyuan JSON files by extracting and structuring character data."
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Force rebuild all files, ignoring modification times"
+    )
+    parser.add_argument(
+        "--character",
+        type=str,
+        help="Process only the specified character (e.g., --character 車)"
+    )
+    args = parser.parse_args()
+
     # Set up paths
     script_dir = Path(__file__).parent
     project_root = script_dir.parent.parent
@@ -788,23 +843,44 @@ def main():
         sys.exit(1)
 
     # Get all JSON files
-    json_files = sorted(raw_dir.glob("*.json"))
+    if args.character:
+        # Process only the specified character
+        json_file = raw_dir / f"{args.character}.json"
+        if not json_file.exists():
+            print(f"Error: File not found for character '{args.character}': {json_file}", file=sys.stderr)
+            sys.exit(1)
+        json_files = [json_file]
+        print(f"Processing single character: {args.character}")
+    else:
+        json_files = sorted(raw_dir.glob("*.json"))
 
     if not json_files:
         print(f"No JSON files found in {raw_dir}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Found {len(json_files)} JSON files\n")
+    if not args.character:
+        print(f"Found {len(json_files)} JSON files")
+        if args.overwrite:
+            print("Overwrite mode: rebuilding all files\n")
+        else:
+            print("Incremental mode: rebuilding only changed files\n")
 
     # Process each file
     errors = 0
     processed = 0
     skipped = 0
+    ignored_files = {"home.json", "news.json"}  # Non-character files to ignore
+
     for json_file in json_files:
+        # Skip ignored files
+        if json_file.name in ignored_files:
+            skipped += 1
+            continue
+
         output_file = output_dir / json_file.name
 
-        # Check if rebuild is needed
-        if not needs_rebuild(json_file, output_file):
+        # Check if rebuild is needed (skip check if overwrite flag is set)
+        if not args.overwrite and not needs_rebuild(json_file, output_file):
             skipped += 1
             continue
 
@@ -815,7 +891,8 @@ def main():
             errors += 1
 
     print(f"\nProcessed: {processed} files")
-    print(f"Skipped: {skipped} files (already up-to-date)")
+    if not args.overwrite:
+        print(f"Skipped: {skipped} files (already up-to-date)")
     if errors:
         print(f"Errors: {errors}", file=sys.stderr)
         sys.exit(1)
