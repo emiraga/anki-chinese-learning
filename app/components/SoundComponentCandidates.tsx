@@ -1,16 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { DongCharacter } from "~/types/dong_character";
 import type { YellowBridgeCharacter } from "~/types/yellowbridge_character";
-import anki from "~/apis/anki";
-import {
-  type SoundComponentCandidate,
-  getAllComponentsRecursive,
-  extractYellowBridgePhoneticComponents,
-  mergeCandidates,
-  sortCandidates,
-} from "~/utils/sound_component_helpers";
+import { updateSoundComponentInAnki } from "~/utils/sound_component_helpers";
 import { CandidateBadge } from "~/components/CandidateBadge";
 import { ScoreLegend } from "~/components/ScoreLegend";
+import { useSoundComponentCandidates } from "~/hooks/useSoundComponentCandidates";
 
 interface SoundComponentCandidatesProps {
   mainCharacter: string;
@@ -31,62 +25,15 @@ export function SoundComponentCandidates({
   ankiId,
   onUpdate,
 }: SoundComponentCandidatesProps) {
-  const [candidates, setCandidates] = useState<SoundComponentCandidate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Load candidates when data changes
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCandidates = async () => {
-      setIsLoading(true);
-
-      let dongCandidates: SoundComponentCandidate[] = [];
-      let ybCandidates: SoundComponentCandidate[] = [];
-
-      // Get Dong candidates
-      if (dongCharacter) {
-        try {
-          dongCandidates = await getAllComponentsRecursive(
-            dongCharacter,
-            mainCharPinyin,
-            0,
-            new Set([mainCharacter]),
-          );
-        } catch {
-          // Error loading Dong candidates
-        }
-      }
-
-      // Get YellowBridge candidates
-      if (yellowBridgeCharacter) {
-        try {
-          ybCandidates = extractYellowBridgePhoneticComponents(
-            yellowBridgeCharacter,
-            mainCharPinyin,
-          );
-        } catch {
-          // Error loading YellowBridge candidates
-        }
-      }
-
-      // Merge, deduplicate, and sort candidates
-      const mergedCandidates = mergeCandidates(dongCandidates, ybCandidates);
-      const sortedCandidates = sortCandidates(mergedCandidates);
-
-      if (!cancelled) {
-        setCandidates(sortedCandidates);
-        setIsLoading(false);
-      }
-    };
-
-    loadCandidates();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [dongCharacter, yellowBridgeCharacter, mainCharacter, mainCharPinyin]);
+  // Load candidates using custom hook
+  const { candidates, isLoading } = useSoundComponentCandidates({
+    mainCharacter,
+    mainCharPinyin,
+    dongCharacter,
+    yellowBridgeCharacter,
+  });
 
   const setSoundComponent = async (candidateChar: string) => {
     if (!ankiId) {
@@ -96,12 +43,7 @@ export function SoundComponentCandidates({
 
     setIsUpdating(true);
     try {
-      await anki.note.updateNoteFields({
-        note: {
-          id: ankiId,
-          fields: { "Sound component character": candidateChar },
-        },
-      });
+      await updateSoundComponentInAnki(ankiId, candidateChar);
       if (onUpdate) {
         onUpdate();
       }

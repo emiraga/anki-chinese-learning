@@ -4,18 +4,15 @@ import { useDongCharacter } from "~/hooks/useDongCharacter";
 import MainFrame from "~/toolbar/frame";
 import { useEffect, useState, useMemo } from "react";
 import { CharLink } from "~/components/CharCard";
-import anki from "~/apis/anki";
 import { Tabs } from "~/components/Tabs";
 import {
   type SoundComponentCandidate,
   fetchDongCharacter,
   fetchYellowBridgeCharacter,
-  getAllComponentsRecursive,
-  extractYellowBridgePhoneticComponents,
-  mergeCandidates,
-  sortCandidates,
+  loadSoundComponentCandidates,
   getScoreBadgeClasses,
   getCharacterPinyin,
+  updateSoundComponentInAnki,
 } from "~/utils/sound_component_helpers";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 import { CandidateBadge } from "~/components/CandidateBadge";
@@ -71,15 +68,11 @@ function CharacterRow({
 
     setIsUpdating(true);
     try {
-      await anki.note.updateNoteFields({
-        note: {
-          id: ankiId,
-          fields: { "Sound component character": candidateChar },
-        },
-      });
+      await updateSoundComponentInAnki(ankiId, candidateChar);
       onSoundComponentUpdate(character);
     } catch (error) {
       alert(`Failed to update sound component: ${error}`);
+    } finally {
       setIsUpdating(false);
     }
   };
@@ -195,35 +188,13 @@ export default function SoundEval() {
           fetchYellowBridgeCharacter(char.traditional),
         ]);
 
-        let dongCandidates: SoundComponentCandidate[] = [];
-        let ybCandidates: SoundComponentCandidate[] = [];
-
-        // Get Dong candidates
-        if (dongChar) {
-          try {
-            dongCandidates = await getAllComponentsRecursive(
-              dongChar,
-              charPinyin,
-              0,
-              new Set([char.traditional]),
-            );
-          } catch {
-            // Error loading Dong candidates
-          }
-        }
-
-        // Get YellowBridge candidates
-        if (ybChar) {
-          try {
-            ybCandidates = extractYellowBridgePhoneticComponents(ybChar, charPinyin);
-          } catch {
-            // Error loading YellowBridge candidates
-          }
-        }
-
-        // Merge, deduplicate, and sort candidates
-        const mergedCandidates = mergeCandidates(dongCandidates, ybCandidates);
-        const candidates = sortCandidates(mergedCandidates);
+        // Load and process candidates using helper function
+        const candidates = await loadSoundComponentCandidates(
+          char.traditional,
+          charPinyin,
+          dongChar,
+          ybChar,
+        );
 
         const maxScore = candidates.length > 0 ? candidates[0].score : 0;
 

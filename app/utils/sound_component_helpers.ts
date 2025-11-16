@@ -326,3 +326,57 @@ export function getCharacterPinyin(char: string, dongChar?: DongCharacter | null
 
   return "";
 }
+
+// Update sound component character in Anki
+export async function updateSoundComponentInAnki(
+  ankiId: number,
+  soundComponentChar: string,
+): Promise<void> {
+  // Dynamic import to avoid circular dependency and keep anki in client-side only
+  const anki = (await import("~/apis/anki")).default;
+
+  await anki.note.updateNoteFields({
+    note: {
+      id: ankiId,
+      fields: { "Sound component character": soundComponentChar },
+    },
+  });
+}
+
+// Load sound component candidates for a character (non-hook version for use in loops)
+export async function loadSoundComponentCandidates(
+  mainCharacter: string,
+  mainCharPinyin: string,
+  dongChar?: DongCharacter | null,
+  ybChar?: YellowBridgeCharacter | null,
+): Promise<SoundComponentCandidate[]> {
+  let dongCandidates: SoundComponentCandidate[] = [];
+  let ybCandidates: SoundComponentCandidate[] = [];
+
+  // Get Dong candidates
+  if (dongChar) {
+    try {
+      dongCandidates = await getAllComponentsRecursive(
+        dongChar,
+        mainCharPinyin,
+        0,
+        new Set([mainCharacter]),
+      );
+    } catch (err) {
+      console.error("Error loading Dong candidates:", err);
+    }
+  }
+
+  // Get YellowBridge candidates
+  if (ybChar) {
+    try {
+      ybCandidates = extractYellowBridgePhoneticComponents(ybChar, mainCharPinyin);
+    } catch (err) {
+      console.error("Error loading YellowBridge candidates:", err);
+    }
+  }
+
+  // Merge, deduplicate, and sort candidates
+  const mergedCandidates = mergeCandidates(dongCandidates, ybCandidates);
+  return sortCandidates(mergedCandidates);
+}
