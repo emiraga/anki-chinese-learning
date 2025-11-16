@@ -48,6 +48,7 @@ BLACKLISTED_CHARS = {
     '，',
     '）',
     '。',
+    '𮎷',
 }
 
 
