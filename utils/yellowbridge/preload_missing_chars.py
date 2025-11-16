@@ -22,6 +22,8 @@ from typing import Set
 from urllib.parse import quote
 import requests
 from collections import Counter
+import subprocess
+import sys
 
 # Characters that cannot be loaded from YellowBridge
 BLACKLISTED_CHARS = {
@@ -499,10 +501,37 @@ def main():
         return 1
 
     print(f"✅ All {len(chars_to_open)} raw JSON files verified successfully")
-    print("\nNext steps:")
-    print("1. Run the convert.py script to process the new data")
 
-    return 0
+    # Run the convert.py script to process the new data
+    print(f"\n{'='*60}")
+    print("Running convert.py to process the new data...")
+    print(f"{'='*60}\n")
+
+    convert_script = Path(__file__).parent / "convert.py"
+
+    try:
+        # Run convert.py and stream output in real time
+        result = subprocess.run(
+            [sys.executable, str(convert_script)],
+            cwd=Path.cwd(),
+            check=True
+        )
+
+        print(f"\n{'='*60}")
+        print("✅ Successfully processed all new character data")
+        print(f"{'='*60}")
+
+        return result.returncode
+
+    except subprocess.CalledProcessError as e:
+        print(f"\n{'='*60}")
+        print(f"❌ ERROR: convert.py failed with exit code {e.returncode}")
+        print(f"{'='*60}")
+        return e.returncode
+    except FileNotFoundError:
+        print(f"\n❌ ERROR: Could not find convert.py at {convert_script}")
+        print("\nPlease run the convert.py script manually to process the new data")
+        return 1
 
 
 if __name__ == '__main__':

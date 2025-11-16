@@ -540,6 +540,34 @@ def main():
     print(f"Failed: {failure_count}")
     print(f"Data saved to: {rtega_data_dir}/")
 
+    # Run parse script if any files were successfully downloaded
+    if success_count > 0:
+        print(f"\n{'='*60}")
+        print("Running parse_rtega_html.py to process downloaded files...")
+        print(f"{'='*60}\n")
+
+        parse_script = script_dir / "parse_rtega_html.py"
+
+        try:
+            # Run the parse script with real-time output
+            result = subprocess.run(
+                [str(parse_script)],
+                cwd=project_root,
+                text=True
+            )
+
+            print(f"\n{'='*60}")
+            if result.returncode == 0:
+                print("✓ Parse script completed successfully")
+            else:
+                print(f"✗ Parse script exited with code {result.returncode}")
+            print(f"{'='*60}")
+
+        except FileNotFoundError:
+            print(f"Error: Parse script not found at {parse_script}")
+        except Exception as e:
+            print(f"Error running parse script: {e}")
+
 
 if __name__ == "__main__":
     main()

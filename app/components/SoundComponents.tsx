@@ -166,7 +166,7 @@ function SoundComponentGroup({
           return (
             <div
               key={char.traditional}
-              className="relative flex items-center gap-2"
+              className="relative flex items-center gap-2 w-52"
             >
               {score !== null && (
                 <div
@@ -228,7 +228,7 @@ function SoundComponentGroup({
                 : null;
 
             return (
-              <div key={char.traditional} className="relative">
+              <div key={char.traditional} className="relative w-52">
                 {score !== null && (
                   <div
                     className={`px-1.5 py-0.5 w-26 rounded text-xs  ${getScoreBgColor(score)} `}

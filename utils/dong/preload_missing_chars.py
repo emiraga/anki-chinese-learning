@@ -15,6 +15,7 @@ from pathlib import Path
 import urllib.parse
 from collections import Counter
 import argparse
+import subprocess
 
 
 def anki_connect_request(action, params=None):
@@ -424,8 +425,73 @@ def main():
 
     print(f"\n{'='*60}")
     print("Done! All browser tabs opened.")
-    print(f"Please download the data for these {len(missing_sorted)} characters.")
-    print(f"Data should be saved to: {dong_data_dir}/")
+    print(f"\n{'='*60}")
+    print("NEXT STEPS - Download the database:")
+    print("1. In your browser, press Cmd+Shift+J (Mac) or Ctrl+Shift+J (Windows/Linux) to open Developer Console")
+    print("2. Go to the 'Application' tab (or 'Storage' tab in Firefox)")
+    print("3. In the left sidebar, expand 'IndexedDB'")
+    print("4. Find and expand the database (likely named 'keyvaluepairs' or similar)")
+    print("5. Right-click on the database and select 'Export' or 'Save'")
+    print("6. Save the file to your ~/Downloads/ folder")
+    print(f"\nThe populate script will look for: ~/Downloads/keyvaluepairs-*")
+    print(f"Data will be saved to: {dong_data_dir}/")
+
+    print(f"\n{'='*60}")
+    response = input("Have you downloaded the database file to ~/Downloads/? (y/N): ")
+
+    if response.lower() != 'y':
+        print("\nNo problem! When you're ready, you can manually run:")
+        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+        return
+
+    # Run the populate script
+    print(f"\n{'='*60}")
+    print("Running populate script...")
+    print(f"{'='*60}\n")
+
+    populate_script = script_dir / "populate_dong_chars.py"
+    downloads_pattern = str(Path.home() / "Downloads" / "keyvaluepairs-*")
+
+    try:
+        # Run the populate script and stream output in real-time
+        process = subprocess.Popen(
+            [str(populate_script), downloads_pattern],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+
+        # Stream output line by line
+        if process.stdout:
+            for line in process.stdout:
+                print(line, end='')
+
+        # Wait for process to complete
+        return_code = process.wait()
+
+        if return_code == 0:
+            print(f"\n{'='*60}")
+            print("SUCCESS! Cleaning up downloaded files...")
+            # Remove the downloaded files
+            cleanup_cmd = f"rm -f {downloads_pattern}"
+            subprocess.run(cleanup_cmd, shell=True, check=True)
+            print("Download files removed.")
+            print(f"{'='*60}")
+        else:
+            print(f"\n{'='*60}")
+            print(f"ERROR: Populate script failed with return code {return_code}")
+            print("Downloaded files were NOT removed.")
+            print(f"{'='*60}")
+
+    except FileNotFoundError:
+        print(f"ERROR: Could not find populate script at: {populate_script}")
+        print("Please run manually:")
+        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+    except Exception as e:
+        print(f"ERROR: Failed to run populate script: {e}")
+        print("Please run manually:")
+        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
 
 
 if __name__ == "__main__":
