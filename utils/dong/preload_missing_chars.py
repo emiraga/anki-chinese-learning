@@ -16,6 +16,7 @@ from collections import Counter
 import argparse
 import subprocess
 import sys
+import glob
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -234,10 +235,29 @@ def main():
     populate_script = script_dir / "populate_dong_chars.py"
     downloads_pattern = str(Path.home() / "Downloads" / "keyvaluepairs-*")
 
+    # Expand the wildcard pattern to find actual files
+    matching_files = glob.glob(downloads_pattern)
+
+    if not matching_files:
+        print(f"ERROR: No files found matching pattern: {downloads_pattern}")
+        print("Please ensure the database file is downloaded to ~/Downloads/")
+        print("Then run manually:")
+        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+        return
+
+    if len(matching_files) > 1:
+        print(f"WARNING: Found {len(matching_files)} matching files:")
+        for f in matching_files:
+            print(f"  - {f}")
+        print("Using the first file...")
+
+    input_file = matching_files[0]
+    print(f"Using input file: {input_file}\n")
+
     try:
         # Run the populate script and stream output in real-time
         process = subprocess.Popen(
-            [str(populate_script), downloads_pattern],
+            [str(populate_script), input_file],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -255,10 +275,14 @@ def main():
         if return_code == 0:
             print(f"\n{'='*60}")
             print("SUCCESS! Cleaning up downloaded files...")
-            # Remove the downloaded files
-            cleanup_cmd = f"rm -f {downloads_pattern}"
-            subprocess.run(cleanup_cmd, shell=True, check=True)
-            print("Download files removed.")
+            # Remove all matching downloaded files
+            for file_path in matching_files:
+                try:
+                    os.remove(file_path)
+                    print(f"Removed: {file_path}")
+                except Exception as e:
+                    print(f"Warning: Could not remove {file_path}: {e}")
+            print("Download files cleanup complete.")
             print(f"{'='*60}")
         else:
             print(f"\n{'='*60}")
@@ -269,11 +293,11 @@ def main():
     except FileNotFoundError:
         print(f"ERROR: Could not find populate script at: {populate_script}")
         print("Please run manually:")
-        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+        print(f"  ./utils/dong/populate_dong_chars.py {input_file} && rm -f {input_file}")
     except Exception as e:
         print(f"ERROR: Failed to run populate script: {e}")
         print("Please run manually:")
-        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+        print(f"  ./utils/dong/populate_dong_chars.py {input_file} && rm -f {input_file}")
 
 
 if __name__ == "__main__":
