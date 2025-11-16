@@ -7,14 +7,19 @@
 # ]
 # ///
 """
-Convert Hanziyuan JSON files by extracting characterInfo into a structured dictionary.
+Convert Hanziyuan JSON files by extracting characterInfo and etymologyCharacters into structured dictionaries.
 
-This script processes JSON files in public/data/hanziyuan/raw/ and extracts the
-"characterInfo" field, converting it from an array of HTML-formatted strings into
-a clean dictionary mapping headers to their content.
+This script processes JSON files in public/data/hanziyuan/raw/ and converts:
+1. "characterInfo" - from an array of HTML strings to a dictionary mapping labels to content
+2. "etymologyCharacters" - from HTML to a structured dictionary with oracle, bronze, seal,
+   and liushutong character IDs organized by type
+3. "etymologyStyles" - extracts base64-encoded SVG images from inline CSS, saves them to
+   public/data/hanziyuan/images/etymology/, and creates a mapping of etymology IDs to image paths
 """
 
+import base64
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict
@@ -98,6 +103,150 @@ def extract_label_and_content(html_string: str) -> tuple[str, str] | None:
     return (label, content)
 
 
+def parse_etymology_section(soup: BeautifulSoup, header_text: str, image_map: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Parse a single etymology section (oracle, bronze, seal, or liushutong).
+
+    Args:
+        soup: BeautifulSoup object of the HTML
+        header_text: English text to search for in h3 headers (e.g., "Oracle characters")
+        image_map: Dictionary mapping etymology IDs to image paths
+
+    Returns:
+        Dictionary with chinese name, count, and list of items with id and image
+    """
+    # Find the h3 header containing the section title
+    for h3 in soup.find_all('h3'):
+        header_full = h3.get_text()
+        if header_text in header_full:
+            # Extract count from header like "Oracle characters 甲骨文 (13)"
+            count_match = re.search(r'\((\d+)\)', header_full)
+            count = int(count_match.group(1)) if count_match else 0
+
+            # Extract Chinese name
+            chinese_match = re.search(r'[\u4e00-\u9fff]+', header_full)
+            chinese_name = chinese_match.group(0) if chinese_match else ""
+
+            # Find all etymology IDs in the div elements
+            items = []
+            # Get the next sibling elements until we hit <hr>
+            current = h3.next_sibling
+            while current and current.name != 'hr':
+                if hasattr(current, 'find_all'):
+                    # Look for div elements with id starting with "etymology"
+                    for div in current.find_all('div', id=True):
+                        if div['id'].startswith('etymology'):
+                            # Extract the ID (everything after "etymology")
+                            etymology_id = div['id'].replace('etymology', '')
+                            items.append({
+                                "id": etymology_id,
+                                "image": image_map.get(etymology_id, "")
+                            })
+                current = current.next_sibling
+
+            return {
+                "chinese": chinese_name,
+                "count": count,
+                "items": items
+            }
+
+    # Return empty structure if section not found
+    return {
+        "chinese": "",
+        "count": 0,
+        "items": []
+    }
+
+
+def convert_etymology_characters(etymology_html: str, image_map: Dict[str, str]) -> Dict[str, Dict[str, Any]]:
+    """
+    Convert etymologyCharacters HTML into a structured dictionary.
+
+    Args:
+        etymology_html: HTML string containing etymology character sections
+        image_map: Dictionary mapping etymology IDs to image paths
+
+    Returns:
+        Dictionary with sections for oracle, bronze, seal, and liushutong characters,
+        each containing items with id and image path
+
+    Raises:
+        ValueError: If an unexpected character type is found
+    """
+    soup = BeautifulSoup(etymology_html, 'lxml')
+
+    # Define known character types
+    character_types = {
+        "oracle": "Oracle characters",
+        "bronze": "Bronze characters",
+        "seal": "Seal characters",
+        "liushutong": "Liushutong characters"
+    }
+
+    # Check for unexpected character types
+    known_type_names = set(character_types.values())
+    for h3 in soup.find_all('h3'):
+        header_text = h3.get_text()
+        # Check if this h3 matches any known type
+        if not any(known_type in header_text for known_type in known_type_names):
+            raise ValueError(
+                f"Unexpected etymology character type found in HTML: '{header_text.strip()}'. "
+                f"Known types are: {', '.join(sorted(known_type_names))}"
+            )
+
+    # Parse each section using the defined types
+    return {
+        key: parse_etymology_section(soup, header_text, image_map)
+        for key, header_text in character_types.items()
+    }
+
+
+def extract_etymology_images(etymology_styles: str, character: str, images_dir: Path) -> Dict[str, str]:
+    """
+    Extract base64-encoded images from etymologyStyles CSS and save them to files.
+
+    Args:
+        etymology_styles: CSS string with base64-encoded background images
+        character: The Chinese character (used for unique filenames)
+        images_dir: Directory to save image files
+
+    Returns:
+        Dictionary mapping etymology IDs to image paths (relative to public/)
+    """
+    if not etymology_styles:
+        return {}
+
+    # Create images directory if it doesn't exist
+    images_dir.mkdir(parents=True, exist_ok=True)
+
+    # Pattern to match: #etymologyID { background-image: url('data:image/svg+xml;base64,DATA') }
+    pattern = r'#etymology(\w+)\s*\{\s*background-image:\s*url\([\'"]data:image/svg\+xml;base64,([^\'"]+)[\'"]\)\s*\}'
+
+    result = {}
+    for match in re.finditer(pattern, etymology_styles):
+        etymology_id = match.group(1)  # e.g., "J29285"
+        base64_data = match.group(2)   # The base64-encoded SVG
+
+        # Create unique filename using character and etymology ID
+        filename = f"{character}_{etymology_id}.svg"
+        file_path = images_dir / filename
+
+        try:
+            # Decode base64 and write to file
+            svg_data = base64.b64decode(base64_data)
+            with open(file_path, 'wb') as f:
+                f.write(svg_data)
+
+            # Store the path relative to public/
+            relative_path = f"data/hanziyuan/images/etymology/{filename}"
+            result[etymology_id] = relative_path
+
+        except Exception as e:
+            print(f"Warning: Failed to decode image for {etymology_id}: {e}", file=sys.stderr)
+
+    return result
+
+
 def convert_character_info(character_info: list[str]) -> Dict[str, str]:
     """
     Convert characterInfo array into a dictionary with plain text values.
@@ -125,13 +274,14 @@ def convert_character_info(character_info: list[str]) -> Dict[str, str]:
     return result
 
 
-def process_file(input_path: Path, output_path: Path) -> None:
+def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
     """
     Process a single JSON file.
 
     Args:
         input_path: Path to input JSON file
         output_path: Path to output JSON file
+        images_dir: Directory to save extracted images
     """
     try:
         # Read the file
@@ -143,14 +293,24 @@ def process_file(input_path: Path, output_path: Path) -> None:
             print(f"Warning: No 'characterInfo' field in {input_path.name}", file=sys.stderr)
             return
 
+        # Get the character name from filename (e.g., "車.json" -> "車")
+        character = input_path.stem
+
         character_info = data['characterInfo']
         converted = convert_character_info(character_info)
 
-        # Create output structure - preserve other fields
+        # Extract and save etymology images first (to get the image map)
+        etymology_styles = data.get('etymologyStyles', '')
+        etymology_images = extract_etymology_images(etymology_styles, character, images_dir)
+
+        # Convert etymologyCharacters with image paths
+        etymology_chars = data.get('etymologyCharacters', '')
+        converted_etymology = convert_etymology_characters(etymology_chars, etymology_images) if etymology_chars else {}
+
+        # Create output structure
         output_data = {
             'characterInfo': converted,
-            'etymologyCharacters': data.get('etymologyCharacters', []),
-            'etymologyStyles': data.get('etymologyStyles', [])
+            'etymologyCharacters': converted_etymology
         }
 
         # Write output
@@ -158,7 +318,7 @@ def process_file(input_path: Path, output_path: Path) -> None:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(output_data, f, ensure_ascii=False, indent=2)
 
-        print(f"✓ Converted {input_path.name}")
+        print(f"✓ Converted {input_path.name} ({len(etymology_images)} images)")
 
     except Exception as e:
         print(f"Error processing {input_path.name}: {e}", file=sys.stderr)
@@ -172,6 +332,7 @@ def main():
     project_root = script_dir.parent.parent
     raw_dir = project_root / "public" / "data" / "hanziyuan" / "raw"
     output_dir = project_root / "public" / "data" / "hanziyuan" / "converted"
+    images_dir = project_root / "public" / "data" / "hanziyuan" / "images" / "etymology"
 
     if not raw_dir.exists():
         print(f"Error: Raw directory not found: {raw_dir}", file=sys.stderr)
@@ -188,10 +349,11 @@ def main():
 
     # Process each file
     errors = 0
+    total_images = 0
     for json_file in json_files:
         output_file = output_dir / json_file.name
         try:
-            process_file(json_file, output_file)
+            process_file(json_file, output_file, images_dir)
         except Exception:
             errors += 1
 
@@ -201,6 +363,7 @@ def main():
         sys.exit(1)
     else:
         print(f"Output directory: {output_dir}")
+        print(f"Images directory: {images_dir}")
 
 
 if __name__ == "__main__":
