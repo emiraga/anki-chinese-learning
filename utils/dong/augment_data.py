@@ -11,6 +11,8 @@ import os
 import sys
 from pathlib import Path
 import time
+import argparse
+from google.cloud import translate_v2 as translate
 
 # In-memory cache for translations
 _translation_cache: dict[str, str] = {}
@@ -140,9 +142,6 @@ def main():
     """
     Main function to process all dong JSON files.
     """
-    import argparse
-    from google.cloud import translate_v2 as translate
-
     parser = argparse.ArgumentParser(
         description='Add English translations to dong Chinese JSON files using Google Cloud Translation API'
     )

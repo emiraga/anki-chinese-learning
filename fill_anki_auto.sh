@@ -10,7 +10,7 @@ popd
 
 ./utils/hanzi/fill_hanzi_notes.py
 ./utils/props/fill_props_field.py
-./utils/dong/translate.py
+./utils/dong/augment_data.py
 ./utils/dong/download_images.py
 ./utils/dong/fill_dong_chinese.py
 ./utils/rtega/parse_rtega_html.py
