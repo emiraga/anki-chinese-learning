@@ -220,9 +220,10 @@ export default function SoundEval() {
     };
   }, [charsWithPinyin]);
 
-  // Categorize character data into three groups
+  // Categorize character data into four groups
   const categorizedData = useMemo(() => {
     const needsReview: CharacterData[] = [];
+    const hasSoundCandidates: CharacterData[] = [];
     const noSoundComponent: CharacterData[] = [];
     const alreadyCorrect: CharacterData[] = [];
 
@@ -238,9 +239,19 @@ export default function SoundEval() {
       if (ankiMatchesTopCandidate) {
         alreadyCorrect.push(data);
       }
-      // No sound component: Character has no sound component in Anki
+      // No sound component in Anki
       else if (!data.soundComponentChar) {
-        noSoundComponent.push(data);
+        // Has sound candidates: Character has no sound component in Anki but has at least one "sound" type candidate
+        const hasSoundTypeCandidate = data.candidates.some((candidate) =>
+          candidate.componentType.includes("sound"),
+        );
+        if (hasSoundTypeCandidate) {
+          hasSoundCandidates.push(data);
+        }
+        // No sound component: Character has no sound component in Anki and no "sound" type candidates
+        else {
+          noSoundComponent.push(data);
+        }
       }
       // Needs review: Has sound component but doesn't match top candidate, or has candidates
       else if (data.candidates.length > 0) {
@@ -248,7 +259,12 @@ export default function SoundEval() {
       }
     }
 
-    return { needsReview, noSoundComponent, alreadyCorrect };
+    return {
+      needsReview,
+      hasSoundCandidates,
+      noSoundComponent,
+      alreadyCorrect,
+    };
   }, [characterDataList]);
 
   // Get the data for the active tab
@@ -256,6 +272,8 @@ export default function SoundEval() {
     switch (activeTab) {
       case "needs-review":
         return categorizedData.needsReview;
+      case "has-sound-candidates":
+        return categorizedData.hasSoundCandidates;
       case "no-sound-component":
         return categorizedData.noSoundComponent;
       case "already-correct":
@@ -285,6 +303,11 @@ export default function SoundEval() {
               id: "needs-review",
               label: "Needs Review",
               count: categorizedData.needsReview.length,
+            },
+            {
+              id: "has-sound-candidates",
+              label: "Has Sound Candidates",
+              count: categorizedData.hasSoundCandidates.length,
             },
             {
               id: "no-sound-component",
