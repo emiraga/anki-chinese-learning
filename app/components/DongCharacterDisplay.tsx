@@ -1177,13 +1177,14 @@ function ComponentInSection({
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
           {sortedItems.map((item, index) => {
             const isKnown = characters[item.char];
-            const pinyins = item.pinyinFrequencies?.map(pf => pf.pinyin) || [];
+            const pinyins =
+              item.pinyinFrequencies?.map((pf) => pf.pinyin) || [];
             const pinyinDisplay = pinyins.join(", ");
             return (
               <CharLink
                 key={index}
                 traditional={item.char}
-                className={`flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!isKnown ? "opacity-30" : ""}`}
+                className={`flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!isKnown ? "opacity-60" : ""}`}
                 title={`${item.char}${pinyinDisplay ? ` (${pinyinDisplay})` : ""}${!isKnown ? " (Unknown)" : ""}`}
               >
                 <div className="text-5xl font-serif mb-2 dark:text-gray-100">
@@ -1229,9 +1230,7 @@ function ComponentInSection({
   );
 }
 
-export function DongCharacterDisplay({
-  character,
-}: DongCharacterDisplayProps) {
+export function DongCharacterDisplay({ character }: DongCharacterDisplayProps) {
   // Get known characters from context
   const { characters } = useOutletContext<OutletContext>();
 
@@ -1336,10 +1335,7 @@ export function DongCharacterDisplay({
       )}
 
       {/* Component In - Characters that use this character as a component */}
-      <ComponentInSection
-        character={character}
-        characters={characters}
-      />
+      <ComponentInSection character={character} characters={characters} />
 
       {/* Evolution Section */}
       {character.images &&
