@@ -137,5 +137,9 @@ export interface DongCharacter {
       bookCharCount?: number;
     };
     isVerified?: boolean;
+    pinyinFrequencies?: Array<{
+      pinyin: string;
+      count: number;
+    }>;
   }>;
 }

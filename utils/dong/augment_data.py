@@ -3,6 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "google-cloud-translate>=3.15.0",
+#   "pypinyin>=0.51.0",
 # ]
 # ///
 
@@ -13,9 +14,41 @@ from pathlib import Path
 import time
 import argparse
 from google.cloud import translate_v2 as translate
+from pypinyin import pinyin, Style
 
 # In-memory cache for translations
 _translation_cache: dict[str, str] = {}
+
+
+def get_pinyin_from_library(char: str) -> list:
+    """
+    Get pinyin for a character using pypinyin library as fallback.
+    Returns all possible pronunciations (heteronyms) if available.
+
+    Args:
+        char: Chinese character
+
+    Returns:
+        List of pinyinFrequencies format: [{"pinyin": "...", "count": 1}, ...]
+        Empty list if pinyin cannot be determined
+    """
+    if not char or len(char) != 1:
+        return []
+
+    try:
+        # Get pinyin with tone marks, including all possible pronunciations
+        result = pinyin(char, style=Style.TONE, heteronym=True)
+        if result and result[0]:
+            # pypinyin returns a list of lists: [['pronunciation1', 'pronunciation2', ...]]
+            pronunciations = result[0]
+            if pronunciations:
+                # Return all pronunciations in pinyinFrequencies format
+                # We don't have real frequency data, so we use count=1 for all
+                return [{"pinyin": p, "count": 1} for p in pronunciations]
+    except Exception as e:
+        print(f"Warning: Failed to get pinyin for '{char}': {e}")
+
+    return []
 
 
 def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
@@ -63,13 +96,73 @@ def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
                 raise Exception(f"Translation failed after {max_retries} attempts: {e}")
 
 
-def process_dong_file(file_path: Path, client, dry_run: bool = False) -> bool:
+def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True) -> dict[str, list]:
     """
-    Process a single dong JSON file and add English translations.
+    Build a mapping from character to pinyinFrequencies by reading all JSON files.
+    Also includes characters from the 'chars' array and pypinyin library as fallbacks.
+
+    Args:
+        dong_dir: Directory containing dong JSON files
+        use_pypinyin_fallback: Whether to use pypinyin library for missing characters
+
+    Returns:
+        Dictionary mapping character (str) to pinyinFrequencies (list)
+    """
+    char_to_pinyin: dict[str, list] = {}
+    all_componentIn_chars: set[str] = set()
+
+    # First pass: collect all data from files
+    for file_path in dong_dir.glob('*.json'):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Get the character and its pinyinFrequencies from root level
+            if 'char' in data and 'pinyinFrequencies' in data and data['pinyinFrequencies']:
+                char = data['char']
+                pinyin_freqs = data['pinyinFrequencies']
+                char_to_pinyin[char] = pinyin_freqs
+
+            # Also get pinyinFrequencies from chars array as fallback
+            if 'chars' in data and isinstance(data['chars'], list):
+                for char_obj in data['chars']:
+                    if 'char' in char_obj and 'pinyinFrequencies' in char_obj and char_obj['pinyinFrequencies']:
+                        char = char_obj['char']
+                        pinyin_freqs = char_obj['pinyinFrequencies']
+                        # Only add if not already present (root level takes precedence)
+                        if char not in char_to_pinyin:
+                            char_to_pinyin[char] = pinyin_freqs
+
+            # Collect all characters from componentIn for pypinyin fallback
+            if use_pypinyin_fallback and 'componentIn' in data and isinstance(data['componentIn'], list):
+                for item in data['componentIn']:
+                    if 'char' in item:
+                        all_componentIn_chars.add(item['char'])
+        except Exception as e:
+            print(f"Warning: Error reading {file_path.name} for mapping: {e}")
+            continue
+
+    # Second pass: use pypinyin for characters in componentIn that don't have pinyin yet
+    if use_pypinyin_fallback:
+        missing_chars = all_componentIn_chars - set(char_to_pinyin.keys())
+        if missing_chars:
+            print(f"Using pypinyin fallback for {len(missing_chars)} characters...")
+            for char in missing_chars:
+                pinyin_result = get_pinyin_from_library(char)
+                if pinyin_result:
+                    char_to_pinyin[char] = pinyin_result
+
+    return char_to_pinyin
+
+
+def process_dong_file(file_path: Path, client, char_to_pinyin: dict[str, list], dry_run: bool = False) -> bool:
+    """
+    Process a single dong JSON file and add English translations and pinyinFrequencies.
 
     Args:
         file_path: Path to the JSON file
         client: Google Cloud Translation client
+        char_to_pinyin: Mapping from character to pinyinFrequencies
         dry_run: If True, only print what would be done without saving
 
     Returns:
@@ -122,6 +215,25 @@ def process_dong_file(file_path: Path, client, dry_run: bool = False) -> bool:
                         else:
                             # Populate cache with existing translation
                             _translation_cache[comment['text']] = comment['text_en_translation']
+
+    # Process componentIn array
+    if 'componentIn' in data and isinstance(data['componentIn'], list):
+        for component_obj in data['componentIn']:
+            if 'char' in component_obj:
+                char = component_obj['char']
+                # Check if pinyinFrequencies already exists and matches
+                if char in char_to_pinyin:
+                    expected_pinyin = char_to_pinyin[char]
+                    current_pinyin = component_obj.get('pinyinFrequencies')
+
+                    # Only modify if pinyinFrequencies is missing or different
+                    if current_pinyin != expected_pinyin:
+                        if current_pinyin is None:
+                            print(f"Adding pinyinFrequencies for componentIn char '{char}' in {file_path.name}")
+                        else:
+                            print(f"Updating pinyinFrequencies for componentIn char '{char}' in {file_path.name}")
+                        component_obj['pinyinFrequencies'] = expected_pinyin
+                        modified = True
 
     # Save the modified file
     if modified and not dry_run:
@@ -195,6 +307,11 @@ def main():
         print(f"Error: Directory not found: {dong_dir}")
         sys.exit(1)
 
+    # Build character to pinyinFrequencies mapping
+    print("Building character to pinyinFrequencies mapping...")
+    char_to_pinyin = build_char_pinyin_mapping(dong_dir)
+    print(f"Built mapping for {len(char_to_pinyin)} characters")
+
     # Get list of files to process
     if args.file:
         file_path = dong_dir / args.file
@@ -217,7 +334,7 @@ def main():
     modified_count = 0
     for file_path in files_to_process:
         try:
-            if process_dong_file(file_path, client, dry_run=args.dry_run):
+            if process_dong_file(file_path, client, char_to_pinyin, dry_run=args.dry_run):
                 modified_count += 1
         except Exception as e:
             print(f"Error processing {file_path.name}: {e}")

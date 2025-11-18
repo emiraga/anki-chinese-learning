@@ -1177,16 +1177,23 @@ function ComponentInSection({
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
           {sortedItems.map((item, index) => {
             const isKnown = characters[item.char];
+            const pinyins = item.pinyinFrequencies?.map(pf => pf.pinyin) || [];
+            const pinyinDisplay = pinyins.join(", ");
             return (
               <CharLink
                 key={index}
                 traditional={item.char}
                 className={`flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${!isKnown ? "opacity-30" : ""}`}
-                title={`${item.char}${!isKnown ? " (Unknown)" : ""}`}
+                title={`${item.char}${pinyinDisplay ? ` (${pinyinDisplay})` : ""}${!isKnown ? " (Unknown)" : ""}`}
               >
                 <div className="text-5xl font-serif mb-2 dark:text-gray-100">
                   {item.char}
                 </div>
+                {pinyinDisplay && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
+                    {pinyinDisplay}
+                  </div>
+                )}
                 {item.statistics?.bookCharCount && (
                   <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
                     {item.statistics.bookCharCount.toLocaleString()} uses
