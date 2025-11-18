@@ -19,6 +19,7 @@ interface MergedCandidate {
   source: CandidateSource;
   bookCharCount?: number;
   isVerified?: boolean;
+  pinyin?: string[];
 }
 
 // Helper function to merge candidates from all sources
@@ -41,22 +42,28 @@ function getMergedCandidates(
         return hasSound && !existingCharSet.has(item.char);
       })
       .forEach((item) => {
+        // Extract pinyin from pinyinFrequencies, sorted by count (most common first)
+        const pinyin = item.pinyinFrequencies
+          ?.sort((a, b) => b.count - a.count)
+          .map((pf) => pf.pinyin) || [];
+
         dongCandidates.set(item.char, {
           char: item.char,
           source: "dong",
           bookCharCount: item.statistics?.bookCharCount,
           isVerified: item.isVerified,
+          pinyin,
         });
       });
   }
 
   // Get candidates from YellowBridge
-  const yellowBridgeCandidates = new Set<string>();
+  const yellowBridgeCandidates = new Map<string, string[]>();
   if (yellowBridgeIndexes?.soundsComponentIn?.[soundComponent]) {
     const ybEntry = yellowBridgeIndexes.soundsComponentIn[soundComponent];
     ybEntry.appearsIn.forEach((usage) => {
       if (!existingCharSet.has(usage.character)) {
-        yellowBridgeCandidates.add(usage.character);
+        yellowBridgeCandidates.set(usage.character, usage.pinyin);
       }
     });
   }
@@ -66,9 +73,15 @@ function getMergedCandidates(
 
   // Add all Dong candidates
   dongCandidates.forEach((candidate) => {
-    if (yellowBridgeCandidates.has(candidate.char)) {
-      // Character is in both sources
-      mergedCandidates.push({ ...candidate, source: "both" });
+    const ybPinyin = yellowBridgeCandidates.get(candidate.char);
+    if (ybPinyin) {
+      // Character is in both sources - merge pinyin arrays
+      const combinedPinyin = [...new Set([...candidate.pinyin || [], ...ybPinyin])];
+      mergedCandidates.push({
+        ...candidate,
+        source: "both",
+        pinyin: combinedPinyin
+      });
     } else {
       // Character is only in Dong
       mergedCandidates.push(candidate);
@@ -76,11 +89,12 @@ function getMergedCandidates(
   });
 
   // Add YellowBridge-only candidates
-  yellowBridgeCandidates.forEach((char) => {
+  yellowBridgeCandidates.forEach((pinyin, char) => {
     if (!dongCandidates.has(char)) {
       mergedCandidates.push({
         char,
         source: "yellowbridge",
+        pinyin,
       });
     }
   });
@@ -275,17 +289,22 @@ function SoundComponentCandidates({
         {sortedCandidates.map((candidate) => {
           const isKnown = characters[candidate.char];
 
-          // Calculate score only for known characters
-          let score: number | null = null;
+          // Get pinyin - prefer from known character, otherwise use candidate pinyin
+          let candidatePinyin = "";
           if (isKnown) {
-            // Get pinyin from the known character data (which has pinyinAccented)
-            const candidatePinyin = isKnown.pinyin?.[0]?.pinyinAccented || "";
-            if (candidatePinyin && soundComponentPinyin) {
-              score = scoreSoundSimilarity(
-                soundComponentPinyin,
-                candidatePinyin,
-              );
-            }
+            candidatePinyin = isKnown.pinyin?.[0]?.pinyinAccented || "";
+          } else if (candidate.pinyin && candidate.pinyin.length > 0) {
+            // Use the first pinyin from the candidate data
+            candidatePinyin = candidate.pinyin[0];
+          }
+
+          // Calculate score if we have pinyin
+          let score: number | null = null;
+          if (candidatePinyin && soundComponentPinyin) {
+            score = scoreSoundSimilarity(
+              soundComponentPinyin,
+              candidatePinyin,
+            );
           }
 
           // Determine border style based on source
@@ -304,6 +323,7 @@ function SoundComponentCandidates({
 
           const tooltipParts = [
             candidate.char,
+            candidatePinyin || "???",
             !isKnown ? "(Unknown)" : "",
             candidate.bookCharCount
               ? `${candidate.bookCharCount.toLocaleString()} uses`
@@ -314,7 +334,7 @@ function SoundComponentCandidates({
           ].filter(Boolean);
 
           return (
-            <div key={candidate.char} className="relative">
+            <div key={candidate.char} className="relative flex flex-col items-center gap-1">
               <CharLink
                 traditional={candidate.char}
                 className={`text-2xl font-serif hover:text-blue-600 dark:hover:text-blue-400 transition-colors ${!isKnown ? "opacity-30" : ""} ${borderClass}`}
@@ -322,6 +342,9 @@ function SoundComponentCandidates({
               >
                 {candidate.char}
               </CharLink>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                {candidatePinyin || "???"}
+              </div>
               {score !== null && (
                 <div
                   className={`rounded text-xs font-bold ${getScoreBadgeClasses(score)}`}
