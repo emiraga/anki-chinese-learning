@@ -25,6 +25,15 @@ const formatSoundRelationship = (relationship: SoundRelationship, char1: string,
           Share sound: <span className="text-2xl">{relationship.component}</span>
         </span>
       );
+    case "common_ancestor":
+      return (
+        <span className="text-purple-600 dark:text-purple-400">
+          Common ancestor: <span className="text-2xl">{relationship.ancestor}</span>
+          <span className="text-sm ml-2">
+            (depth: {char1}={relationship.depth1}, {char2}={relationship.depth2})
+          </span>
+        </span>
+      );
   }
 };
 
