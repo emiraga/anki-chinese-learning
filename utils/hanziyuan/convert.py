@@ -673,8 +673,8 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
             # Collect all parts of this component (may span multiple lines)
             component_lines = [line]
 
-            # If this line ends with "and", the next line continues the component description
-            while line.endswith(" and") and i < len(lines):
+            # If this line ends with "and" or "from", the next line continues the component description
+            while (line.endswith(" and") or line.endswith(" from")) and i < len(lines):
                 next_line = lines[i].strip()
                 i += 1
                 # Continue collecting if it's a component line (even if it starts with parentheses)
@@ -697,9 +697,11 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                 if comp_text.startswith("from "):
                     comp_text = comp_text[5:].strip()
 
-                # Remove trailing "and" or "." if present
+                # Remove trailing "and", "from", or "." if present
                 if comp_text.endswith(" and"):
                     comp_text = comp_text[:-4].strip()
+                elif comp_text.endswith(" from"):
+                    comp_text = comp_text[:-5].strip()
                 elif comp_text.endswith("."):
                     comp_text = comp_text[:-1].strip()
 
@@ -724,14 +726,30 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                 rem_plus_match = re.search(r'\(rem\+\s+([^)]+)\)', comp_text)
                 if rem_plus_match:
                     marker_content = rem_plus_match.group(1).strip()
-                    marker_parts = marker_content.split()
-                    if len(marker_parts) >= 2:
-                        markers["added"] = {
-                            "character": marker_parts[0],
-                            "pronunciation": marker_parts[1]
-                        }
+                    # Check if there are multiple components separated by '+'
+                    if '+' in marker_content:
+                        # Split by '+' and parse each component
+                        component_parts = [part.strip() for part in marker_content.split('+')]
+                        added_list = []
+                        for part in component_parts:
+                            part_tokens = part.split()
+                            if len(part_tokens) >= 2:
+                                added_list.append({
+                                    "character": part_tokens[0],
+                                    "pronunciation": part_tokens[1]
+                                })
+                            elif len(part_tokens) == 1:
+                                added_list.append(part_tokens[0])
+                        markers["added"] = added_list if len(added_list) > 1 else added_list[0] if added_list else marker_content
                     else:
-                        markers["added"] = marker_content
+                        marker_parts = marker_content.split()
+                        if len(marker_parts) >= 2:
+                            markers["added"] = {
+                                "character": marker_parts[0],
+                                "pronunciation": marker_parts[1]
+                            }
+                        else:
+                            markers["added"] = marker_content
 
                 # Extract (not- X) pattern
                 not_match = re.search(r'\(not-\s+([^)]+)\)', comp_text)
@@ -937,8 +955,8 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         # Check if character matches exactly or is contained within the older traditional variants
         is_valid = (
             character == traditional_field or
-            character == simplified_field
-            or (character in older_traditional_field and character in ["裡", "眾"])
+            character == simplified_field or
+            character in older_traditional_field
         )
 
         if not is_valid:
@@ -1046,7 +1064,7 @@ def main():
     processed = 0
     skipped = 0
     deleted = 0
-    ignored_files = {"home.json", "news.json"}  # Non-character files to ignore
+    ignored_files = {"home.json", "news.json", "research.json", "wechat.json"}  # Non-character files to ignore
 
     for json_file in json_files:
         # Skip ignored files

@@ -24,8 +24,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.character_discovery import discover_all_characters, extract_all_characters
 
 # Characters that cannot be loaded
-BLACKLISTED_CHARS = set([])
-
+BLACKLISTED_CHARS = {
+    '㥁',
+    '乗',
+    '敻',
+}
 
 def open_hanziyuan_url(char: str, delay: float = 2.0):
     """Open character dictionary page for the given character."""
