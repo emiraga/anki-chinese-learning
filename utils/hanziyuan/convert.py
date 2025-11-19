@@ -271,7 +271,7 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
             print(f"Warning: Failed to decode image for {etymology_id}: {e}", file=sys.stderr)
 
     # Validate: J29285 should only appear for character '車'
-    if "J29285" in result and character != "車":
+    if "J29285" in result and (character != "車" and character != "车"):
         raise ValueError(
             f"Image ID 'J29285' found for character '{character}'. "
             f"This ID should only appear for character '車'. "

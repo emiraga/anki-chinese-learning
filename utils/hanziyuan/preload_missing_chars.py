@@ -28,6 +28,18 @@ BLACKLISTED_CHARS = {
     '㥁',
     '乗',
     '敻',
+    '𤸰',
+    '𠕋',
+    '夀',
+    '舺',
+    '艶',
+    '閲',
+    '鋭',
+    '搧',
+    '衞',
+    '凃',
+    '藴',
+    '緖',
 }
 
 def open_hanziyuan_url(char: str, delay: float = 2.0):
@@ -101,7 +113,7 @@ def main():
     parser.add_argument(
         '--delay',
         type=float,
-        default=1,
+        default=0.5,
         help='Delay in seconds between opening browser tabs (default: 2.0)'
     )
     parser.add_argument(
