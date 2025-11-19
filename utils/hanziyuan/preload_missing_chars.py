@@ -72,7 +72,8 @@ def extract_components_from_json(json_file: Path) -> Set[str]:
             if component:
                 # Extract only CJK characters from the component field
                 # (component may contain English descriptions or pinyin)
-                chars = extract_all_characters(component, normalize=False)
+                # Normalize to handle compatibility variants
+                chars = extract_all_characters(component, normalize=True)
                 components.update(chars)
 
     except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
@@ -147,11 +148,13 @@ def main():
     project_root = Path.cwd()
 
     # Use shared utility to discover all characters from Anki and data directories
+    # IMPORTANT: Use normalize=True to convert compatibility variants (like U+FA17)
+    # to their canonical forms (like U+76CA)
     all_chars, char_frequency = discover_all_characters(
         project_root,
         include_anki=not args.skip_anki,
         include_folders=not args.skip_folders,
-        normalize=False
+        normalize=True
     )
 
     # Extract components from existing converted JSON files
