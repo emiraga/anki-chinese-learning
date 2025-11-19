@@ -668,13 +668,24 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                     "pronunciation": pronunciation
                 })
 
-        # Check for component entries like "from door 户戶戸 hù and"
-        elif line.startswith("from "):
+        # Check for component entries like "from door 户戶戸 hù and" or just "from"
+        elif line.startswith("from"):
             # Collect all parts of this component (may span multiple lines)
             component_lines = [line]
 
-            # If this line ends with "and" or "from", the next line continues the component description
-            while (line.endswith(" and") or line.endswith(" from")) and i < len(lines):
+            # Check if the line is just "from" with nothing after it, or ends with "and"/"from"
+            # Handle both "from " and "from" (without space)
+            if line.startswith("from "):
+                line_content = line[5:].strip()  # Remove "from " prefix
+            elif line == "from":
+                line_content = ""
+            else:
+                line_content = line[4:].strip()  # Remove "from" prefix (no space)
+
+            should_continue = (line.endswith(" and") or line.endswith(" from") or not line_content)
+
+            # If continuation is needed, collect following lines
+            while should_continue and i < len(lines):
                 next_line = lines[i].strip()
                 i += 1
                 # Continue collecting if it's a component line (even if it starts with parentheses)
@@ -684,6 +695,8 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                    not next_line.startswith("(variant-of "):
                     component_lines.append(next_line)
                     line = next_line  # Update line for next iteration
+                    # Continue if this line ends with "and", or if it's a marker line followed by more
+                    should_continue = line.endswith(" and") or (line.endswith(")") and i < len(lines))
                 else:
                     # This line is not part of the component, put it back
                     i -= 1
@@ -767,9 +780,13 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                 # Remove all parenthetical notes for cleaner parsing
                 comp_text = re.sub(r'\([^)]+\)', '', comp_text).strip()
 
-                # If after removing markers, the line is empty, this was a marker-only component
+                # If after removing markers, the line is empty or only has a quantity word,
+                # this was a marker-only component with optional quantity
                 # We still want to add it to show what was removed/added/negated
-                if not comp_text and markers:
+                quantity_words = ["two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
+                is_quantity_only = comp_text.lower() in quantity_words
+
+                if (not comp_text or is_quantity_only) and markers:
                     # Create a marker-only entry
                     component_entry: Dict[str, Any] = {
                         "description": "",
@@ -778,6 +795,8 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                         "pronunciation": "",
                         "markers": markers
                     }
+                    if is_quantity_only:
+                        component_entry["quantity"] = comp_text
                     result["components"].append(component_entry)
                     continue
 
