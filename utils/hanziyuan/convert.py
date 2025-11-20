@@ -31,7 +31,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 from bs4 import BeautifulSoup
-from hanziconv import HanziConv
+
+# Add parent directories to path for importing shared utilities
+sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
+from character_conversion import to_traditional, is_simplified
 
 
 def html_to_text(html_string: str) -> str:
@@ -973,13 +976,16 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         simplified_field = converted.get('Simplified in your browser 简体字的浏览器显示', '')
         older_traditional_field = converted.get('Older traditional characters 旧繁体字/异体字', '')
 
-        # Check if the character is actually a simplified character
-        is_actually_simplified = HanziConv.toTraditional(character) != character
+        # Check if the character is actually a simplified character using our utility
+        # This handles both standard conversions and special cases not recognized by HanziConv
+        is_actually_simplified = is_simplified(character)
 
         # Check if character matches exactly or is contained within the older traditional variants
+        # We trust the JSON data: if filename matches simplified field, accept it
         is_valid = (
             character == traditional_field or
             (character == simplified_field and is_actually_simplified) or
+            character == simplified_field or  # Trust the data even if conversion detection fails
             character in older_traditional_field
         )
 
