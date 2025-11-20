@@ -4,6 +4,7 @@
 # dependencies = [
 #   "beautifulsoup4",
 #   "lxml",
+#   "hanziconv",
 # ]
 # ///
 """
@@ -30,6 +31,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 from bs4 import BeautifulSoup
+from hanziconv import HanziConv
 
 
 def html_to_text(html_string: str) -> str:
@@ -971,17 +973,21 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         simplified_field = converted.get('Simplified in your browser 简体字的浏览器显示', '')
         older_traditional_field = converted.get('Older traditional characters 旧繁体字/异体字', '')
 
+        # Check if the character is actually a simplified character
+        is_actually_simplified = HanziConv.toTraditional(character) != character
+
         # Check if character matches exactly or is contained within the older traditional variants
         is_valid = (
             character == traditional_field or
-            character == simplified_field or
+            (character == simplified_field and is_actually_simplified) or
             character in older_traditional_field
         )
 
         if not is_valid:
             raise ValueError(
                 f"Character mismatch in {input_path.name}: filename character '{character}' "
-                f"does not match traditional '{traditional_field}', simplified '{simplified_field}', "
+                f"does not match traditional '{traditional_field}', "
+                f"simplified '{simplified_field}' (is_simplified={is_actually_simplified}), "
                 f"or is not found in older traditional '{older_traditional_field}'"
             )
 
