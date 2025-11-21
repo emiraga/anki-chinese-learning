@@ -7,6 +7,7 @@
 Script to preload words from HackChinese with intelligent prioritization.
 """
 
+import argparse
 import json
 import time
 import webbrowser
@@ -48,27 +49,29 @@ def load_word_files(directory: Path) -> List[Dict[str, Any]]:
     return words
 
 
-def extract_component_ids(word: Dict[str, Any]) -> List[str]:
+def extract_component_ids(word: Dict[str, Any]) -> List[tuple[str, str]]:
     """
-    Extract all component IDs from a word dictionary.
+    Extract all component IDs and traditional characters from a word dictionary.
 
     Args:
         word: Word dictionary containing a 'components' key
 
     Returns:
-        List of component IDs (as strings)
+        List of tuples (component_id, traditional) as strings
     """
-    component_ids = []
+    component_info = []
 
     components = word.get("components", [])
     if not isinstance(components, list):
-        return component_ids
+        return component_info
 
     for component in components:
         if isinstance(component, dict) and "id" in component:
-            component_ids.append(str(component["id"]))
+            component_id = str(component["id"])
+            traditional = component.get("traditional", "")
+            component_info.append((component_id, traditional))
 
-    return component_ids
+    return component_info
 
 
 def get_existing_word_ids(directory: Path) -> Set[str]:
@@ -130,23 +133,33 @@ def open_in_browser_and_wait(word_id: str, traditional: str = "", base_url: str 
     raise Exception(f"File {file_path} did not appear after 20 seconds")
 
 
-def load_list_files(directory: Path) -> List[Dict[str, Any]]:
+def load_list_files(directory: Path, file_paths: Optional[List[Path]] = None) -> List[Dict[str, Any]]:
     """
-    Load all JSON list files from the specified directory.
+    Load JSON list files from the specified directory or specific file paths.
 
     Args:
         directory: Path to the directory containing list JSON files
+        file_paths: Optional list of specific file paths to load. If None, loads all JSON files from directory.
 
     Returns:
         List of parsed list dictionaries
     """
     lists = []
 
-    if not directory.exists():
-        print(f"Warning: Directory {directory} does not exist")
-        return lists
+    if file_paths is None:
+        # Load all JSON files from directory
+        if not directory.exists():
+            print(f"Warning: Directory {directory} does not exist")
+            return lists
 
-    for file_path in directory.glob("*.json"):
+        file_paths = list(directory.glob("*.json"))
+
+    # Load the specified file paths
+    for file_path in file_paths:
+        if not file_path.exists():
+            print(f"Warning: File {file_path} does not exist")
+            continue
+
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 list_data = json.load(f)
@@ -212,6 +225,22 @@ def main():
     2. Component words from already downloaded words
     3. Multi-character words from lists
     """
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Preload words from HackChinese with intelligent prioritization"
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Specific list files to load (e.g., hsk1.json hsk2.json). If not provided, loads all files from lists directory."
+    )
+    args = parser.parse_args()
+
+    # Convert file arguments to Path objects
+    list_file_paths = None
+    if args.files:
+        list_file_paths = [Path(f) if Path(f).is_absolute() else LISTS_DIR / f for f in args.files]
+
     print("=" * 60)
     print("HackChinese Word Preloader")
     print("=" * 60)
@@ -234,15 +263,21 @@ def main():
     # Load all existing words to extract components
     print("\n[2/5] Extracting components from existing words...")
     existing_words = load_word_files(WORDS_DIR)
-    component_ids = set()
+    component_info = {}
     for word in existing_words:
-        comp_ids = extract_component_ids(word)
-        component_ids.update(comp_ids)
-    print(f"  Found {len(component_ids)} unique component IDs")
+        comp_info = extract_component_ids(word)
+        for comp_id, traditional in comp_info:
+            if comp_id not in component_info:
+                component_info[comp_id] = traditional
+    print(f"  Found {len(component_info)} unique component IDs")
 
     # Load list files
     print("\n[3/5] Loading list files...")
-    lists = load_list_files(LISTS_DIR)
+    if list_file_paths:
+        print(f"  Loading {len(list_file_paths)} specified file(s)")
+    else:
+        print("  Loading all files from lists directory")
+    lists = load_list_files(LISTS_DIR, list_file_paths)
     print(f"  Loaded {len(lists)} lists")
 
     # Extract word info from lists
@@ -266,9 +301,11 @@ def main():
 
     # Priority 2: Components from already downloaded words
     component_count = 0
-    for comp_id in component_ids:
+    for comp_id, traditional in component_info.items():
         if comp_id not in existing_ids and comp_id not in queued_ids:
-            traditional = list_word_info.get(comp_id, "")
+            # Prefer traditional from component_info, fallback to list_word_info
+            if not traditional:
+                traditional = list_word_info.get(comp_id, "")
             priority_queue.put((2, comp_id, traditional))
             queued_ids.add(comp_id)
             component_count += 1
@@ -308,20 +345,18 @@ def main():
         priority, word_id, traditional = priority_queue.get()
         downloaded += 1
 
-        priority_label = {1: "SINGLE-CHAR", 2: "COMPONENT", 3: "MULTI-CHAR"}[priority]
-        print(f"\n[{downloaded}/{total_to_download}] ({priority_label}) {traditional} (ID: {word_id})")
-
         # Check if all characters of this word are already downloaded
         if all(char in downloaded_chars for char in traditional):
-            print(f"  ⊘ Skipped (all characters already downloaded)")
             continue
 
         # Check if file already exists (safety check)
         file_path = WORDS_DIR / f"{word_id}.json"
         if file_path.exists():
-            print(f"  ⊘ Skipped (already exists)")
             existing_ids.add(word_id)
             continue
+
+        priority_label = {1: "SINGLE-CHAR", 2: "COMPONENT", 3: "MULTI-CHAR"}[priority]
+        print(f"\n[{downloaded}/{total_to_download}] ({priority_label}) {traditional} (ID: {word_id})")
 
         try:
             file_path = open_in_browser_and_wait(word_id, traditional)
@@ -334,11 +369,14 @@ def main():
                 if len(word_traditional) == 1:
                     downloaded_chars.add(word_traditional)
 
-                new_component_ids = extract_component_ids(new_word)
+                new_component_info = extract_component_ids(new_word)
                 added_components = 0
-                for comp_id in new_component_ids:
+                for comp_id, comp_traditional in new_component_info:
                     if comp_id not in existing_ids and comp_id not in queued_ids:
-                        comp_traditional = list_word_info.get(comp_id, "")
+                        # Prefer traditional from component, fallback to list_word_info
+                        if not comp_traditional:
+                            comp_traditional = list_word_info.get(comp_id, "")
+                        print("Adding to queue", (2, comp_id, comp_traditional))
                         priority_queue.put((2, comp_id, comp_traditional))
                         queued_ids.add(comp_id)
                         added_components += 1
