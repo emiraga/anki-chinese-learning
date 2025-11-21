@@ -26,7 +26,9 @@ function Section({
  * Parses the meaning tree string and splits it into individual meaning items
  * Format: "(orig.) text%%→ text%% ⇒ text"
  */
-function parseMeaningTree(meaningTree: string | null): Array<{ arrow: string; text: string }> {
+function parseMeaningTree(
+  meaningTree: string | null,
+): Array<{ arrow: string; text: string }> {
   if (!meaningTree) {
     return [];
   }
@@ -57,31 +59,55 @@ function parseMeaningTree(meaningTree: string | null): Array<{ arrow: string; te
  * Gets the badge style based on component type
  * Colors match DongCharacterDisplay for consistency
  */
-function getComponentTypeBadge(componentType: string): { label: string; bgColor: string; textColor: string } {
+function getComponentTypeBadge(componentType: string): {
+  label: string;
+  bgColor: string;
+  textColor: string;
+} {
   const type = componentType.toUpperCase();
 
   // SOUND - Blue (matches Dong's sound component)
   if (type === "SOUND") {
-    return { label: "SOUND", bgColor: "bg-blue-100 dark:bg-blue-900", textColor: "text-blue-600 dark:text-blue-400" };
+    return {
+      label: "SOUND",
+      bgColor: "bg-blue-100 dark:bg-blue-900",
+      textColor: "text-blue-600 dark:text-blue-400",
+    };
   }
 
   // MEANING - Red (matches Dong's meaning component)
   if (type === "MEANING") {
-    return { label: "MEANING", bgColor: "bg-red-100 dark:bg-red-900", textColor: "text-red-600 dark:text-red-400" };
+    return {
+      label: "MEANING",
+      bgColor: "bg-red-100 dark:bg-red-900",
+      textColor: "text-red-600 dark:text-red-400",
+    };
   }
 
   // FORM - Green (matches Dong's iconic component - visual representation)
   if (type === "FORM") {
-    return { label: "FORM", bgColor: "bg-green-100 dark:bg-green-900", textColor: "text-green-600 dark:text-green-400" };
+    return {
+      label: "FORM",
+      bgColor: "bg-green-100 dark:bg-green-900",
+      textColor: "text-green-600 dark:text-green-400",
+    };
   }
 
   // EMPTY - Gray (matches Dong's deleted/unknown)
   if (type === "EMPTY") {
-    return { label: "EMPTY", bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-600 dark:text-gray-400" };
+    return {
+      label: "EMPTY",
+      bgColor: "bg-gray-100 dark:bg-gray-700",
+      textColor: "text-gray-600 dark:text-gray-400",
+    };
   }
 
   // Default - Gray
-  return { label: type, bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-600 dark:text-gray-400" };
+  return {
+    label: type,
+    bgColor: "bg-gray-100 dark:bg-gray-700",
+    textColor: "text-gray-600 dark:text-gray-400",
+  };
 }
 
 /**
@@ -100,13 +126,17 @@ function parseStrokeOrderDiagrams(diagramString: string | null): string[] {
     .filter((svg) => svg.length > 0);
 }
 
-export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDisplayProps) {
+export function HackChineseOutlierDisplay({
+  character,
+}: HackChineseOutlierDisplayProps) {
   // Prefer traditional data, fallback to simplified
   const meaningTreeItems = parseMeaningTree(
-    character.meaning_tree_as_character_trad || character.meaning_tree_as_character_simp
+    character.meaning_tree_as_character_trad ||
+      character.meaning_tree_as_character_simp,
   );
   const meaningTreeAsComponentItems = parseMeaningTree(
-    character.meaning_tree_as_component_trad || character.meaning_tree_as_component_simp
+    character.meaning_tree_as_component_trad ||
+      character.meaning_tree_as_component_simp,
   );
 
   // Get unique components (prefer trad charset, fallback to simp)
@@ -115,23 +145,31 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
     .sort((a, b) => a.position - b.position);
 
   // If no traditional components, use simplified as fallback
-  const displayComponents = components.length > 0
-    ? components
-    : character.component_analyses
-        .filter((c) => c.charset === "simp")
-        .sort((a, b) => a.position - b.position);
+  const displayComponents =
+    components.length > 0
+      ? components
+      : character.component_analyses
+          .filter((c) => c.charset === "simp")
+          .sort((a, b) => a.position - b.position);
 
   // Parse stroke order diagrams (prefer traditional, fallback to simplified)
   const strokeOrderDiagrams = parseStrokeOrderDiagrams(
-    character.so_diagram_trad || character.so_diagram_simp
+    character.so_diagram_trad || character.so_diagram_simp,
   );
 
   // Check if we're using simplified fallback data
-  const usingSimplifiedMeaningTree = !character.meaning_tree_as_character_trad && character.meaning_tree_as_character_simp;
-  const usingSimplifiedMeaningTreeComponent = !character.meaning_tree_as_component_trad && character.meaning_tree_as_component_simp;
-  const usingSimplifiedComponents = components.length === 0 && displayComponents.length > 0;
-  const usingSimplifiedStrokeOrder = !character.so_diagram_trad && character.so_diagram_simp;
-  const usingSimplifiedFormExplanation = !character.form_explanation_trad && character.form_explanation_simp;
+  const usingSimplifiedMeaningTree =
+    !character.meaning_tree_as_character_trad &&
+    character.meaning_tree_as_character_simp;
+  const usingSimplifiedMeaningTreeComponent =
+    !character.meaning_tree_as_component_trad &&
+    character.meaning_tree_as_component_simp;
+  const usingSimplifiedComponents =
+    components.length === 0 && displayComponents.length > 0;
+  const usingSimplifiedStrokeOrder =
+    !character.so_diagram_trad && character.so_diagram_simp;
+  const usingSimplifiedFormExplanation =
+    !character.form_explanation_trad && character.form_explanation_simp;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
@@ -143,7 +181,9 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
             <div className="flex items-center justify-center rounded bg-gray-50 p-8 dark:bg-gray-700">
               <div
                 className="flex h-48 w-48 items-center justify-center [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:h-auto [&>svg]:w-auto dark:invert"
-                dangerouslySetInnerHTML={{ __html: character.ancient_form_image }}
+                dangerouslySetInnerHTML={{
+                  __html: character.ancient_form_image,
+                }}
               />
             </div>
           </Section>
@@ -153,14 +193,20 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         <Section title="Form Description">
           {usingSimplifiedFormExplanation && (
             <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
-              Note: Displaying simplified character information ({character.simplified})
+              Note: Displaying simplified character information (
+              {character.simplified})
             </div>
           )}
           <div className="space-y-4">
-            {(character.form_explanation_trad || character.form_explanation_simp)
+            {(
+              character.form_explanation_trad || character.form_explanation_simp
+            )
               .split("%%")
               .map((paragraph, index) => (
-                <div key={index} className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                <div
+                  key={index}
+                  className="text-base leading-relaxed text-gray-800 dark:text-gray-200"
+                >
                   {paragraph.trim()}
                 </div>
               ))}
@@ -173,14 +219,17 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         <Section title="Components">
           {usingSimplifiedComponents && (
             <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
-              Note: Displaying simplified character information ({character.simplified})
+              Note: Displaying simplified character information (
+              {character.simplified})
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {displayComponents.map((component) => {
               // Split component type by " + " to handle combined types
-              const types = component.component_type.split(" + ").map(t => t.trim());
-              const badges = types.map(type => getComponentTypeBadge(type));
+              const types = component.component_type
+                .split(" + ")
+                .map((t) => t.trim());
+              const badges = types.map((type) => getComponentTypeBadge(type));
 
               return (
                 <div
@@ -188,16 +237,24 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
                   className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-700"
                 >
                   <div className="mb-3 flex items-start gap-3">
-                    <div className="flex-shrink-0 text-4xl dark:text-gray-100">{component.component.trim()}</div>
+                    <div className="shrink-0 text-4xl dark:text-gray-100">
+                      {component.component.trim()}
+                    </div>
                     <div className="flex-1 flex gap-2">
                       {badges.map((badge, index) => (
-                        <div key={index} className={`inline-block rounded px-2 py-1 text-xs font-semibold ${badge.bgColor} ${badge.textColor}`}>
+                        <div
+                          key={index}
+                          className={`inline-block rounded px-2 py-1 text-xs font-semibold ${badge.bgColor} ${badge.textColor}`}
+                        >
                           {badge.label}
                         </div>
                       ))}
+                      {component.component_type_desc}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{component.description.trim()}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {component.description.trim()}
+                  </p>
                 </div>
               );
             })}
@@ -210,17 +267,22 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         <Section title="Meaning Tree as a character">
           {usingSimplifiedMeaningTree && (
             <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
-              Note: Displaying simplified character information ({character.simplified})
+              Note: Displaying simplified character information (
+              {character.simplified})
             </div>
           )}
           <ol className="space-y-3">
             {meaningTreeItems.map((item, index) => (
               <li key={index} className="flex gap-3">
-                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-blue-100 font-semibold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-blue-100 font-semibold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                   {index + 1}
                 </span>
                 <span className="flex-1 text-base leading-relaxed text-gray-800 dark:text-gray-200">
-                  {item.arrow && <span className="mr-2 font-semibold text-blue-600 dark:text-blue-400">{item.arrow}</span>}
+                  {item.arrow && (
+                    <span className="mr-2 font-semibold text-blue-600 dark:text-blue-400">
+                      {item.arrow}
+                    </span>
+                  )}
                   {item.text}
                 </span>
               </li>
@@ -234,20 +296,26 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         <Section title="Meaning Tree as a component">
           {usingSimplifiedMeaningTreeComponent && (
             <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
-              Note: Displaying simplified character information ({character.simplified})
+              Note: Displaying simplified character information (
+              {character.simplified})
             </div>
           )}
           <p className="mb-4 text-sm italic text-gray-600 dark:text-gray-400">
-            How this character&apos;s meaning evolved when used as a component in other characters:
+            How this character&apos;s meaning evolved when used as a component
+            in other characters:
           </p>
           <ol className="space-y-3">
             {meaningTreeAsComponentItems.map((item, index) => (
               <li key={index} className="flex gap-3">
-                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-green-100 font-semibold text-green-600 dark:bg-green-900 dark:text-green-300">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-green-100 font-semibold text-green-600 dark:bg-green-900 dark:text-green-300">
                   {index + 1}
                 </span>
                 <span className="flex-1 text-base leading-relaxed text-gray-800 dark:text-gray-200">
-                  {item.arrow && <span className="mr-2 font-semibold text-green-600 dark:text-green-400">{item.arrow}</span>}
+                  {item.arrow && (
+                    <span className="mr-2 font-semibold text-green-600 dark:text-green-400">
+                      {item.arrow}
+                    </span>
+                  )}
                   {item.text}
                 </span>
               </li>
@@ -261,7 +329,8 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         <Section title="Stroke Order">
           {usingSimplifiedStrokeOrder && (
             <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
-              Note: Displaying simplified character information ({character.simplified})
+              Note: Displaying simplified character information (
+              {character.simplified})
             </div>
           )}
           <div className="flex flex-wrap items-center justify-center gap-4">
