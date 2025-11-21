@@ -126,6 +126,13 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
     character.so_diagram_trad || character.so_diagram_simp
   );
 
+  // Check if we're using simplified fallback data
+  const usingSimplifiedMeaningTree = !character.meaning_tree_as_character_trad && character.meaning_tree_as_character_simp;
+  const usingSimplifiedMeaningTreeComponent = !character.meaning_tree_as_component_trad && character.meaning_tree_as_component_simp;
+  const usingSimplifiedComponents = components.length === 0 && displayComponents.length > 0;
+  const usingSimplifiedStrokeOrder = !character.so_diagram_trad && character.so_diagram_simp;
+  const usingSimplifiedFormExplanation = !character.form_explanation_trad && character.form_explanation_simp;
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
       {/* Top Section: Ancient Form and Form Description side by side */}
@@ -144,6 +151,11 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
 
         {/* Form Description */}
         <Section title="Form Description">
+          {usingSimplifiedFormExplanation && (
+            <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
+              Note: Displaying simplified character information ({character.simplified})
+            </div>
+          )}
           <div className="space-y-4">
             {(character.form_explanation_trad || character.form_explanation_simp)
               .split("%%")
@@ -159,6 +171,11 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
       {/* Components */}
       {displayComponents.length > 0 && (
         <Section title="Components">
+          {usingSimplifiedComponents && (
+            <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
+              Note: Displaying simplified character information ({character.simplified})
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {displayComponents.map((component) => {
               // Split component type by " + " to handle combined types
@@ -191,6 +208,11 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
       {/* Meaning Tree as a Character */}
       {meaningTreeItems.length > 0 && (
         <Section title="Meaning Tree as a character">
+          {usingSimplifiedMeaningTree && (
+            <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
+              Note: Displaying simplified character information ({character.simplified})
+            </div>
+          )}
           <ol className="space-y-3">
             {meaningTreeItems.map((item, index) => (
               <li key={index} className="flex gap-3">
@@ -210,6 +232,11 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
       {/* Meaning Tree as a Component */}
       {meaningTreeAsComponentItems.length > 0 && (
         <Section title="Meaning Tree as a component">
+          {usingSimplifiedMeaningTreeComponent && (
+            <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
+              Note: Displaying simplified character information ({character.simplified})
+            </div>
+          )}
           <p className="mb-4 text-sm italic text-gray-600 dark:text-gray-400">
             How this character&apos;s meaning evolved when used as a component in other characters:
           </p>
@@ -232,6 +259,11 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
       {/* Stroke Order Diagrams */}
       {strokeOrderDiagrams.length > 0 && (
         <Section title="Stroke Order">
+          {usingSimplifiedStrokeOrder && (
+            <div className="mb-3 text-xs italic text-gray-500 dark:text-gray-400">
+              Note: Displaying simplified character information ({character.simplified})
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-center gap-4">
             {strokeOrderDiagrams.map((svg, index) => (
               <div
