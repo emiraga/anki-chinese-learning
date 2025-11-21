@@ -17,3 +17,4 @@ popd
 ./utils/rtega/fill_rtega_mnemonics.py
 ./utils/yellowbridge/convert.py
 ./utils/yellowbridge/fill_yellowbridge_chinese.py
+./utils/hackchinese/convert.py

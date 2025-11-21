@@ -26,6 +26,7 @@ def main():
     # Process all JSON files
     processed_count = 0
     outlier_count = 0
+    skipped_count = 0
 
     for json_file in words_dir.glob("*.json"):
         processed_count += 1
@@ -42,8 +43,16 @@ def main():
             # Check if outlier exists and is not empty
             outlier = data.get("outlier")
             if outlier is not None and outlier:
-                # Save outlier data
+                # Check if output file exists and is newer than source file
                 output_file = outlier_dir / f"{traditional}.json"
+                if output_file.exists():
+                    source_mtime = json_file.stat().st_mtime
+                    output_mtime = output_file.stat().st_mtime
+                    if output_mtime >= source_mtime:
+                        skipped_count += 1
+                        continue
+
+                # Save outlier data
                 with open(output_file, "w", encoding="utf-8") as f:
                     json.dump(outlier, f, ensure_ascii=False, indent=2)
                 outlier_count += 1
@@ -54,6 +63,7 @@ def main():
 
     print(f"Processed {processed_count} files")
     print(f"Extracted {outlier_count} outlier entries")
+    print(f"Skipped {skipped_count} up-to-date files")
 
 
 if __name__ == "__main__":
