@@ -234,6 +234,21 @@ def main():
         nargs="*",
         help="Specific list files to load (e.g., hsk1.json hsk2.json). If not provided, loads all files from lists directory."
     )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Download all words, even if all their characters are already downloaded. By default, skips words where all characters are known."
+    )
+    parser.add_argument(
+        "--no-components",
+        action="store_true",
+        help="Skip queuing components from downloaded words. By default, components from newly downloaded words are added to the queue."
+    )
+    parser.add_argument(
+        "--no-existing-components",
+        action="store_true",
+        help="Skip adding components from already downloaded words (Priority 2). By default, components from existing words are added to the queue."
+    )
     args = parser.parse_args()
 
     # Convert file arguments to Path objects
@@ -322,15 +337,18 @@ def main():
 
     # Priority 2: Components from already downloaded words
     component_count = 0
-    for comp_id, traditional in component_info.items():
-        if comp_id not in existing_ids and comp_id not in queued_ids:
-            # Prefer traditional from component_info, fallback to list_word_info
-            if not traditional:
-                traditional = list_word_info.get(comp_id, "")
-            priority_queue.put((2, comp_id, traditional))
-            queued_ids.add(comp_id)
-            component_count += 1
-    print(f"  Added {component_count} component words (priority 2)")
+    if not args.no_existing_components:
+        for comp_id, traditional in component_info.items():
+            if comp_id not in existing_ids and comp_id not in queued_ids:
+                # Prefer traditional from component_info, fallback to list_word_info
+                if not traditional:
+                    traditional = list_word_info.get(comp_id, "")
+                priority_queue.put((2, comp_id, traditional))
+                queued_ids.add(comp_id)
+                component_count += 1
+        print(f"  Added {component_count} component words (priority 2)")
+    else:
+        print(f"  Skipped components from existing words (--no-existing-components flag)")
 
     # Priority 3: Multi-character words from lists
     multi_char_count = 0
@@ -359,8 +377,8 @@ def main():
         priority, word_id, traditional = priority_queue.get()
         downloaded += 1
 
-        # Check if all characters of this word are already downloaded
-        if all(char in downloaded_chars for char in traditional):
+        # Check if all characters of this word are already downloaded (unless --all flag is set)
+        if not args.all and all(char in downloaded_chars for char in traditional):
             continue
 
         # Check if file already exists (safety check)
