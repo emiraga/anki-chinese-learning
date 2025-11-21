@@ -58,34 +58,57 @@ function parseMeaningTree(
 /**
  * Parses component strings that may contain special notation:
  * - [X-Y] means "character X minus component Y"
+ * - [X-Y-Z] means "character X minus components Y and Z"
  * - [X+Y] means "components X and Y combined"
+ * - [X-over-Y] means "component X stacked over component Y"
  * - Regular characters are returned as-is
  */
 function parseComponentNotation(component: string): {
-  type: "subtraction" | "addition" | "regular";
+  type: "subtraction" | "addition" | "overlay" | "regular";
   parts: string[];
   displayText: string;
 } {
   const trimmed = component.trim();
 
-  // Check for subtraction: [X-Y]
-  const subtractionMatch = trimmed.match(/^\[(.+?)-(.+?)\]$/);
-  if (subtractionMatch) {
-    return {
-      type: "subtraction",
-      parts: [subtractionMatch[1], subtractionMatch[2]],
-      displayText: `${subtractionMatch[1]} − ${subtractionMatch[2]}`,
-    };
-  }
+  // Check if it's bracketed notation
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    const inner = trimmed.slice(1, -1);
 
-  // Check for addition: [X+Y]
-  const additionMatch = trimmed.match(/^\[(.+?)\+(.+?)\]$/);
-  if (additionMatch) {
-    return {
-      type: "addition",
-      parts: [additionMatch[1], additionMatch[2]],
-      displayText: `${additionMatch[1]} + ${additionMatch[2]}`,
-    };
+    // Check for overlay: [X-over-Y] or [X-over-Y-Z]
+    if (inner.includes("-over-")) {
+      const parts = inner.split("-over-");
+      return {
+        type: "overlay",
+        parts,
+        displayText: parts.join(" over "),
+      };
+    }
+
+    // Check for addition: [X+Y]
+    if (inner.includes("+")) {
+      const parts = inner.split("+");
+      return {
+        type: "addition",
+        parts,
+        displayText: parts.join(" + "),
+      };
+    }
+
+    // Check for subtraction: [X-Y] or [X-Y-Z-...]
+    // This handles both single and multiple subtractions
+    if (inner.includes("-")) {
+      const parts = inner.split("-");
+      if (parts.length >= 2) {
+        return {
+          type: "subtraction",
+          parts,
+          displayText:
+            parts.length === 2
+              ? `${parts[0]} − ${parts[1]}`
+              : `${parts[0]} − ${parts.slice(1).join(" − ")}`,
+        };
+      }
+    }
   }
 
   // Regular component
@@ -287,28 +310,62 @@ export function HackChineseOutlierDisplay({
                         <div className="text-4xl dark:text-gray-100">
                           {notation.displayText}
                         </div>
+                      ) : notation.type === "overlay" ? (
+                        // Overlay notation: [X-over-Y]
+                        <div className="flex flex-col items-center gap-1 border-l-2 border-r-2 px-1 border-gray-200 dark:border-gray-800">
+                          <div className="flex flex-col items-center gap-1">
+                            {notation.parts.map((part, idx) => (
+                              <div
+                                key={idx}
+                                className="flex flex-col items-center"
+                              >
+                                <span className="text-2xl dark:text-gray-100">
+                                  {part}
+                                </span>
+                                {idx < notation.parts.length - 1 && (
+                                  <span className="text-xs font-bold text-purple-500 dark:text-purple-400">
+                                    ↓ over
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       ) : (
+                        // Addition or subtraction notation
                         <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-3xl dark:text-gray-100">
-                              {notation.parts[0]}
-                            </span>
-                            <span
-                              className={`text-xl font-bold ${
-                                notation.type === "subtraction"
-                                  ? "text-red-500 dark:text-red-400"
-                                  : "text-green-500 dark:text-green-400"
-                              }`}
-                            >
-                              {notation.type === "subtraction" ? "−" : "+"}
-                            </span>
-                            <span className="text-3xl dark:text-gray-100">
-                              {notation.parts[1]}
-                            </span>
+                          <div className="flex items-center gap-2 flex-wrap justify-center">
+                            <span className="text-gray-500 text-3xl">[</span>
+                            {notation.parts.map((part, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2"
+                              >
+                                <span className="text-3xl dark:text-gray-100">
+                                  {part}
+                                </span>
+                                {idx < notation.parts.length - 1 && (
+                                  <span
+                                    className={`text-xl font-bold ${
+                                      notation.type === "subtraction"
+                                        ? "text-red-500 dark:text-red-400"
+                                        : "text-green-500 dark:text-green-400"
+                                    }`}
+                                  >
+                                    {notation.type === "subtraction"
+                                      ? "−"
+                                      : "+"}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            <span className="text-gray-500 text-3xl">]</span>
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 italic">
                             {notation.type === "subtraction"
-                              ? "minus"
+                              ? notation.parts.length > 2
+                                ? `minus ${notation.parts.length - 1} components`
+                                : "minus"
                               : "combined"}
                           </div>
                         </div>
