@@ -78,6 +78,22 @@ function getComponentTypeBadge(componentType: string): { label: string; bgColor:
   return { label: type, bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-700 dark:text-gray-300" };
 }
 
+/**
+ * Parses stroke order diagrams from the string containing multiple SVGs
+ * SVGs are separated by multiple newlines
+ */
+function parseStrokeOrderDiagrams(diagramString: string | null): string[] {
+  if (!diagramString) {
+    return [];
+  }
+
+  // Split by triple newlines and filter out empty strings
+  return diagramString
+    .split(/\n\n\n+/)
+    .map((svg) => svg.trim())
+    .filter((svg) => svg.length > 0);
+}
+
 export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDisplayProps) {
   const meaningTreeItems = parseMeaningTree(character.meaning_tree_as_character_simp);
 
@@ -86,12 +102,37 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
     .filter((c) => c.charset === "simp")
     .sort((a, b) => a.position - b.position);
 
+  // Parse stroke order diagrams (prefer traditional if available, fallback to simplified)
+  const strokeOrderDiagrams = parseStrokeOrderDiagrams(
+    character.so_diagram_trad || character.so_diagram_simp
+  );
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6">
-      {/* Form Description */}
-      <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950">
-        <h3 className="mb-2 text-sm font-semibold text-blue-900 dark:text-blue-300">Form Description</h3>
-        <p className="text-sm text-gray-800 dark:text-gray-200">{character.form_explanation_simp}</p>
+      {/* Top Section: Ancient Form and Form Description side by side */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Ancient Form */}
+        {character.ancient_form_image && (
+          <Section title="Ancient Form">
+            <div className="flex items-center justify-center rounded bg-gray-50 p-8 dark:bg-gray-700">
+              <div
+                className="h-48 w-48"
+                dangerouslySetInnerHTML={{ __html: character.ancient_form_image }}
+              />
+            </div>
+          </Section>
+        )}
+
+        {/* Form Description */}
+        <Section title="Form Description">
+          <div className="space-y-4">
+            {character.form_explanation_simp.split("%%").map((paragraph, index) => (
+              <div key={index} className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                {paragraph.trim()}
+              </div>
+            ))}
+          </div>
+        </Section>
       </div>
 
       {/* Components */}
@@ -124,19 +165,38 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
       {/* Meaning Tree */}
       {meaningTreeItems.length > 0 && (
         <Section title="Meaning Tree as a character">
-          <ol className="space-y-2">
+          <ol className="space-y-3">
             {meaningTreeItems.map((item, index) => (
-              <li key={index} className="flex gap-3 text-sm">
-                <span className="flex w-6 flex-shrink-0 items-center justify-center font-semibold text-blue-600 dark:text-blue-400">
+              <li key={index} className="flex gap-3">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-blue-100 font-semibold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                   {index + 1}
                 </span>
-                <span className="flex-1 text-gray-800 dark:text-gray-200">
-                  {item.arrow && <span className="mr-2 text-gray-600 dark:text-gray-400">{item.arrow}</span>}
+                <span className="flex-1 text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                  {item.arrow && <span className="mr-2 font-semibold text-blue-600 dark:text-blue-400">{item.arrow}</span>}
                   {item.text}
                 </span>
               </li>
             ))}
           </ol>
+        </Section>
+      )}
+
+      {/* Stroke Order Diagrams */}
+      {strokeOrderDiagrams.length > 0 && (
+        <Section title="Stroke Order">
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {strokeOrderDiagrams.map((svg, index) => (
+              <div
+                key={index}
+                className="flex h-32 w-32 items-center justify-center rounded bg-gray-50 p-2 dark:bg-gray-700"
+              >
+                <div
+                  className="h-full w-full"
+                  dangerouslySetInnerHTML={{ __html: svg }}
+                />
+              </div>
+            ))}
+          </div>
         </Section>
       )}
     </div>

@@ -349,7 +349,6 @@ export default function CharDetail() {
 
         {activeTab === "hcoutlier" && (
           <>
-            <h2 className="text-2xl">HackChinese Outlier Character Information:</h2>
             {hackChineseOutlierLoading && (
               <div className="text-xl text-gray-600 dark:text-gray-400">
                 Loading HackChinese Outlier data...
