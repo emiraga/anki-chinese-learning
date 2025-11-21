@@ -135,7 +135,7 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
           <Section title="Ancient Form">
             <div className="flex items-center justify-center rounded bg-gray-50 p-8 dark:bg-gray-700">
               <div
-                className="flex h-48 w-48 items-center justify-center [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:h-auto [&>svg]:w-auto"
+                className="flex h-48 w-48 items-center justify-center [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:h-auto [&>svg]:w-auto dark:invert"
                 dangerouslySetInnerHTML={{ __html: character.ancient_form_image }}
               />
             </div>
@@ -239,7 +239,7 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
                 className="flex h-32 w-32 items-center justify-center rounded bg-gray-50 p-2 dark:bg-gray-700"
               >
                 <div
-                  className="h-full w-full"
+                  className="h-full w-full dark:invert"
                   dangerouslySetInnerHTML={{ __html: svg }}
                 />
               </div>
