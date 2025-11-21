@@ -80,11 +80,6 @@ function getComponentTypeBadge(componentType: string): { label: string; bgColor:
     return { label: "EMPTY", bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-600 dark:text-gray-400" };
   }
 
-  // MEANING + SOUND - Purple (distinctive combination, using Dong's remnant color)
-  if (type.includes("MEANING") && type.includes("SOUND")) {
-    return { label: "MEANING + SOUND", bgColor: "bg-purple-100 dark:bg-purple-900", textColor: "text-purple-600 dark:text-purple-400" };
-  }
-
   // Default - Gray
   return { label: type, bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-600 dark:text-gray-400" };
 }
@@ -140,7 +135,7 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
           <Section title="Ancient Form">
             <div className="flex items-center justify-center rounded bg-gray-50 p-8 dark:bg-gray-700">
               <div
-                className="h-48 w-48"
+                className="flex h-48 w-48 items-center justify-center [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:h-auto [&>svg]:w-auto"
                 dangerouslySetInnerHTML={{ __html: character.ancient_form_image }}
               />
             </div>
@@ -164,9 +159,12 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
       {/* Components */}
       {displayComponents.length > 0 && (
         <Section title="Components">
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {displayComponents.map((component) => {
-              const badge = getComponentTypeBadge(component.component_type);
+              // Split component type by " + " to handle combined types
+              const types = component.component_type.split(" + ").map(t => t.trim());
+              const badges = types.map(type => getComponentTypeBadge(type));
+
               return (
                 <div
                   key={component.id}
@@ -174,10 +172,12 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
                 >
                   <div className="mb-3 flex items-start gap-3">
                     <div className="flex-shrink-0 text-4xl dark:text-gray-100">{component.component.trim()}</div>
-                    <div className="flex-1">
-                      <div className={`inline-block rounded px-2 py-1 text-xs font-semibold ${badge.bgColor} ${badge.textColor}`}>
-                        {badge.label}
-                      </div>
+                    <div className="flex-1 flex gap-2">
+                      {badges.map((badge, index) => (
+                        <div key={index} className={`inline-block rounded px-2 py-1 text-xs font-semibold ${badge.bgColor} ${badge.textColor}`}>
+                          {badge.label}
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300">{component.description.trim()}</p>
