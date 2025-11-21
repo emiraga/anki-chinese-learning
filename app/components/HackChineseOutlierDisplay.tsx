@@ -56,6 +56,47 @@ function parseMeaningTree(
 }
 
 /**
+ * Parses component strings that may contain special notation:
+ * - [X-Y] means "character X minus component Y"
+ * - [X+Y] means "components X and Y combined"
+ * - Regular characters are returned as-is
+ */
+function parseComponentNotation(component: string): {
+  type: "subtraction" | "addition" | "regular";
+  parts: string[];
+  displayText: string;
+} {
+  const trimmed = component.trim();
+
+  // Check for subtraction: [X-Y]
+  const subtractionMatch = trimmed.match(/^\[(.+?)-(.+?)\]$/);
+  if (subtractionMatch) {
+    return {
+      type: "subtraction",
+      parts: [subtractionMatch[1], subtractionMatch[2]],
+      displayText: `${subtractionMatch[1]} − ${subtractionMatch[2]}`,
+    };
+  }
+
+  // Check for addition: [X+Y]
+  const additionMatch = trimmed.match(/^\[(.+?)\+(.+?)\]$/);
+  if (additionMatch) {
+    return {
+      type: "addition",
+      parts: [additionMatch[1], additionMatch[2]],
+      displayText: `${additionMatch[1]} + ${additionMatch[2]}`,
+    };
+  }
+
+  // Regular component
+  return {
+    type: "regular",
+    parts: [trimmed],
+    displayText: trimmed,
+  };
+}
+
+/**
  * Gets the badge style based on component type
  * Colors match DongCharacterDisplay for consistency
  */
@@ -231,14 +272,47 @@ export function HackChineseOutlierDisplay({
                 .map((t) => t.trim());
               const badges = types.map((type) => getComponentTypeBadge(type));
 
+              // Parse the component notation
+              const notation = parseComponentNotation(component.component);
+
               return (
                 <div
                   key={component.id}
                   className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-700"
                 >
                   <div className="mb-3 flex items-start gap-3">
-                    <div className="shrink-0 text-4xl dark:text-gray-100">
-                      {component.component.trim()}
+                    {/* Component display with special notation handling */}
+                    <div className="shrink-0">
+                      {notation.type === "regular" ? (
+                        <div className="text-4xl dark:text-gray-100">
+                          {notation.displayText}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-3xl dark:text-gray-100">
+                              {notation.parts[0]}
+                            </span>
+                            <span
+                              className={`text-xl font-bold ${
+                                notation.type === "subtraction"
+                                  ? "text-red-500 dark:text-red-400"
+                                  : "text-green-500 dark:text-green-400"
+                              }`}
+                            >
+                              {notation.type === "subtraction" ? "−" : "+"}
+                            </span>
+                            <span className="text-3xl dark:text-gray-100">
+                              {notation.parts[1]}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            {notation.type === "subtraction"
+                              ? "minus"
+                              : "combined"}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 flex gap-2">
                       {badges.map((badge, index) => (
