@@ -14,8 +14,6 @@ from pathlib import Path
 from typing import List, Set, Dict, Any, Optional
 from queue import PriorityQueue
 
-queue = PriorityQueue()
-
 WORDS_DIR = Path("/Users/emirb/src/Learning_Languages/chinese/anki-chinese-learning/data/hackchinese/words")
 LISTS_DIR = Path("/Users/emirb/src/Learning_Languages/chinese/anki-chinese-learning/data/hackchinese/lists")
 BASE_URL = "https://www.hackchinese.com/words"
@@ -94,20 +92,6 @@ def get_existing_word_ids(directory: Path) -> Set[str]:
         existing_ids.add(word_id)
 
     return existing_ids
-
-
-def check_word_exists(word_id: str, existing_ids: Set[str]) -> bool:
-    """
-    Check if a word file exists for the given ID.
-
-    Args:
-        word_id: The word ID to check
-        existing_ids: Set of existing word IDs
-
-    Returns:
-        True if word exists, False otherwise
-    """
-    return word_id in existing_ids
 
 
 def open_in_browser_and_wait(word_id: str, traditional: str = "", base_url: str = BASE_URL) -> Path:
@@ -219,58 +203,6 @@ def get_list_words_info(lists: List[Dict[str, Any]]) -> Dict[str, str]:
     return word_info
 
 
-def is_single_char_word(word_id: str, list_word_info: Dict[str, str]) -> bool:
-    """
-    Check if a word ID corresponds to a single character word.
-
-    Args:
-        word_id: The word ID to check
-        list_word_info: Dictionary mapping word IDs to traditional characters
-
-    Returns:
-        True if this is a single character word, False otherwise
-    """
-    traditional = list_word_info.get(word_id, "")
-    return len(traditional) == 1
-
-
-def build_char_to_id_mapping(list_word_info: Dict[str, str]) -> Dict[str, str]:
-    """
-    Build reverse mapping from single character to word ID.
-
-    Args:
-        list_word_info: Dictionary mapping word IDs to traditional characters
-
-    Returns:
-        Dictionary mapping single characters to their word IDs
-    """
-    char_to_id = {}
-    for word_id, traditional in list_word_info.items():
-        if len(traditional) == 1:
-            char_to_id[traditional] = word_id
-    return char_to_id
-
-
-def all_chars_loaded(traditional: str, existing_ids: Set[str], char_to_id: Dict[str, str]) -> bool:
-    """
-    Check if all individual characters from a word are already loaded.
-
-    Args:
-        traditional: The traditional form of the word
-        existing_ids: Set of word IDs that already exist
-        char_to_id: Mapping from characters to word IDs
-
-    Returns:
-        True if all individual characters are loaded, False otherwise
-    """
-    for char in traditional:
-        word_id = char_to_id.get(char)
-        # If this character has a word ID and it's not loaded, we need it
-        if word_id and word_id not in existing_ids:
-            return False
-    return True
-
-
 def main():
     """
     Main function to preload missing words with intelligent prioritization.
@@ -317,10 +249,6 @@ def main():
     print("\n[4/5] Building word info from lists...")
     list_word_info = get_list_words_info(lists)
     print(f"  Found {len(list_word_info)} unique words across all lists")
-
-    # Build character to ID mapping
-    char_to_id = build_char_to_id_mapping(list_word_info)
-    print(f"  Mapped {len(char_to_id)} single characters to word IDs")
 
     # Build priority queue
     print("\n[5/5] Building priority queue...")
