@@ -284,10 +284,20 @@ def main():
     print("HackChinese Word Preloader")
     print("=" * 60)
 
-    # Get existing word IDs
+    # Get existing word IDs and single character words
     print("\n[1/5] Loading existing word files...")
     existing_ids = get_existing_word_ids(WORDS_DIR)
     print(f"  Found {len(existing_ids)} existing words")
+
+    # Build set of downloaded single characters
+    downloaded_chars = set()
+    for file_path in WORDS_DIR.glob("*.json"):
+        word_data = load_single_word_file(file_path)
+        if word_data:
+            traditional = word_data.get("word", {}).get("traditional", "")
+            if len(traditional) == 1:
+                downloaded_chars.add(traditional)
+    print(f"  Found {len(downloaded_chars)} single-character words already downloaded")
 
     # Load all existing words to extract components
     print("\n[2/5] Extracting components from existing words...")
@@ -379,6 +389,11 @@ def main():
             # Load the newly downloaded word and extract its components
             new_word = load_single_word_file(file_path)
             if new_word:
+                # Add to downloaded_chars if it's a single character
+                word_traditional = new_word.get("word", {}).get("traditional", "")
+                if len(word_traditional) == 1:
+                    downloaded_chars.add(word_traditional)
+
                 new_component_ids = extract_component_ids(new_word)
                 added_components = 0
                 for comp_id in new_component_ids:
