@@ -106,14 +106,27 @@ function parseStrokeOrderDiagrams(diagramString: string | null): string[] {
 }
 
 export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDisplayProps) {
-  const meaningTreeItems = parseMeaningTree(character.meaning_tree_as_character_simp);
+  // Prefer traditional data, fallback to simplified
+  const meaningTreeItems = parseMeaningTree(
+    character.meaning_tree_as_character_trad || character.meaning_tree_as_character_simp
+  );
+  const meaningTreeAsComponentItems = parseMeaningTree(
+    character.meaning_tree_as_component_trad || character.meaning_tree_as_component_simp
+  );
 
-  // Get unique components (simp charset only to avoid duplicates)
+  // Get unique components (prefer trad charset, fallback to simp)
   const components = character.component_analyses
-    .filter((c) => c.charset === "simp")
+    .filter((c) => c.charset === "trad")
     .sort((a, b) => a.position - b.position);
 
-  // Parse stroke order diagrams (prefer traditional if available, fallback to simplified)
+  // If no traditional components, use simplified as fallback
+  const displayComponents = components.length > 0
+    ? components
+    : character.component_analyses
+        .filter((c) => c.charset === "simp")
+        .sort((a, b) => a.position - b.position);
+
+  // Parse stroke order diagrams (prefer traditional, fallback to simplified)
   const strokeOrderDiagrams = parseStrokeOrderDiagrams(
     character.so_diagram_trad || character.so_diagram_simp
   );
@@ -137,20 +150,22 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         {/* Form Description */}
         <Section title="Form Description">
           <div className="space-y-4">
-            {character.form_explanation_simp.split("%%").map((paragraph, index) => (
-              <div key={index} className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
-                {paragraph.trim()}
-              </div>
-            ))}
+            {(character.form_explanation_trad || character.form_explanation_simp)
+              .split("%%")
+              .map((paragraph, index) => (
+                <div key={index} className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                  {paragraph.trim()}
+                </div>
+              ))}
           </div>
         </Section>
       </div>
 
       {/* Components */}
-      {components.length > 0 && (
+      {displayComponents.length > 0 && (
         <Section title="Components">
           <div className="space-y-4">
-            {components.map((component) => {
+            {displayComponents.map((component) => {
               const badge = getComponentTypeBadge(component.component_type);
               return (
                 <div
@@ -173,7 +188,7 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
         </Section>
       )}
 
-      {/* Meaning Tree */}
+      {/* Meaning Tree as a Character */}
       {meaningTreeItems.length > 0 && (
         <Section title="Meaning Tree as a character">
           <ol className="space-y-3">
@@ -184,6 +199,28 @@ export function HackChineseOutlierDisplay({ character }: HackChineseOutlierDispl
                 </span>
                 <span className="flex-1 text-base leading-relaxed text-gray-800 dark:text-gray-200">
                   {item.arrow && <span className="mr-2 font-semibold text-blue-600 dark:text-blue-400">{item.arrow}</span>}
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </Section>
+      )}
+
+      {/* Meaning Tree as a Component */}
+      {meaningTreeAsComponentItems.length > 0 && (
+        <Section title="Meaning Tree as a component">
+          <p className="mb-4 text-sm italic text-gray-600 dark:text-gray-400">
+            How this character&apos;s meaning evolved when used as a component in other characters:
+          </p>
+          <ol className="space-y-3">
+            {meaningTreeAsComponentItems.map((item, index) => (
+              <li key={index} className="flex gap-3">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-green-100 font-semibold text-green-600 dark:bg-green-900 dark:text-green-300">
+                  {index + 1}
+                </span>
+                <span className="flex-1 text-base leading-relaxed text-gray-800 dark:text-gray-200">
+                  {item.arrow && <span className="mr-2 font-semibold text-green-600 dark:text-green-400">{item.arrow}</span>}
                   {item.text}
                 </span>
               </li>
