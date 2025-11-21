@@ -55,27 +55,38 @@ function parseMeaningTree(meaningTree: string | null): Array<{ arrow: string; te
 
 /**
  * Gets the badge style based on component type
+ * Colors match DongCharacterDisplay for consistency
  */
 function getComponentTypeBadge(componentType: string): { label: string; bgColor: string; textColor: string } {
   const type = componentType.toUpperCase();
 
+  // SOUND - Blue (matches Dong's sound component)
   if (type === "SOUND") {
-    return { label: "SOUND", bgColor: "bg-blue-100 dark:bg-blue-900", textColor: "text-blue-700 dark:text-blue-300" };
-  }
-  if (type === "MEANING") {
-    return { label: "MEANING", bgColor: "bg-cyan-100 dark:bg-cyan-900", textColor: "text-cyan-700 dark:text-cyan-300" };
-  }
-  if (type === "FORM") {
-    return { label: "FORM", bgColor: "bg-purple-100 dark:bg-purple-900", textColor: "text-purple-700 dark:text-purple-300" };
-  }
-  if (type === "EMPTY") {
-    return { label: "EMPTY", bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-700 dark:text-gray-300" };
-  }
-  if (type.includes("MEANING") && type.includes("SOUND")) {
-    return { label: "MEANING + SOUND", bgColor: "bg-teal-100 dark:bg-teal-900", textColor: "text-teal-700 dark:text-teal-300" };
+    return { label: "SOUND", bgColor: "bg-blue-100 dark:bg-blue-900", textColor: "text-blue-600 dark:text-blue-400" };
   }
 
-  return { label: type, bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-700 dark:text-gray-300" };
+  // MEANING - Red (matches Dong's meaning component)
+  if (type === "MEANING") {
+    return { label: "MEANING", bgColor: "bg-red-100 dark:bg-red-900", textColor: "text-red-600 dark:text-red-400" };
+  }
+
+  // FORM - Green (matches Dong's iconic component - visual representation)
+  if (type === "FORM") {
+    return { label: "FORM", bgColor: "bg-green-100 dark:bg-green-900", textColor: "text-green-600 dark:text-green-400" };
+  }
+
+  // EMPTY - Gray (matches Dong's deleted/unknown)
+  if (type === "EMPTY") {
+    return { label: "EMPTY", bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-600 dark:text-gray-400" };
+  }
+
+  // MEANING + SOUND - Purple (distinctive combination, using Dong's remnant color)
+  if (type.includes("MEANING") && type.includes("SOUND")) {
+    return { label: "MEANING + SOUND", bgColor: "bg-purple-100 dark:bg-purple-900", textColor: "text-purple-600 dark:text-purple-400" };
+  }
+
+  // Default - Gray
+  return { label: type, bgColor: "bg-gray-100 dark:bg-gray-700", textColor: "text-gray-600 dark:text-gray-400" };
 }
 
 /**
