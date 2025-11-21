@@ -383,6 +383,18 @@ def main():
         priority_label = {1: "SINGLE-CHAR", 2: "COMPONENT", 3: "MULTI-CHAR"}[priority]
         print(f"\n[{downloaded}/{total_to_download}] ({priority_label}) {traditional} (ID: {word_id})")
 
+        # Check if all characters of this word are already downloaded
+        if all(char in downloaded_chars for char in traditional):
+            print(f"  ⊘ Skipped (all characters already downloaded)")
+            continue
+
+        # Check if file already exists (safety check)
+        file_path = WORDS_DIR / f"{word_id}.json"
+        if file_path.exists():
+            print(f"  ⊘ Skipped (already exists)")
+            existing_ids.add(word_id)
+            continue
+
         try:
             file_path = open_in_browser_and_wait(word_id, traditional)
 
