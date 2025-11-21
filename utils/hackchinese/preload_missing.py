@@ -239,7 +239,18 @@ def main():
     # Convert file arguments to Path objects
     list_file_paths = None
     if args.files:
-        list_file_paths = [Path(f) if Path(f).is_absolute() else LISTS_DIR / f for f in args.files]
+        list_file_paths = []
+        for f in args.files:
+            path = Path(f)
+            # If absolute, use as-is
+            if path.is_absolute():
+                list_file_paths.append(path)
+            # If already exists, use as-is (handles relative paths from cwd)
+            elif path.exists():
+                list_file_paths.append(path)
+            # Otherwise, assume it's relative to LISTS_DIR
+            else:
+                list_file_paths.append(LISTS_DIR / f)
 
     print("=" * 60)
     print("HackChinese Word Preloader")
@@ -251,7 +262,17 @@ def main():
     print(f"  Found {len(existing_ids)} existing words")
 
     # Build set of downloaded single characters
-    downloaded_chars = set()
+    # Include all alphanumeric and common punctuation
+    downloaded_chars = set(['，','。','！','？','；','：','、','…','—','·','「','」','『','』','（','）','《','》', '…',
+                           '!','?',';',':',',','.','-','_','\'','"','(',')','[',']','{','}','<','>','/','\\',
+                           '|','@','#','$','%','^','&','*','+','=','~','`'])
+    # Add all alphanumeric characters
+    downloaded_chars.update(chr(i) for i in range(ord('a'), ord('z') + 1))  # a-z
+    downloaded_chars.update(chr(i) for i in range(ord('A'), ord('Z') + 1))  # A-Z
+    downloaded_chars.update(chr(i) for i in range(ord('0'), ord('9') + 1))  # 0-9
+    downloaded_chars.add(' ')  # space
+    print(f"  Pre-initialized {len(downloaded_chars)} characters (alphanumeric + punctuation)")
+
     for file_path in WORDS_DIR.glob("*.json"):
         word_data = load_single_word_file(file_path)
         if word_data:
@@ -327,13 +348,6 @@ def main():
 
     if total_to_download == 0:
         print("\n✓ All words are already downloaded!")
-        return
-
-    # Ask user if they want to proceed
-    print("\nThis will open browser tabs for each word.")
-    response = input("Do you want to proceed? (y/n): ")
-    if response.lower() != 'y':
-        print("Aborted.")
         return
 
     # Process queue
