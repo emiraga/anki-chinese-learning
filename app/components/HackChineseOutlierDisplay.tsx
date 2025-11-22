@@ -242,9 +242,9 @@ export function HackChineseOutlierDisplay({
         {/* Ancient Form */}
         {character.ancient_form_image && (
           <Section title="Ancient Form">
-            <div className="flex items-center justify-center rounded bg-gray-50 p-8 dark:bg-gray-700">
+            <div className="flex items-center justify-center rounded bg-gray-50 p-8 dark:bg-gray-700 min-h-[400px]">
               <div
-                className="flex h-48 w-48 items-center justify-center [&>svg]:max-h-full [&>svg]:max-w-full [&>svg]:h-auto [&>svg]:w-auto dark:invert"
+                className="flex items-center justify-center w-full h-full [&>svg]:h-80 [&>svg]:w-80 dark:invert"
                 dangerouslySetInnerHTML={{
                   __html: character.ancient_form_image,
                 }}
