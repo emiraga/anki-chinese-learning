@@ -82,9 +82,9 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
             text=True,
             check=True
         )
-        time.sleep(0.5)
+        time.sleep(0.8)
 
-        # Step 2: Click in the middle of the window to ensure focus
+        # Step 2: Click in the middle of the window to ensure focus (twice)
         click_script = f'''
         tell application "System Events"
             tell process "{window_name}"
@@ -105,7 +105,16 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
         )
         time.sleep(0.3)
 
-        # Step 3: Select all
+        # Click again to ensure focus
+        subprocess.run(
+            ['osascript', '-e', click_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.5)
+
+        # Step 3: Select all (twice)
         select_all_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "a" using command down'
         subprocess.run(
             ['osascript', '-e', select_all_script],
@@ -115,6 +124,15 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
         )
         time.sleep(0.3)
 
+        # Select all again to ensure everything is selected
+        subprocess.run(
+            ['osascript', '-e', select_all_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.5)
+
         # Step 4: Copy
         copy_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "c" using command down'
         subprocess.run(
@@ -123,7 +141,7 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
             text=True,
             check=True
         )
-        time.sleep(0.5)
+        time.sleep(0.8)
 
         print(f"✓ Successfully copied from '{window_name}' window")
         return True
