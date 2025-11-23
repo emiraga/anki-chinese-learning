@@ -32,6 +32,12 @@ except ImportError:
 
 
 # Type definitions for Outlier dictionary data
+class Reference(TypedDict, total=False):
+    """A reference to another character"""
+    char: str
+    href: str
+
+
 class Character(TypedDict, total=False):
     """A character entry in a series"""
     traditional: str
@@ -65,6 +71,7 @@ class OutlierData(TypedDict, total=False):
     simplified: Optional[str]
     pinyin: Optional[List[str]]
     note: Optional[str]
+    references: Optional[List[Reference]]
     sound_series: Optional[Series]
     semantic_series: Optional[Series]
     empty_component: Optional[EmptyComponentData]
@@ -472,9 +479,12 @@ def parse_outlier_html(html_str: str) -> OutlierData:
 
     # Extract top-level note between h1 and first h2 (if any)
     # This captures notes like "口 is the canonical form. See also the series for variants: 厶(口)"
+    # Also extract references from links
     if h1:
         first_h2 = soup.find('h2')
         note_parts = []
+        references: List[Reference] = []
+
         for sibling in h1.find_next_siblings():
             if sibling == first_h2:
                 break
@@ -483,8 +493,32 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                 p_text = sibling.get_text(separator=' ', strip=True)
                 if p_text:
                     note_parts.append(p_text)
+
+                # Extract references from links in this paragraph
+                for link in sibling.find_all('a'):
+                    href = link.get('href', '')
+                    # Get text from link, or from img alt if it's an image link
+                    link_text = link.get_text(strip=True)
+                    if not link_text:
+                        # Check if there's an img tag inside
+                        img = link.find('img')
+                        if img:
+                            # For image links, we can't get the character from alt,
+                            # but we can try to extract from the href pattern
+                            # or just skip it for now
+                            continue
+
+                    if href and link_text:
+                        ref: Reference = {
+                            'char': link_text,
+                            'href': href
+                        }
+                        references.append(ref)
+
         if note_parts:
             data['note'] = ' '.join(note_parts)
+        if references:
+            data['references'] = references
 
     # Extract main character pinyin from the first h2 section (usually sound series)
     # Look for pattern like "This is the sound series for 且 qiě."
@@ -510,13 +544,36 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     # Process each h2 section
     current_h2 = None
     pending_text = []
+    pending_elements = []
 
-    def save_section(h2_name, text_list, chars_list=None):
+    def save_section(h2_name, text_list, element_list, chars_list=None):
         """Helper to save section data"""
         if not h2_name:
             return
 
         explanation = ' '.join(text_list).strip() if text_list else None
+
+        # Extract references from links in this section's elements
+        section_refs: List[Reference] = []
+        for elem in element_list:
+            for link in elem.find_all('a'):
+                href = link.get('href', '')
+                link_text = link.get_text(strip=True)
+                if href and link_text:
+                    ref: Reference = {
+                        'char': link_text,
+                        'href': href
+                    }
+                    section_refs.append(ref)
+
+        # Add section references to global references
+        if section_refs:
+            if 'references' not in data:
+                data['references'] = []
+            # Only add unique references
+            for ref in section_refs:
+                if ref not in data['references']:
+                    data['references'].append(ref)
 
         if 'sound series' in h2_name:
             if 'sound_series' not in data:
@@ -554,15 +611,17 @@ def parse_outlier_html(html_str: str) -> OutlierData:
         if element.name == 'h2':
             # Save previous section if it had only text, no list
             if current_h2 and pending_text:
-                save_section(current_h2, pending_text)
+                save_section(current_h2, pending_text, pending_elements)
 
             current_h2 = element.get_text(strip=True).lower()
             pending_text = []
+            pending_elements = []
 
         elif element.name in ['p', 'span'] and current_h2:
             p_text = element.get_text(strip=True)
             if p_text:
                 pending_text.append(p_text)
+                pending_elements.append(element)
 
         elif element.name == 'ul' and current_h2:
             # Parse list items as characters
@@ -573,12 +632,13 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                     characters.append(char)
 
             # Save section with both characters and explanation
-            save_section(current_h2, pending_text, characters)
+            save_section(current_h2, pending_text, pending_elements, characters)
             pending_text = []
+            pending_elements = []
 
     # Save final section if it had only text, no list
     if current_h2 and pending_text:
-        save_section(current_h2, pending_text)
+        save_section(current_h2, pending_text, pending_elements)
 
     return data
 
