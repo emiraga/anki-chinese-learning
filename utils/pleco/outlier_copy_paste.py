@@ -41,14 +41,26 @@ class Series(TypedDict, total=False):
     characters: List[Character]
 
 
+class EmptyComponentData(TypedDict, total=False):
+    """Empty component data"""
+    explanation: str
+    characters: List[Character]
+
+
+class RadicalData(TypedDict, total=False):
+    """Radical data"""
+    explanation: str
+    characters: List[Character]
+
+
 class OutlierData(TypedDict, total=False):
     """Complete Outlier dictionary entry structure"""
     traditional: str
     simplified: Optional[str]
     sound_series: Optional[Series]
     semantic_series: Optional[Series]
-    empty_component: Optional[str]
-    radical: Optional[str]
+    empty_component: Optional[EmptyComponentData]
+    radical: Optional[RadicalData]
     raw_html: Optional[str]
 
 
@@ -410,18 +422,23 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                 if explanation:
                     data['semantic_series']['explanation'] = explanation
 
-            pending_text = []
+            elif 'empty component' in current_h2:
+                if 'empty_component' not in data:
+                    data['empty_component'] = {}
+                if characters:
+                    data['empty_component']['characters'] = characters
+                if explanation:
+                    data['empty_component']['explanation'] = explanation
 
-    # Handle sections without lists
-    for element in soup.find_all(['h2', 'p']):
-        if element.name == 'h2':
-            current_h2 = element.get_text(strip=True).lower()
-        elif element.name == 'p' and current_h2:
-            p_text = element.get_text(strip=True)
-            if 'empty component' in current_h2 and p_text:
-                data['empty_component'] = p_text
-            elif 'radical' in current_h2 and p_text:
-                data['radical'] = p_text
+            elif 'radical' in current_h2:
+                if 'radical' not in data:
+                    data['radical'] = {}
+                if characters:
+                    data['radical']['characters'] = characters
+                if explanation:
+                    data['radical']['explanation'] = explanation
+
+            pending_text = []
 
     return data
 
