@@ -14,6 +14,7 @@ Usage:
     ./utils/pleco/outlier_copy_paste.py                    # Process clipboard content
     ./utils/pleco/outlier_copy_paste.py --auto-copy        # Auto-copy from iPhone Mirroring window
     ./utils/pleco/outlier_copy_paste.py --rebuild          # Rebuild JSON files from HTML files
+    ./utils/pleco/outlier_copy_paste.py --preload-list     # Generate top 50 sound components to explore
 """
 
 import subprocess
@@ -643,6 +644,98 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     return data
 
 
+def generate_preload_list():
+    """
+    Generate a list of the top 50 characters to preload based on their usage as sound components.
+    For each Dong Chinese JSON file, count how many entries in componentIn have type "sound".
+    Skip characters that already have Outlier data.
+    """
+    script_dir = Path(__file__).parent.parent.parent
+    dong_dir = script_dir / 'public' / 'data' / 'dong'
+    outlier_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
+
+    if not dong_dir.exists():
+        raise FileNotFoundError(f"Dong Chinese directory not found: {dong_dir}")
+
+    # Get existing outlier characters
+    existing_outlier_chars = set()
+    if outlier_dir.exists():
+        for json_file in outlier_dir.glob('*.json'):
+            char_name = json_file.stem
+            if char_name and len(char_name) <= 2:
+                existing_outlier_chars.add(char_name)
+
+    print(f"Found {len(existing_outlier_chars)} existing Outlier entries")
+    print()
+
+    # Count sound component usage for each character
+    sound_component_counts = {}
+
+    dong_files = list(dong_dir.glob('*.json'))
+    print(f"Scanning {len(dong_files)} Dong Chinese files...")
+    print()
+
+    for json_file in dong_files:
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            char = data.get('char')
+            if not char:
+                continue
+
+            # Count how many entries in componentIn have type "sound"
+            component_in = data.get('componentIn', [])
+            sound_count = 0
+
+            for usage in component_in:
+                components = usage.get('components', [])
+                for comp in components:
+                    # Check if this is our character and has "sound" in type
+                    if comp.get('character') == char and 'sound' in comp.get('type', []):
+                        sound_count += 1
+                        break  # Only count once per usage entry
+
+            if sound_count > 0:
+                sound_component_counts[char] = sound_count
+
+        except Exception as e:
+            print(f"  Warning: Error processing {json_file.name}: {e}", file=sys.stderr)
+            continue
+
+    # Filter out characters that already have Outlier data
+    filtered_counts = {
+        char: count
+        for char, count in sound_component_counts.items()
+        if char not in existing_outlier_chars
+    }
+
+    # Sort by count (descending) and take top 50
+    sorted_chars = sorted(filtered_counts.items(), key=lambda x: x[1], reverse=True)
+    top_50 = sorted_chars[:50]
+
+    # Display results
+    print("=" * 80)
+    print("TOP 50 SOUND COMPONENTS TO PRELOAD")
+    print("=" * 80)
+    print()
+
+    if top_50:
+        # Print as single line without spaces
+        result = "".join([char for char, _ in top_50])
+        print(result)
+        print()
+    else:
+        print("No candidates found")
+        print()
+
+    print("=" * 80)
+    print(f"Total characters with sound component usage: {len(sound_component_counts)}")
+    print(f"Already have Outlier data: {len([c for c in sound_component_counts if c in existing_outlier_chars])}")
+    print(f"Missing Outlier data: {len(filtered_counts)}")
+    print()
+
+
 def rebuild_from_html_files():
     """Rebuild JSON files from saved HTML files"""
     script_dir = Path(__file__).parent.parent.parent
@@ -696,6 +789,8 @@ def main():
     parser = argparse.ArgumentParser(description='Extract Outlier dictionary data from clipboard')
     parser.add_argument('--rebuild', action='store_true',
                        help='Rebuild JSON files from saved HTML files')
+    parser.add_argument('--preload-list', action='store_true',
+                       help='Generate list of top 50 sound components to preload')
     parser.add_argument('--auto-copy', action='store_true',
                        help='Automatically copy from iPhone Mirroring window before processing')
     parser.add_argument('--window-name', type=str, default='iPhone Mirroring',
@@ -704,6 +799,10 @@ def main():
 
     if args.rebuild:
         rebuild_from_html_files()
+        return
+
+    if args.preload_list:
+        generate_preload_list()
         return
 
     # Auto-copy from window if requested
