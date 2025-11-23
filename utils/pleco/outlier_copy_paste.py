@@ -9,6 +9,11 @@
 """
 Rich text paste handler for macOS
 Accepts paste from clipboard and displays text with formatting details
+
+Usage:
+    ./utils/pleco/outlier_copy_paste.py                    # Process clipboard content
+    ./utils/pleco/outlier_copy_paste.py --auto-copy        # Auto-copy from iPhone Mirroring window
+    ./utils/pleco/outlier_copy_paste.py --rebuild          # Rebuild JSON files from HTML files
 """
 
 import subprocess
@@ -59,6 +64,7 @@ class OutlierData(TypedDict, total=False):
     traditional: str
     simplified: Optional[str]
     pinyin: Optional[List[str]]
+    note: Optional[str]
     sound_series: Optional[Series]
     semantic_series: Optional[Series]
     empty_component: Optional[EmptyComponentData]
@@ -464,6 +470,21 @@ def parse_outlier_html(html_str: str) -> OutlierData:
         if match:
             data['traditional'] = match.group(1)
 
+    # Extract top-level note between h1 and first h2 (if any)
+    # This captures notes like "口 is the canonical form. See also the series for variants: 厶(口)"
+    if h1:
+        first_h2 = soup.find('h2')
+        note_parts = []
+        for sibling in h1.find_next_siblings():
+            if sibling == first_h2:
+                break
+            if sibling.name == 'p':
+                p_text = sibling.get_text(strip=True)
+                if p_text:
+                    note_parts.append(p_text)
+        if note_parts:
+            data['note'] = ' '.join(note_parts)
+
     # Extract main character pinyin from the first h2 section (usually sound series)
     # Look for pattern like "This is the sound series for 且 qiě."
     first_section = soup.find('h2')
@@ -774,13 +795,13 @@ def main():
                 print("No character found in data, skipping file save", file=sys.stderr)
 
     # Character analysis
-    if plain_text:
-        print("CHARACTER ANALYSIS:")
-        print("-" * 80)
-        print("First 100 characters with Unicode points:")
-        for i, char in enumerate(plain_text[:100]):
-            print(f"  {i:3d}: '{char}' U+{ord(char):04X} ({ord(char)}) - {char.encode('unicode_escape').decode('ascii')}")
-        print()
+    # if plain_text:
+    #     print("CHARACTER ANALYSIS:")
+    #     print("-" * 80)
+    #     print("First 100 characters with Unicode points:")
+    #     for i, char in enumerate(plain_text[:100]):
+    #         print(f"  {i:3d}: '{char}' U+{ord(char):04X} ({ord(char)}) - {char.encode('unicode_escape').decode('ascii')}")
+    #     print()
 
 
 if __name__ == '__main__':
