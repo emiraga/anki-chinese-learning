@@ -18,6 +18,8 @@ from pypinyin import pinyin, Style
 
 # In-memory cache for translations
 _translation_cache: dict[str, str] = {}
+# Lazy-initialized translation client
+_translation_client = None
 
 
 def get_pinyin_from_library(char: str) -> list:
@@ -51,14 +53,27 @@ def get_pinyin_from_library(char: str) -> list:
     return []
 
 
-def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
+def get_translation_client():
+    """
+    Get or initialize the Google Cloud Translation client lazily.
+
+    Returns:
+        Google Cloud Translation client
+    """
+    global _translation_client
+    if _translation_client is None:
+        print("Initializing Google Cloud Translation client...")
+        _translation_client = translate.Client()
+    return _translation_client
+
+
+def translate_text_with_google(text: str, max_retries: int = 3) -> str:
     """
     Translate Chinese text to English using Google Cloud Translation API.
     Uses in-memory cache to avoid redundant API calls.
 
     Args:
         text: Chinese text to translate
-        client: Google Cloud Translation client
         max_retries: Maximum number of retry attempts
 
     Returns:
@@ -73,6 +88,9 @@ def translate_text_with_google(text: str, client, max_retries: int = 3) -> str:
     # Check cache first
     if text in _translation_cache:
         return _translation_cache[text]
+
+    # Get client lazily
+    client = get_translation_client()
 
     # Not in cache, translate it
     for attempt in range(max_retries):
@@ -155,13 +173,12 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
     return char_to_pinyin
 
 
-def process_dong_file(file_path: Path, client, char_to_pinyin: dict[str, list], dry_run: bool = False) -> bool:
+def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list], dry_run: bool = False) -> bool:
     """
     Process a single dong JSON file and add English translations and pinyinFrequencies.
 
     Args:
         file_path: Path to the JSON file
-        client: Google Cloud Translation client
         char_to_pinyin: Mapping from character to pinyinFrequencies
         dry_run: If True, only print what would be done without saving
 
@@ -185,7 +202,7 @@ def process_dong_file(file_path: Path, client, char_to_pinyin: dict[str, list], 
                 if 'shuowen_en_translation' not in char_obj or not char_obj['shuowen_en_translation']:
                     print(f"Translating shuowen for {char_obj.get('char', 'unknown')}...")
                     try:
-                        translation = translate_text_with_google(char_obj['shuowen'], client)
+                        translation = translate_text_with_google(char_obj['shuowen'])
                         char_obj['shuowen_en_translation'] = translation
                         modified = True
                         print(f"  Original: {char_obj['shuowen'][:80]}...")
@@ -204,7 +221,7 @@ def process_dong_file(file_path: Path, client, char_to_pinyin: dict[str, list], 
                         if 'text_en_translation' not in comment or not comment['text_en_translation']:
                             print(f"Translating comment for {char_obj.get('char', 'unknown')}...")
                             try:
-                                translation = translate_text_with_google(comment['text'], client)
+                                translation = translate_text_with_google(comment['text'])
                                 comment['text_en_translation'] = translation
                                 modified = True
                                 print(f"  Original: {comment['text'][:80]}...")
@@ -293,14 +310,6 @@ def main():
     # Set environment variable for Google Cloud credentials
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(credentials_path)
 
-    # Initialize translation client
-    print("Initializing Google Cloud Translation client...")
-    try:
-        client = translate.Client()
-    except Exception as e:
-        print(f"Error initializing translation client: {e}")
-        sys.exit(1)
-
     dong_dir = project_root / 'public' / 'data' / 'dong'
 
     if not dong_dir.exists():
@@ -334,7 +343,7 @@ def main():
     modified_count = 0
     for file_path in files_to_process:
         try:
-            if process_dong_file(file_path, client, char_to_pinyin, dry_run=args.dry_run):
+            if process_dong_file(file_path, char_to_pinyin, dry_run=args.dry_run):
                 modified_count += 1
         except Exception as e:
             print(f"Error processing {file_path.name}: {e}")

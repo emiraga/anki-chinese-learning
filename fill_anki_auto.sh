@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 pushd utils/zhuyin
 ./fill_zhuyin_anki.py
 popd
