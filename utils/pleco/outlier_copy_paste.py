@@ -261,33 +261,17 @@ def parse_outlier_html(html_str: str) -> OutlierData:
 
     # Process each h2 section
     current_h2 = None
+    pending_text = []
 
     for element in soup.find_all(['h2', 'p', 'ul', 'span']):
         if element.name == 'h2':
             current_h2 = element.get_text(strip=True).lower()
+            pending_text = []
 
-        elif element.name == 'p' and current_h2:
+        elif element.name in ['p', 'span'] and current_h2:
             p_text = element.get_text(strip=True)
-
-            if 'sound series' in current_h2:
-                if 'sound_series' not in data:
-                    data['sound_series'] = {'characters': []}
-                if data['sound_series'] and p_text:
-                    data['sound_series']['explanation'] = p_text
-
-            elif 'semantic series' in current_h2:
-                if 'semantic_series' not in data:
-                    data['semantic_series'] = {'characters': []}
-                if data['semantic_series'] and p_text:
-                    # Accumulate explanation text
-                    current_exp = data['semantic_series'].get('explanation', '')
-                    data['semantic_series']['explanation'] = (current_exp + ' ' + p_text).strip()
-
-            elif 'empty component' in current_h2:
-                data['empty_component'] = p_text
-
-            elif 'radical' in current_h2:
-                data['radical'] = p_text
+            if p_text:
+                pending_text.append(p_text)
 
         elif element.name == 'ul' and current_h2:
             # Parse list items as characters
@@ -297,16 +281,36 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                 if char:
                     characters.append(char)
 
-            if characters:
-                if 'sound series' in current_h2:
-                    if 'sound_series' not in data:
-                        data['sound_series'] = {}
-                    data['sound_series']['characters'] = characters
+            explanation = ' '.join(pending_text).strip()
 
-                elif 'semantic series' in current_h2:
-                    if 'semantic_series' not in data:
-                        data['semantic_series'] = {}
+            if 'sound series' in current_h2:
+                if 'sound_series' not in data:
+                    data['sound_series'] = {}
+                if characters:
+                    data['sound_series']['characters'] = characters
+                if explanation:
+                    data['sound_series']['explanation'] = explanation
+
+            elif 'semantic series' in current_h2:
+                if 'semantic_series' not in data:
+                    data['semantic_series'] = {}
+                if characters:
                     data['semantic_series']['characters'] = characters
+                if explanation:
+                    data['semantic_series']['explanation'] = explanation
+
+            pending_text = []
+
+    # Handle sections without lists
+    for element in soup.find_all(['h2', 'p']):
+        if element.name == 'h2':
+            current_h2 = element.get_text(strip=True).lower()
+        elif element.name == 'p' and current_h2:
+            p_text = element.get_text(strip=True)
+            if 'empty component' in current_h2 and p_text:
+                data['empty_component'] = p_text
+            elif 'radical' in current_h2 and p_text:
+                data['radical'] = p_text
 
     return data
 
