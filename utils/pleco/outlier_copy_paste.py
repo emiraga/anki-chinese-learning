@@ -58,6 +58,7 @@ class OutlierData(TypedDict, total=False):
     """Complete Outlier dictionary entry structure"""
     traditional: str
     simplified: Optional[str]
+    pinyin: Optional[List[str]]
     sound_series: Optional[Series]
     semantic_series: Optional[Series]
     empty_component: Optional[EmptyComponentData]
@@ -403,10 +404,14 @@ def parse_character_from_li(li_element) -> Optional[Character]:
                 # Only set explanation if it's not just the pinyin
                 if clean_red and not is_just_pinyin:
                     char['explanation'] = clean_red
-                # Meaning is everything after the semicolon
-                char['meaning'] = meaning_part
+                    # Meaning is everything after the semicolon (explanation was extracted)
+                    char['meaning'] = meaning_part
+                else:
+                    # Red text was just pinyin, so the semicolon is separating meanings, not explanation
+                    # Keep the full meaning including all parts
+                    char['meaning'] = after_colon
             else:
-                # No red text, so first part is meaning
+                # No red text, so everything is meaning
                 char['meaning'] = after_colon
         else:
             # No semicolon - check if we have red text
@@ -451,6 +456,27 @@ def parse_outlier_html(html_str: str) -> OutlierData:
         match = re.search(r'component\s+(.)', h1_text)
         if match:
             data['traditional'] = match.group(1)
+
+    # Extract main character pinyin from the first h2 section (usually sound series)
+    # Look for pattern like "This is the sound series for 且 qiě."
+    first_section = soup.find('h2')
+    if first_section:
+        # Get all siblings between this h2 and the next h2 or ul
+        # The red tag with pinyin appears at the same level as span tags
+        for sibling in first_section.find_next_siblings():
+            if sibling.name == 'h2':
+                break
+            if sibling.name == 'ul':
+                break
+            # Check if this element itself is a red tag
+            if sibling.name == 'red':
+                red_text = sibling.get_text(strip=True)
+                pinyin_candidates = extract_pinyin_from_text(red_text)
+                if pinyin_candidates:
+                    valid_pinyin = [p for p in pinyin_candidates if validate_pinyin(p)]
+                    if valid_pinyin:
+                        data['pinyin'] = valid_pinyin
+                        break
 
     # Process each h2 section
     current_h2 = None
