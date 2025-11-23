@@ -16,6 +16,7 @@ import sys
 import re
 import json
 import argparse
+import time
 from pathlib import Path
 from typing import TypedDict, List, Optional
 try:
@@ -62,6 +63,75 @@ class OutlierData(TypedDict, total=False):
     empty_component: Optional[EmptyComponentData]
     radical: Optional[RadicalData]
     raw_html: Optional[str]
+
+
+def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
+    """
+    Automatically copy content from a specific window by sending keyboard shortcuts.
+
+    Args:
+        window_name: Name of the window to target (default: "iPhone Mirroring")
+    """
+    try:
+        # Step 1: Activate the application
+        activate_script = f'tell application "{window_name}" to activate'
+        subprocess.run(
+            ['osascript', '-e', activate_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.5)
+
+        # Step 2: Click in the middle of the window to ensure focus
+        click_script = f'''
+        tell application "System Events"
+            tell process "{window_name}"
+                set frontWindow to front window
+                set windowPos to position of frontWindow
+                set windowSize to size of frontWindow
+                set centerX to (item 1 of windowPos) + (item 1 of windowSize) / 2
+                set centerY to (item 2 of windowPos) + (item 2 of windowSize) / 2
+                click at {{centerX, centerY}}
+            end tell
+        end tell
+        '''
+        subprocess.run(
+            ['osascript', '-e', click_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.3)
+
+        # Step 3: Select all
+        select_all_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "a" using command down'
+        subprocess.run(
+            ['osascript', '-e', select_all_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.3)
+
+        # Step 4: Copy
+        copy_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "c" using command down'
+        subprocess.run(
+            ['osascript', '-e', copy_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.5)
+
+        print(f"✓ Successfully copied from '{window_name}' window")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"✗ Error activating window or copying: {e}", file=sys.stderr)
+        if e.stderr:
+            print(f"  Details: {e.stderr}", file=sys.stderr)
+        return False
 
 
 def get_clipboard_formats():
@@ -511,11 +581,28 @@ def main():
     parser = argparse.ArgumentParser(description='Extract Outlier dictionary data from clipboard')
     parser.add_argument('--rebuild', action='store_true',
                        help='Rebuild JSON files from saved HTML files')
+    parser.add_argument('--auto-copy', action='store_true',
+                       help='Automatically copy from iPhone Mirroring window before processing')
+    parser.add_argument('--window-name', type=str, default='iPhone Mirroring',
+                       help='Name of window to copy from (default: iPhone Mirroring)')
     args = parser.parse_args()
 
     if args.rebuild:
         rebuild_from_html_files()
         return
+
+    # Auto-copy from window if requested
+    if args.auto_copy:
+        print("=" * 80)
+        print("AUTO-COPY FROM WINDOW")
+        print("=" * 80)
+        print()
+        if not auto_copy_from_window(args.window_name):
+            print("\nFailed to auto-copy. Please copy manually and try again.", file=sys.stderr)
+            sys.exit(1)
+        print()
+        # Give a bit more time for clipboard to be ready
+        time.sleep(0.5)
 
     print("=" * 80)
     print("CLIPBOARD CONTENT ANALYSIS")
