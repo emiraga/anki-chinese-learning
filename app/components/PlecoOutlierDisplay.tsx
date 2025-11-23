@@ -1,5 +1,5 @@
 import React from "react";
-import type { PlecoOutlier, Character, Series, Reference } from "~/types/pleco_outlier";
+import type { PlecoOutlier, Character, Series } from "~/types/pleco_outlier";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
 import { useOutletContext } from "react-router";
@@ -42,15 +42,16 @@ interface CharacterHeaderProps {
 function CharacterHeader({ character }: CharacterHeaderProps) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-8">
-          {/* Main Character Display */}
-          <div className="relative w-48 h-48 flex items-center justify-center">
-            <div className="text-9xl font-serif leading-none dark:text-gray-100">
-              {character.traditional}
-            </div>
+      <div className="flex items-start gap-8">
+        {/* Main Character Display */}
+        <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
+          <div className="text-9xl font-serif leading-none dark:text-gray-100">
+            {character.traditional}
           </div>
+        </div>
 
+        {/* Right side content */}
+        <div className="flex-1 space-y-4">
           {/* Character Metadata */}
           <div className="space-y-2">
             {/* Simplified form */}
@@ -67,42 +68,37 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
               </div>
             )}
           </div>
+
+          {/* Top-level note */}
+          {character.note && (
+            <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-blue-50 dark:bg-blue-950 border-l-4 border-blue-500 dark:border-blue-400 rounded">
+              <HanziText value={character.note} />
+            </div>
+          )}
+
+          {/* References */}
+          {character.references && character.references.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Related Characters:
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {character.references.map((ref, index) => (
+                  <CharLink
+                    key={index}
+                    traditional={ref.char}
+                    className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    title={ref.href}
+                  >
+                    <span className="text-2xl font-serif dark:text-gray-100">{ref.char}</span>
+                  </CharLink>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Top-level note */}
-      {character.note && (
-        <div className="mt-6 text-gray-700 dark:text-gray-300 leading-relaxed">
-          <HanziText value={character.note} />
-        </div>
-      )}
     </div>
-  );
-}
-
-// References section component
-interface ReferencesSectionProps {
-  references?: Reference[];
-}
-
-function ReferencesSection({ references }: ReferencesSectionProps) {
-  if (!references || references.length === 0) return null;
-
-  return (
-    <Section title="References">
-      <div className="flex flex-wrap gap-3">
-        {references.map((ref, index) => (
-          <CharLink
-            key={index}
-            traditional={ref.char}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            title={ref.href}
-          >
-            <span className="text-3xl font-serif dark:text-gray-100">{ref.char}</span>
-          </CharLink>
-        ))}
-      </div>
-    </Section>
   );
 }
 
@@ -267,11 +263,8 @@ export function PlecoOutlierDisplay({ character }: PlecoOutlierDisplayProps) {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
-      {/* Header Section */}
+      {/* Header Section (includes character, note, and references) */}
       <CharacterHeader character={character} />
-
-      {/* References Section */}
-      <ReferencesSection references={character.references} />
 
       {/* Sound Series Section */}
       <SeriesSection title="Sound Series" series={character.sound_series} characters={characters} />
