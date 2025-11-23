@@ -322,150 +322,28 @@ export default function CharDetail() {
           </>
         )}
 
-        {activeTab === "rtega" && (
-          <>
-            {rtegaLoading && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                Loading Rtega mnemonic...
-              </div>
-            )}
-            {rtegaError && (
-              <div className="text-xl text-red-600 dark:text-red-400">
-                Error: {rtegaError}
-              </div>
-            )}
-            {!rtegaLoading && !rtegaError && !rtegaCharacter && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                No Rtega mnemonic found
-              </div>
-            )}
-            {rtegaCharacter && (
-              <RtegaCharacterView character={rtegaCharacter} />
-            )}
-          </>
+        {activeTab === "rtega" && rtegaCharacter && (
+          <RtegaCharacterView character={rtegaCharacter} />
         )}
 
-        {activeTab === "dong" && (
-          <>
-            {dongLoading && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                Loading character data...
-              </div>
-            )}
-            {dongError && (
-              <div className="text-xl text-red-600 dark:text-red-400">
-                Error: {dongError}
-              </div>
-            )}
-            {!dongLoading && !dongError && !dongCharacter && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                No character data found
-              </div>
-            )}
-            {dongCharacter && (
-              <DongCharacterDisplay character={dongCharacter} />
-            )}
-          </>
+        {activeTab === "dong" && dongCharacter && (
+          <DongCharacterDisplay character={dongCharacter} />
         )}
 
-        {activeTab === "yellowbridge" && (
-          <>
-            {yellowBridgeLoading && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                Loading YellowBridge data...
-              </div>
-            )}
-            {yellowBridgeError && (
-              <div className="text-xl text-red-600 dark:text-red-400">
-                Error: {yellowBridgeError}
-              </div>
-            )}
-            {!yellowBridgeLoading &&
-              !yellowBridgeError &&
-              !yellowBridgeCharacter && (
-                <div className="text-xl text-gray-600 dark:text-gray-400">
-                  No YellowBridge data found
-                </div>
-              )}
-            {yellowBridgeCharacter && (
-              <YellowBridgeDisplay character={yellowBridgeCharacter} />
-            )}
-          </>
+        {activeTab === "yellowbridge" && yellowBridgeCharacter && (
+          <YellowBridgeDisplay character={yellowBridgeCharacter} />
         )}
 
-        {activeTab === "hanziyuan" && (
-          <>
-            {hanziYuanLoading && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                Loading HanziYuan data...
-              </div>
-            )}
-            {hanziYuanError && (
-              <div className="text-xl text-red-600 dark:text-red-400">
-                Error: {hanziYuanError}
-              </div>
-            )}
-            {!hanziYuanLoading && !hanziYuanError && !hanziYuanCharacter && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                No HanziYuan data found
-              </div>
-            )}
-            {hanziYuanCharacter && (
-              <HanziYuanDisplay character={hanziYuanCharacter} />
-            )}
-          </>
+        {activeTab === "hanziyuan" && hanziYuanCharacter && (
+          <HanziYuanDisplay character={hanziYuanCharacter} />
         )}
 
-        {activeTab === "hcoutlier" && (
-          <>
-            {hackChineseOutlierLoading && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                Loading HackChinese Outlier data...
-              </div>
-            )}
-            {hackChineseOutlierError && (
-              <div className="text-xl text-red-600 dark:text-red-400">
-                Error: {hackChineseOutlierError}
-              </div>
-            )}
-            {!hackChineseOutlierLoading &&
-              !hackChineseOutlierError &&
-              !hackChineseOutlierCharacter && (
-                <div className="text-xl text-gray-600 dark:text-gray-400">
-                  No HackChinese Outlier data found
-                </div>
-              )}
-            {hackChineseOutlierCharacter && (
-              <HackChineseOutlierDisplay
-                character={hackChineseOutlierCharacter}
-              />
-            )}
-          </>
+        {activeTab === "hcoutlier" && hackChineseOutlierCharacter && (
+          <HackChineseOutlierDisplay character={hackChineseOutlierCharacter} />
         )}
 
-        {activeTab === "plecooutlier" && (
-          <>
-            {plecoOutlierLoading && (
-              <div className="text-xl text-gray-600 dark:text-gray-400">
-                Loading Pleco Outlier data...
-              </div>
-            )}
-            {plecoOutlierError && (
-              <div className="text-xl text-red-600 dark:text-red-400">
-                Error: {plecoOutlierError}
-              </div>
-            )}
-            {!plecoOutlierLoading &&
-              !plecoOutlierError &&
-              !plecoOutlierCharacter && (
-                <div className="text-xl text-gray-600 dark:text-gray-400">
-                  No Pleco Outlier data found
-                </div>
-              )}
-            {plecoOutlierCharacter && (
-              <PlecoOutlierDisplay character={plecoOutlierCharacter} />
-            )}
-          </>
+        {activeTab === "plecooutlier" && plecoOutlierCharacter && (
+          <PlecoOutlierDisplay character={plecoOutlierCharacter} />
         )}
       </div>
     </MainFrame>
