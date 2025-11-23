@@ -65,10 +65,26 @@ This is useful when you've updated the parsing logic and want to regenerate all 
       "explanation": "A small evergreen tree..."
     }]
   },
-  "empty_component": "神 does not generally appear as an empty component.",
-  "radical": "This component does not appear on the list of KangXi radicals."
+  "empty_component": {
+    "explanation": "大 appears as an empty component in the following characters:",
+    "characters": [{
+      "traditional": "莫",
+      "pinyin": ["mò"],
+      "meaning": "do not, is not, can not; negative"
+    }]
+  },
+  "radical": {
+    "explanation": "This is KangXi radical 37. Radical list (21 members):",
+    "characters": [{
+      "traditional": "天",
+      "pinyin": ["tiān"],
+      "meaning": "sky, heaven; god, celestial"
+    }]
+  }
 }
 ```
+
+**Note**: `empty_component` and `radical` can be either an object with `explanation` and `characters` (when there are members), or omitted entirely (when no data available).
 
 ### TypeScript Types
 
@@ -91,8 +107,8 @@ interface OutlierData {
   simplified?: string;
   sound_series?: Series;
   semantic_series?: Series;
-  empty_component?: string;
-  radical?: string;
+  empty_component?: Series;  // Same structure as Series
+  radical?: Series;           // Same structure as Series
 }
 ```
 

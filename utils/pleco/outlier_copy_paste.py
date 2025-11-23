@@ -323,13 +323,12 @@ def parse_character_from_li(li_element) -> Optional[Character]:
 
             # Check if explanation part matches red text
             if red_text:
-                # Remove "(orig.)" markers
-                clean_red = red_text.replace("(orig.)", "").strip()
                 # Remove trailing colon from red text if present
-                clean_red = clean_red.rstrip(':')
+                clean_red = red_text.rstrip(':')
 
-                # Check if red text is just pinyin
-                is_just_pinyin = clean_red in (pinyin or [])
+                # Check if red text is just pinyin (after removing (orig.) for comparison)
+                red_without_orig = clean_red.replace("(orig.)", "").strip()
+                is_just_pinyin = red_without_orig in (pinyin or [])
 
                 # Only set explanation if it's not just the pinyin
                 if clean_red and not is_just_pinyin:
@@ -342,10 +341,11 @@ def parse_character_from_li(li_element) -> Optional[Character]:
         else:
             # No semicolon - check if we have red text
             if red_text:
-                clean_red = red_text.replace("(orig.)", "").strip().rstrip(':')
+                clean_red = red_text.rstrip(':')
 
-                # Check if red text is just pinyin
-                is_just_pinyin = clean_red in (pinyin or [])
+                # Check if red text is just pinyin (after removing (orig.) for comparison)
+                red_without_orig = clean_red.replace("(orig.)", "").strip()
+                is_just_pinyin = red_without_orig in (pinyin or [])
 
                 # Only set explanation if it's not just the pinyin
                 if clean_red and not is_just_pinyin:
