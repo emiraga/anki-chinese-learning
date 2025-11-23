@@ -74,7 +74,20 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
         window_name: Name of the window to target (default: "iPhone Mirroring")
     """
     try:
+        # Step 0: Clear clipboard first
+        print("Step 0: Clearing clipboard...")
+        clear_clipboard_script = 'set the clipboard to ""'
+        subprocess.run(
+            ['osascript', '-e', clear_clipboard_script],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        time.sleep(0.2)
+        print("  ✓ Clipboard cleared")
+
         # Step 1: Activate the application
+        print(f"Step 1: Activating '{window_name}' window...")
         activate_script = f'tell application "{window_name}" to activate'
         subprocess.run(
             ['osascript', '-e', activate_script],
@@ -83,38 +96,10 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
             check=True
         )
         time.sleep(0.8)
-
-        # Step 2: Click in the middle of the window to ensure focus (twice)
-        click_script = f'''
-        tell application "System Events"
-            tell process "{window_name}"
-                set frontWindow to front window
-                set windowPos to position of frontWindow
-                set windowSize to size of frontWindow
-                set centerX to (item 1 of windowPos) + (item 1 of windowSize) / 2
-                set centerY to (item 2 of windowPos) + (item 2 of windowSize) / 2
-                click at {{centerX, centerY}}
-            end tell
-        end tell
-        '''
-        subprocess.run(
-            ['osascript', '-e', click_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        time.sleep(0.3)
-
-        # Click again to ensure focus
-        subprocess.run(
-            ['osascript', '-e', click_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        time.sleep(0.5)
+        print("  ✓ Window activated")
 
         # Step 3: Select all (twice)
+        print("Step 3: Selecting all content (twice)...")
         select_all_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "a" using command down'
         subprocess.run(
             ['osascript', '-e', select_all_script],
@@ -123,6 +108,7 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
             check=True
         )
         time.sleep(0.3)
+        print("  First select all done...")
 
         # Select all again to ensure everything is selected
         subprocess.run(
@@ -132,8 +118,10 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
             check=True
         )
         time.sleep(0.5)
+        print("  ✓ Select all completed")
 
         # Step 4: Copy
+        print("Step 4: Copying to clipboard...")
         copy_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "c" using command down'
         subprocess.run(
             ['osascript', '-e', copy_script],
@@ -142,8 +130,9 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
             check=True
         )
         time.sleep(0.8)
+        print("  ✓ Copy command sent")
 
-        print(f"✓ Successfully copied from '{window_name}' window")
+        print(f"\n✓ Successfully copied from '{window_name}' window")
         return True
 
     except subprocess.CalledProcessError as e:
