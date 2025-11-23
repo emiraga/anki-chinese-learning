@@ -13,29 +13,21 @@ interface YellowBridgeDisplayProps {
   character: YellowBridgeCharacter;
 }
 
-// Component type configuration with colors matching DongCharacterDisplay
+// Component type configuration matching DongCharacterDisplay
 const COMPONENT_TYPE_CONFIG = {
   phonetic: {
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    borderColor: "border-blue-200 dark:border-blue-700",
     textColor: "text-blue-600 dark:text-blue-400",
-    label: "Phonetic (Sound)",
+    label: "Sound",
   },
   semantic: {
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-200 dark:border-green-700",
     textColor: "text-green-600 dark:text-green-400",
-    label: "Semantic (Meaning)",
+    label: "Meaning",
   },
   primitive: {
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    borderColor: "border-purple-200 dark:border-purple-700",
     textColor: "text-purple-600 dark:text-purple-400",
-    label: "Primitive",
+    label: "Remnant",
   },
   radical: {
-    bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
-    borderColor: "border-cyan-200 dark:border-cyan-700",
     textColor: "text-cyan-600 dark:text-cyan-400",
     label: "Radical",
   },
@@ -49,20 +41,18 @@ function ComponentBadge({
   componentType?: keyof typeof COMPONENT_TYPE_CONFIG;
 }) {
   const typeConfig = componentType ? COMPONENT_TYPE_CONFIG[componentType] : null;
-  const bgColor = typeConfig?.bgColor || "bg-gray-100 dark:bg-gray-700";
-  const borderColor = typeConfig?.borderColor || "border-gray-200 dark:border-gray-600";
 
   return (
-    <div className={`flex items-start gap-3 p-4 rounded-lg border ${bgColor} ${borderColor} transition-colors hover:shadow-md`}>
+    <div className="flex items-start gap-4 p-4 transition-colors">
       <CharLink
         traditional={comp.character}
         className="text-3xl font-serif dark:text-gray-100 shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 mb-1 flex-wrap">
-          {comp.pinyin.length > 0 && (
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {comp.pinyin.join(', ')}
+        <div className="flex items-baseline gap-2 mb-1">
+          {typeConfig && (
+            <span className={`text-sm font-medium ${typeConfig.textColor}`}>
+              {typeConfig.label} component
             </span>
           )}
           {comp.isAltered && (
@@ -71,11 +61,14 @@ function ComponentBadge({
             </span>
           )}
         </div>
-        {comp.description && (
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            {comp.description}
-          </p>
-        )}
+        <div className="text-gray-600 dark:text-gray-400 mb-2">
+          {comp.pinyin.length > 0 && (
+            <span className="mr-2 font-medium">{comp.pinyin.join(', ')}</span>
+          )}
+          {comp.description && (
+            <span>{comp.description}</span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -110,9 +103,10 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
   const { indexes, loading: indexesLoading } = useYellowBridgeIndexes();
   const { characters } = useOutletContext<OutletContext>();
 
-  const hasPhonetic = character.functionalComponents.phonetic.length > 0;
-  const hasSemantic = character.functionalComponents.semantic.length > 0;
-  const hasPrimitive = character.functionalComponents.primitive.length > 0;
+  const hasComponents =
+    character.functionalComponents.phonetic.length > 0 ||
+    character.functionalComponents.semantic.length > 0 ||
+    character.functionalComponents.primitive.length > 0;
   const hasFormation = character.formationMethods.length > 0;
 
   // Check if this character is used as a phonetic component in other characters
@@ -163,23 +157,18 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
         </div>
       </div>
 
-      {/* Phonetic Components */}
-      {hasPhonetic && (
-        <Section title="Phonetic Components (Sound)">
-          <div className="space-y-3">
+      {/* Components Section */}
+      {hasComponents && (
+        <Section title="Components">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {character.functionalComponents.phonetic.map((comp, idx) => (
-              <ComponentBadge key={idx} comp={comp} componentType="phonetic" />
+              <ComponentBadge key={`phonetic-${idx}`} comp={comp} componentType="phonetic" />
             ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Semantic Components */}
-      {hasSemantic && (
-        <Section title="Semantic Components (Meaning)">
-          <div className="space-y-3">
             {character.functionalComponents.semantic.map((comp, idx) => (
-              <ComponentBadge key={idx} comp={comp} componentType="semantic" />
+              <ComponentBadge key={`semantic-${idx}`} comp={comp} componentType="semantic" />
+            ))}
+            {character.functionalComponents.primitive.map((comp, idx) => (
+              <ComponentBadge key={`primitive-${idx}`} comp={comp} componentType="primitive" />
             ))}
           </div>
         </Section>
@@ -217,17 +206,6 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Primitive Components */}
-      {hasPrimitive && (
-        <Section title="Primitive Components">
-          <div className="space-y-3">
-            {character.functionalComponents.primitive.map((comp, idx) => (
-              <ComponentBadge key={idx} comp={comp} componentType="primitive" />
             ))}
           </div>
         </Section>
