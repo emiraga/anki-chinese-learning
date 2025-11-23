@@ -129,6 +129,28 @@ export default function CharDetail() {
       )
     : [];
 
+  // Build tabs array dynamically based on loaded content
+  const tabs = [{ id: "general", label: "General" }];
+
+  if (!dongLoading && !dongError && dongCharacter) {
+    tabs.push({ id: "dong", label: "Dong Chinese" });
+  }
+  if (!yellowBridgeLoading && !yellowBridgeError && yellowBridgeCharacter) {
+    tabs.push({ id: "yellowbridge", label: "YellowBridge" });
+  }
+  if (!rtegaLoading && !rtegaError && rtegaCharacter) {
+    tabs.push({ id: "rtega", label: "Rtega" });
+  }
+  if (!hanziYuanLoading && !hanziYuanError && hanziYuanCharacter) {
+    tabs.push({ id: "hanziyuan", label: "HanziYuan" });
+  }
+  if (!hackChineseOutlierLoading && !hackChineseOutlierError && hackChineseOutlierCharacter) {
+    tabs.push({ id: "hcoutlier", label: "HC Outlier" });
+  }
+  if (!plecoOutlierLoading && !plecoOutlierError && plecoOutlierCharacter) {
+    tabs.push({ id: "plecooutlier", label: "Pleco Outlier" });
+  }
+
   return (
     <MainFrame>
       <div className="mx-4">
@@ -148,15 +170,7 @@ export default function CharDetail() {
         </h3>
 
         <Tabs
-          tabs={[
-            { id: "general", label: "General" },
-            { id: "dong", label: "Dong Chinese" },
-            { id: "yellowbridge", label: "YellowBridge" },
-            { id: "rtega", label: "Rtega" },
-            { id: "hanziyuan", label: "HanziYuan" },
-            { id: "hcoutlier", label: "HC Outlier" },
-            { id: "plecooutlier", label: "Pleco Outlier" },
-          ]}
+          tabs={tabs}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
@@ -257,12 +271,59 @@ export default function CharDetail() {
                 <hr className="my-4" />
               </>
             )}
+
+            {/* Loading Errors Section */}
+            {(dongError ||
+              yellowBridgeError ||
+              rtegaError ||
+              hanziYuanError ||
+              hackChineseOutlierError ||
+              plecoOutlierError) && (
+              <>
+                <h2 className="text-2xl text-red-600 dark:text-red-400">
+                  Data Loading Errors
+                </h2>
+                <div className="space-y-2">
+                  {dongError && (
+                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
+                      <strong>Dong Chinese:</strong> {dongError}
+                    </div>
+                  )}
+                  {yellowBridgeError && (
+                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
+                      <strong>YellowBridge:</strong> {yellowBridgeError}
+                    </div>
+                  )}
+                  {rtegaError && (
+                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
+                      <strong>Rtega:</strong> {rtegaError}
+                    </div>
+                  )}
+                  {hanziYuanError && (
+                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
+                      <strong>HanziYuan:</strong> {hanziYuanError}
+                    </div>
+                  )}
+                  {hackChineseOutlierError && (
+                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
+                      <strong>HackChinese Outlier:</strong>{" "}
+                      {hackChineseOutlierError}
+                    </div>
+                  )}
+                  {plecoOutlierError && (
+                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
+                      <strong>Pleco Outlier:</strong> {plecoOutlierError}
+                    </div>
+                  )}
+                </div>
+                <hr className="my-4" />
+              </>
+            )}
           </>
         )}
 
         {activeTab === "rtega" && (
           <>
-            <h2 className="text-2xl">Rtega Mnemonic:</h2>
             {rtegaLoading && (
               <div className="text-xl text-gray-600 dark:text-gray-400">
                 Loading Rtega mnemonic...
@@ -286,7 +347,6 @@ export default function CharDetail() {
 
         {activeTab === "dong" && (
           <>
-            <h2 className="text-2xl">Character Etymology:</h2>
             {dongLoading && (
               <div className="text-xl text-gray-600 dark:text-gray-400">
                 Loading character data...
@@ -335,7 +395,6 @@ export default function CharDetail() {
 
         {activeTab === "hanziyuan" && (
           <>
-            <h2 className="text-2xl">HanziYuan Character Information:</h2>
             {hanziYuanLoading && (
               <div className="text-xl text-gray-600 dark:text-gray-400">
                 Loading HanziYuan data...

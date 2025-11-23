@@ -35,12 +35,14 @@ const COMPONENT_TYPE_CONFIG = {
 
 function ComponentBadge({
   comp,
-  componentType
+  componentType,
 }: {
   comp: ComponentInfo;
   componentType?: keyof typeof COMPONENT_TYPE_CONFIG;
 }) {
-  const typeConfig = componentType ? COMPONENT_TYPE_CONFIG[componentType] : null;
+  const typeConfig = componentType
+    ? COMPONENT_TYPE_CONFIG[componentType]
+    : null;
 
   return (
     <div className="flex items-start gap-4 p-4 transition-colors">
@@ -63,11 +65,9 @@ function ComponentBadge({
         </div>
         <div className="text-gray-600 dark:text-gray-400 mb-2">
           {comp.pinyin.length > 0 && (
-            <span className="mr-2 font-medium">{comp.pinyin.join(', ')}</span>
+            <span className="mr-2 font-medium">{comp.pinyin.join(", ")}</span>
           )}
-          {comp.description && (
-            <span>{comp.description}</span>
-          )}
+          {comp.description && <span>{comp.description}</span>}
         </div>
       </div>
     </div>
@@ -107,11 +107,13 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
     character.functionalComponents.phonetic.length > 0 ||
     character.functionalComponents.semantic.length > 0 ||
     character.functionalComponents.primitive.length > 0;
-  const hasFormation = character.formationMethods.length > 0;
+  const hasFormation =
+    character.formationMethods && character.formationMethods.length > 0;
 
   // Check if this character is used as a phonetic component in other characters
   const soundComponentEntry = indexes?.soundsComponentIn[character.character];
-  const isPhoneticComponent = soundComponentEntry && soundComponentEntry.appearsIn.length > 0;
+  const isPhoneticComponent =
+    soundComponentEntry && soundComponentEntry.appearsIn.length > 0;
 
   // Separate known and unknown characters in the appearsIn list
   const knownCharacters: CharacterUsage[] = [];
@@ -133,14 +135,14 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Character Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1">
             <h2 className="text-5xl font-serif text-gray-900 dark:text-gray-100 mb-3">
               {character.character}
             </h2>
             {character.pinyin.length > 0 && (
               <p className="text-2xl font-medium text-gray-600 dark:text-gray-400 mb-2">
-                {character.pinyin.join(', ')}
+                {character.pinyin.join(", ")}
               </p>
             )}
             {character.definition && (
@@ -149,11 +151,47 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
               </p>
             )}
           </div>
-          {character.kangxiRadical && (
-            <span className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-1 rounded text-sm font-medium">
-              Radical #{character.kangxiRadical}
-            </span>
-          )}
+
+          {/* Right side: Kangxi Radical and Formation Methods */}
+          <div className="flex flex-2 flex-col gap-4 items-end">
+            {character.kangxiRadical && (
+              <span className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 px-3 py-1 rounded text-sm font-medium">
+                Radical #{character.kangxiRadical}
+              </span>
+            )}
+
+            {/* Character Formation Methods */}
+            {hasFormation && (
+              <div className="space-y-3 w-full">
+                {character.formationMethods.map((method, idx) => (
+                  <div key={idx}>
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                        {method.typeEnglish}
+                      </span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        ({method.typeChinese})
+                      </span>
+                    </div>
+                    <p className="text-gray-700 dark:text-gray-300 mb-2 text-sm">
+                      {method.description}
+                    </p>
+                    {method.referencedCharacters.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {method.referencedCharacters.map((char, charIdx) => (
+                          <CharLink
+                            key={charIdx}
+                            traditional={char}
+                            className="text-xl font-serif px-2 py-1"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -162,50 +200,25 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
         <Section title="Components">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {character.functionalComponents.phonetic.map((comp, idx) => (
-              <ComponentBadge key={`phonetic-${idx}`} comp={comp} componentType="phonetic" />
+              <ComponentBadge
+                key={`phonetic-${idx}`}
+                comp={comp}
+                componentType="phonetic"
+              />
             ))}
             {character.functionalComponents.semantic.map((comp, idx) => (
-              <ComponentBadge key={`semantic-${idx}`} comp={comp} componentType="semantic" />
+              <ComponentBadge
+                key={`semantic-${idx}`}
+                comp={comp}
+                componentType="semantic"
+              />
             ))}
             {character.functionalComponents.primitive.map((comp, idx) => (
-              <ComponentBadge key={`primitive-${idx}`} comp={comp} componentType="primitive" />
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Formation Methods */}
-      {hasFormation && (
-        <Section title="Character Formation">
-          <div className="space-y-4">
-            {character.formationMethods.map((method, idx) => (
-              <div
-                key={idx}
-                className="border-l-4 border-amber-500 dark:border-amber-400 pl-4 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-r"
-              >
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    {method.typeEnglish}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    ({method.typeChinese})
-                  </span>
-                </div>
-                <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  {method.description}
-                </p>
-                {method.referencedCharacters.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {method.referencedCharacters.map((char, charIdx) => (
-                      <CharLink
-                        key={charIdx}
-                        traditional={char}
-                        className="text-2xl font-serif bg-white dark:bg-gray-700 px-2 py-1 rounded shadow-sm"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ComponentBadge
+                key={`primitive-${idx}`}
+                comp={comp}
+                componentType="primitive"
+              />
             ))}
           </div>
         </Section>
@@ -250,7 +263,9 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
 
       {/* Used as Phonetic Component */}
       {!indexesLoading && isPhoneticComponent && totalCount > 0 && (
-        <Section title={`Sound component in ${knownCharacters.length} known${unknownCharacters.length > 0 ? ` + ${unknownCharacters.length} unknown` : ""} characters`}>
+        <Section
+          title={`Sound component in ${knownCharacters.length} known${unknownCharacters.length > 0 ? ` + ${unknownCharacters.length} unknown` : ""} characters`}
+        >
           <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
             {/* Known characters first */}
             {knownCharacters.map((usage, idx) => (
@@ -258,14 +273,14 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
                 key={`known-${idx}`}
                 traditional={usage.character}
                 className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                title={`${usage.character}${usage.pinyin.length > 0 ? ` (${usage.pinyin.join(', ')})` : ""}`}
+                title={`${usage.character}${usage.pinyin.length > 0 ? ` (${usage.pinyin.join(", ")})` : ""}`}
               >
                 <div className="text-5xl font-serif mb-2 dark:text-gray-100">
                   {usage.character}
                 </div>
                 {usage.pinyin.length > 0 && (
                   <div className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
-                    {usage.pinyin.join(', ')}
+                    {usage.pinyin.join(", ")}
                   </div>
                 )}
                 {usage.isAltered && (
@@ -281,14 +296,14 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
                 key={`unknown-${idx}`}
                 traditional={usage.character}
                 className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors opacity-60"
-                title={`${usage.character}${usage.pinyin.length > 0 ? ` (${usage.pinyin.join(', ')})` : ""} (Unknown)`}
+                title={`${usage.character}${usage.pinyin.length > 0 ? ` (${usage.pinyin.join(", ")})` : ""} (Unknown)`}
               >
                 <div className="text-5xl font-serif mb-2 dark:text-gray-100">
                   {usage.character}
                 </div>
                 {usage.pinyin.length > 0 && (
                   <div className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
-                    {usage.pinyin.join(', ')}
+                    {usage.pinyin.join(", ")}
                   </div>
                 )}
                 {usage.isAltered && (

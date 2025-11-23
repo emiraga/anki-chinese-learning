@@ -44,8 +44,8 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <div className="flex items-start gap-8">
         {/* Main Character Display */}
-        <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
-          <div className="text-9xl font-serif leading-none dark:text-gray-100">
+        <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
+          <div className="text-8xl font-serif leading-none dark:text-gray-100">
             {character.traditional}
           </div>
         </div>
@@ -55,11 +55,12 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
           {/* Character Metadata */}
           <div className="space-y-2">
             {/* Simplified form */}
-            {character.simplified && character.simplified !== character.traditional && (
-              <div className="text-2xl font-medium text-gray-600 dark:text-gray-400">
-                Simplified: {character.simplified}
-              </div>
-            )}
+            {character.simplified &&
+              character.simplified !== character.traditional && (
+                <div className="text-2xl font-medium text-gray-600 dark:text-gray-400">
+                  Simplified: {character.simplified}
+                </div>
+              )}
 
             {/* Pinyin */}
             {character.pinyin && character.pinyin.length > 0 && (
@@ -90,7 +91,9 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
                     className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                     title={ref.href}
                   >
-                    <span className="text-2xl font-serif dark:text-gray-100">{ref.char}</span>
+                    <span className="text-2xl font-serif dark:text-gray-100">
+                      {ref.char}
+                    </span>
                   </CharLink>
                 ))}
               </div>
@@ -109,9 +112,8 @@ interface CharacterItemProps {
 }
 
 function CharacterItem({ char, isKnown }: CharacterItemProps) {
-  const pinyinDisplay = char.pinyin && char.pinyin.length > 0
-    ? char.pinyin.join(", ")
-    : "";
+  const pinyinDisplay =
+    char.pinyin && char.pinyin.length > 0 ? char.pinyin.join(", ") : "";
 
   // Build title for tooltip
   const titleParts = [];
@@ -162,11 +164,14 @@ interface SeriesSectionProps {
 }
 
 function SeriesSection({ title, series, characters }: SeriesSectionProps) {
-  if (!series || !series.characters || series.characters.length === 0) return null;
+  if (!series || !series.characters || series.characters.length === 0)
+    return null;
 
   // Separate known and unknown characters
   const knownChars = series.characters.filter((c) => characters[c.traditional]);
-  const unknownChars = series.characters.filter((c) => !characters[c.traditional]);
+  const unknownChars = series.characters.filter(
+    (c) => !characters[c.traditional],
+  );
 
   const sectionTitle = `${title} - ${knownChars.length} known${unknownChars.length > 0 ? ` + ${unknownChars.length} unknown` : ""}`;
 
@@ -180,9 +185,7 @@ function SeriesSection({ title, series, characters }: SeriesSectionProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {series.characters.map((char, index) => {
           const isKnown = !!characters[char.traditional];
-          return (
-            <CharacterItem key={index} char={char} isKnown={isKnown} />
-          );
+          return <CharacterItem key={index} char={char} isKnown={isKnown} />;
         })}
       </div>
     </Section>
@@ -195,12 +198,24 @@ interface EmptyComponentSectionProps {
   characters: Record<string, unknown>;
 }
 
-function EmptyComponentSection({ emptyComponent, characters }: EmptyComponentSectionProps) {
-  if (!emptyComponent || !emptyComponent.characters || emptyComponent.characters.length === 0) return null;
+function EmptyComponentSection({
+  emptyComponent,
+  characters,
+}: EmptyComponentSectionProps) {
+  if (
+    !emptyComponent ||
+    !emptyComponent.characters ||
+    emptyComponent.characters.length === 0
+  )
+    return null;
 
   // Separate known and unknown characters
-  const knownChars = emptyComponent.characters.filter((c) => characters[c.traditional]);
-  const unknownChars = emptyComponent.characters.filter((c) => !characters[c.traditional]);
+  const knownChars = emptyComponent.characters.filter(
+    (c) => characters[c.traditional],
+  );
+  const unknownChars = emptyComponent.characters.filter(
+    (c) => !characters[c.traditional],
+  );
 
   const sectionTitle = `Empty Component - ${knownChars.length} known${unknownChars.length > 0 ? ` + ${unknownChars.length} unknown` : ""}`;
 
@@ -214,9 +229,7 @@ function EmptyComponentSection({ emptyComponent, characters }: EmptyComponentSec
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {emptyComponent.characters.map((char, index) => {
           const isKnown = !!characters[char.traditional];
-          return (
-            <CharacterItem key={index} char={char} isKnown={isKnown} />
-          );
+          return <CharacterItem key={index} char={char} isKnown={isKnown} />;
         })}
       </div>
     </Section>
@@ -230,11 +243,16 @@ interface RadicalSectionProps {
 }
 
 function RadicalSection({ radical, characters }: RadicalSectionProps) {
-  if (!radical || !radical.characters || radical.characters.length === 0) return null;
+  if (!radical || !radical.characters || radical.characters.length === 0)
+    return null;
 
   // Separate known and unknown characters
-  const knownChars = radical.characters.filter((c) => characters[c.traditional]);
-  const unknownChars = radical.characters.filter((c) => !characters[c.traditional]);
+  const knownChars = radical.characters.filter(
+    (c) => characters[c.traditional],
+  );
+  const unknownChars = radical.characters.filter(
+    (c) => !characters[c.traditional],
+  );
 
   const sectionTitle = `Radical - ${knownChars.length} known${unknownChars.length > 0 ? ` + ${unknownChars.length} unknown` : ""}`;
 
@@ -248,9 +266,7 @@ function RadicalSection({ radical, characters }: RadicalSectionProps) {
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {radical.characters.map((char, index) => {
           const isKnown = !!characters[char.traditional];
-          return (
-            <CharacterItem key={index} char={char} isKnown={isKnown} />
-          );
+          return <CharacterItem key={index} char={char} isKnown={isKnown} />;
         })}
       </div>
     </Section>
@@ -267,13 +283,24 @@ export function PlecoOutlierDisplay({ character }: PlecoOutlierDisplayProps) {
       <CharacterHeader character={character} />
 
       {/* Sound Series Section */}
-      <SeriesSection title="Sound Series" series={character.sound_series} characters={characters} />
+      <SeriesSection
+        title="Sound Series"
+        series={character.sound_series}
+        characters={characters}
+      />
 
       {/* Semantic Series Section */}
-      <SeriesSection title="Semantic Series" series={character.semantic_series} characters={characters} />
+      <SeriesSection
+        title="Semantic Series"
+        series={character.semantic_series}
+        characters={characters}
+      />
 
       {/* Empty Component Section */}
-      <EmptyComponentSection emptyComponent={character.empty_component} characters={characters} />
+      <EmptyComponentSection
+        emptyComponent={character.empty_component}
+        characters={characters}
+      />
 
       {/* Radical Section */}
       <RadicalSection radical={character.radical} characters={characters} />
