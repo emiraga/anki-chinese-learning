@@ -2,6 +2,8 @@ import React from "react";
 import type { PlecoOutlier, Character, Series, Reference } from "~/types/pleco_outlier";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
+import { useOutletContext } from "react-router";
+import type { OutletContext } from "~/data/types";
 
 interface PlecoOutlierDisplayProps {
   character: PlecoOutlier;
@@ -107,9 +109,10 @@ function ReferencesSection({ references }: ReferencesSectionProps) {
 // Character list item component - grid card style
 interface CharacterItemProps {
   char: Character;
+  isKnown: boolean;
 }
 
-function CharacterItem({ char }: CharacterItemProps) {
+function CharacterItem({ char, isKnown }: CharacterItemProps) {
   const pinyinDisplay = char.pinyin && char.pinyin.length > 0
     ? char.pinyin.join(", ")
     : "";
@@ -119,12 +122,13 @@ function CharacterItem({ char }: CharacterItemProps) {
   if (pinyinDisplay) titleParts.push(pinyinDisplay);
   if (char.explanation) titleParts.push(char.explanation);
   if (char.meaning) titleParts.push(char.meaning);
+  if (!isKnown) titleParts.push("(Unknown)");
   const title = titleParts.join(" - ");
 
   return (
     <CharLink
       traditional={char.traditional}
-      className="flex flex-col items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded"
+      className={`flex flex-col items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded ${!isKnown ? "opacity-60" : ""}`}
       title={title}
     >
       <div className="text-5xl font-serif mb-2 dark:text-gray-100">
@@ -158,25 +162,33 @@ function CharacterItem({ char }: CharacterItemProps) {
 interface SeriesSectionProps {
   title: string;
   series?: Series;
+  characters: Record<string, unknown>;
 }
 
-function SeriesSection({ title, series }: SeriesSectionProps) {
-  if (!series) return null;
+function SeriesSection({ title, series, characters }: SeriesSectionProps) {
+  if (!series || !series.characters || series.characters.length === 0) return null;
+
+  // Separate known and unknown characters
+  const knownChars = series.characters.filter((c) => characters[c.traditional]);
+  const unknownChars = series.characters.filter((c) => !characters[c.traditional]);
+
+  const sectionTitle = `${title} - ${knownChars.length} known${unknownChars.length > 0 ? ` + ${unknownChars.length} unknown` : ""}`;
 
   return (
-    <Section title={title}>
+    <Section title={sectionTitle}>
       {series.explanation && (
         <div className="mb-6 text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-blue-50 dark:bg-blue-950 border-l-4 border-blue-500 dark:border-blue-400 rounded">
           <HanziText value={series.explanation} />
         </div>
       )}
-      {series.characters && series.characters.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {series.characters.map((char, index) => (
-            <CharacterItem key={index} char={char} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {series.characters.map((char, index) => {
+          const isKnown = !!characters[char.traditional];
+          return (
+            <CharacterItem key={index} char={char} isKnown={isKnown} />
+          );
+        })}
+      </div>
     </Section>
   );
 }
@@ -184,25 +196,33 @@ function SeriesSection({ title, series }: SeriesSectionProps) {
 // Empty component section
 interface EmptyComponentSectionProps {
   emptyComponent?: PlecoOutlier["empty_component"];
+  characters: Record<string, unknown>;
 }
 
-function EmptyComponentSection({ emptyComponent }: EmptyComponentSectionProps) {
-  if (!emptyComponent) return null;
+function EmptyComponentSection({ emptyComponent, characters }: EmptyComponentSectionProps) {
+  if (!emptyComponent || !emptyComponent.characters || emptyComponent.characters.length === 0) return null;
+
+  // Separate known and unknown characters
+  const knownChars = emptyComponent.characters.filter((c) => characters[c.traditional]);
+  const unknownChars = emptyComponent.characters.filter((c) => !characters[c.traditional]);
+
+  const sectionTitle = `Empty Component - ${knownChars.length} known${unknownChars.length > 0 ? ` + ${unknownChars.length} unknown` : ""}`;
 
   return (
-    <Section title="Empty Component">
+    <Section title={sectionTitle}>
       {emptyComponent.explanation && (
         <div className="mb-6 text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-purple-50 dark:bg-purple-950 border-l-4 border-purple-500 dark:border-purple-400 rounded">
           <HanziText value={emptyComponent.explanation} />
         </div>
       )}
-      {emptyComponent.characters && emptyComponent.characters.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {emptyComponent.characters.map((char, index) => (
-            <CharacterItem key={index} char={char} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {emptyComponent.characters.map((char, index) => {
+          const isKnown = !!characters[char.traditional];
+          return (
+            <CharacterItem key={index} char={char} isKnown={isKnown} />
+          );
+        })}
+      </div>
     </Section>
   );
 }
@@ -210,30 +230,41 @@ function EmptyComponentSection({ emptyComponent }: EmptyComponentSectionProps) {
 // Radical section component
 interface RadicalSectionProps {
   radical?: PlecoOutlier["radical"];
+  characters: Record<string, unknown>;
 }
 
-function RadicalSection({ radical }: RadicalSectionProps) {
-  if (!radical) return null;
+function RadicalSection({ radical, characters }: RadicalSectionProps) {
+  if (!radical || !radical.characters || radical.characters.length === 0) return null;
+
+  // Separate known and unknown characters
+  const knownChars = radical.characters.filter((c) => characters[c.traditional]);
+  const unknownChars = radical.characters.filter((c) => !characters[c.traditional]);
+
+  const sectionTitle = `Radical - ${knownChars.length} known${unknownChars.length > 0 ? ` + ${unknownChars.length} unknown` : ""}`;
 
   return (
-    <Section title="Radical">
+    <Section title={sectionTitle}>
       {radical.explanation && (
         <div className="mb-6 text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-green-50 dark:bg-green-950 border-l-4 border-green-500 dark:border-green-400 rounded">
           <HanziText value={radical.explanation} />
         </div>
       )}
-      {radical.characters && radical.characters.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {radical.characters.map((char, index) => (
-            <CharacterItem key={index} char={char} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {radical.characters.map((char, index) => {
+          const isKnown = !!characters[char.traditional];
+          return (
+            <CharacterItem key={index} char={char} isKnown={isKnown} />
+          );
+        })}
+      </div>
     </Section>
   );
 }
 
 export function PlecoOutlierDisplay({ character }: PlecoOutlierDisplayProps) {
+  // Get known characters from context
+  const { characters } = useOutletContext<OutletContext>();
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header Section */}
@@ -243,16 +274,16 @@ export function PlecoOutlierDisplay({ character }: PlecoOutlierDisplayProps) {
       <ReferencesSection references={character.references} />
 
       {/* Sound Series Section */}
-      <SeriesSection title="Sound Series" series={character.sound_series} />
+      <SeriesSection title="Sound Series" series={character.sound_series} characters={characters} />
 
       {/* Semantic Series Section */}
-      <SeriesSection title="Semantic Series" series={character.semantic_series} />
+      <SeriesSection title="Semantic Series" series={character.semantic_series} characters={characters} />
 
       {/* Empty Component Section */}
-      <EmptyComponentSection emptyComponent={character.empty_component} />
+      <EmptyComponentSection emptyComponent={character.empty_component} characters={characters} />
 
       {/* Radical Section */}
-      <RadicalSection radical={character.radical} />
+      <RadicalSection radical={character.radical} characters={characters} />
     </div>
   );
 }
