@@ -479,7 +479,8 @@ def parse_outlier_html(html_str: str) -> OutlierData:
             if sibling == first_h2:
                 break
             if sibling.name == 'p':
-                p_text = sibling.get_text(strip=True)
+                # Get text with separator to preserve spacing between elements
+                p_text = sibling.get_text(separator=' ', strip=True)
                 if p_text:
                     note_parts.append(p_text)
         if note_parts:
