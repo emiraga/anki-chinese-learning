@@ -81,29 +81,6 @@ function ComponentBadge({
   );
 }
 
-function CharacterUsageBadge({ usage, isKnown = true }: { usage: CharacterUsage; isKnown?: boolean }) {
-  return (
-    <div className={`inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 px-3 py-2 rounded-lg hover:shadow-md transition-all ${!isKnown ? 'opacity-30' : ''}`}
-      title={!isKnown ? `${usage.character} (Unknown)` : undefined}
-    >
-      <CharLink
-        traditional={usage.character}
-        className="text-2xl font-serif text-gray-900 dark:text-gray-100"
-      />
-      {usage.isAltered && (
-        <span className="text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 px-1.5 py-0.5 rounded">
-          altered
-        </span>
-      )}
-      {usage.pinyin.length > 0 && (
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          {usage.pinyin.join(', ')}
-        </span>
-      )}
-    </div>
-  );
-}
-
 // Section header component matching DongCharacterDisplay
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -295,18 +272,53 @@ export function YellowBridgeDisplay({ character }: YellowBridgeDisplayProps) {
 
       {/* Used as Phonetic Component */}
       {!indexesLoading && isPhoneticComponent && totalCount > 0 && (
-        <Section title={`Used as Phonetic Component in ${knownCharacters.length} known${unknownCharacters.length > 0 ? ` + ${unknownCharacters.length} unknown` : ""} ${totalCount === 1 ? "character" : "characters"}`}>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            This character appears as a phonetic (sound) component in the following characters:
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <Section title={`Sound component in ${knownCharacters.length} known${unknownCharacters.length > 0 ? ` + ${unknownCharacters.length} unknown` : ""} characters`}>
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
             {/* Known characters first */}
             {knownCharacters.map((usage, idx) => (
-              <CharacterUsageBadge key={`known-${idx}`} usage={usage} isKnown={true} />
+              <CharLink
+                key={`known-${idx}`}
+                traditional={usage.character}
+                className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                title={`${usage.character}${usage.pinyin.length > 0 ? ` (${usage.pinyin.join(', ')})` : ""}`}
+              >
+                <div className="text-5xl font-serif mb-2 dark:text-gray-100">
+                  {usage.character}
+                </div>
+                {usage.pinyin.length > 0 && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
+                    {usage.pinyin.join(', ')}
+                  </div>
+                )}
+                {usage.isAltered && (
+                  <div className="text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 px-1.5 py-0.5 rounded mt-1">
+                    altered
+                  </div>
+                )}
+              </CharLink>
             ))}
             {/* Unknown characters second */}
             {unknownCharacters.map((usage, idx) => (
-              <CharacterUsageBadge key={`unknown-${idx}`} usage={usage} isKnown={false} />
+              <CharLink
+                key={`unknown-${idx}`}
+                traditional={usage.character}
+                className="flex flex-col items-center p-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors opacity-60"
+                title={`${usage.character}${usage.pinyin.length > 0 ? ` (${usage.pinyin.join(', ')})` : ""} (Unknown)`}
+              >
+                <div className="text-5xl font-serif mb-2 dark:text-gray-100">
+                  {usage.character}
+                </div>
+                {usage.pinyin.length > 0 && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
+                    {usage.pinyin.join(', ')}
+                  </div>
+                )}
+                {usage.isAltered && (
+                  <div className="text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100 px-1.5 py-0.5 rounded mt-1">
+                    altered
+                  </div>
+                )}
+              </CharLink>
             ))}
           </div>
         </Section>
