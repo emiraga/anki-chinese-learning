@@ -386,8 +386,51 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     current_h2 = None
     pending_text = []
 
+    def save_section(h2_name, text_list, chars_list=None):
+        """Helper to save section data"""
+        if not h2_name:
+            return
+
+        explanation = ' '.join(text_list).strip() if text_list else None
+
+        if 'sound series' in h2_name:
+            if 'sound_series' not in data:
+                data['sound_series'] = {}
+            if chars_list:
+                data['sound_series']['characters'] = chars_list
+            if explanation:
+                data['sound_series']['explanation'] = explanation
+
+        elif 'semantic series' in h2_name:
+            if 'semantic_series' not in data:
+                data['semantic_series'] = {}
+            if chars_list:
+                data['semantic_series']['characters'] = chars_list
+            if explanation:
+                data['semantic_series']['explanation'] = explanation
+
+        elif 'empty component' in h2_name:
+            if 'empty_component' not in data:
+                data['empty_component'] = {}
+            if chars_list:
+                data['empty_component']['characters'] = chars_list
+            if explanation:
+                data['empty_component']['explanation'] = explanation
+
+        elif 'radical' in h2_name:
+            if 'radical' not in data:
+                data['radical'] = {}
+            if chars_list:
+                data['radical']['characters'] = chars_list
+            if explanation:
+                data['radical']['explanation'] = explanation
+
     for element in soup.find_all(['h2', 'p', 'ul', 'span']):
         if element.name == 'h2':
+            # Save previous section if it had only text, no list
+            if current_h2 and pending_text:
+                save_section(current_h2, pending_text)
+
             current_h2 = element.get_text(strip=True).lower()
             pending_text = []
 
@@ -404,41 +447,13 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                 if char:
                     characters.append(char)
 
-            explanation = ' '.join(pending_text).strip()
-
-            if 'sound series' in current_h2:
-                if 'sound_series' not in data:
-                    data['sound_series'] = {}
-                if characters:
-                    data['sound_series']['characters'] = characters
-                if explanation:
-                    data['sound_series']['explanation'] = explanation
-
-            elif 'semantic series' in current_h2:
-                if 'semantic_series' not in data:
-                    data['semantic_series'] = {}
-                if characters:
-                    data['semantic_series']['characters'] = characters
-                if explanation:
-                    data['semantic_series']['explanation'] = explanation
-
-            elif 'empty component' in current_h2:
-                if 'empty_component' not in data:
-                    data['empty_component'] = {}
-                if characters:
-                    data['empty_component']['characters'] = characters
-                if explanation:
-                    data['empty_component']['explanation'] = explanation
-
-            elif 'radical' in current_h2:
-                if 'radical' not in data:
-                    data['radical'] = {}
-                if characters:
-                    data['radical']['characters'] = characters
-                if explanation:
-                    data['radical']['explanation'] = explanation
-
+            # Save section with both characters and explanation
+            save_section(current_h2, pending_text, characters)
             pending_text = []
+
+    # Save final section if it had only text, no list
+    if current_h2 and pending_text:
+        save_section(current_h2, pending_text)
 
     return data
 
