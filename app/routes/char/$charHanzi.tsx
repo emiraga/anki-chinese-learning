@@ -23,6 +23,8 @@ import { useYellowBridgeCharacter } from "~/hooks/useYellowBridgeCharacter";
 import { YellowBridgeDisplay } from "~/components/YellowBridgeDisplay";
 import { useHackChineseOutlier } from "~/hooks/useHackChineseOutlier";
 import { HackChineseOutlierDisplay } from "~/components/HackChineseOutlierDisplay";
+import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
+import { PlecoOutlierDisplay } from "~/components/PlecoOutlierDisplay";
 import { Tabs } from "~/components/Tabs";
 import { useState } from "react";
 import { SoundComponentCandidates } from "~/components/SoundComponentCandidates";
@@ -90,6 +92,13 @@ export default function CharDetail() {
     error: hackChineseOutlierError,
   } = useHackChineseOutlier(char.traditional);
 
+  // Load Pleco Outlier character data
+  const {
+    character: plecoOutlierCharacter,
+    loading: plecoOutlierLoading,
+    error: plecoOutlierError,
+  } = usePlecoOutlier(char.traditional);
+
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional),
   );
@@ -146,6 +155,7 @@ export default function CharDetail() {
             { id: "rtega", label: "Rtega" },
             { id: "hanziyuan", label: "HanziYuan" },
             { id: "hcoutlier", label: "HC Outlier" },
+            { id: "plecooutlier", label: "Pleco Outlier" },
           ]}
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -370,6 +380,31 @@ export default function CharDetail() {
               <HackChineseOutlierDisplay
                 character={hackChineseOutlierCharacter}
               />
+            )}
+          </>
+        )}
+
+        {activeTab === "plecooutlier" && (
+          <>
+            {plecoOutlierLoading && (
+              <div className="text-xl text-gray-600 dark:text-gray-400">
+                Loading Pleco Outlier data...
+              </div>
+            )}
+            {plecoOutlierError && (
+              <div className="text-xl text-red-600 dark:text-red-400">
+                Error: {plecoOutlierError}
+              </div>
+            )}
+            {!plecoOutlierLoading &&
+              !plecoOutlierError &&
+              !plecoOutlierCharacter && (
+                <div className="text-xl text-gray-600 dark:text-gray-400">
+                  No Pleco Outlier data found
+                </div>
+              )}
+            {plecoOutlierCharacter && (
+              <PlecoOutlierDisplay character={plecoOutlierCharacter} />
             )}
           </>
         )}

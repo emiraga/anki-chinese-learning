@@ -761,53 +761,7 @@ def main():
         print("No RTF content available")
     print()
 
-    # Get HTML
-    print("HTML CONTENT (DECODED):")
-    print("-" * 80)
     html_data = get_clipboard_html()
-    if html_data and html_data != 'missing value':
-        parsed_html = parse_hex_data(html_data, "HTML")
-        if parsed_html:
-            formatted = format_html_readable(parsed_html)
-            print(formatted if formatted else parsed_html)
-
-            # Extract text structure
-            print("\n" + "=" * 80)
-            print("STRUCTURED TEXT EXTRACTION FROM HTML:")
-            print("-" * 80)
-            if BS4_AVAILABLE:
-                soup = BeautifulSoup(parsed_html, 'html.parser')
-
-                # Find all headings
-                for heading in soup.find_all(['h1', 'h2', 'h3']):
-                    print(f"\n{heading.name.upper()}: {heading.get_text(strip=True)}")
-
-                # Find all lists
-                for ul in soup.find_all('ul'):
-                    for li in ul.find_all('li'):
-                        # Get text, preserving special formatting
-                        text = ""
-                        for element in li.descendants:
-                            if element.name == 'red':
-                                text += f"[RED]{element.get_text()}[/RED]"
-                            elif isinstance(element, str):
-                                text += str(element)
-                        print(f"  • {text.strip()}")
-
-                # Find paragraphs
-                for p in soup.find_all('p'):
-                    p_text = p.get_text(strip=True)
-                    if p_text:
-                        print(f"\nP: {p_text}")
-            else:
-                print("(Install beautifulsoup4 for structured extraction)")
-        else:
-            print("Could not parse HTML, showing raw:")
-            print(html_data[:500])
-    else:
-        print("No HTML content available")
-    print()
-
     # Parse and output JSON
     if html_data and html_data != 'missing value':
         parsed_html = parse_hex_data(html_data, "HTML")
