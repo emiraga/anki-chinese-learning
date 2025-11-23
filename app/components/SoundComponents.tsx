@@ -11,12 +11,18 @@ import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 import { getScoreBadgeClasses } from "~/utils/sound_component_helpers";
 import { useYellowBridgeIndexes } from "~/hooks/useYellowBridgeIndexes";
 import type { YellowBridgeIndexes } from "~/types/yellowbridge_character";
+import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
+import type { PlecoOutlier } from "~/types/pleco_outlier";
 
-type CandidateSource = "dong" | "yellowbridge" | "both";
+enum CandidateSource {
+  DONG = "dong",
+  YELLOWBRIDGE = "yellowbridge",
+  PLECO = "pleco",
+}
 
 interface MergedCandidate {
   char: string;
-  source: CandidateSource;
+  sources: CandidateSource[];
   bookCharCount?: number;
   isVerified?: boolean;
   pinyin?: string[];
@@ -28,6 +34,7 @@ function getMergedCandidates(
   existingChars: CharacterType[],
   dongCharacter: ReturnType<typeof useDongCharacter>["character"],
   yellowBridgeIndexes: YellowBridgeIndexes | null,
+  plecoOutlier: PlecoOutlier | null,
 ): MergedCandidate[] {
   const existingCharSet = new Set(existingChars.map((c) => c.traditional));
 
@@ -49,7 +56,7 @@ function getMergedCandidates(
 
         dongCandidates.set(item.char, {
           char: item.char,
-          source: "dong",
+          sources: [CandidateSource.DONG],
           bookCharCount: item.statistics?.bookCharCount,
           isVerified: item.isVerified,
           pinyin,
@@ -68,38 +75,59 @@ function getMergedCandidates(
     });
   }
 
+  // Get candidates from Pleco Outlier (sound_series = characters that have this sound component)
+  const plecoCandidates = new Map<string, string[]>();
+  if (plecoOutlier?.sound_series?.characters) {
+    plecoOutlier.sound_series.characters.forEach((char) => {
+      if (!existingCharSet.has(char.traditional)) {
+        plecoCandidates.set(char.traditional, char.pinyin || []);
+      }
+    });
+  }
+
   // Merge candidates and track sources
-  const mergedCandidates: MergedCandidate[] = [];
+  const candidatesMap = new Map<string, MergedCandidate>();
 
   // Add all Dong candidates
   dongCandidates.forEach((candidate) => {
-    const ybPinyin = yellowBridgeCandidates.get(candidate.char);
-    if (ybPinyin) {
-      // Character is in both sources - merge pinyin arrays
-      const combinedPinyin = [...new Set([...candidate.pinyin || [], ...ybPinyin])];
-      mergedCandidates.push({
-        ...candidate,
-        source: "both",
-        pinyin: combinedPinyin
-      });
-    } else {
-      // Character is only in Dong
-      mergedCandidates.push(candidate);
-    }
+    candidatesMap.set(candidate.char, candidate);
   });
 
-  // Add YellowBridge-only candidates
+  // Merge YellowBridge candidates
   yellowBridgeCandidates.forEach((pinyin, char) => {
-    if (!dongCandidates.has(char)) {
-      mergedCandidates.push({
+    const existing = candidatesMap.get(char);
+    if (existing) {
+      // Add YellowBridge as a source and merge pinyin
+      existing.sources.push(CandidateSource.YELLOWBRIDGE);
+      existing.pinyin = [...new Set([...existing.pinyin || [], ...pinyin])];
+    } else {
+      // New candidate from YellowBridge only
+      candidatesMap.set(char, {
         char,
-        source: "yellowbridge",
+        sources: [CandidateSource.YELLOWBRIDGE],
         pinyin,
       });
     }
   });
 
-  return mergedCandidates;
+  // Merge Pleco candidates
+  plecoCandidates.forEach((pinyin, char) => {
+    const existing = candidatesMap.get(char);
+    if (existing) {
+      // Add Pleco as a source and merge pinyin
+      existing.sources.push(CandidateSource.PLECO);
+      existing.pinyin = [...new Set([...existing.pinyin || [], ...pinyin])];
+    } else {
+      // New candidate from Pleco only
+      candidatesMap.set(char, {
+        char,
+        sources: [CandidateSource.PLECO],
+        pinyin,
+      });
+    }
+  });
+
+  return Array.from(candidatesMap.values());
 }
 
 // Component to display a single sound component group
@@ -108,6 +136,7 @@ interface SoundComponentGroupProps {
   chars: CharacterType[];
   characters: OutletContext["characters"];
   yellowBridgeIndexes: YellowBridgeIndexes | null;
+  yellowBridgeError: string | null;
   showZhuyin?: boolean;
   compact?: boolean; // For unknown singular display
 }
@@ -117,6 +146,7 @@ function SoundComponentGroup({
   chars,
   characters,
   yellowBridgeIndexes,
+  yellowBridgeError,
   showZhuyin,
   compact = false,
 }: SoundComponentGroupProps) {
@@ -135,14 +165,22 @@ function SoundComponentGroup({
   // Check if sound component is a known character
   const isSoundComponentKnown = !!soundCompChar;
 
-  // Get merged candidates from all sources
-  const { character: dongCharacter } = useDongCharacter(soundComponent);
+  // Get merged candidates from all sources with error tracking
+  const { character: dongCharacter, error: dongError } = useDongCharacter(soundComponent);
+  const { character: plecoOutlier, error: plecoError } = usePlecoOutlier(soundComponent);
   const mergedCandidates = getMergedCandidates(
     soundComponent,
     chars,
     dongCharacter,
     yellowBridgeIndexes,
+    plecoOutlier,
   );
+
+  // Collect failed sources
+  const failedSources: string[] = [];
+  if (dongError) failedSources.push("Dong Chinese");
+  if (plecoError) failedSources.push("Pleco Outlier");
+  if (yellowBridgeError) failedSources.push("YellowBridge");
 
   // Calculate total unique characters (existing + candidates)
   const totalChars = chars.length + mergedCandidates.length;
@@ -161,6 +199,14 @@ function SoundComponentGroup({
         <div className="text-base">
           <PinyinList pinyin={soundCompPinyin} showZhuyin={showZhuyin} />
         </div>
+        {failedSources.length > 0 && (
+          <span
+            className="text-xs text-red-600 dark:text-red-400 font-medium"
+            title={`Failed to load: ${failedSources.join(", ")}`}
+          >
+            ⚠ Source error
+          </span>
+        )}
         <span className="text-sm text-gray-500 dark:text-gray-400">→</span>
         {chars.map((char) => {
           const charPinyin = char.pinyin?.[0]?.pinyinAccented || "";
@@ -222,6 +268,14 @@ function SoundComponentGroup({
             ⚠ Low candidates ({totalChars})
           </span>
         )}
+        {failedSources.length > 0 && (
+          <span
+            className="text-sm text-red-600 dark:text-red-400 font-medium"
+            title={`Failed to load: ${failedSources.join(", ")}`}
+          >
+            ⚠ Source error: {failedSources.join(", ")}
+          </span>
+        )}
       </div>
       <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-wrap gap-2 ">
@@ -275,11 +329,17 @@ function SoundComponentCandidates({
     return null;
   }
 
-  // Sort by bookCharCount (frequency) for known stats, then alphabetically
+  // Sort by number of sources (descending), then by bookCharCount (frequency), then alphabetically
   const sortedCandidates = [...mergedCandidates].sort((a, b) => {
+    // Primary sort: number of sources (more sources = more reliable)
+    if (b.sources.length !== a.sources.length) {
+      return b.sources.length - a.sources.length;
+    }
+    // Secondary sort: bookCharCount (frequency)
     const aCount = a.bookCharCount || 0;
     const bCount = b.bookCharCount || 0;
     if (bCount !== aCount) return bCount - aCount;
+    // Tertiary sort: alphabetically
     return a.char.localeCompare(b.char);
   });
 
@@ -307,19 +367,31 @@ function SoundComponentCandidates({
             );
           }
 
-          // Determine border style based on source
+          // Determine border style based on number of missing sources
+          const totalSources = 3; // Dong, YellowBridge, Pleco
+          const missingSources = totalSources - candidate.sources.length;
           let borderClass = "";
-          let sourceLabel = "";
-          if (candidate.source === "dong") {
-            borderClass = "border-b-2 border-blue-500";
-            sourceLabel = "Dong Chinese only";
-          } else if (candidate.source === "yellowbridge") {
-            borderClass = "border-b-2 border-yellow-500";
-            sourceLabel = "YellowBridge only";
+
+          if (missingSources === 0) {
+            // All sources - no underline
+            borderClass = "";
+          } else if (missingSources === 1) {
+            // Missing 1 source - light gray
+            borderClass = "border-b-2 border-gray-400 dark:border-gray-500";
+          } else if (missingSources === 2) {
+            // Missing 2 sources - medium gray
+            borderClass = "border-b-2 border-gray-600 dark:border-gray-400";
           } else {
-            borderClass = ""; // No border for characters in both sources
-            sourceLabel = "Both sources";
+            // Missing 3 sources (shouldn't happen) - dark gray
+            borderClass = "border-b-2 border-gray-800 dark:border-gray-200";
           }
+
+          // Build source label
+          const sourceNames: string[] = [];
+          if (candidate.sources.includes(CandidateSource.DONG)) sourceNames.push("Dong");
+          if (candidate.sources.includes(CandidateSource.YELLOWBRIDGE)) sourceNames.push("YellowBridge");
+          if (candidate.sources.includes(CandidateSource.PLECO)) sourceNames.push("Pleco");
+          const sourceLabel = sourceNames.join(", ");
 
           const tooltipParts = [
             candidate.char,
@@ -330,7 +402,7 @@ function SoundComponentCandidates({
               : "",
             candidate.isVerified ? "✓" : "",
             score !== null ? `Score: ${score.toFixed(1)}/10` : "",
-            `Source: ${sourceLabel}`,
+            `Sources: ${sourceLabel}`,
           ].filter(Boolean);
 
           return (
@@ -373,7 +445,7 @@ export default function SoundComponents({
   } = useSettings();
 
   // Load YellowBridge indexes
-  const { indexes: yellowBridgeIndexes } = useYellowBridgeIndexes();
+  const { indexes: yellowBridgeIndexes, error: yellowBridgeError } = useYellowBridgeIndexes();
 
   // Group characters by their sound component
   const soundComponentGroups = new Map<string, CharacterType[]>();
@@ -429,6 +501,7 @@ export default function SoundComponents({
               chars={chars}
               characters={characters}
               yellowBridgeIndexes={yellowBridgeIndexes}
+              yellowBridgeError={yellowBridgeError}
               showZhuyin={features?.showZhuyin}
             />
           ))}
@@ -465,6 +538,7 @@ export default function SoundComponents({
                     chars={chars}
                     characters={characters}
                     yellowBridgeIndexes={yellowBridgeIndexes}
+                    yellowBridgeError={yellowBridgeError}
                     showZhuyin={features?.showZhuyin}
                     compact
                   />
