@@ -15,6 +15,8 @@ import subprocess
 import sys
 import re
 import json
+import argparse
+from pathlib import Path
 from typing import TypedDict, List, Optional
 try:
     from bs4 import BeautifulSoup, NavigableString, Tag
@@ -162,12 +164,95 @@ def format_html_readable(html_str):
         return formatted
 
 
+def validate_pinyin(pinyin: str) -> bool:
+    """
+    Validate that a string looks like valid pinyin.
+
+    Valid pinyin consists of:
+    - Latin letters (a-z, A-Z)
+    - Pinyin tone marks (ā, á, ǎ, à, ē, é, ě, è, etc.)
+    - Should be 1-6 characters long
+    - Should not contain numbers, spaces, or special characters (except tone marks)
+    - Must have at least one tone mark OR be a known toneless syllable
+    """
+    if not pinyin or len(pinyin) > 6:
+        return False
+
+    # Check each character is either Latin letter or pinyin tone mark
+    valid_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    tone_marks = set('āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ')
+
+    for char in pinyin:
+        if char not in valid_chars and char not in tone_marks:
+            return False
+
+    # Must contain at least one vowel
+    vowels = set('aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ')
+    if not any(c in vowels for c in pinyin.lower()):
+        return False
+
+    # Must have at least one tone mark (accented character)
+    # This prevents random English words from being accepted
+    has_tone_mark = any(c in tone_marks for c in pinyin)
+
+    # Single character pinyin must have a tone mark
+    if len(pinyin) == 1 and not has_tone_mark:
+        return False
+
+    # Multi-character should either have tone mark or be all lowercase
+    # (all lowercase is suspicious unless it's in our exception list)
+    if len(pinyin) > 1 and not has_tone_mark:
+        # Only accept if it looks phonetically valid
+        # Common English words that aren't pinyin: "is", "This", "some", etc.
+        # Real pinyin syllables always start with valid pinyin initials
+        valid_initials = set('bpmfdtnlgkhjqxzhchshrzcsyw')
+        first_char = pinyin[0].lower()
+
+        # If doesn't start with valid pinyin initial, reject
+        if first_char not in valid_initials and first_char not in vowels:
+            return False
+
+    return has_tone_mark
+
+
 def extract_pinyin_from_text(text: str) -> List[str]:
     """Extract pinyin syllables from text"""
-    # Match pinyin with tone marks
+    # Match pinyin with tone marks (including single-character pinyin like ā, ē)
     pinyin_pattern = r'\b[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ]+\b'
     matches = re.findall(pinyin_pattern, text)
-    return [m for m in matches if m and len(m) > 1]
+    # Keep syllables that are either:
+    # 1. More than 1 character, OR
+    # 2. Single character with a tone mark (non-ASCII)
+    candidates = [m for m in matches if m and (len(m) > 1 or ord(m[0]) > 127)]
+
+    # Filter to valid pinyin (permissive - just skip invalid ones)
+    valid_pinyin = [c for c in candidates if validate_pinyin(c)]
+
+    return valid_pinyin
+
+
+def validate_character_pinyin(char: Character, char_hanzi: str):
+    """
+    Validate the pinyin field in a Character object.
+    Throws exception if pinyin is present but invalid.
+    """
+    if 'pinyin' not in char:
+        return  # No pinyin to validate
+
+    pinyin_list = char.get('pinyin', [])
+    if not pinyin_list:
+        return  # Empty list is okay
+
+    invalid = []
+    for pinyin in pinyin_list:
+        if not validate_pinyin(pinyin):
+            invalid.append(pinyin)
+
+    if invalid:
+        raise ValueError(
+            f"Invalid pinyin in character '{char_hanzi}': {invalid}. "
+            f"Full character data: {char}"
+        )
 
 
 def parse_character_from_li(li_element) -> Optional[Character]:
@@ -188,15 +273,30 @@ def parse_character_from_li(li_element) -> Optional[Character]:
     red_text = red_text.strip()
 
     # Parse the structure: "榊 shén: explanation; meaning"
+    # or "阿 ā (ē): meaning"
     # First, get character and pinyin
     match = re.match(r'^([^\s]+)\s+([^:]+):\s*(.*)$', li_text)
 
     if match:
         char['traditional'] = match.group(1)
 
-        # Extract pinyin from the second group
+        # Extract pinyin from the second group (handles "shén" or "ā (ē)")
         pinyin_text = match.group(2).strip()
         pinyin = extract_pinyin_from_text(pinyin_text)
+
+        # Also check if red text contains pinyin that we should use
+        if red_text:
+            red_pinyin = extract_pinyin_from_text(red_text)
+            if red_pinyin:
+                # If we already have pinyin, combine them
+                if pinyin:
+                    # Add any new pinyin from red text that's not already in the list
+                    for rp in red_pinyin:
+                        if rp not in pinyin:
+                            pinyin.append(rp)
+                else:
+                    pinyin = red_pinyin
+
         if pinyin:
             char['pinyin'] = pinyin
 
@@ -216,8 +316,11 @@ def parse_character_from_li(li_element) -> Optional[Character]:
                 # Remove trailing colon from red text if present
                 clean_red = clean_red.rstrip(':')
 
+                # Check if red text is just pinyin
+                is_just_pinyin = clean_red in (pinyin or [])
+
                 # Only set explanation if it's not just the pinyin
-                if clean_red and clean_red not in pinyin:
+                if clean_red and not is_just_pinyin:
                     char['explanation'] = clean_red
                 # Meaning is everything after the semicolon
                 char['meaning'] = meaning_part
@@ -228,8 +331,12 @@ def parse_character_from_li(li_element) -> Optional[Character]:
             # No semicolon - check if we have red text
             if red_text:
                 clean_red = red_text.replace("(orig.)", "").strip().rstrip(':')
+
+                # Check if red text is just pinyin
+                is_just_pinyin = clean_red in (pinyin or [])
+
                 # Only set explanation if it's not just the pinyin
-                if clean_red and clean_red not in pinyin:
+                if clean_red and not is_just_pinyin:
                     char['explanation'] = clean_red
                 # The non-red part is the meaning
                 meaning = after_colon.replace(red_text, '').strip()
@@ -238,6 +345,10 @@ def parse_character_from_li(li_element) -> Optional[Character]:
             else:
                 # Everything is the meaning
                 char['meaning'] = after_colon
+
+    # Validate pinyin before returning
+    if char.get('traditional'):
+        validate_character_pinyin(char, char['traditional'])
 
     return char if char.get('traditional') else None
 
@@ -315,7 +426,65 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     return data
 
 
+def rebuild_from_html_files():
+    """Rebuild JSON files from saved HTML files"""
+    script_dir = Path(__file__).parent.parent.parent
+    html_dir = script_dir / 'data' / 'pleco' / 'outlier_series'
+    json_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
+
+    if not html_dir.exists():
+        print(f"Directory not found: {html_dir}", file=sys.stderr)
+        return
+
+    html_files = list(html_dir.glob('*.html'))
+
+    if not html_files:
+        print(f"No HTML files found in {html_dir}", file=sys.stderr)
+        return
+
+    # Ensure JSON output directory exists
+    json_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Found {len(html_files)} HTML files to rebuild")
+    print("=" * 80)
+
+    for html_file in sorted(html_files):
+        print(f"\nProcessing: {html_file.name}")
+
+        try:
+            with open(html_file, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+
+            outlier_data = parse_outlier_html(html_content)
+
+            if outlier_data.get('traditional'):
+                char = outlier_data['traditional']
+                json_file = json_dir / f'{char}.json'
+
+                with open(json_file, 'w', encoding='utf-8') as f:
+                    json.dump(outlier_data, f, ensure_ascii=False, indent=2)
+
+                print(f"  ✓ Saved: {json_file}")
+            else:
+                print(f"  ✗ No character found in HTML", file=sys.stderr)
+
+        except Exception as e:
+            print(f"  ✗ Error processing {html_file.name}: {e}", file=sys.stderr)
+
+    print("\n" + "=" * 80)
+    print("Rebuild complete!")
+
+
 def main():
+    parser = argparse.ArgumentParser(description='Extract Outlier dictionary data from clipboard')
+    parser.add_argument('--rebuild', action='store_true',
+                       help='Rebuild JSON files from saved HTML files')
+    args = parser.parse_args()
+
+    if args.rebuild:
+        rebuild_from_html_files()
+        return
+
     print("=" * 80)
     print("CLIPBOARD CONTENT ANALYSIS")
     print("=" * 80)
@@ -416,6 +585,41 @@ def main():
             json_output = json.dumps(outlier_data, ensure_ascii=False, indent=2)
             print(json_output)
             print()
+
+            # Save to file
+            if outlier_data.get('traditional'):
+                char = outlier_data['traditional']
+
+                # Get script directory and construct paths
+                script_dir = Path(__file__).parent.parent.parent
+                json_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
+                html_dir = script_dir / 'data' / 'pleco' / 'outlier_series'
+
+                # Ensure directories exist
+                json_dir.mkdir(parents=True, exist_ok=True)
+                html_dir.mkdir(parents=True, exist_ok=True)
+
+                json_file = json_dir / f'{char}.json'
+                html_file = html_dir / f'{char}.html'
+
+                try:
+                    # Save JSON to public/data
+                    with open(json_file, 'w', encoding='utf-8') as f:
+                        json.dump(outlier_data, f, ensure_ascii=False, indent=2)
+
+                    # Save HTML to data
+                    with open(html_file, 'w', encoding='utf-8') as f:
+                        f.write(parsed_html)
+
+                    print("=" * 80)
+                    print(f"JSON SAVED TO: {json_file}")
+                    print(f"HTML SAVED TO: {html_file}")
+                    print("-" * 80)
+                    print()
+                except Exception as e:
+                    print(f"Error saving files: {e}", file=sys.stderr)
+            else:
+                print("No character found in data, skipping file save", file=sys.stderr)
 
     # Character analysis
     if plain_text:
