@@ -649,6 +649,7 @@ def generate_preload_list():
     Generate a list of the top 50 characters to preload based on their usage as sound components.
     For each Dong Chinese JSON file, count how many entries in componentIn have type "sound".
     Skip characters that already have Outlier data.
+    For each sound component, include one sample character that uses it.
     """
     script_dir = Path(__file__).parent.parent.parent
     dong_dir = script_dir / 'public' / 'data' / 'dong'
@@ -668,8 +669,9 @@ def generate_preload_list():
     print(f"Found {len(existing_outlier_chars)} existing Outlier entries")
     print()
 
-    # Count sound component usage for each character
+    # Count sound component usage for each character and track sample characters
     sound_component_counts = {}
+    sound_component_samples = {}  # Map from component to a sample character that uses it
 
     dong_files = list(dong_dir.glob('*.json'))
     print(f"Scanning {len(dong_files)} Dong Chinese files...")
@@ -690,10 +692,15 @@ def generate_preload_list():
 
             for usage in component_in:
                 components = usage.get('components', [])
+                using_char = usage.get('char')  # The character that uses this component
+
                 for comp in components:
                     # Check if this is our character and has "sound" in type
                     if comp.get('character') == char and 'sound' in comp.get('type', []):
                         sound_count += 1
+                        # Store the first sample character we find
+                        if char not in sound_component_samples and using_char:
+                            sound_component_samples[char] = using_char
                         break  # Only count once per usage entry
 
             if sound_count > 0:
@@ -721,8 +728,13 @@ def generate_preload_list():
     print()
 
     if top_50:
-        # Print as single line without spaces
-        result = "".join([char for char, _ in top_50])
+        # Print as single line with sample characters
+        result_parts = []
+        for char, count in top_50:
+            sample = sound_component_samples.get(char, '')
+            result_parts.append(f"{char}{sample}")
+
+        result = "".join(result_parts)
         print(result)
         print()
     else:
