@@ -80,25 +80,27 @@ class OutlierData(TypedDict, total=False):
     raw_html: Optional[str]
 
 
-def auto_copy_from_window(window_name: str = "iPhone Mirroring"):
+def auto_copy_from_window(window_name: str = "iPhone Mirroring", clear_clipboard: bool = True):
     """
     Automatically copy content from a specific window by sending keyboard shortcuts.
 
     Args:
         window_name: Name of the window to target (default: "iPhone Mirroring")
+        clear_clipboard: Whether to clear clipboard before copying (default: True)
     """
     try:
-        # Step 0: Clear clipboard first
-        print("Step 0: Clearing clipboard...")
-        clear_clipboard_script = 'set the clipboard to ""'
-        subprocess.run(
-            ['osascript', '-e', clear_clipboard_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        time.sleep(0.2)
-        print("  ✓ Clipboard cleared")
+        # Step 0: Clear clipboard first (only on first attempt)
+        if clear_clipboard:
+            print("Step 0: Clearing clipboard...")
+            clear_clipboard_script = 'set the clipboard to ""'
+            subprocess.run(
+                ['osascript', '-e', clear_clipboard_script],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            time.sleep(0.2)
+            print("  ✓ Clipboard cleared")
 
         # Step 1: Activate the application
         print(f"Step 1: Activating '{window_name}' window...")
@@ -829,6 +831,36 @@ def main():
         print()
         # Give a bit more time for clipboard to be ready
         time.sleep(0.5)
+
+        # Verify clipboard has content, retry if needed
+        max_retries = 3
+        retry_count = 0
+        html_data = None
+
+        while retry_count < max_retries:
+            html_data = get_clipboard_html()
+            if html_data and html_data != 'missing value':
+                parsed_html = parse_hex_data(html_data, "HTML")
+                if parsed_html and len(parsed_html.strip()) > 0:
+                    print(f"✓ Successfully verified clipboard content")
+                    break
+
+            retry_count += 1
+            if retry_count < max_retries:
+                print(f"⚠ Clipboard empty or invalid (attempt {retry_count}/{max_retries}), retrying copy...")
+                time.sleep(0.5)
+
+                # Try copying again without clearing clipboard
+                if not auto_copy_from_window(args.window_name, clear_clipboard=False):
+                    print("\nFailed to auto-copy on retry. Please copy manually and try again.", file=sys.stderr)
+                    sys.exit(1)
+                time.sleep(0.5)
+
+        if retry_count >= max_retries:
+            print(f"\n✗ Failed to get valid clipboard content after {max_retries} attempts", file=sys.stderr)
+            print("Please ensure the content is visible and try again.", file=sys.stderr)
+            sys.exit(1)
+        print()
 
     print("=" * 80)
     print("CLIPBOARD CONTENT ANALYSIS")
