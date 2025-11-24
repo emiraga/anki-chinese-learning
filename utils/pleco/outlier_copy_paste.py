@@ -23,8 +23,10 @@ import re
 import json
 import argparse
 import time
+import hashlib
+import base64
 from pathlib import Path
-from typing import TypedDict, List, Optional
+from typing import TypedDict, List, Optional, Tuple
 try:
     from bs4 import BeautifulSoup, NavigableString, Tag
     BS4_AVAILABLE = True
@@ -463,6 +465,70 @@ def parse_character_from_li(li_element) -> Optional[Character]:
     return char if char.get('traditional') else None
 
 
+def extract_image_id_from_img_tag(img_tag) -> Tuple[Optional[str], Optional[bytes]]:
+    """
+    Extract image data from an img tag and generate an ID for it.
+    Returns (image_id, image_bytes) or (None, None) if no image data found.
+    """
+    if not img_tag:
+        return None, None
+
+    src = img_tag.get('src', '')
+    if not src.startswith('data:image/'):
+        return None, None
+
+    # Parse data URL: data:image/svg+xml;base64,<data>
+    try:
+        # Split on comma to get the base64 data
+        parts = src.split(',', 1)
+        if len(parts) != 2:
+            return None, None
+
+        image_data_b64 = parts[1]
+        image_bytes = base64.b64decode(image_data_b64)
+
+        # Generate MD5 hash as ID
+        image_id = hashlib.md5(image_bytes).hexdigest()
+
+        return image_id, image_bytes
+    except Exception as e:
+        print(f"Error extracting image data: {e}", file=sys.stderr)
+        return None, None
+
+
+def save_image_to_disk(image_id: str, image_bytes: bytes, images_dir: Path) -> bool:
+    """
+    Save image bytes to disk with the given ID.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        # Ensure images directory exists
+        images_dir.mkdir(parents=True, exist_ok=True)
+
+        # Determine file extension from image data
+        # SVG images start with <?xml or <svg
+        if image_bytes.startswith(b'<?xml') or image_bytes.startswith(b'<svg'):
+            ext = 'svg'
+        elif image_bytes.startswith(b'\x89PNG'):
+            ext = 'png'
+        elif image_bytes.startswith(b'\xff\xd8\xff'):
+            ext = 'jpg'
+        else:
+            # Default to svg for unknown types
+            ext = 'svg'
+
+        image_path = images_dir / f'{image_id}.{ext}'
+
+        with open(image_path, 'wb') as f:
+            f.write(image_bytes)
+
+        print(f"  Saved image: {image_path}")
+        return True
+    except Exception as e:
+        print(f"  Error saving image: {e}", file=sys.stderr)
+        return False
+
+
 def parse_outlier_html(html_str: str) -> OutlierData:
     """Parse Outlier dictionary HTML into structured data"""
     if not html_str or not BS4_AVAILABLE:
@@ -475,10 +541,26 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     h1 = soup.find('h1')
     if h1:
         h1_text = h1.get_text(strip=True)
-        # Extract character from "System level info for component 神"
-        match = re.search(r'component\s+(.)', h1_text)
-        if match:
-            data['traditional'] = match.group(1)
+
+        # First check if there's an img tag in the h1 (character as image)
+        img_tag = h1.find('img')
+        if img_tag:
+            image_id, image_bytes = extract_image_id_from_img_tag(img_tag)
+            if image_id:
+                # Save the image
+                script_dir = Path(__file__).parent.parent.parent
+                images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'
+                save_image_to_disk(image_id, image_bytes, images_dir)
+
+                # Use the image ID as the "traditional" character
+                data['traditional'] = f"img_{image_id}"
+            else:
+                raise ValueError(f"Failed to extract image ID from img tag in h1: {h1}")
+        else:
+            # Extract character from "System level info for component 神"
+            match = re.search(r'component\s+(.)', h1_text)
+            if match:
+                data['traditional'] = match.group(1)
 
     # Extract top-level note between h1 and first h2 (if any)
     # This captures notes like "口 is the canonical form. See also the series for variants: 厶(口)"
@@ -506,10 +588,15 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                         # Check if there's an img tag inside
                         img = link.find('img')
                         if img:
-                            # For image links, we can't get the character from alt,
-                            # but we can try to extract from the href pattern
-                            # or just skip it for now
-                            continue
+                            # Extract and save the image, use its ID as the reference
+                            image_id, image_bytes = extract_image_id_from_img_tag(img)
+                            if image_id and image_bytes:
+                                script_dir = Path(__file__).parent.parent.parent
+                                images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'
+                                save_image_to_disk(image_id, image_bytes, images_dir)
+                                link_text = f"img_{image_id}"
+                            else:
+                                continue
 
                     if href and link_text:
                         ref: Reference = {
@@ -562,6 +649,19 @@ def parse_outlier_html(html_str: str) -> OutlierData:
             for link in elem.find_all('a'):
                 href = link.get('href', '')
                 link_text = link.get_text(strip=True)
+                if not link_text:
+                    # Check if there's an img tag inside
+                    img = link.find('img')
+                    if img:
+                        # Extract and save the image, use its ID as the reference
+                        image_id, image_bytes = extract_image_id_from_img_tag(img)
+                        if image_id and image_bytes:
+                            script_dir = Path(__file__).parent.parent.parent
+                            images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'
+                            save_image_to_disk(image_id, image_bytes, images_dir)
+                            link_text = f"img_{image_id}"
+                        else:
+                            continue
                 if href and link_text:
                     ref: Reference = {
                         'char': link_text,
