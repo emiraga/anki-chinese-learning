@@ -178,7 +178,9 @@ export function SearchMorePhrases({
               onClick={async () => {
                 await anki.card.unsuspend({ cards: note.cards });
                 await anki.card.setDueDate({ cards: note.cards, days: "0" });
-                alert("Enabled " + note.fields["Traditional"]?.value);
+                setPhrases((phrases) =>
+                  phrases?.filter((phrase) => phrase.noteId !== note.noteId),
+                );
               }}
             >
               enable
