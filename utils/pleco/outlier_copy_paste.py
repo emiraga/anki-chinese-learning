@@ -933,7 +933,7 @@ def main():
         time.sleep(0.5)
 
         # Verify clipboard has content, retry if needed
-        max_retries = 3
+        max_retries = 10
         retry_count = 0
         html_data = None
 

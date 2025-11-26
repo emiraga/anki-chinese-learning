@@ -34,20 +34,64 @@ function Section({
   );
 }
 
+// Helper function to check if a character is an image reference
+function isImageCharacter(char: string): boolean {
+  return char.startsWith("img_");
+}
+
+// Helper function to get image path from character ID
+function getImagePath(char: string): string | null {
+  if (!isImageCharacter(char)) return null;
+  const imageId = char.substring(4); // Remove "img_" prefix
+  return `/data/pleco/images/${imageId}.svg`;
+}
+
+// Component to display either a character or an image
+interface CharacterDisplayProps {
+  char: string;
+  className?: string;
+}
+
+function CharacterDisplay({ char, className = "" }: CharacterDisplayProps) {
+  const imagePath = getImagePath(char);
+
+  if (imagePath) {
+    return (
+      <img
+        src={imagePath}
+        alt={char}
+        className={className}
+        style={{ width: "100%", height: "100%" }}
+      />
+    );
+  }
+
+  return <span className={className}>{char}</span>;
+}
+
 // Character header component
 interface CharacterHeaderProps {
   character: PlecoOutlier;
 }
 
 function CharacterHeader({ character }: CharacterHeaderProps) {
+  const isImage = isImageCharacter(character.traditional);
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
       <div className="flex items-start gap-8">
         {/* Main Character Display */}
         <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
-          <div className="text-8xl font-serif leading-none dark:text-gray-100">
-            {character.traditional}
-          </div>
+          {isImage ? (
+            <CharacterDisplay
+              char={character.traditional}
+              className="w-full h-full object-contain dark:invert"
+            />
+          ) : (
+            <div className="text-8xl font-serif leading-none dark:text-gray-100">
+              {character.traditional}
+            </div>
+          )}
         </div>
 
         {/* Right side content */}
@@ -84,18 +128,30 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
                 Related Characters:
               </h3>
               <div className="flex flex-wrap gap-2">
-                {character.references.map((ref, index) => (
-                  <CharLink
-                    key={index}
-                    traditional={ref.char}
-                    className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    title={ref.href}
-                  >
-                    <span className="text-2xl font-serif dark:text-gray-100">
-                      {ref.char}
-                    </span>
-                  </CharLink>
-                ))}
+                {character.references.map((ref, index) => {
+                  const isRefImage = isImageCharacter(ref.char);
+                  return (
+                    <CharLink
+                      key={index}
+                      traditional={ref.char}
+                      className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      title={ref.href}
+                    >
+                      {isRefImage ? (
+                        <div className="w-8 h-8">
+                          <CharacterDisplay
+                            char={ref.char}
+                            className="w-full h-full object-contain dark:invert"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-serif dark:text-gray-100">
+                          {ref.char}
+                        </span>
+                      )}
+                    </CharLink>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -123,15 +179,26 @@ function CharacterItem({ char, isKnown }: CharacterItemProps) {
   if (!isKnown) titleParts.push("(Unknown)");
   const title = titleParts.join(" - ");
 
+  const isImage = isImageCharacter(char.traditional);
+
   return (
     <CharLink
       traditional={char.traditional}
       className={`flex flex-col items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded ${!isKnown ? "opacity-60" : ""}`}
       title={title}
     >
-      <div className="text-5xl font-serif mb-2 dark:text-gray-100">
-        {char.traditional}
-      </div>
+      {isImage ? (
+        <div className="w-20 h-20 mb-2">
+          <CharacterDisplay
+            char={char.traditional}
+            className="w-full h-full object-contain dark:invert"
+          />
+        </div>
+      ) : (
+        <div className="text-5xl font-serif mb-2 dark:text-gray-100">
+          {char.traditional}
+        </div>
+      )}
       {char.simplified && char.simplified !== char.traditional && (
         <div className="text-2xl text-gray-500 dark:text-gray-400 mb-1">
           {char.simplified}
