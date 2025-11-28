@@ -2,6 +2,8 @@
 
 set -x
 
+./utils/hanzi/fill_hanzi_notes.py
+
 pushd utils/zhuyin
 ./fill_zhuyin_anki.py
 popd
@@ -10,8 +12,8 @@ pushd utils/tts
 ./fill_audio_anki.py --use-pinyin-hint
 popd
 
-./utils/hanzi/fill_hanzi_notes.py
 ./utils/props/fill_props_field.py
+./utils/hanziyuan/convert.py
 ./utils/dong/augment_data.py
 ./utils/dong/download_images.py
 ./utils/dong/fill_dong_chinese.py

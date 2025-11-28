@@ -252,9 +252,6 @@ def should_process_note(note_type, traditional):
     Returns:
         bool: True if note should be processed, False otherwise
     """
-    if note_type == "TOCFL":
-        # For TOCFL, only process single character notes
-        return len(traditional) == 1
     return True
 
 
@@ -315,6 +312,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
 
             # Get the Traditional field (which contains the hanzi character)
             traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = traditional[0:1]
 
             if not traditional:
                 print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}): No Traditional field, skipping")
