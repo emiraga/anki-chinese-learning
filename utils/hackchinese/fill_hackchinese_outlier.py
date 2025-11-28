@@ -6,7 +6,6 @@
 # ]
 # ///
 
-import os
 import json
 import requests
 import argparse
@@ -87,9 +86,9 @@ def update_note_field(note_id, field_name, field_value):
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
-def load_yellowbridge_character(character):
+def load_hackchinese_outlier_data(character):
     """
-    Load the YellowBridge character data for a given character
+    Load the HackChinese Outlier data for a given character
 
     Args:
         character (str): The Chinese character
@@ -97,9 +96,8 @@ def load_yellowbridge_character(character):
     Returns:
         dict: Character data or None if not found
     """
-    # Construct the path to the JSON file
-    yellowbridge_dir = Path(__file__).parent.parent.parent / "public" / "data" / "yellowbridge" / "info"
-    json_file = yellowbridge_dir / f"{character}.json"
+    outlier_dir = Path(__file__).parent.parent.parent / "public" / "data" / "hackchinese" / "outlier"
+    json_file = outlier_dir / f"{character}.json"
 
     if not json_file.exists():
         return None
@@ -108,156 +106,63 @@ def load_yellowbridge_character(character):
         with open(json_file, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f"Error loading YellowBridge data for {character}: {e}")
+        print(f"Error loading HackChinese Outlier data for {character}: {e}")
         return None
 
 
-def escape_html(text):
+def process_explanation_text(text):
     """
-    Escape HTML special characters
+    Process explanation text: convert %% to paragraphs and remove excess newlines
 
     Args:
-        text (str): Text to escape
+        text (str): Raw explanation text
 
     Returns:
-        str: Escaped text
+        str: Processed HTML text
     """
     if not text:
-        return text
-    return (text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#39;"))
+        return None
+
+    # Replace %% with paragraph breaks
+    parts = text.split("%%")
+
+    # Process each part: strip whitespace and wrap in <p> tags
+    paragraphs = []
+    for part in parts:
+        part = part.strip()
+        if part:
+            paragraphs.append(f"<p>{part}</p>")
+
+    return "\n".join(paragraphs)
 
 
-def format_component_info(component):
+def generate_hackchinese_outlier_html(outlier_data):
     """
-    Format a component with pinyin and description
+    Generate HTML for HackChineseOutlier Etymology field
 
     Args:
-        component (dict): Component information
-
-    Returns:
-        str: HTML formatted component
-    """
-    parts = [f'<strong>{escape_html(component["character"])}</strong>']
-
-    if component.get("pinyin") and len(component["pinyin"]) > 0:
-        pinyin_str = ", ".join(component["pinyin"])
-        parts.append(f'<em>{escape_html(pinyin_str)}</em>')
-
-    if component.get("description"):
-        parts.append(f'"{escape_html(component["description"])}"')
-
-    if component.get("isAltered"):
-        parts.append('<span style="font-size: 0.75em; background-color: #fef3c7; color: #92400e; padding: 0.125rem 0.375rem; border-radius: 0.25rem;">altered</span>')
-
-    return " ".join(parts)
-
-
-def generate_yellowbridge_etymology_html(yb_data):
-    """
-    Generate HTML for Yellowbridge Etymology field
-
-    Args:
-        yb_data (dict): YellowBridge character data
+        outlier_data (dict): HackChinese Outlier character data
 
     Returns:
         str: HTML string or None if no data available
     """
-    if not yb_data:
+    if not outlier_data:
         return None
 
-    html_parts = []
+    # Use form_explanation_trad, fallback to form_explanation_simp
+    explanation = outlier_data.get("form_explanation_trad")
+    if not explanation:
+        explanation = outlier_data.get("form_explanation_simp")
 
-    # 1. Definition
-    if yb_data.get("definition"):
-        definition = escape_html(yb_data["definition"])
-        html_parts.append(f'<p><strong>Definition:</strong> {definition}</p>')
-
-    # 2. Character Formation
-    if yb_data.get("formationMethods") and len(yb_data["formationMethods"]) > 0:
-        # html_parts.append('<p><strong>Character Formation:</strong></p>')
-        html_parts.append('<ul>')
-
-        for method in yb_data["formationMethods"]:
-            type_english = escape_html(method.get("typeEnglish", ""))
-            type_chinese = escape_html(method.get("typeChinese", ""))
-            description = escape_html(method.get("description", ""))
-
-            method_html = f'<li><strong>{type_english}</strong> ({type_chinese}): {description}'
-
-            if method.get("referencedCharacters") and len(method["referencedCharacters"]) > 0:
-                ref_chars = ", ".join([escape_html(c) for c in method["referencedCharacters"]])
-                method_html += f' [{ref_chars}]'
-
-            method_html += '</li>'
-            html_parts.append(method_html)
-
-        html_parts.append('</ul>')
-
-    # 3. Functional Components (Phonetic and Semantic)
-    functional_comps = yb_data.get("functionalComponents", {})
-    has_phonetic = functional_comps.get("phonetic") and len(functional_comps["phonetic"]) > 0
-    has_semantic = functional_comps.get("semantic") and len(functional_comps["semantic"]) > 0
-
-    if has_phonetic or has_semantic:
-        # html_parts.append('<p><strong>Functional Components:</strong></p>')
-        html_parts.append('<ul>')
-
-        if has_phonetic:
-            html_parts.append('<li><strong style="color: #2563eb;">Phonetic (Sound):</strong>')
-            html_parts.append('<ul>')
-            for comp in functional_comps["phonetic"]:
-                html_parts.append(f'<li>{format_component_info(comp)}</li>')
-            html_parts.append('</ul>')
-            html_parts.append('</li>')
-
-        if has_semantic:
-            html_parts.append('<li><strong style="color: #16a34a;">Semantic (Meaning):</strong>')
-            html_parts.append('<ul>')
-            for comp in functional_comps["semantic"]:
-                html_parts.append(f'<li>{format_component_info(comp)}</li>')
-            html_parts.append('</ul>')
-            html_parts.append('</li>')
-
-        html_parts.append('</ul>')
-
-    # 4. Primitive Components
-    has_primitive = functional_comps.get("primitive") and len(functional_comps["primitive"]) > 0
-
-    if has_primitive:
-        # html_parts.append('<p><strong>Primitive Components:</strong></p>')
-        html_parts.append('<ul>')
-        for comp in functional_comps["primitive"]:
-            html_parts.append(f'<li>{format_component_info(comp)}</li>')
-        html_parts.append('</ul>')
-
-    if not html_parts:
+    if not explanation:
         return None
 
-    return "\n".join(html_parts)
+    return process_explanation_text(explanation)
 
 
-def should_process_note(note_type, traditional):
+def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
     """
-    Determine if a note should be processed based on note type and traditional field
-
-    Args:
-        note_type (str): The note type (e.g., "Hanzi", "TOCFL")
-        traditional (str): The Traditional field content
-
-    Returns:
-        bool: True if note should be processed, False otherwise
-    """
-    return True
-
-
-def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
-    """
-    Update notes with Yellowbridge Etymology for specified note types
+    Update notes with HackChineseOutlier Etymology for specified note types
 
     Args:
         note_types (list): List of note type names to process (e.g., ["Hanzi", "TOCFL"])
@@ -278,8 +183,8 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
             search_query += f' Traditional:_'
 
         if not overwrite:
-            # Exclude notes that already have content in the Yellowbridge Etymology field
-            search_query += ' -"Yellowbridge Etymology:_*"'
+            # Exclude notes that already have content in the HackChineseOutlier Etymology field
+            search_query += ' -"HackChineseOutlier Etymology:_*"'
 
         response = anki_connect_request("findNotes", {"query": search_query})
         if response and response.get("result"):
@@ -304,6 +209,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
     updated_count = 0
     skipped_count = 0
     error_count = 0
+    no_outlier_data = set()
 
     for i, note_id in enumerate(all_note_ids, 1):
         try:
@@ -319,22 +225,16 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
                 skipped_count += 1
                 continue
 
-            # Check if this note should be processed based on note type rules
-            if not should_process_note(note_type, traditional):
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
-                skipped_count += 1
-                continue
+            # Load the HackChinese Outlier data from JSON file
+            outlier_data = load_hackchinese_outlier_data(traditional)
 
-            # Load the YellowBridge data from JSON file
-            yb_data = load_yellowbridge_character(traditional)
-
-            if not yb_data:
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No YellowBridge data found, skipping")
+            if not outlier_data:
+                no_outlier_data.add(traditional)
                 skipped_count += 1
                 continue
 
             # Generate the etymology HTML
-            etymology_html = generate_yellowbridge_etymology_html(yb_data)
+            etymology_html = generate_hackchinese_outlier_html(outlier_data)
 
             if not etymology_html:
                 print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No etymology data to generate, skipping")
@@ -347,7 +247,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
                 updated_count += 1
             else:
                 # Update the note
-                update_note_field(note_id, "Yellowbridge Etymology", etymology_html)
+                update_note_field(note_id, "HackChineseOutlier Etymology", etymology_html)
                 print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Updated successfully")
                 updated_count += 1
 
@@ -362,6 +262,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")
     print(f"  Errors: {error_count}")
+    print(no_outlier_data)
     if dry_run:
         print("  (DRY RUN - no changes were made)")
     print("="*60)
@@ -369,7 +270,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill Yellowbridge Etymology field for notes in Anki',
+        description='Fill HackChineseOutlier Etymology field for notes in Anki',
         epilog='''
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
@@ -377,17 +278,12 @@ Examples:
   %(prog)s                                     Update all Hanzi notes
   %(prog)s --note-types Hanzi TOCFL            Update both Hanzi and TOCFL notes
   %(prog)s --limit 100                         Update first 100 notes only
-  %(prog)s --character 你                      Update specific character only
-  %(prog)s --character 你 --overwrite          Rebuild specific character
-  %(prog)s --note-types TOCFL --dry-run        Preview TOCFL single-character notes
+  %(prog)s --character `                      Update specific character only
+  %(prog)s --character ` --overwrite          Rebuild specific character
 
-This script generates HTML content for the "Yellowbridge Etymology" field including:
-  1. Definition
-  2. Character Formation methods (with types and descriptions)
-  3. Functional Components (Phonetic and Semantic)
-  4. Primitive Components
-
-Note: TOCFL notes are only processed if the Traditional field contains a single character.
+This script generates content for the "HackChineseOutlier Etymology" field from
+HackChinese Outlier dictionary data. It uses form_explanation_trad and falls back
+to form_explanation_simp if not available.
 
 The script only updates empty fields and skips notes that already have content.
 Requires Anki running with AnkiConnect addon installed.
@@ -401,12 +297,12 @@ Requires Anki running with AnkiConnect addon installed.
     parser.add_argument('--overwrite', action='store_true',
                        help='Overwrite existing content in the field (default: skip filled fields)')
     parser.add_argument('--character', type=str, metavar='CHAR',
-                       help='Process only this specific character (e.g., 你)')
+                       help='Process only this specific character (e.g., `)')
     parser.add_argument('--note-types', nargs='+', default=['Hanzi', 'TOCFL'], metavar='TYPE',
                        help='Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL')
     args = parser.parse_args()
 
-    update_yellowbridge_etymology_for_note_types(
+    update_hackchinese_outlier_for_note_types(
         note_types=args.note_types,
         dry_run=args.dry_run,
         limit=args.limit,
