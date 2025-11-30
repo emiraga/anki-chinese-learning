@@ -262,7 +262,7 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")
     print(f"  Errors: {error_count}")
-    print(no_outlier_data)
+    print(''.join(no_outlier_data))
     if dry_run:
         print("  (DRY RUN - no changes were made)")
     print("="*60)

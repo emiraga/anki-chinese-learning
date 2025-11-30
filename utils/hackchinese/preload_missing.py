@@ -123,12 +123,12 @@ def open_in_browser_and_wait(word_id: str, traditional: str = "", base_url: str 
         raise Exception(f"Error opening {url}: {e}")
 
     # Wait for file to appear
-    for attempt in range(20):
-        time.sleep(1)
+    for attempt in range(50):
+        time.sleep(0.4)
         if file_path.exists():
-            print(f"  ✓ File appeared after {attempt + 1} second(s)")
+            print(f"  ✓ File appeared after {attempt + 1} attempts(s)")
             return file_path
-        print(f"  Waiting for file... ({attempt + 1}/20)")
+        print(f"  Waiting for file... ({attempt + 1})")
 
     raise Exception(f"File {file_path} did not appear after 20 seconds")
 
