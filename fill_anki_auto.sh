@@ -3,6 +3,7 @@
 set -x
 
 ./utils/hanzi/fill_hanzi_notes.py
+./utils/hanzi/clean_notes.py
 
 pushd utils/zhuyin
 ./fill_zhuyin_anki.py
