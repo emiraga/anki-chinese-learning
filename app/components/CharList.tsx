@@ -1,7 +1,6 @@
 import { type CharacterType } from "~/data/characters";
 import { CharCard, CharCardDetails } from "./CharCard";
 import { PinyinText } from "./PinyinText";
-import type { KnownPropsType } from "~/data/props";
 import { TagList } from "./TagList";
 import { type CharsToPhrasesPinyin } from "~/data/phrases";
 import { getAllPinyinUnreliable, comparePinyin } from "~/utils/pinyin";
@@ -23,34 +22,65 @@ export const CharList: React.FC<{
 };
 
 export const CharListConflicts: React.FC<{
-  knownProps: KnownPropsType;
-  conflicting: CharacterType[];
+  title: string;
+  conflicts: Array<{
+    character: CharacterType;
+    reason:
+      | { type: "missing_props"; props: string[] }
+      | { type: "no_pinyin_from_phrases" }
+      | { type: "pinyin_mismatch"; missingPinyin: string[] };
+  }>;
   charPhrasesPinyin: CharsToPhrasesPinyin;
-}> = ({ knownProps, conflicting, charPhrasesPinyin }) => {
-  if (conflicting.length === 0) {
-    return <div className="m-5">No Character Conflicts</div>;
+}> = ({ title, conflicts, charPhrasesPinyin }) => {
+  if (conflicts.length === 0) {
+    return null;
   }
 
   return (
     <>
       <h3 className="font-serif text-3xl m-4">
-        Character conflicts ({conflicting.length}):
+        {title} ({conflicts.length}):
       </h3>
       <div className="block">
-        {conflicting.map((v, i) => {
-          const missingProps = v.tags.filter(
-            (t) => t.startsWith("prop::") && knownProps[t] === undefined
-          );
+        {conflicts.map((conflict, i) => {
+          const v = conflict.character;
+          const reason = conflict.reason;
+
           return (
             <div className="w-full" key={i}>
               <CharCardDetails char={v} />
               <div className="">
-                {missingProps.length ? (
-                  <div>
-                    Missing props list:
-                    <TagList tags={missingProps} />
+                {reason.type === "missing_props" && (
+                  <div className="mb-2">
+                    <span className="font-bold text-red-600">
+                      Missing props:
+                    </span>
+                    <TagList tags={reason.props} />
                   </div>
-                ) : undefined}
+                )}
+
+                {reason.type === "no_pinyin_from_phrases" && (
+                  <div className="mb-2">
+                    <span className="font-bold text-red-600">
+                      No pinyin found from phrases
+                    </span>
+                  </div>
+                )}
+
+                {reason.type === "pinyin_mismatch" && (
+                  <div className="mb-2">
+                    <span className="font-bold text-red-600">
+                      Missing pinyin in Anki:
+                    </span>
+                    {reason.missingPinyin.map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="ml-2 text-red-500"
+                        dangerouslySetInnerHTML={{ __html: p }}
+                      ></span>
+                    ))}
+                  </div>
+                )}
 
                 <div>
                   Anki:

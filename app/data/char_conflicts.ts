@@ -7,18 +7,34 @@ import {
 } from "~/data/phrases";
 import { removeDuplicateChars } from "~/utils/array";
 
+export type ConflictReason =
+  | { type: "missing_props"; props: string[] }
+  | { type: "no_pinyin_from_phrases" }
+  | { type: "pinyin_mismatch"; missingPinyin: string[] };
+
+export type CharacterConflict = {
+  character: CharacterType;
+  reason: ConflictReason;
+};
+
 export function getConflictingChars(
   knownProps: KnownPropsType,
   characters: CharactersType,
   charPhrasesPinyin: CharsToPhrasesPinyin
-): CharacterType[] {
-  return Object.values(characters).filter((v) => {
-    for (const tag of v.tags) {
-      if (tag.startsWith("prop::")) {
-        if (knownProps[tag] === undefined) {
-          return true;
-        }
-      }
+): CharacterConflict[] {
+  const conflicts: CharacterConflict[] = [];
+
+  for (const v of Object.values(characters)) {
+    // Check for missing props
+    const missingProps = v.tags.filter(
+      (tag) => tag.startsWith("prop::") && knownProps[tag] === undefined
+    );
+    if (missingProps.length > 0) {
+      conflicts.push({
+        character: v,
+        reason: { type: "missing_props", props: missingProps },
+      });
+      continue;
     }
 
     const fromAnki = new Set(v.pinyin.map((x) => x.pinyinAccented));
@@ -30,18 +46,32 @@ export function getConflictingChars(
         : []
     );
 
+    // Check for no pinyin from phrases
     if (fromPhrases.size === 0 && v.withSound) {
-      return true;
+      conflicts.push({
+        character: v,
+        reason: { type: "no_pinyin_from_phrases" },
+      });
+      continue;
     }
 
+    // Check for pinyin mismatch
+    const missingPinyin: string[] = [];
     for (const p of fromPhrases) {
       if (!fromAnki.has(p)) {
         console.log("Missing", p, "in", fromAnki);
-        return true;
+        missingPinyin.push(p);
       }
     }
-    return false;
-  });
+    if (missingPinyin.length > 0) {
+      conflicts.push({
+        character: v,
+        reason: { type: "pinyin_mismatch", missingPinyin },
+      });
+    }
+  }
+
+  return conflicts;
 }
 
 export function getMissingPhraseChars(
