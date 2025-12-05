@@ -1,4 +1,3 @@
- 
 // TODO: migrate this to config
 export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   TOCFL: [
@@ -34,5 +33,7 @@ export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   ],
   Dangdai: [
     { name: "Dangdai", deck: "Chinese::A Course in Contemporary Chinese" },
+    { name: "Dangdai", deck: "Chinese::A Course in Contemporary Chinese" },
+    { name: "Sound to meaning", deck: "Chinese::Listening" },
   ],
 };
