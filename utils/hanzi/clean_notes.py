@@ -231,7 +231,7 @@ def add_tag_to_note(note_id, tag):
         raise RuntimeError(f"Failed to add tag to note {note_id}: {response}")
 
 
-def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map):
+def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_type):
     """
     Process a single-character phrase note and update corresponding Hanzi note
 
@@ -240,6 +240,7 @@ def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map):
         character (str): The character
         pinyin (str): The cleaned pinyin
         hanzi_map (dict): Map of (char, pinyin) -> Hanzi note info
+        note_type (str): The note type (e.g., "TOCFL", "Dangdai")
 
     Returns:
         tuple: (success: bool, skip_reason: str or None)
@@ -259,15 +260,20 @@ def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map):
     if not phrase_meaning:
         return False, "no_meaning"
 
-    # Check if Hanzi note's Meaning 2 already matches the target
-    hanzi_meaning2 = hanzi_note_info['fields'].get('Meaning 2', {}).get('value', '').strip()
-    if hanzi_meaning2 == phrase_meaning:
-        return True, "already_matches"
+    # Only update Meaning 2 for TOCFL notes
+    should_update_meaning = note_type == "TOCFL"
+
+    if should_update_meaning:
+        # Check if Hanzi note's Meaning 2 already matches the target
+        hanzi_meaning2 = hanzi_note_info['fields'].get('Meaning 2', {}).get('value', '').strip()
+        if hanzi_meaning2 == phrase_meaning:
+            return True, "already_matches"
 
     try:
-        # Update Hanzi note's Meaning 2 field
-        update_hanzi_meaning2(hanzi_note_id, phrase_meaning)
-        print(f"  ✓ Updated Hanzi note {hanzi_note_id} Meaning 2 with: {phrase_meaning[:50]}...")
+        # Update Hanzi note's Meaning 2 field (only for TOCFL)
+        if should_update_meaning:
+            update_hanzi_meaning2(hanzi_note_id, phrase_meaning)
+            print(f"  ✓ Updated Hanzi note {hanzi_note_id} Meaning 2 with: {phrase_meaning[:50]}...")
 
         # Add tag to phrase note
         add_tag_to_note(phrase_note_id, "ready-for-deletion")
@@ -292,8 +298,8 @@ def main():
         print("No Hanzi notes found. Exiting.")
         return
 
-    # Step 2: Extract single-character phrase notes (TOCFL only)
-    note_types = ["TOCFL"]
+    # Step 2: Extract single-character phrase notes (TOCFL and Dangdai)
+    note_types = ["TOCFL", "Dangdai"]
     single_char_phrases = extract_single_char_phrase_notes(note_types)
 
     if not single_char_phrases:
@@ -309,7 +315,7 @@ def main():
         phrase_note_id = phrase_note_info.get('noteId')
         note_type = phrase_note_info.get('modelName', 'unknown')
 
-        success, skip_reason = process_phrase_note(phrase_note_info, character, pinyin, hanzi_map)
+        success, skip_reason = process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_type)
 
         # Skip printing anything if values already match
         if skip_reason == "already_matches":
