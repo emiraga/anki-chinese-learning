@@ -43,24 +43,6 @@ def anki_connect_request(action, params=None):
         raise
 
 
-def get_note_info(note_id):
-    """
-    Get detailed information about a note
-
-    Args:
-        note_id (int): The note ID
-
-    Returns:
-        dict: Note information
-    """
-    response = anki_connect_request("notesInfo", {"notes": [note_id]})
-
-    if response and response.get("result"):
-        return response["result"][0]
-
-    raise Exception(f"No note found for ID {note_id}")
-
-
 def update_note_field(note_id, field_name, field_value):
     """
     Update a specific field of a note
@@ -324,24 +306,37 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         all_note_ids = all_note_ids[:limit]
         print(f"Processing limited to {limit} notes")
 
+    # Batch fetch all note info at once for speed
+    print(f"Fetching note data...")
+    notes_response = anki_connect_request("notesInfo", {"notes": all_note_ids})
+    if not notes_response or not notes_response.get("result"):
+        print("Failed to fetch note information")
+        return
+
+    all_notes_info = notes_response["result"]
+    print(f"Fetched {len(all_notes_info)} notes")
+
     updated_count = 0
     skipped_count = 0
     no_sentences_count = 0
     unchanged_count = 0
 
-    for i, note_id in enumerate(all_note_ids, 1):
+    for i, note_info in enumerate(all_notes_info, 1):
         try:
-            note_info = get_note_info(note_id)
+            note_id = note_info.get('noteId')
             note_type = note_info.get('modelName', 'Unknown')
 
             # Get the Traditional field
             traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
             if not traditional:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}): No Traditional field, skipping")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}): No Traditional field, skipping")
                 skipped_count += 1
                 continue
 
             char = traditional[0]
+
+            # Get current field value
+            current_value = note_info['fields'].get('Example sentences', {}).get('value', '').strip()
 
             # Get sentences for this character
             sentences = char_sentences.get(char, [])
@@ -354,16 +349,13 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
                 # Generate HTML
                 new_html = generate_example_sentences_html(sentences)
 
-            # Get current field value
-            current_value = note_info['fields'].get('Example sentences', {}).get('value', '').strip()
-
             # Check if update is needed
             if current_value == new_html:
                 unchanged_count += 1
                 continue
 
             if dry_run:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {char}): Would update Example sentences")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Would update Example sentences")
                 print(f"  Found {len(sentences)} sentences")
                 if sentences:
                     print(f"  First sentence: {sentences[0][0]}")
@@ -371,16 +363,17 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
             else:
                 # Update the note
                 update_note_field(note_id, "Example sentences", new_html)
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {char}): Updated with {len(sentences)} sentences")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(sentences)} sentences")
                 updated_count += 1
 
         except Exception as e:
-            print(f"[{i}/{len(all_note_ids)}] Error processing note {note_id}: {e}")
+            note_id = note_info.get('noteId', 'unknown')
+            print(f"[{i}/{len(all_notes_info)}] Error processing note {note_id}: {e}")
             raise
 
     print("\n" + "="*60)
     print(f"Summary:")
-    print(f"  Total notes: {len(all_note_ids)}")
+    print(f"  Total notes: {len(all_notes_info)}")
     print(f"  Updated: {updated_count}")
     print(f"  Unchanged: {unchanged_count}")
     print(f"  No sentences available: {no_sentences_count}")

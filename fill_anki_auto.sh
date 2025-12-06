@@ -29,3 +29,4 @@ popd
 
 ./utils/hackchinese/convert.py
 ./utils/hackchinese/fill_hackchinese_outlier.py
+./utils/hackchinese/fill_example_sentences.py
