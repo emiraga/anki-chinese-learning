@@ -162,26 +162,29 @@ def can_use_sentence(sentence_text: str, learned_chars: Set[str]) -> bool:
     return True
 
 
-def load_all_word_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, str]]]:
+def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tuple[str, str]]]]:
     """
-    Load all sentences from HackChinese word JSON files, grouped by character
+    Load all sentences and compounds from HackChinese word JSON files, grouped by character
 
     Args:
         learned_chars (Set[str]): Set of learned characters
 
     Returns:
-        Dict[str, List[Tuple[str, str]]]: Dictionary mapping character to list of (traditional, english) tuples
+        Dict[str, Dict[str, List[Tuple[str, str]]]]: Dictionary mapping character to dict with 'sentences' and 'compounds' keys,
+        each containing list of (traditional, english) tuples
     """
     words_dir = Path(__file__).parent.parent.parent / "data" / "hackchinese" / "words"
 
     if not words_dir.exists():
         raise Exception(f"Words directory not found: {words_dir}")
 
-    char_sentences: Dict[str, List[Tuple[str, str]]] = {}
+    char_data: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
     processed_files = 0
     single_char_words = 0
+    total_sentences_found = 0
+    total_compounds_found = 0
 
-    for json_file in words_dir.glob("*.json"):
+    for json_file in sorted(words_dir.glob("*.json")):
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -196,13 +199,12 @@ def load_all_word_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str
             single_char_words += 1
             char = traditional
 
+            # Initialize data structure for this character
+            if char not in char_data:
+                char_data[char] = {"sentences": [], "compounds": []}
+
             # Get sentences for this character
             sentences = data.get("sentences", [])
-
-            if char not in char_sentences:
-                char_sentences[char] = []
-
-            # Filter sentences where all characters are learned
             for sentence in sentences:
                 sentence_trad = sentence.get("traditional", "")
                 sentence_eng = sentence.get("english", "")
@@ -211,8 +213,23 @@ def load_all_word_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str
                     if can_use_sentence(sentence_trad, learned_chars):
                         # Avoid duplicates
                         sentence_tuple = (sentence_trad, sentence_eng)
-                        if sentence_tuple not in char_sentences[char]:
-                            char_sentences[char].append(sentence_tuple)
+                        if sentence_tuple not in char_data[char]["sentences"]:
+                            char_data[char]["sentences"].append(sentence_tuple)
+                            total_sentences_found += 1
+
+            # Get compounds for this character
+            compounds = data.get("compounds", [])
+            for compound in compounds:
+                compound_trad = compound.get("traditional", "")
+                compound_eng = compound.get("english", "")
+
+                if compound_trad and compound_eng:
+                    if can_use_sentence(compound_trad, learned_chars):
+                        # Avoid duplicates
+                        compound_tuple = (compound_trad, compound_eng)
+                        if compound_tuple not in char_data[char]["compounds"]:
+                            char_data[char]["compounds"].append(compound_tuple)
+                            total_compounds_found += 1
 
         except Exception as e:
             print(f"Error loading {json_file}: {e}")
@@ -220,32 +237,36 @@ def load_all_word_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str
 
     print(f"Processed {processed_files} JSON files")
     print(f"Found {single_char_words} single-character words")
-    print(f"Collected sentences for {len(char_sentences)} characters")
+    print(f"Collected data for {len(char_data)} characters")
+    print(f"Total sentences found: {total_sentences_found}")
+    print(f"Total compounds found: {total_compounds_found}")
 
-    # Sort sentences for each character (by traditional text for consistency)
-    for char in char_sentences:
-        char_sentences[char].sort(key=lambda x: x[0])
-
-    return char_sentences
+    return char_data
 
 
-def generate_example_sentences_html(sentences: List[Tuple[str, str]]) -> str:
+def generate_example_sentences_html(sentences: List[Tuple[str, str]], compounds: List[Tuple[str, str]]) -> str:
     """
-    Generate HTML for Example sentences field
+    Generate HTML for Example sentences field (includes sentences and compounds)
 
     Args:
-        sentences (List[Tuple[str, str]]): List of (traditional, english) tuples
+        sentences (List[Tuple[str, str]]): List of (traditional, english) tuples for sentences
+        compounds (List[Tuple[str, str]]): List of (traditional, english) tuples for compounds
 
     Returns:
         str: HTML string
     """
-    if not sentences:
+    if not sentences and not compounds:
         return ""
 
     html_parts = []
 
-    for trad, eng in sentences:
-        html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+    # Add sentences
+    if sentences:
+        for trad, eng in sentences:
+            html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+    elif compounds:
+        for trad, eng in compounds[0:10]:
+            html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
 
     return "\n".join(html_parts)
 
@@ -268,9 +289,9 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         print("No learned characters found. Cannot proceed.")
         return
 
-    # Load all sentences
-    print("\nLoading sentences from HackChinese data...")
-    char_sentences = load_all_word_sentences(learned_chars)
+    # Load all sentences and compounds
+    print("\nLoading sentences and compounds from HackChinese data...")
+    char_data = load_all_word_data(learned_chars)
 
     # Get notes to update
     all_note_ids = []
@@ -338,16 +359,20 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
             # Get current field value
             current_value = note_info['fields'].get('Example sentences', {}).get('value', '').strip()
 
-            # Get sentences for this character
-            sentences = char_sentences.get(char, [])
+            # Get sentences and compounds for this character
+            char_info = char_data.get(char, {"sentences": [], "compounds": []})
+            sentences = char_info["sentences"]
+            compounds = char_info["compounds"]
 
-            if not sentences:
+            if not sentences and not compounds:
                 no_sentences_count += 1
-                # Clear the field if there are no valid sentences
+                # Clear the field if there are no valid sentences or compounds
                 new_html = ""
             else:
                 # Generate HTML
-                new_html = generate_example_sentences_html(sentences)
+                print(compounds)
+                new_html = generate_example_sentences_html(sentences, compounds)
+                print(new_html)
 
             # Check if update is needed
             if current_value == new_html:
@@ -356,14 +381,16 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
 
             if dry_run:
                 print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Would update Example sentences")
-                print(f"  Found {len(sentences)} sentences")
+                print(f"  Found {len(sentences)} sentences, {len(compounds)} compounds")
                 if sentences:
                     print(f"  First sentence: {sentences[0][0]}")
+                elif compounds:
+                    print(f"  First compound: {compounds[0][0]}")
                 updated_count += 1
             else:
                 # Update the note
                 update_note_field(note_id, "Example sentences", new_html)
-                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(sentences)} sentences")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(sentences)} sentences, {len(compounds)} compounds")
                 updated_count += 1
 
         except Exception as e:
@@ -376,7 +403,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
     print(f"  Total notes: {len(all_notes_info)}")
     print(f"  Updated: {updated_count}")
     print(f"  Unchanged: {unchanged_count}")
-    print(f"  No sentences available: {no_sentences_count}")
+    print(f"  No sentences or compounds available: {no_sentences_count}")
     print(f"  Skipped: {skipped_count}")
     if dry_run:
         print("  (DRY RUN - no changes were made)")
@@ -395,8 +422,9 @@ Examples:
   %(prog)s --limit 100                         Update first 100 notes only
   %(prog)s --character 被                      Update specific character only
 
-This script fills the "Example sentences" field with sentences from HackChinese
-data where all characters in the sentence have been learned (not new, not suspended).
+This script fills the "Example sentences" field with sentences and compounds from
+HackChinese data where all characters have been learned (not new, not suspended).
+Sentences are shown first, followed by compounds (separated by a horizontal line).
 It will overwrite existing content if it differs from the generated content.
 
 Requires Anki running with AnkiConnect addon installed.
