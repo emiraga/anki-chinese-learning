@@ -78,7 +78,7 @@ def get_learned_characters() -> Set[str]:
         Set[str]: Set of learned characters
     """
     # Query for Hanzi notes that are not new and not suspended
-    search_query = 'note:Hanzi -is:new -is:suspended'
+    search_query = 'note:Hanzi -is:suspended'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -262,9 +262,9 @@ def generate_example_sentences_html(sentences: List[Tuple[str, str]], compounds:
 
     # Add sentences
     if sentences:
-        for trad, eng in sentences:
+        for trad, eng in sentences[0:10]:
             html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
-    elif compounds:
+    if compounds:
         for trad, eng in compounds[0:10]:
             html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
 
@@ -304,8 +304,8 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         else:
             search_query += f' Traditional:_'
 
-        # Only get non-suspended, non-new notes
-        search_query += ' -is:new -is:suspended'
+        # Only get non-suspended notes
+        search_query += ' -is:suspended'
 
         response = anki_connect_request("findNotes", {"query": search_query})
         if response and response.get("result"):
@@ -366,13 +366,9 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
 
             if not sentences and not compounds:
                 no_sentences_count += 1
-                # Clear the field if there are no valid sentences or compounds
                 new_html = ""
             else:
-                # Generate HTML
-                print(compounds)
                 new_html = generate_example_sentences_html(sentences, compounds)
-                print(new_html)
 
             # Check if update is needed
             if current_value == new_html:
@@ -423,7 +419,7 @@ Examples:
   %(prog)s --character 被                      Update specific character only
 
 This script fills the "Example sentences" field with sentences and compounds from
-HackChinese data where all characters have been learned (not new, not suspended).
+HackChinese data where all characters have been learned (not suspended).
 Sentences are shown first, followed by compounds (separated by a horizontal line).
 It will overwrite existing content if it differs from the generated content.
 
