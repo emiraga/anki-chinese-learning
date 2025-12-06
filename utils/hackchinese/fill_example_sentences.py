@@ -249,7 +249,7 @@ def load_all_word_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str
 
 def generate_example_sentences_html(sentences: List[Tuple[str, str]]) -> str:
     """
-    Generate HTML for Example Sentences field
+    Generate HTML for Example sentences field
 
     Args:
         sentences (List[Tuple[str, str]]): List of (traditional, english) tuples
@@ -270,7 +270,7 @@ def generate_example_sentences_html(sentences: List[Tuple[str, str]]) -> str:
 
 def update_example_sentences(note_types, dry_run=False, limit=None, character=None):
     """
-    Update notes with Example Sentences
+    Update notes with Example sentences
 
     Args:
         note_types (list): List of note type names to process
@@ -355,7 +355,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
                 new_html = generate_example_sentences_html(sentences)
 
             # Get current field value
-            current_value = note_info['fields'].get('Example Sentences', {}).get('value', '').strip()
+            current_value = note_info['fields'].get('Example sentences', {}).get('value', '').strip()
 
             # Check if update is needed
             if current_value == new_html:
@@ -363,14 +363,14 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
                 continue
 
             if dry_run:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {char}): Would update Example Sentences")
+                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {char}): Would update Example sentences")
                 print(f"  Found {len(sentences)} sentences")
                 if sentences:
                     print(f"  First sentence: {sentences[0][0]}")
                 updated_count += 1
             else:
                 # Update the note
-                update_note_field(note_id, "Example Sentences", new_html)
+                update_note_field(note_id, "Example sentences", new_html)
                 print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {char}): Updated with {len(sentences)} sentences")
                 updated_count += 1
 
@@ -392,7 +392,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill Example Sentences field for Hanzi notes in Anki',
+        description='Fill Example sentences field for Hanzi notes in Anki',
         epilog='''
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
@@ -402,7 +402,7 @@ Examples:
   %(prog)s --limit 100                         Update first 100 notes only
   %(prog)s --character 被                      Update specific character only
 
-This script fills the "Example Sentences" field with sentences from HackChinese
+This script fills the "Example sentences" field with sentences from HackChinese
 data where all characters in the sentence have been learned (not new, not suspended).
 It will overwrite existing content if it differs from the generated content.
 
