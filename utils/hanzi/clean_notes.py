@@ -63,7 +63,7 @@ def find_notes_by_type(note_type):
     Returns:
         list: List of note IDs
     """
-    response = anki_connect_request("findNotes", {"query": f"note:{note_type}"})
+    response = anki_connect_request("findNotes", {"query": f"note:{note_type} -is:suspended"})
 
     if response and response.get("result"):
         note_ids = response["result"]

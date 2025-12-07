@@ -47,14 +47,19 @@ def convert_pinyin_to_numbered(pinyin_text):
 
 def setup_credentials():
     """
-    Set up Google Cloud credentials
-    You need to:
-    1. Create a Google Cloud project
-    2. Enable Text-to-Speech API
-    3. Create a service account and download JSON key
-    4. Set GOOGLE_APPLICATION_CREDENTIALS environment variable
+    Set up Google Cloud credentials by locating gcloud_account.json
+    relative to the script's path.
     """
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gcloud_account.json"
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    credentials_path = os.path.join(script_dir, "gcloud_account.json")
+
+    if not os.path.exists(credentials_path):
+        raise FileNotFoundError(
+            f"Credentials file not found at {credentials_path}. "
+            "Please ensure 'gcloud_account.json' is in the same directory as the script."
+        )
+
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
 
 
 def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A", pinyin_hint=None):

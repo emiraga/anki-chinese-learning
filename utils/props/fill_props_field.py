@@ -291,9 +291,6 @@ def main():
         for i in range(0, len(note_ids), batch_size):
             batch_ids = note_ids[i:i + batch_size]
             batch_num = i // batch_size + 1
-            total_batches = (len(note_ids) + batch_size - 1) // batch_size
-
-            print(f"\nProcessing batch {batch_num}/{total_batches} ({len(batch_ids)} notes)...")
 
             try:
                 notes_info = get_notes_info(batch_ids)

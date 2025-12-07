@@ -5,13 +5,9 @@ set -x
 ./utils/hanzi/fill_hanzi_notes.py
 ./utils/hanzi/clean_notes.py
 
-pushd utils/zhuyin
-./fill_zhuyin_anki.py
-popd
+./utils/zhuyin/fill_zhuyin_anki.py
 
-pushd utils/tts
-./fill_audio_anki.py --use-pinyin-hint
-popd
+./utils/tts/fill_audio_anki.py --use-pinyin-hint
 
 ./utils/props/fill_props_field.py
 
