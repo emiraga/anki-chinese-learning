@@ -12,23 +12,38 @@ import os
 import requests
 import base64
 import argparse
+import re
 from google.cloud import texttospeech
 import dragonmapper.transcriptions
 
+
+# Define maximum lengths for filename components to keep them reasonable
+_MAX_TEXT_FILENAME_LEN = 50
+_MAX_PINYIN_FILENAME_LEN = 50
 
 # Generate API key via https://console.cloud.google.com/apis/credentials
 
 def convert_pinyin_to_numbered(pinyin_text):
     """
-    Convert pinyin with tone marks to numbered format using dragonmapper
+    Convert pinyin with tone marks to space-separated numbered format.
+    Handles both accented and numbered pinyin as input.
 
     Args:
-        pinyin_text (str): Pinyin with tone marks (e.g., "děi yào")
+        pinyin_text (str): Pinyin with tone marks (e.g., "děi yào") or numbered ("xiao3xue2")
 
     Returns:
-        str: Pinyin with numbers (e.g., "dei3 yao4")
+        str: Pinyin with numbers and spaces (e.g., "dei3 yao4", "xiao3 xue2")
     """
-    return dragonmapper.transcriptions.accented_to_numbered(pinyin_text)
+    # If there are no numbers, assume it's accented and convert.
+    if not any(char.isdigit() for char in pinyin_text):
+        numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin_text)
+    else:
+        # It's already numbered, just use it as is.
+        numbered = pinyin_text
+
+    # Add spaces between syllables if they are not there.
+    # This regex finds a number followed by a letter and inserts a space.
+    return re.sub(r'(\d)([a-zA-Z])', r'\1 \2', numbered)
 
 def setup_credentials():
     """
@@ -263,10 +278,17 @@ def update_audio_for_note(note_id, note_info, target_text, pinyin_hint=None):
 
     # Generate audio filename
     clean_text = target_text.replace('?', '').replace('*', '')
+    # Truncate clean_text
+    if len(clean_text) > _MAX_TEXT_FILENAME_LEN:
+        clean_text = clean_text[:_MAX_TEXT_FILENAME_LEN]
+
     if pinyin_hint:
         # Convert pinyin to numbered format and clean for filename
         numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
         clean_pinyin = numbered_pinyin.replace(' ', '_').replace(':', '').replace('*', '').replace('?', '')
+        # Truncate clean_pinyin
+        if len(clean_pinyin) > _MAX_PINYIN_FILENAME_LEN:
+            clean_pinyin = clean_pinyin[:_MAX_PINYIN_FILENAME_LEN]
         audio_filename = f"emir_tts_{clean_text}_{clean_pinyin}_{note_id}.mp3"
     else:
         audio_filename = f"emir_tts_{clean_text}_{note_id}.mp3"
