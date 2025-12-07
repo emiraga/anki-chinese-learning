@@ -14,8 +14,7 @@ export function meta({}: Route.MetaArgs) {
 export default function Stats() {
   const { props, characters } = useOutletContext<OutletContext>();
 
-  let charsComplete = Object.values(characters).filter((c) => c.withSound);
-  let charsWithoutSound = Object.values(characters).filter((c) => !c.withSound);
+  let chars = Object.values(characters);
   let charsWithSoundComponent = Object.values(characters).filter(
     (c) => c.soundComponentCharacter && c.soundComponentCharacter.length > 0,
   );
@@ -31,20 +30,11 @@ export default function Stats() {
         ))}
       </Section>
 
-      <Section className="block" display={charsWithoutSound.length > 0}>
+      <Section className="block" display={chars.length > 0}>
         <h3 className="font-serif text-4xl my-2">
-          List of characters without sound: ({charsWithoutSound.length})
+          List of characters: ({chars.length})
         </h3>
-        {charsWithoutSound.map((p, i) => (
-          <span key={i}>{p.traditional}</span>
-        ))}
-      </Section>
-
-      <Section className="block" display={charsComplete.length > 0}>
-        <h3 className="font-serif text-4xl my-2">
-          List of characters: ({charsComplete.length})
-        </h3>
-        {charsComplete.map((p, i) => (
+        {chars.map((p, i) => (
           <span key={i}>{p.traditional}</span>
         ))}
       </Section>
