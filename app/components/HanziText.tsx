@@ -2,7 +2,7 @@ import { useOutletContext, Link } from "react-router";
 import { getNewCharacter, type CharactersType } from "~/data/characters";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails, CharLink } from "./CharCard";
-import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
+import { IGNORE_PHRASE_CHARS, IGNORE_PHRASES } from "~/data/phrases";
 import { segmentChineseText, type SegmentationAlgorithm } from "~/utils/text";
 import { useMemo } from "react";
 
@@ -77,7 +77,11 @@ export const HanziSegmentedText: React.FC<{
 
         // For multi-character words, wrap in a container with word styling
         if (segment.text.length > 1) {
+          // Check if the phrase should be ignored completely
+          const isIgnoredPhrase = IGNORE_PHRASES.has(segment.text);
+
           const shouldUnderline =
+            !isIgnoredPhrase &&
             [...segment.text].filter((c) => !IGNORE_PHRASE_CHARS.has(c))
               .length > 0;
 

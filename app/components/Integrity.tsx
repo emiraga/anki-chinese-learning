@@ -486,7 +486,9 @@ function MixedSuspension({
       suspendedCards: note.cardDetails.filter(
         (c) =>
           c.queue === -1 &&
-          !note.tags.includes(`card-${c.ord}-ignored-on-purpose`),
+          !note.tags.includes(
+            `card-${CARDS_INFO[noteType][c.ord]["name"]}-ignored-on-purpose`,
+          ),
       ).length,
       regularCards: note.cardDetails.filter((c) => c.queue !== -1).length,
     }))
@@ -936,6 +938,7 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
         <section className="block m-4">
           <MixedSuspension noteType="TOCFL" notesByCards={notesByCards} />
           <MixedSuspension noteType="Hanzi" notesByCards={notesByCards} />
+          <MixedSuspension noteType="MyWords" notesByCards={notesByCards} />
         </section>
       )}
       {!loading && (

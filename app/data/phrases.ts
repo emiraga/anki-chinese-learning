@@ -26,9 +26,18 @@ export type CharsToPhrasesPinyin = {
 
 const IGNORE_PHRASE_CHARS = new Set([
   ...Array.from({ length: 128 }, (_, i) => String.fromCharCode(1 + i)),
-  ..."Ａ？āēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ、，。…（）＝’！→ 【】“”「」ㄒ～：ㄧˊ ㄍㄨㄢˋㄈㄤㄔㄜㄐㄑㄠˇ ㄊㄚㄥㄗㄟㄩㄓㄖㄕㄌㄅㄆㄇㄉㄎㄏㄞㄣㄛㄦㄙㄘㄋㄝㄡ",
+  ..."⋯Ａ？āēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ、，。…（）＝’！→ 【】“”「」ㄒ～：ㄧˊ ㄍㄨㄢˋㄈㄤㄔㄜㄐㄑㄠˇ ㄊㄚㄥㄗㄟㄩㄓㄖㄕㄌㄅㄆㄇㄉㄎㄏㄞㄣㄛㄦㄙㄘㄋㄝㄡ",
 ]);
-export { IGNORE_PHRASE_CHARS };
+const IGNORE_PHRASES = new Set([
+  "我要",
+  "一碗",
+  "一杯",
+  "不要",
+  "兩碗",
+  "兩杯",
+]);
+
+export { IGNORE_PHRASE_CHARS, IGNORE_PHRASES };
 
 // Create a custom hook to load and manage Anki data with reload capability
 export function useAnkiPhrases() {
