@@ -77,9 +77,32 @@ def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"
 
     # Set the text input - use SSML if pinyin hint provided
     if pinyin_hint:
-        # Convert pinyin to numbered format and use phoneme tags
+        # Convert pinyin to numbered format
         numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
-        ssml_text = f'<speak><phoneme alphabet="pinyin" ph="{numbered_pinyin}">{text}</phoneme></speak>'
+        syllables = numbered_pinyin.split()
+
+        # Remove non-Chinese characters from text for alignment
+        chinese_chars = [char for char in text if '\u4e00' <= char <= '\u9fff']
+
+        # Build SSML with individual phoneme tags per character
+        if len(syllables) == len(chinese_chars):
+            ssml_parts = ['<speak>']
+            char_idx = 0
+            for i, char in enumerate(text):
+                if '\u4e00' <= char <= '\u9fff':
+                    # This is a Chinese character, wrap with phoneme tag
+                    ssml_parts.append(f'<phoneme alphabet="pinyin" ph="{syllables[char_idx]}">{char}</phoneme>')
+                    char_idx += 1
+                else:
+                    # Non-Chinese character, add as-is
+                    ssml_parts.append(char)
+            ssml_parts.append('</speak>')
+            ssml_text = ''.join(ssml_parts)
+        else:
+            # Fallback to old method if syllable count doesn't match
+            print(f"Warning: Syllable count ({len(syllables)}) doesn't match character count ({len(chinese_chars)}). Using fallback method.")
+            ssml_text = f'<speak><phoneme alphabet="pinyin" ph="{numbered_pinyin}">{text}</phoneme></speak>'
+
         synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
         print(f"Original pinyin: {pinyin_hint}")
         print(f"Converted to numbered: {numbered_pinyin}")
