@@ -68,10 +68,14 @@ def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"
 
     Args:
         text (str): Text to convert (Traditional Chinese characters)
-        output_file (str): Output audio file path
+        output_file (str): Output audio file path (will be saved in script directory)
         voice_name (str): Voice to use (see available voices below)
         pinyin_hint (str): Optional pinyin pronunciation hint
     """
+    # Get script directory and ensure output file is saved there
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    output_file = os.path.join(script_dir, os.path.basename(output_file))
+
     # Initialize the client
     client = texttospeech.TextToSpeechClient()
 
