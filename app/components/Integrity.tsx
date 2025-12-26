@@ -611,6 +611,84 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
   );
 }
 
+function IntegrityFilteredDecks() {
+  const [filteredDecks, setFilteredDecks] = useState<
+    { name: string; cardCount: number }[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const deckNames = await anki.deck.deckNames();
+        const deckConfigs = await Promise.all(
+          deckNames.map(async (name) => {
+            try {
+              const config = (await anki.deck.getDeckConfig({
+                deck: name,
+              })) as any;
+              return { name, config };
+            } catch (e) {
+              return { name, config: null };
+            }
+          }),
+        );
+
+        const targetFilteredDecks = deckConfigs.filter(({ config }) => {
+          if (!config || !config.dyn) return false;
+          // Check if any of the terms (queries) target Chinese
+          const terms = config.terms || [];
+          return terms.some((term: any) => {
+            const query = term[0] || "";
+            return query.includes("Chinese");
+          });
+        });
+
+        const decksWithCards = await Promise.all(
+          targetFilteredDecks.map(async ({ name }) => {
+            const cards = await anki.card.findCards({
+              query: `deck:"${name}"`,
+            });
+            return { name, cardCount: cards.length };
+          }),
+        );
+
+        setFilteredDecks(decksWithCards.filter((d) => d.cardCount > 0));
+      } catch (e) {
+        console.error("Failed to fetch filtered decks", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  if (isLoading || filteredDecks.length === 0) return null;
+
+  return (
+    <>
+      <h3 className="font-serif text-3xl">
+        Cards in filtered decks (Chinese):
+      </h3>
+      <div className="mx-4">
+        {filteredDecks.map(({ name, cardCount }) => (
+          <div key={name} className="mb-2">
+            🚨 {cardCount} cards in filtered deck: <strong>{name}</strong>
+            <button
+              className="rounded-2xl bg-blue-100 dark:bg-blue-900 p-1 ml-2 inline text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              onClick={async () => {
+                await ankiOpenBrowse(`deck:"${name}"`);
+              }}
+            >
+              anki
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function IntegrityPinyinZhuyinConsistency() {
   const { phrases } = useOutletContext<OutletContext>();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -924,6 +1002,9 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
         <DuplicatePhrase source="Dangdai" fromOthers={["TOCFL", "MyWords"]} />
       </section>
 
+      <section className="block m-4">
+        <IntegrityFilteredDecks />
+      </section>
       <section className="block m-4">
         {loading ? (
           <LoadingProgressBar
