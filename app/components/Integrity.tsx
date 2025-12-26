@@ -626,9 +626,12 @@ function IntegrityFilteredDecks() {
             try {
               const config = (await anki.deck.getDeckConfig({
                 deck: name,
-              })) as any;
+              })) as {
+                dyn: boolean | number;
+                terms?: [string, number, number][];
+              };
               return { name, config };
-            } catch (e) {
+            } catch {
               return { name, config: null };
             }
           }),
@@ -638,7 +641,7 @@ function IntegrityFilteredDecks() {
           if (!config || !config.dyn) return false;
           // Check if any of the terms (queries) target Chinese
           const terms = config.terms || [];
-          return terms.some((term: any) => {
+          return terms.some((term) => {
             const query = term[0] || "";
             return query.includes("Chinese");
           });
