@@ -209,7 +209,6 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
     updated_count = 0
     skipped_count = 0
     error_count = 0
-    no_outlier_data = set()
 
     for i, note_id in enumerate(all_note_ids, 1):
         try:
@@ -229,7 +228,6 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
             outlier_data = load_hackchinese_outlier_data(traditional)
 
             if not outlier_data:
-                no_outlier_data.add(traditional)
                 skipped_count += 1
                 continue
 
@@ -262,7 +260,6 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")
     print(f"  Errors: {error_count}")
-    print(''.join(no_outlier_data))
     if dry_run:
         print("  (DRY RUN - no changes were made)")
     print("="*60)
