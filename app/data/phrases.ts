@@ -26,7 +26,7 @@ export type CharsToPhrasesPinyin = {
 
 const IGNORE_PHRASE_CHARS = new Set([
   ...Array.from({ length: 128 }, (_, i) => String.fromCharCode(1 + i)),
-  ..."⋯Ａ？āēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ、，。…（）＝’！→ 【】“”「」ㄒ～：ㄧˊ ㄍㄨㄢˋㄈㄤㄔㄜㄐㄑㄠˇ ㄊㄚㄥㄗㄟㄩㄓㄖㄕㄌㄅㄆㄇㄉㄎㄏㄞㄣㄛㄦㄙㄘㄋㄝㄡ",
+  ..."—⋯Ａ？āēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ、，。…（）＝’！→ 【】“”「」ㄒ～：ㄧˊ ㄍㄨㄢˋㄈㄤㄔㄜㄐㄑㄠˇ ㄊㄚㄥㄗㄟㄩㄓㄖㄕㄌㄅㄆㄇㄉㄎㄏㄞㄣㄛㄦㄙㄘㄋㄝㄡ",
 ]);
 const IGNORE_PHRASES = new Set([
   "我要",

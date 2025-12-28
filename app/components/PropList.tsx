@@ -42,16 +42,18 @@ export const PropList: React.FC<PropListProps> = ({
       {miscTags.map((tag) => (
         <div className="italic flex items-center gap-2" key={tag}>
           <span>{tag}</span>
-          {ankiId && (
-            <button
-              onClick={() => handleRemoveTag(tag)}
-              disabled={removingTag === tag}
-              className="text-red-500 hover:text-red-700 disabled:opacity-50 text-sm font-bold px-1"
-              title={`Remove tag "${tag}"`}
-            >
-              {removingTag === tag ? "..." : "✕"}
-            </button>
-          )}
+          {ankiId &&
+            props.length > 0 &&
+            tag === "chinese::some-props-missing" && (
+              <button
+                onClick={() => handleRemoveTag(tag)}
+                disabled={removingTag === tag}
+                className="text-red-500 hover:text-red-700 disabled:opacity-50 text-sm font-bold px-1"
+                title={`Remove tag "${tag}"`}
+              >
+                {removingTag === tag ? "..." : "✕"}
+              </button>
+            )}
         </div>
       ))}
     </div>
