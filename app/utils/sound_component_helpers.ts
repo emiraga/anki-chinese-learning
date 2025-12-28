@@ -337,6 +337,7 @@ export function getCharacterPinyin(char: string, dongChar?: DongCharacter | null
 export async function updateSoundComponentInAnki(
   ankiId: number,
   soundComponentChar: string,
+  propTagsToAdd?: string[],
 ): Promise<void> {
   // Dynamic import to avoid circular dependency and keep anki in client-side only
   const anki = (await import("~/apis/anki")).default;
@@ -347,6 +348,14 @@ export async function updateSoundComponentInAnki(
       fields: { "Sound component character": soundComponentChar },
     },
   });
+
+  // Add prop tags from the sound component character
+  if (propTagsToAdd && propTagsToAdd.length > 0) {
+    await anki.note.addTags({
+      notes: [ankiId],
+      tags: propTagsToAdd.join(" "),
+    });
+  }
 }
 
 // Load sound component candidates for a character (non-hook version for use in loops)

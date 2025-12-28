@@ -196,6 +196,7 @@ export default function CharDetail() {
               yellowBridgeCharacter={yellowBridgeCharacter}
               currentSoundComponent={char.soundComponentCharacter}
               ankiId={char.ankiId}
+              characters={characters}
               onUpdate={() => {
                 // Reload the page to show updated data
                 window.location.reload();

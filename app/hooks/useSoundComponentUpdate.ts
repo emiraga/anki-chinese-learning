@@ -4,11 +4,13 @@ import { updateSoundComponentInAnki } from "~/utils/sound_component_helpers";
 interface UseSoundComponentUpdateProps {
   ankiId: number | null;
   onUpdate?: () => void;
+  getPropTagsForCharacter?: (char: string) => string[];
 }
 
 export function useSoundComponentUpdate({
   ankiId,
   onUpdate,
+  getPropTagsForCharacter,
 }: UseSoundComponentUpdateProps) {
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -20,7 +22,9 @@ export function useSoundComponentUpdate({
 
     setIsUpdating(true);
     try {
-      await updateSoundComponentInAnki(ankiId, candidateChar);
+      // Get prop tags from the sound component character
+      const propTags = getPropTagsForCharacter?.(candidateChar);
+      await updateSoundComponentInAnki(ankiId, candidateChar, propTags);
       if (onUpdate) {
         onUpdate();
       }
