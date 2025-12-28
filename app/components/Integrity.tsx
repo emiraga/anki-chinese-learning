@@ -13,6 +13,7 @@ import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 import { LoadingProgressBar } from "./LoadingProgressBar";
 import { PhraseMeaning } from "./Phrase";
+import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import {
   getCharacterMnemonicTags,
   shouldHaveMnemonicTags,
@@ -318,6 +319,7 @@ function DuplicatePhrase({
                         >
                           {hasPinyinMismatch && "⚠️ "}
                           {phrase.pinyin}
+                          <AnkiAudioPlayer audioField={phrase.audio} />
                           {hasPinyinMismatch && " ❗"}
                         </div>
                       </div>
@@ -344,6 +346,26 @@ function DuplicatePhrase({
                         >
                           delete
                         </button>
+                        {phrase.audio && otherVariants.some((v) => v.source === "TOCFL") && (
+                          <button
+                            className="rounded-xl bg-purple-100 dark:bg-purple-900 px-2 py-1 text-xs text-purple-500 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                            onClick={async () => {
+                              const tocflVariant = otherVariants.find(
+                                (v) => v.source === "TOCFL",
+                              );
+                              if (!tocflVariant) return;
+                              await anki.note.updateNoteFields({
+                                note: {
+                                  id: tocflVariant.noteId,
+                                  fields: { Audio: phrase.audio },
+                                },
+                              });
+                              alert("Audio copied to TOCFL note!");
+                            }}
+                          >
+                            Use this sound
+                          </button>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -368,6 +390,7 @@ function DuplicatePhrase({
                               >
                                 {isPinyinDifferent && "⚠️ "}
                                 {variant.pinyin}
+                                <AnkiAudioPlayer audioField={variant.audio} />
                                 {isPinyinDifferent && " ❗"}
                               </div>
                             </div>

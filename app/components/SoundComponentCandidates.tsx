@@ -4,6 +4,8 @@ import { useSoundComponentUpdate } from "~/hooks/useSoundComponentUpdate";
 import { CandidateBadge } from "~/components/CandidateBadge";
 import { ScoreLegend } from "~/components/ScoreLegend";
 import { useSoundComponentCandidates } from "~/hooks/useSoundComponentCandidates";
+import type { CharactersType } from "~/data/characters";
+import { useCallback } from "react";
 
 interface SoundComponentCandidatesProps {
   mainCharacter: string;
@@ -13,6 +15,7 @@ interface SoundComponentCandidatesProps {
   currentSoundComponent?: string;
   ankiId: number | null;
   onUpdate?: () => void;
+  characters?: CharactersType;
 }
 
 export function SoundComponentCandidates({
@@ -23,6 +26,7 @@ export function SoundComponentCandidates({
   currentSoundComponent,
   ankiId,
   onUpdate,
+  characters,
 }: SoundComponentCandidatesProps) {
   // Load candidates using custom hook
   const { candidates, isLoading } = useSoundComponentCandidates({
@@ -32,9 +36,21 @@ export function SoundComponentCandidates({
     yellowBridgeCharacter,
   });
 
+  // Get prop tags for a character from the characters context
+  const getPropTagsForCharacter = useCallback(
+    (char: string): string[] => {
+      if (!characters) return [];
+      const charData = characters[char];
+      if (!charData) return [];
+      return charData.tags.filter((tag) => tag.startsWith("prop::"));
+    },
+    [characters],
+  );
+
   const { updateSoundComponent, isUpdating } = useSoundComponentUpdate({
     ankiId,
     onUpdate,
+    getPropTagsForCharacter,
   });
 
   if (isLoading) {
