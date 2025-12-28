@@ -218,6 +218,8 @@ export default function CharDetail() {
             <PropList
               props={propsName.map((name) => knownProps[name])}
               miscTags={miscTags}
+              ankiId={char.ankiId}
+              onTagRemoved={() => window.location.reload()}
             />
             <hr className="my-4" />
             {charPhrasesPinyin[charHanzi] &&

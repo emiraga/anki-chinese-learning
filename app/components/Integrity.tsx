@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CARDS_INFO } from "~/data/cards";
 import pinyinToZhuyin from "zhuyin-improved";
 import { LoadingProgressBar } from "./LoadingProgressBar";
-import { PhraseMeaning } from "./Phrase";
+import { PhraseLink, PhraseMeaning } from "./Phrase";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import {
   getCharacterMnemonicTags,
@@ -290,7 +290,9 @@ function DuplicatePhrase({
                 >
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium align-top">
                     <div className="flex flex-col gap-2 h-full justify-between">
-                      <div>{phrase.traditional}</div>
+                      <div>
+                        <PhraseLink value={phrase.traditional} />
+                      </div>
                       <button
                         className="rounded-xl bg-gray-100 dark:bg-gray-900 px-2 py-1 text-xs text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors self-start"
                         onClick={async () => {
@@ -346,26 +348,27 @@ function DuplicatePhrase({
                         >
                           delete
                         </button>
-                        {phrase.audio && otherVariants.some((v) => v.source === "TOCFL") && (
-                          <button
-                            className="rounded-xl bg-purple-100 dark:bg-purple-900 px-2 py-1 text-xs text-purple-500 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
-                            onClick={async () => {
-                              const tocflVariant = otherVariants.find(
-                                (v) => v.source === "TOCFL",
-                              );
-                              if (!tocflVariant) return;
-                              await anki.note.updateNoteFields({
-                                note: {
-                                  id: tocflVariant.noteId,
-                                  fields: { Audio: phrase.audio },
-                                },
-                              });
-                              alert("Audio copied to TOCFL note!");
-                            }}
-                          >
-                            Use this sound
-                          </button>
-                        )}
+                        {phrase.audio &&
+                          otherVariants.some((v) => v.source === "TOCFL") && (
+                            <button
+                              className="rounded-xl bg-purple-100 dark:bg-purple-900 px-2 py-1 text-xs text-purple-500 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                              onClick={async () => {
+                                const tocflVariant = otherVariants.find(
+                                  (v) => v.source === "TOCFL",
+                                );
+                                if (!tocflVariant) return;
+                                await anki.note.updateNoteFields({
+                                  note: {
+                                    id: tocflVariant.noteId,
+                                    fields: { Audio: phrase.audio },
+                                  },
+                                });
+                                alert("Audio copied to TOCFL note!");
+                              }}
+                            >
+                              Use this sound
+                            </button>
+                          )}
                       </div>
                     </div>
                   </td>
@@ -442,7 +445,8 @@ function LowerCasePinyin() {
       <h3 className="font-serif text-3xl">Lowercase pinyin:</h3>
       {filtered1.map((phrase, i) => (
         <div key={i}>
-          Not lower case pinyin: {phrase.source} {phrase.traditional}
+          Not lower case pinyin: {phrase.source}{" "}
+          <PhraseLink value={phrase.traditional} />
           {phrase.pinyin}
         </div>
       ))}
@@ -814,7 +818,9 @@ function IntegrityPinyinZhuyinConsistency() {
       <div className="mx-4">
         {filtered.map((phrase, i) => (
           <div key={i} className="border-b py-2">
-            <div className="font-medium">{phrase.traditional}</div>
+            <div className="font-medium">
+              <PhraseLink value={phrase.traditional} />
+            </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Pinyin: {phrase.pinyin}
             </div>
