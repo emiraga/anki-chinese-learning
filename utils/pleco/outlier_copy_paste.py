@@ -13,7 +13,7 @@ Accepts paste from clipboard and displays text with formatting details
 Usage:
     ./utils/pleco/outlier_copy_paste.py                    # Process clipboard content
     ./utils/pleco/outlier_copy_paste.py --auto-copy        # Auto-copy from iPhone Mirroring window
-    ./utils/pleco/outlier_copy_paste.py --rebuild          # Rebuild JSON files from HTML files
+    ./utils/pleco/outlier_copy_paste.py --rebuild          # Rebuild JSON files from HTML files in outlier_series_tc/
     ./utils/pleco/outlier_copy_paste.py --preload-list     # Generate top 50 sound components to explore
 """
 
@@ -850,10 +850,9 @@ def generate_preload_list():
     print()
 
 
-def rebuild_from_html_files():
+def rebuild_from_html_files(html_dir):
     """Rebuild JSON files from saved HTML files"""
     script_dir = Path(__file__).parent.parent.parent
-    html_dir = script_dir / 'data' / 'pleco' / 'outlier_series'
     json_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
 
     if not html_dir.exists():
@@ -912,7 +911,9 @@ def main():
     args = parser.parse_args()
 
     if args.rebuild:
-        rebuild_from_html_files()
+        script_dir = Path(__file__).parent.parent.parent
+        html_dir = script_dir / 'data' / 'pleco' / 'outlier_series_tc'
+        rebuild_from_html_files(html_dir)
         return
 
     if args.preload_list:
