@@ -13,6 +13,7 @@ This module provides a simple interface to discover all characters from:
 - Three standard data directories: dong, yellowbridge/raw, rtega
 """
 
+import json
 import unicodedata
 from pathlib import Path
 from collections import Counter
@@ -170,6 +171,84 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple
     return all_chars, char_frequency
 
 
+def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter]:
+    """Scan outlier series JSON files for characters in specific fields.
+
+    Extracts characters from:
+    - references[].char
+    - sound_series.characters[].traditional
+    - semantic_series.characters[].traditional
+    - empty_component.characters[].traditional
+    - radical.characters[].traditional
+    """
+    outlier_dir = project_root / "public" / "data" / "pleco" / "outlier_series"
+
+    all_chars = set()
+    char_frequency = Counter()
+
+    if not outlier_dir.exists():
+        print(f"Warning: Directory does not exist: {outlier_dir}")
+        return all_chars, char_frequency
+
+    json_files = list(outlier_dir.glob("*.json"))
+    print(f"Scanning {len(json_files)} JSON files in {outlier_dir}...")
+
+    for file_path in json_files:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Extract from references[].char
+            for ref in data.get('references', []):
+                char = ref.get('char', '')
+                if char:
+                    chars = extract_all_characters(char, normalize=normalize)
+                    all_chars.update(chars)
+                    char_frequency.update(chars)
+
+            # Extract from sound_series.characters[].traditional
+            sound_series = data.get('sound_series', {})
+            for char_entry in sound_series.get('characters', []):
+                trad = char_entry.get('traditional', '')
+                if trad:
+                    chars = extract_all_characters(trad, normalize=normalize)
+                    all_chars.update(chars)
+                    char_frequency.update(chars)
+
+            # Extract from semantic_series.characters[].traditional
+            semantic_series = data.get('semantic_series', {})
+            for char_entry in semantic_series.get('characters', []):
+                trad = char_entry.get('traditional', '')
+                if trad:
+                    chars = extract_all_characters(trad, normalize=normalize)
+                    all_chars.update(chars)
+                    char_frequency.update(chars)
+
+            # Extract from empty_component.characters[].traditional
+            empty_component = data.get('empty_component', {})
+            for char_entry in empty_component.get('characters', []):
+                trad = char_entry.get('traditional', '')
+                if trad:
+                    chars = extract_all_characters(trad, normalize=normalize)
+                    all_chars.update(chars)
+                    char_frequency.update(chars)
+
+            # Extract from radical.characters[].traditional
+            radical = data.get('radical', {})
+            for char_entry in radical.get('characters', []):
+                trad = char_entry.get('traditional', '')
+                if trad:
+                    chars = extract_all_characters(trad, normalize=normalize)
+                    all_chars.update(chars)
+                    char_frequency.update(chars)
+
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"  Error reading {file_path}: {e}")
+
+    print(f"Found {len(all_chars)} unique characters from outlier series JSON files")
+    return all_chars, char_frequency
+
+
 def discover_all_characters(
     project_root: Path,
     include_anki: bool = True,
@@ -177,13 +256,16 @@ def discover_all_characters(
     normalize: bool = False
 ) -> Tuple[Set[str], Counter]:
     """
-    Discover all characters from Anki and the three standard data directories.
+    Discover all characters from Anki and the standard data directories.
 
     This is the main entry point that loads characters from:
     1. Anki notes (TOCFL, MyWords, Hanzi, Dangdai)
     2. public/data/dong
     3. public/data/yellowbridge/raw
-    4. data/rtega
+    4. public/data/hanziyuan/converted
+    5. public/data/hackchinese/outlier
+    6. public/data/pleco/outlier_series (filenames)
+    7. public/data/pleco/outlier_series JSON files (referenced characters)
 
     Args:
         project_root (Path): Project root directory
@@ -220,6 +302,14 @@ def discover_all_characters(
         dir_chars, dir_freq = _scan_data_directories(project_root, normalize=normalize)
         all_chars.update(dir_chars)
         char_frequency.update(dir_freq)
+
+        # Scan outlier series JSON files for referenced characters
+        print(f"\n{'='*60}")
+        print("SCANNING OUTLIER SERIES JSON FILES")
+        print(f"{'='*60}")
+        outlier_chars, outlier_freq = _scan_outlier_series_json(project_root, normalize=normalize)
+        all_chars.update(outlier_chars)
+        char_frequency.update(outlier_freq)
     else:
         print("Skipping data directories scan")
 
