@@ -4,6 +4,67 @@ import { TagList } from "./TagList";
 import { Link, useOutletContext } from "react-router";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import type { OutletContext } from "~/data/types";
+import { HanziText } from "./HanziText";
+
+export const PhraseCard: React.FC<{ phraseHanzi: string }> = ({
+  phraseHanzi,
+}) => {
+  const sources = [
+    {
+      name: "MoE",
+      link:
+        "https://dict.revised.moe.edu.tw/search.jsp?md=1&word=" +
+        encodeURIComponent(phraseHanzi) +
+        "&qMd=0&qCol=1",
+    },
+    {
+      name: "dong",
+      link:
+        "https://www.dong-chinese.com/dictionary/search/" +
+        encodeURIComponent(phraseHanzi),
+    },
+    {
+      name: "wiki",
+      link:
+        "https://en.wiktionary.org/wiki/" +
+        encodeURIComponent(phraseHanzi) +
+        "#Chinese",
+    },
+  ];
+
+  return (
+    <div className="mx-6 mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-6">
+        <div className="text-6xl font-serif">
+          <HanziText value={phraseHanzi} />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {sources.map(({ name, link }) => (
+            <a
+              key={name}
+              href={link}
+              rel="noreferrer"
+              target="_blank"
+              className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors text-sm"
+            >
+              {name} 🔗
+            </a>
+          ))}
+          <button
+            className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors text-sm"
+            onClick={() => {
+              sources.forEach((source) => {
+                window.open(source.link, "_blank");
+              });
+            }}
+          >
+            Open all
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const PhraseMeaning: React.FC<{
   meaning: string;

@@ -2,7 +2,7 @@ import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/$phraseHanzi";
 import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
-import { PhraseList } from "~/components/Phrase";
+import { PhraseCard, PhraseList } from "~/components/Phrase";
 import { SearchMorePhrases } from "~/components/MorePhrases";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { removeDuplicateChars } from "~/utils/array";
@@ -37,6 +37,7 @@ export default function PhraseHanzi() {
   const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   return (
     <MainFrame>
+      <PhraseCard phraseHanzi={phraseHanzi} />
       {[
         ...removeDuplicateChars(
           removeDuplicateChars(phraseHanzi, IGNORE_PHRASE_CHARS),
