@@ -24,6 +24,7 @@ import { YellowBridgeDisplay } from "~/components/YellowBridgeDisplay";
 import { useHackChineseOutlier } from "~/hooks/useHackChineseOutlier";
 import { HackChineseOutlierDisplay } from "~/components/HackChineseOutlierDisplay";
 import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
+import { usePlecoOutlierDictionary } from "~/hooks/usePlecoOutlierDictionary";
 import { PlecoOutlierDisplay } from "~/components/PlecoOutlierDisplay";
 import { Tabs } from "~/components/Tabs";
 import { useState } from "react";
@@ -92,12 +93,19 @@ export default function CharDetail() {
     error: hackChineseOutlierError,
   } = useHackChineseOutlier(char.traditional);
 
-  // Load Pleco Outlier character data
+  // Load Pleco Outlier character data (series)
   const {
     character: plecoOutlierCharacter,
     loading: plecoOutlierLoading,
     error: plecoOutlierError,
   } = usePlecoOutlier(char.traditional);
+
+  // Load Pleco Outlier Dictionary data
+  const {
+    dictionary: plecoOutlierDictionary,
+    loading: plecoOutlierDictionaryLoading,
+    error: plecoOutlierDictionaryError,
+  } = usePlecoOutlierDictionary(char.traditional);
 
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional),
@@ -144,10 +152,20 @@ export default function CharDetail() {
   if (!hanziYuanLoading && !hanziYuanError && hanziYuanCharacter) {
     tabs.push({ id: "hanziyuan", label: "HanziYuan" });
   }
-  if (!hackChineseOutlierLoading && !hackChineseOutlierError && hackChineseOutlierCharacter) {
+  if (
+    !hackChineseOutlierLoading &&
+    !hackChineseOutlierError &&
+    hackChineseOutlierCharacter
+  ) {
     tabs.push({ id: "hcoutlier", label: "HC Outlier" });
   }
-  if (!plecoOutlierLoading && !plecoOutlierError && plecoOutlierCharacter) {
+  // Show Pleco Outlier tab if either series or dictionary data exists
+  const hasPlecoOutlierData =
+    (!plecoOutlierLoading && !plecoOutlierError && plecoOutlierCharacter) ||
+    (!plecoOutlierDictionaryLoading &&
+      !plecoOutlierDictionaryError &&
+      plecoOutlierDictionary);
+  if (hasPlecoOutlierData) {
     tabs.push({ id: "plecooutlier", label: "Pleco Outlier" });
   }
 
@@ -169,11 +187,7 @@ export default function CharDetail() {
           ) : undefined}
         </h3>
 
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
         {activeTab === "general" && (
           <>
@@ -202,6 +216,13 @@ export default function CharDetail() {
                 window.location.reload();
               }}
             />
+            {charsUsingSoundComponent.length > 0 && (
+              <>
+                <hr className="my-4" />
+                <h2 className="text-2xl">Sound component in:</h2>
+                <CharList characters={charsUsingSoundComponent} />
+              </>
+            )}
             <hr className="my-4" />
             <div>
               <span className="tw-kai text-8xl">{char.traditional}</span>
@@ -251,13 +272,6 @@ export default function CharDetail() {
               filterUnknownChars={true}
             />
             <hr className="my-4" />
-            {charsUsingSoundComponent.length > 0 && (
-              <>
-                <h2 className="text-2xl">Sound component in:</h2>
-                <CharList characters={charsUsingSoundComponent} />
-                <hr className="my-4" />
-              </>
-            )}
             {charsUsingAsProp.length > 0 && propForThisChar && (
               <>
                 <h2 className="text-2xl">
@@ -345,8 +359,11 @@ export default function CharDetail() {
           <HackChineseOutlierDisplay character={hackChineseOutlierCharacter} />
         )}
 
-        {activeTab === "plecooutlier" && plecoOutlierCharacter && (
-          <PlecoOutlierDisplay character={plecoOutlierCharacter} />
+        {activeTab === "plecooutlier" && hasPlecoOutlierData && (
+          <PlecoOutlierDisplay
+            character={plecoOutlierCharacter ?? undefined}
+            dictionary={plecoOutlierDictionary ?? undefined}
+          />
         )}
       </div>
     </MainFrame>

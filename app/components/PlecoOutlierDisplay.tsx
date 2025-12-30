@@ -1,12 +1,18 @@
 import React from "react";
-import type { PlecoOutlier, Character, Series } from "~/types/pleco_outlier";
+import type {
+  PlecoOutlier,
+  PlecoOutlierDictionary,
+  Character,
+  Series,
+} from "~/types/pleco_outlier";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 
 interface PlecoOutlierDisplayProps {
-  character: PlecoOutlier;
+  character?: PlecoOutlier;
+  dictionary?: PlecoOutlierDictionary;
 }
 
 // Section header component
@@ -340,37 +346,79 @@ function RadicalSection({ radical, characters }: RadicalSectionProps) {
   );
 }
 
-export function PlecoOutlierDisplay({ character }: PlecoOutlierDisplayProps) {
+export function PlecoOutlierDisplay({
+  character,
+  dictionary,
+}: PlecoOutlierDisplayProps) {
   // Get known characters from context
   const { characters } = useOutletContext<OutletContext>();
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header Section (includes character, note, and references) */}
-      <CharacterHeader character={character} />
+      {character && <CharacterHeader character={character} />}
+
+      {/* Form Section - from outlier_dictionary */}
+      {dictionary?.form_html && (
+        <Section title="Form">
+          <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-amber-50 dark:bg-amber-950 border-l-4 border-amber-500 dark:border-amber-400 rounded">
+            <span dangerouslySetInnerHTML={{ __html: dictionary.form_html }} />
+          </div>
+        </Section>
+      )}
+
+      {/* Meanings Section - from outlier_dictionary */}
+      {dictionary?.meanings_html && (
+        <Section title="Meanings">
+          <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-teal-50 dark:bg-teal-950 border-l-4 border-teal-500 dark:border-teal-400 rounded">
+            <span
+              dangerouslySetInnerHTML={{ __html: dictionary.meanings_html }}
+            />
+          </div>
+        </Section>
+      )}
+
+      {/* Components Section - from outlier_dictionary */}
+      {dictionary?.components_html && (
+        <Section title="Components">
+          <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-indigo-50 dark:bg-indigo-950 border-l-4 border-indigo-500 dark:border-indigo-400 rounded">
+            <span
+              dangerouslySetInnerHTML={{ __html: dictionary.components_html }}
+            />
+          </div>
+        </Section>
+      )}
 
       {/* Sound Series Section */}
-      <SeriesSection
-        title="Sound Series"
-        series={character.sound_series}
-        characters={characters}
-      />
+      {character && (
+        <SeriesSection
+          title="Sound Series"
+          series={character.sound_series}
+          characters={characters}
+        />
+      )}
 
       {/* Semantic Series Section */}
-      <SeriesSection
-        title="Semantic Series"
-        series={character.semantic_series}
-        characters={characters}
-      />
+      {character && (
+        <SeriesSection
+          title="Semantic Series"
+          series={character.semantic_series}
+          characters={characters}
+        />
+      )}
 
       {/* Empty Component Section */}
-      <EmptyComponentSection
-        emptyComponent={character.empty_component}
-        characters={characters}
-      />
+      {character && (
+        <EmptyComponentSection
+          emptyComponent={character.empty_component}
+          characters={characters}
+        />
+      )}
 
       {/* Radical Section */}
-      <RadicalSection radical={character.radical} characters={characters} />
+      {character && (
+        <RadicalSection radical={character.radical} characters={characters} />
+      )}
     </div>
   );
 }

@@ -59,3 +59,13 @@ export interface PlecoOutlier {
   radical?: RadicalData;
   raw_html?: string;
 }
+
+/**
+ * Outlier Dictionary entry with HTML content
+ */
+export interface PlecoOutlierDictionary {
+  hanzi: string;
+  form_html: string;
+  meanings_html: string;
+  components_html: string | null;
+}
