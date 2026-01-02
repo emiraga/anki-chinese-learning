@@ -678,6 +678,20 @@ const CustomDailyTooltip = ({
   return null;
 };
 
+// Helper function to generate all dates between start and end (inclusive)
+const generateDateRange = (startDate: string, endDate: string): string[] => {
+  const dates: string[] = [];
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  while (current <= end) {
+    dates.push(current.toISOString().split("T")[0]);
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+};
+
 // Daily Incremental Chart Component
 const DailyIncrementalChart: React.FC<{
   dailyLearnedCharacters: { [key: string]: number };
@@ -690,14 +704,19 @@ const DailyIncrementalChart: React.FC<{
     return <div>No daily data to display</div>;
   }
 
-  // Get all unique dates from both datasets
-  const allDates = new Set([
+  // Get all unique dates from both datasets to find the range
+  const existingDates = [
     ...Object.keys(dailyLearnedCharacters),
     ...Object.keys(dailyStartedCharacters),
-  ]);
-  const sortedDates = Array.from(allDates).sort();
+  ].sort();
 
-  // Create combined data
+  const firstDate = existingDates[0];
+  const lastDate = existingDates[existingDates.length - 1];
+
+  // Generate all dates in the range (fill gaps with zeros)
+  const sortedDates = generateDateRange(firstDate, lastDate);
+
+  // Create combined data with zeros for missing dates
   const allData = sortedDates.map((date) => ({
     date,
     learned: dailyLearnedCharacters[date] || 0,
@@ -805,12 +824,17 @@ const ProgressChart: React.FC<{
     ([a], [b]) => a.localeCompare(b)
   );
 
-  // Get all unique dates from both datasets
-  const allDates = new Set([
+  // Get all unique dates from both datasets to find the range
+  const existingDates = [
     ...learnedEntries.map(([date]) => date),
     ...startedEntries.map(([date]) => date),
-  ]);
-  const sortedDates = Array.from(allDates).sort();
+  ].sort();
+
+  const firstDate = existingDates[0];
+  const lastDate = existingDates[existingDates.length - 1];
+
+  // Generate all dates in the range (fill gaps)
+  const sortedDates = generateDateRange(firstDate, lastDate);
 
   // Create combined data with both metrics, ensuring cumulative values carry forward
   const allData = sortedDates.reduce((acc, date) => {
