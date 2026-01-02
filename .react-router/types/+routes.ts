@@ -53,6 +53,9 @@ type Pages = {
   "/phrases_more": {
     params: {};
   };
+  "/phrases_process": {
+    params: {};
+  };
   "/pinyin": {
     params: {};
   };
@@ -167,7 +170,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -212,6 +215,10 @@ type RouteFiles = {
   "routes/phrases_more.tsx": {
     id: "routes/phrases_more";
     page: "/phrases_more";
+  };
+  "routes/phrases_process.tsx": {
+    id: "routes/phrases_process";
+    page: "/phrases_process";
   };
   "routes/pinyin.tsx": {
     id: "routes/pinyin";
@@ -364,6 +371,7 @@ type RouteModules = {
   "routes/phrases": typeof import("./app/routes/phrases.tsx");
   "routes/phrases_import": typeof import("./app/routes/phrases_import.tsx");
   "routes/phrases_more": typeof import("./app/routes/phrases_more.tsx");
+  "routes/phrases_process": typeof import("./app/routes/phrases_process.tsx");
   "routes/pinyin": typeof import("./app/routes/pinyin.tsx");
   "routes/place/$placeName": typeof import("./app/routes/place/$placeName.tsx");
   "routes/places": typeof import("./app/routes/places.tsx");

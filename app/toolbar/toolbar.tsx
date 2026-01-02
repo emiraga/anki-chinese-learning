@@ -151,6 +151,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/phrases_process",
+          name: "Process",
+          show: true,
+        },
+        {
           pathname: "/homophones",
           name: "Homophones",
           show: phrases.length > 0,
