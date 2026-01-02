@@ -678,11 +678,21 @@ const CustomDailyTooltip = ({
   return null;
 };
 
-// Helper function to generate all dates between start and end (inclusive)
-const generateDateRange = (startDate: string, endDate: string): string[] => {
+// Helper function to get complete date range from data objects
+// Returns all dates between the first and last date found in any of the data objects
+const getCompleteDateRange = (
+  ...dataObjects: { [key: string]: number }[]
+): string[] => {
+  const existingDates = dataObjects.flatMap((obj) => Object.keys(obj)).sort();
+
+  if (existingDates.length === 0) return [];
+
+  const firstDate = existingDates[0];
+  const lastDate = existingDates[existingDates.length - 1];
+
   const dates: string[] = [];
-  const current = new Date(startDate);
-  const end = new Date(endDate);
+  const current = new Date(firstDate);
+  const end = new Date(lastDate);
 
   while (current <= end) {
     dates.push(current.toISOString().split("T")[0]);
@@ -697,24 +707,14 @@ const DailyIncrementalChart: React.FC<{
   dailyLearnedCharacters: { [key: string]: number };
   dailyStartedCharacters: { [key: string]: number };
 }> = ({ dailyLearnedCharacters, dailyStartedCharacters }) => {
-  if (
-    Object.keys(dailyLearnedCharacters).length === 0 &&
-    Object.keys(dailyStartedCharacters).length === 0
-  ) {
+  const sortedDates = getCompleteDateRange(
+    dailyLearnedCharacters,
+    dailyStartedCharacters
+  );
+
+  if (sortedDates.length === 0) {
     return <div>No daily data to display</div>;
   }
-
-  // Get all unique dates from both datasets to find the range
-  const existingDates = [
-    ...Object.keys(dailyLearnedCharacters),
-    ...Object.keys(dailyStartedCharacters),
-  ].sort();
-
-  const firstDate = existingDates[0];
-  const lastDate = existingDates[existingDates.length - 1];
-
-  // Generate all dates in the range (fill gaps with zeros)
-  const sortedDates = generateDateRange(firstDate, lastDate);
 
   // Create combined data with zeros for missing dates
   const allData = sortedDates.map((date) => ({
@@ -812,29 +812,22 @@ const ProgressChart: React.FC<{
   characterProgress: { [key: string]: number };
   charactersStartedLearning: { [key: string]: number };
 }> = ({ characterProgress, charactersStartedLearning }) => {
-  if (Object.keys(characterProgress).length === 0) {
+  const sortedDates = getCompleteDateRange(
+    characterProgress,
+    charactersStartedLearning
+  );
+
+  if (sortedDates.length === 0) {
     return <div>No data to display</div>;
   }
 
-  // Prepare combined progress data
+  // Prepare combined progress data for max value calculation
   const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
     a.localeCompare(b)
   );
   const startedEntries = Object.entries(charactersStartedLearning).sort(
     ([a], [b]) => a.localeCompare(b)
   );
-
-  // Get all unique dates from both datasets to find the range
-  const existingDates = [
-    ...learnedEntries.map(([date]) => date),
-    ...startedEntries.map(([date]) => date),
-  ].sort();
-
-  const firstDate = existingDates[0];
-  const lastDate = existingDates[existingDates.length - 1];
-
-  // Generate all dates in the range (fill gaps)
-  const sortedDates = generateDateRange(firstDate, lastDate);
 
   // Create combined data with both metrics, ensuring cumulative values carry forward
   const allData = sortedDates.reduce((acc, date) => {
