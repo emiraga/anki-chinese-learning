@@ -200,25 +200,20 @@ const useAnkiHanziProgress = () => {
           }
         });
 
-        // Convert to cumulative graph data
-        const sortedDates = Object.keys(dailyLearnedCharacters).sort();
-        let cumulativeCount = 0;
-        const cumulativeGraphData: { [key: string]: number } = {};
+        // Convert daily data to cumulative graph data
+        const toCumulative = (daily: { [key: string]: number }) => {
+          const sorted = Object.keys(daily).sort();
+          let count = 0;
+          const cumulative: { [key: string]: number } = {};
+          sorted.forEach((date) => {
+            count += daily[date];
+            cumulative[date] = count;
+          });
+          return cumulative;
+        };
 
-        sortedDates.forEach((date) => {
-          cumulativeCount += dailyLearnedCharacters[date];
-          cumulativeGraphData[date] = cumulativeCount;
-        });
-
-        // Convert started learning to cumulative graph data
-        const sortedStartedDates = Object.keys(dailyStartedCharacters).sort();
-        let cumulativeStartedCount = 0;
-        const cumulativeStartedGraphData: { [key: string]: number } = {};
-
-        sortedStartedDates.forEach((date) => {
-          cumulativeStartedCount += dailyStartedCharacters[date];
-          cumulativeStartedGraphData[date] = cumulativeStartedCount;
-        });
+        const cumulativeGraphData = toCumulative(dailyLearnedCharacters);
+        const cumulativeStartedGraphData = toCumulative(dailyStartedCharacters);
 
         setProgressPercentage(0);
         setStage("Finalizing results...");
@@ -323,43 +318,31 @@ const calculateMonthlyRates = (
     [key: string]: { learned: number; started: number; totalDays: number };
   } = {};
 
-  // Process learned characters
-  for (let i = 0; i < learnedEntries.length; i++) {
-    const [date, cumulativeCount] = learnedEntries[i];
-    const currentDate = new Date(date);
-    const monthKey = `${currentDate.getFullYear()}-${String(
-      currentDate.getMonth() + 1
-    ).padStart(2, "0")}`;
+  // Process cumulative entries into monthly totals
+  const processEntries = (
+    entries: [string, number][],
+    field: "learned" | "started"
+  ) => {
+    for (let i = 0; i < entries.length; i++) {
+      const [date, cumulativeCount] = entries[i];
+      const currentDate = new Date(date);
+      const monthKey = `${currentDate.getFullYear()}-${String(
+        currentDate.getMonth() + 1
+      ).padStart(2, "0")}`;
 
-    // Get characters learned on this date
-    const prevCount = i > 0 ? learnedEntries[i - 1][1] : 0;
-    const charactersLearnedThisDate = cumulativeCount - prevCount;
+      const prevCount = i > 0 ? entries[i - 1][1] : 0;
+      const countThisDate = cumulativeCount - prevCount;
 
-    if (!monthlyData[monthKey]) {
-      monthlyData[monthKey] = { learned: 0, started: 0, totalDays: 0 };
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { learned: 0, started: 0, totalDays: 0 };
+      }
+
+      monthlyData[monthKey][field] += countThisDate;
     }
+  };
 
-    monthlyData[monthKey].learned += charactersLearnedThisDate;
-  }
-
-  // Process started characters
-  for (let i = 0; i < startedEntries.length; i++) {
-    const [date, cumulativeCount] = startedEntries[i];
-    const currentDate = new Date(date);
-    const monthKey = `${currentDate.getFullYear()}-${String(
-      currentDate.getMonth() + 1
-    ).padStart(2, "0")}`;
-
-    // Get characters started on this date
-    const prevCount = i > 0 ? startedEntries[i - 1][1] : 0;
-    const charactersStartedThisDate = cumulativeCount - prevCount;
-
-    if (!monthlyData[monthKey]) {
-      monthlyData[monthKey] = { learned: 0, started: 0, totalDays: 0 };
-    }
-
-    monthlyData[monthKey].started += charactersStartedThisDate;
-  }
+  processEntries(learnedEntries, "learned");
+  processEntries(startedEntries, "started");
 
   // Calculate days in each month and learning rates
   const currentDate = new Date();
@@ -402,6 +385,15 @@ const calculateMonthlyRates = (
   });
 };
 
+// Shared tooltip wrapper component
+const TooltipWrapper: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
+  <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+    {children}
+  </div>
+);
+
 // Custom tooltip component for histogram
 const CustomHistogramTooltip = ({
   active,
@@ -420,14 +412,14 @@ const CustomHistogramTooltip = ({
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+      <TooltipWrapper>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {data.binStart}-{data.binEnd} days
         </p>
         <p className="text-sm text-purple-600 dark:text-purple-400">
           {data.count} characters
         </p>
-      </div>
+      </TooltipWrapper>
     );
   }
   return null;
@@ -554,7 +546,7 @@ const CustomBarTooltip = ({
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+      <TooltipWrapper>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {data.monthLabel}
         </p>
@@ -569,7 +561,7 @@ const CustomBarTooltip = ({
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {data.daysInMonth} days{data.isCurrentMonth ? " (so far)" : ""}
         </p>
-      </div>
+      </TooltipWrapper>
     );
   }
   return null;
@@ -663,7 +655,7 @@ const CustomDailyTooltip = ({
   if (active && payload && payload.length) {
     const date = new Date(label).toLocaleDateString("en-CA");
     return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg">
+      <TooltipWrapper>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {date}
         </p>
@@ -672,10 +664,19 @@ const CustomDailyTooltip = ({
             {entry.name}: {entry.value} characters
           </p>
         ))}
-      </div>
+      </TooltipWrapper>
     );
   }
   return null;
+};
+
+// Format date for x-axis display (shared by multiple charts)
+const formatXAxisDate = (tickItem: string) => {
+  const date = new Date(tickItem);
+  return date.toLocaleDateString("en-CA", {
+    month: "short",
+    day: "numeric",
+  });
 };
 
 // Helper function to get complete date range from data objects
@@ -727,17 +728,7 @@ const DailyIncrementalChart: React.FC<{
   // Calculate max value for Y-axis
   const maxLearnedValue = Math.max(...Object.values(dailyLearnedCharacters), 0);
   const maxStartedValue = Math.max(...Object.values(dailyStartedCharacters), 0);
-  const maxValue = Math.max(maxLearnedValue, maxStartedValue);
-  const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
-
-  // Format date for x-axis
-  const formatXAxisDate = (tickItem: string) => {
-    const date = new Date(tickItem);
-    return date.toLocaleDateString("en-CA", {
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const yAxisMax = Math.ceil(Math.max(maxLearnedValue, maxStartedValue) * 1.1);
 
   return (
     <div className="w-full h-96 mb-6">
@@ -863,18 +854,7 @@ const ProgressChart: React.FC<{
   // Calculate max value for Y-axis from both datasets
   const maxLearnedValue = Math.max(...learnedEntries.map(([, count]) => count));
   const maxStartedValue = Math.max(...startedEntries.map(([, count]) => count));
-  const maxValue = Math.max(maxLearnedValue, maxStartedValue);
-  const yAxisMax = Math.ceil(maxValue * 1.1); // Add 10% padding above max
-
-
-  // Format date for x-axis
-  const formatXAxisDate = (tickItem: string) => {
-    const date = new Date(tickItem);
-    return date.toLocaleDateString("en-CA", {
-      month: "short",
-      day: "numeric",
-    });
-  };
+  const yAxisMax = Math.ceil(Math.max(maxLearnedValue, maxStartedValue) * 1.1);
 
   return (
     <div className="w-full h-96 mb-6">
