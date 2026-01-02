@@ -4,7 +4,7 @@
 # dependencies = [
 #   "requests",
 #   "dragonmapper",
-#   "google-generativeai",
+#   "google-genai",
 # ]
 # ///
 
@@ -63,14 +63,15 @@ def pinyin_to_zhuyin(pinyin_text):
         raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}")
 
 
-def translate_with_gemini(traditional_text, model, max_retries=3):
+def translate_with_gemini(traditional_text, client, model_name="gemini-2.0-flash-exp", max_retries=3):
     """
     Use Google Gemini API to translate Chinese text to English
     Better at understanding idioms and colloquial expressions
 
     Args:
         traditional_text (str): Traditional Chinese text
-        model: GenerativeModel instance
+        client: genai.Client instance
+        model_name (str): Model name to use
         max_retries (int): Maximum number of retry attempts
 
     Returns:
@@ -87,7 +88,7 @@ Provide only the English translation, nothing else."""
 
     for attempt in range(max_retries):
         try:
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(model=model_name, contents=prompt)
             translated_text = response.text.strip()
             return translated_text
         except Exception as e:
@@ -336,15 +337,14 @@ def main():
                 )
 
             # Initialize Gemini
-            print("⋯ Initializing Google Gemini model...")
-            import google.generativeai as genai
+            print("⋯ Initializing Google Gemini client...")
+            from google import genai
 
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            client = genai.Client(api_key=api_key)
 
             # Translate
             print("⋯ Translating with Google Gemini...")
-            meaning = translate_with_gemini(args.traditional, model)
+            meaning = translate_with_gemini(args.traditional, client)
             print(f"✓ Translated: {meaning}")
 
         # Step 3: Create the note
