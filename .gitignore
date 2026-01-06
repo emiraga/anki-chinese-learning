@@ -147,6 +147,7 @@ __pycache__
 
 # Python script caches
 utils/rtega/.cache/
+utils/audio/.loudness_cache.json
 
 # Secrets
 keys_secret.txt

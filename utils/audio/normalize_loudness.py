@@ -24,6 +24,7 @@ Requirements:
 
 import argparse
 import glob
+import json
 import os
 import sys
 from dataclasses import dataclass
@@ -32,6 +33,52 @@ from typing import Optional
 
 from pydub import AudioSegment
 from tqdm import tqdm
+
+
+# Cache file location (same directory as script)
+CACHE_FILE = Path(__file__).resolve().parent / ".loudness_cache.json"
+
+
+def load_cache() -> dict[str, dict]:
+    """Load the cache from disk."""
+    if not CACHE_FILE.exists():
+        return {}
+    try:
+        with open(CACHE_FILE, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def save_cache(cache: dict[str, dict]) -> None:
+    """Save the cache to disk."""
+    try:
+        with open(CACHE_FILE, "w") as f:
+            json.dump(cache, f)
+    except OSError as e:
+        print(f"Warning: Could not save cache: {e}")
+
+
+def get_file_key(filepath: str) -> tuple[str, float, int]:
+    """Get cache key components for a file: (filename, mtime, size)."""
+    stat = os.stat(filepath)
+    return (os.path.basename(filepath), stat.st_mtime, stat.st_size)
+
+
+def get_cached_dbfs(cache: dict[str, dict], filepath: str) -> Optional[float]:
+    """Get cached dBFS value if cache is valid for this file."""
+    filename, mtime, size = get_file_key(filepath)
+    if filename in cache:
+        entry = cache[filename]
+        if entry.get("mtime") == mtime and entry.get("size") == size:
+            return entry.get("dbfs")
+    return None
+
+
+def update_cache(cache: dict[str, dict], filepath: str, dbfs: float) -> None:
+    """Update cache with new dBFS value for a file."""
+    filename, mtime, size = get_file_key(filepath)
+    cache[filename] = {"mtime": mtime, "size": size, "dbfs": dbfs}
 
 
 @dataclass
@@ -83,11 +130,29 @@ def get_matching_files(media_path: Path) -> list[tuple[str, str]]:
     return files
 
 
-def analyze_file(filepath: str) -> Optional[float]:
-    """Analyze a single file and return its dBFS value."""
+def analyze_file(
+    filepath: str,
+    cache: Optional[dict[str, dict]] = None
+) -> Optional[float]:
+    """Analyze a single file and return its dBFS value.
+
+    If cache is provided, checks cache first and updates it with new values.
+    """
+    # Check cache first
+    if cache is not None:
+        cached = get_cached_dbfs(cache, filepath)
+        if cached is not None:
+            return cached
+
     try:
         audio = AudioSegment.from_mp3(filepath)
-        return audio.dBFS
+        dbfs = audio.dBFS
+
+        # Update cache if provided
+        if cache is not None:
+            update_cache(cache, filepath, dbfs)
+
+        return dbfs
     except Exception as e:
         print(f"  Warning: Could not analyze {filepath}: {e}")
         return None
@@ -95,15 +160,44 @@ def analyze_file(filepath: str) -> Optional[float]:
 
 def analyze_all_files(
     files: list[tuple[str, str]],
-    verbose: bool = False
+    verbose: bool = False,
+    cache_save_interval: int = 100
 ) -> list[AudioFile]:
-    """Analyze all files and return their loudness values."""
-    results = []
+    """Analyze all files and return their loudness values.
 
-    for filepath, pattern in tqdm(files, desc="Analyzing", unit="file"):
-        dbfs = analyze_file(filepath)
+    Uses a cache file to avoid re-analyzing unchanged files.
+    Saves cache periodically every cache_save_interval new analyses.
+    """
+    results = []
+    cache = load_cache()
+    cache_hits = 0
+    cache_misses = 0
+    unsaved_count = 0
+
+    for filepath, pattern in tqdm(files, desc="Analyzing", unit="file", mininterval=0.1, miniters=3):
+        # Check if we'll get a cache hit (for stats)
+        cached = get_cached_dbfs(cache, filepath)
+        if cached is not None:
+            cache_hits += 1
+        else:
+            cache_misses += 1
+            unsaved_count += 1
+
+        dbfs = analyze_file(filepath, cache)
         if dbfs is not None:
             results.append(AudioFile(path=filepath, dbfs=dbfs, pattern=pattern))
+
+        # Periodically save cache to avoid losing progress
+        if unsaved_count >= cache_save_interval:
+            save_cache(cache)
+            unsaved_count = 0
+
+    # Save any remaining updates
+    if unsaved_count > 0:
+        save_cache(cache)
+
+    if verbose or (cache_hits > 0 and cache_misses > 0):
+        print(f"Cache: {cache_hits} hits, {cache_misses} misses")
 
     return results
 
@@ -184,11 +278,13 @@ def print_loud_files(
 def normalize_file(
     filepath: str,
     target_dbfs: float,
-    dry_run: bool = True
+    dry_run: bool = True,
+    cache: Optional[dict[str, dict]] = None
 ) -> tuple[bool, str]:
     """Normalize a single file to the target loudness.
 
     Returns (success, message) tuple.
+    If cache is provided, updates it with the new dBFS value after normalization.
     """
     try:
         audio = AudioSegment.from_mp3(filepath)
@@ -203,6 +299,10 @@ def normalize_file(
 
         # Export back to the same file
         normalized.export(filepath, format="mp3")
+
+        # Update cache with new dBFS value (file mtime/size changed)
+        if cache is not None:
+            update_cache(cache, filepath, target_dbfs)
 
         return True, f"Adjusted by {adjustment:+.1f} dB"
     except Exception as e:
@@ -239,16 +339,23 @@ def normalize_loud_files(
     if dry_run:
         print("(DRY RUN - no files will be modified)")
 
+    # Load cache for updating after normalization
+    cache = load_cache() if not dry_run else None
+
     success_count = 0
     error_count = 0
 
     for f in tqdm(loud_files, desc="Normalizing", unit="file"):
-        success, _ = normalize_file(f.path, config.target_dbfs, dry_run)
+        success, _ = normalize_file(f.path, config.target_dbfs, dry_run, cache)
 
         if success:
             success_count += 1
         else:
             error_count += 1
+
+    # Save updated cache
+    if cache is not None:
+        save_cache(cache)
 
     status = "Would process" if dry_run else "Processed"
     print(f"{status}: {success_count} successful, {error_count} errors")
@@ -331,8 +438,19 @@ Examples:
         default=20,
         help="Number of loud files to show in analysis (default: 20)"
     )
+    parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Clear the analysis cache before running"
+    )
 
     args = parser.parse_args()
+
+    # Clear cache if requested
+    if args.clear_cache:
+        if CACHE_FILE.exists():
+            CACHE_FILE.unlink()
+            print("Cache cleared.")
 
     # Build configuration
     config = NormalizationConfig(
