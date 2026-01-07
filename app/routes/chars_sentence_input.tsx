@@ -1,6 +1,9 @@
 import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/index";
-import { HanziSegmentedText } from "~/components/HanziText";
+import {
+  HanziSegmentedText,
+  MissingCharsByFrequency,
+} from "~/components/HanziText";
 import { useLocalStorageState } from "~/utils/localStorage";
 import { type SegmentationAlgorithm } from "~/utils/text";
 import Textarea from "react-textarea-autosize";
@@ -68,6 +71,10 @@ export default function TodoCharsSentenceInput() {
               <p className="text-sm text-gray-600 mt-2">
                 Words are underlined to show segmentation boundaries
               </p>
+            </div>
+
+            <div className="m-4">
+              <MissingCharsByFrequency text={sentence} />
             </div>
           </>
         ) : undefined}

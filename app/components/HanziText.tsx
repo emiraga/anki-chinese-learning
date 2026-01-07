@@ -6,6 +6,47 @@ import { IGNORE_PHRASE_CHARS, IGNORE_PHRASES } from "~/data/phrases";
 import { segmentChineseText, type SegmentationAlgorithm } from "~/utils/text";
 import { useMemo } from "react";
 
+export const MissingCharsByFrequency: React.FC<{ text: string }> = ({
+  text,
+}) => {
+  const { characters } = useOutletContext<OutletContext>();
+
+  const missingChars = useMemo(() => {
+    if (!text) return [];
+
+    const charCounts = new Map<string, number>();
+
+    for (const c of text) {
+      if (IGNORE_PHRASE_CHARS.has(c)) continue;
+      if (characters[c]) continue;
+
+      charCounts.set(c, (charCounts.get(c) || 0) + 1);
+    }
+
+    return Array.from(charCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([char, count]) => ({ char, count }));
+  }, [text, characters]);
+
+  if (missingChars.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <h4 className="text-lg font-semibold mb-2">
+        Missing Characters ({missingChars.length}):
+      </h4>
+      <div className="flex flex-wrap gap-2">
+        {missingChars.map(({ char, count }) => (
+          <span key={char} className="inline-flex items-center">
+            <CharLink traditional={char} className="text-red-600 text-2xl" />
+            <span className="text-sm text-gray-500 ml-1">×{count}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
   const { characters } = useOutletContext<OutletContext>();
   if (!value) {
