@@ -16,25 +16,30 @@ const MainFrame: React.FC<{
     if (disableKeyboardShortcuts) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.key === "p" &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey
-      ) {
-        const target = event.target as HTMLElement;
-        if (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable
-        ) {
-          return;
-        }
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
 
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (event.key === "p") {
         event.preventDefault();
         const pinyin = window.prompt("Enter pinyin syllable:");
         if (pinyin && pinyin.trim()) {
           navigate(`/sylable/${pinyin.trim()}`);
+        }
+      } else if (event.key === "h") {
+        event.preventDefault();
+        const hanzi = window.prompt("Enter character (hanzi):");
+        if (hanzi && hanzi.trim()) {
+          navigate(`/char/${hanzi.trim()}`);
         }
       }
     };

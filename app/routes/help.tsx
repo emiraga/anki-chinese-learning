@@ -37,11 +37,36 @@ export default function Help() {
                 </code>
                 to study characters and phrases with that pronunciation.
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                Note: This shortcut is disabled when typing in input fields or
-                text areas.
+            </div>
+
+            <div className="border-l-4 border-green-500 pl-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Quick Character Navigation
+              </h3>
+              <div className="flex items-center gap-4 mb-2">
+                <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">
+                  H
+                </kbd>
+                <span className="text-gray-700 dark:text-gray-300">
+                  Press anywhere to open character (hanzi) prompt
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Press the <strong>H</strong> key on any page to quickly navigate
+                to a character page. A prompt will appear where you can enter a
+                Chinese character. After entering the character, you&apos;ll be
+                taken to{" "}
+                <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                  /char/[character]
+                </code>
+                to view detailed information about that character.
               </p>
             </div>
+
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+              Note: These shortcuts are disabled when typing in input fields or
+              text areas.
+            </p>
           </div>
         </div>
 
@@ -117,7 +142,11 @@ export default function Help() {
               <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">
                 P
               </kbd>{" "}
-              shortcut for quick syllable lookup
+              shortcut for quick syllable lookup or{" "}
+              <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">
+                H
+              </kbd>{" "}
+              for character lookup
             </li>
           </ol>
         </div>
