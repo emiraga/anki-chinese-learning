@@ -20,11 +20,70 @@ and element mapping logic.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import requests
 import dragonmapper.transcriptions
 import re
 import argparse
+
+
+@dataclass
+class AnkiCache:
+    """Cache for Anki queries to avoid repeated API calls"""
+    _query_cache: dict[str, list[int]] = field(default_factory=dict)
+    _notes_info_cache: dict[int, dict] = field(default_factory=dict)
+
+    def get_query(self, query: str) -> list[int] | None:
+        """Get cached query result"""
+        return self._query_cache.get(query)
+
+    def set_query(self, query: str, note_ids: list[int]) -> None:
+        """Cache query result"""
+        self._query_cache[query] = note_ids
+
+    def get_notes_info(self, note_ids: list[int]) -> tuple[list[dict], list[int]]:
+        """
+        Get cached notes info and return uncached IDs.
+
+        Returns:
+            Tuple of (cached_notes, uncached_ids)
+        """
+        cached = []
+        uncached = []
+        for note_id in note_ids:
+            if note_id in self._notes_info_cache:
+                cached.append(self._notes_info_cache[note_id])
+            else:
+                uncached.append(note_id)
+        return cached, uncached
+
+    def set_notes_info(self, notes: list[dict]) -> None:
+        """Cache notes info"""
+        for note in notes:
+            note_id = note.get('noteId')
+            if note_id:
+                self._notes_info_cache[note_id] = note
+
+    def clear(self) -> None:
+        """Clear all caches"""
+        self._query_cache.clear()
+        self._notes_info_cache.clear()
+
+    def stats(self) -> dict[str, int]:
+        """Return cache statistics"""
+        return {
+            'queries': len(self._query_cache),
+            'notes': len(self._notes_info_cache),
+        }
+
+
+# Global cache instance
+_cache = AnkiCache()
+
+
+def get_cache() -> AnkiCache:
+    """Get the global cache instance"""
+    return _cache
 
 
 def anki_connect_request(action: str, params: dict | None = None) -> dict:
@@ -60,26 +119,37 @@ def anki_connect_request(action: str, params: dict | None = None) -> dict:
     return result
 
 
-def find_notes_by_query(query: str) -> list[int]:
+def find_notes_by_query(query: str, cache: AnkiCache | None = None) -> list[int]:
     """
     Find notes matching a query
 
     Args:
         query: Anki search query
+        cache: Optional cache instance (uses global cache if not provided)
 
     Returns:
         List of note IDs
     """
+    if cache is None:
+        cache = _cache
+
+    cached = cache.get_query(query)
+    if cached is not None:
+        return cached
+
     response = anki_connect_request("findNotes", {"query": query})
-    return response.get("result", [])
+    result = response.get("result", [])
+    cache.set_query(query, result)
+    return result
 
 
-def get_notes_info(note_ids: list[int]) -> list[dict]:
+def get_notes_info(note_ids: list[int], cache: AnkiCache | None = None) -> list[dict]:
     """
     Get detailed information about multiple notes
 
     Args:
         note_ids: List of note IDs
+        cache: Optional cache instance (uses global cache if not provided)
 
     Returns:
         List of note information dictionaries
@@ -87,8 +157,24 @@ def get_notes_info(note_ids: list[int]) -> list[dict]:
     if not note_ids:
         return []
 
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-    return response.get("result", [])
+    if cache is None:
+        cache = _cache
+
+    cached_notes, uncached_ids = cache.get_notes_info(note_ids)
+
+    if not uncached_ids:
+        return cached_notes
+
+    response = anki_connect_request("notesInfo", {"notes": uncached_ids})
+    new_notes = response.get("result", [])
+    cache.set_notes_info(new_notes)
+
+    return cached_notes + new_notes
+
+
+def escape_comma(text: str) -> str:
+    """Replace ASCII comma with fullwidth comma + variation selector to avoid field delimiter conflicts"""
+    return text.replace(',', '，︀')
 
 
 def remove_tone_marks(pinyin: str) -> str:
@@ -142,11 +228,11 @@ class ConnectDotsNote:
 
     def left_str(self) -> str:
         """Get comma-separated left elements, sorted"""
-        return ", ".join([l for l, _ in self.get_sorted_pairs()])
+        return ", ".join([escape_comma(l) for l, _ in self.get_sorted_pairs()])
 
     def right_str(self) -> str:
         """Get comma-separated right elements, sorted by corresponding left"""
-        return ", ".join([r for _, r in self.get_sorted_pairs()])
+        return ", ".join([escape_comma(r) for _, r in self.get_sorted_pairs()])
 
 
 class ConnectDotsGenerator(ABC):
@@ -426,7 +512,9 @@ class ConnectDotsManager:
             'updated': 0,
             'unchanged': 0,
             'errors': 0,
+            'untracked': 0,
         }
+        processed_keys: set[str] = set()
 
         print("Fetching existing ConnectDots notes...")
         existing_notes = self.get_existing_notes()
@@ -443,6 +531,7 @@ class ConnectDotsManager:
                 continue
 
             for note in notes:
+                processed_keys.add(note.key)
                 try:
                     existing = existing_notes.get(note.key)
 
@@ -465,6 +554,14 @@ class ConnectDotsManager:
                     print(f"  Error processing note '{note.key}': {e}")
                     stats['errors'] += 1
 
+        # Check for untracked notes
+        untracked_keys = set(existing_notes.keys()) - processed_keys
+        if untracked_keys:
+            print(f"\n⚠️  Warning: {len(untracked_keys)} untracked ConnectDots note(s):")
+            for key in sorted(untracked_keys):
+                print(f"  - {key}")
+            stats['untracked'] = len(untracked_keys)
+
         return stats
 
 
@@ -485,7 +582,10 @@ def main():
     generators: list[ConnectDotsGenerator] = []
 
     generators.append(SoundComponentHanziToPinyin('隹'))
-    generators.append(SyllableHanziToPinyin('dui'))
+    generators.append(SyllableHanziToPinyin('shi'))
+    generators.append(SyllableHanziToPinyin('ji'))
+    generators.append(SyllableHanziToPinyin('xi'))
+    generators.append(SyllableHanziToPinyin('sui'))
     generators.append(TagTraditionalToMeaning('chinese::category::food'))
 
     if not generators:
@@ -499,7 +599,13 @@ def main():
     print(f"Created: {stats['created']}")
     print(f"Updated: {stats['updated']}")
     print(f"Unchanged: {stats['unchanged']}")
+    print(f"Untracked: {stats['untracked']}")
     print(f"Errors: {stats['errors']}")
+
+    cache_stats = _cache.stats()
+    print(f"\n=== Cache Stats ===")
+    print(f"Cached queries: {cache_stats['queries']}")
+    print(f"Cached notes: {cache_stats['notes']}")
 
 
 if __name__ == "__main__":
