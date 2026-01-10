@@ -1,0 +1,235 @@
+<div class="connect-dots-container">
+  <div class="columns">
+    <div class="column left-column">
+      <div class="column-header">Match</div>
+      <div id="left-items"></div>
+    </div>
+    <div class="column right-column">
+      <div class="column-header">With</div>
+      <div id="right-items"></div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span id="status-text">Tap a left item to start</span>
+    <span id="progress">0 / 0</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Parse Anki fields
+  const leftRaw = "{{Left}}";
+  const rightRaw = "{{Right}}";
+
+  const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
+  const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);
+
+  // Get unique right items for display
+  const uniqueRight = [...new Set(rightItems)];
+
+  // Shuffle unique right items
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  const shuffledRight = shuffle(uniqueRight);
+
+  // Color palette for connections
+  const colors = [
+    '#3b82f6', // blue
+    '#10b981', // green
+    '#f59e0b', // amber
+    '#ef4444', // red
+    '#8b5cf6', // purple
+    '#ec4899', // pink
+    '#06b6d4', // cyan
+    '#f97316', // orange
+    '#14b8a6', // teal
+    '#6366f1', // indigo
+  ];
+
+  // State
+  let selectedLeftIndex = null;
+  let connections = {}; // leftIndex -> rightValue
+  let rightUsageCount = {}; // rightValue -> count
+
+  // Initialize usage counts
+  shuffledRight.forEach(r => rightUsageCount[r] = 0);
+
+  // Render functions
+  function getColorForRight(rightValue) {
+    const idx = shuffledRight.indexOf(rightValue);
+    return colors[idx % colors.length];
+  }
+
+  function renderLeft() {
+    const container = document.getElementById('left-items');
+    container.innerHTML = '';
+
+    leftItems.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'item left-item';
+      div.dataset.index = idx;
+
+      if (selectedLeftIndex === idx) {
+        div.classList.add('selected');
+      }
+
+      if (connections[idx] !== undefined) {
+        div.classList.add('connected');
+        div.style.borderColor = getColorForRight(connections[idx]);
+        div.style.backgroundColor = getColorForRight(connections[idx]) + '20';
+      }
+
+      const text = document.createElement('span');
+      text.className = 'item-text';
+      text.textContent = item;
+      div.appendChild(text);
+
+      if (connections[idx] !== undefined) {
+        const badge = document.createElement('span');
+        badge.className = 'connection-badge';
+        badge.style.backgroundColor = getColorForRight(connections[idx]);
+        badge.textContent = connections[idx];
+        div.appendChild(badge);
+      }
+
+      div.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handleLeftClick(idx);
+      });
+      div.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handleLeftClick(idx);
+      });
+      container.appendChild(div);
+    });
+  }
+
+  function renderRight() {
+    const container = document.getElementById('right-items');
+    container.innerHTML = '';
+
+    shuffledRight.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'item right-item';
+      div.dataset.value = item;
+      div.style.borderColor = colors[idx % colors.length];
+
+      if (rightUsageCount[item] > 0) {
+        div.classList.add('used');
+        div.style.backgroundColor = colors[idx % colors.length] + '20';
+      }
+
+      const text = document.createElement('span');
+      text.className = 'item-text';
+      text.textContent = item;
+      div.appendChild(text);
+
+      if (rightUsageCount[item] > 0) {
+        const count = document.createElement('span');
+        count.className = 'usage-count';
+        count.style.backgroundColor = colors[idx % colors.length];
+        count.textContent = rightUsageCount[item];
+        div.appendChild(count);
+      }
+
+      div.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handleRightClick(item);
+      });
+      div.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        handleRightClick(item);
+      });
+      container.appendChild(div);
+    });
+  }
+
+  function updateStatus() {
+    const connected = Object.keys(connections).length;
+    const total = leftItems.length;
+    document.getElementById('progress').textContent = connected + ' / ' + total;
+
+    const statusText = document.getElementById('status-text');
+    if (selectedLeftIndex !== null) {
+      statusText.textContent = 'Now tap a right item to connect';
+    } else if (connected === total) {
+      statusText.textContent = 'All connected! Flip to check';
+    } else {
+      statusText.textContent = 'Tap a left item to start';
+    }
+  }
+
+  function handleLeftClick(idx) {
+    // If already connected, disconnect it
+    if (connections[idx] !== undefined) {
+      const oldRight = connections[idx];
+      rightUsageCount[oldRight]--;
+      delete connections[idx];
+      selectedLeftIndex = null;
+    } else if (selectedLeftIndex === idx) {
+      // Deselect
+      selectedLeftIndex = null;
+    } else {
+      // Select this item
+      selectedLeftIndex = idx;
+    }
+
+    render();
+  }
+
+  function handleRightClick(rightValue) {
+    if (selectedLeftIndex === null) return;
+
+    // Connect
+    connections[selectedLeftIndex] = rightValue;
+    rightUsageCount[rightValue]++;
+    selectedLeftIndex = null;
+
+    render();
+  }
+
+  function render() {
+    renderLeft();
+    renderRight();
+    updateStatus();
+  }
+
+  // Store connections for back template
+  window.connectDotsState = {
+    connections: connections,
+    leftItems: leftItems,
+    rightItems: rightItems
+  };
+
+  // Prevent card flip on container
+  const container = document.querySelector('.connect-dots-container');
+  container.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  container.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+  });
+  container.addEventListener('touchstart', (e) => {
+    // Allow touch to work but stop propagation
+    e.stopPropagation();
+  });
+
+  // Initial render
+  render();
+})();
+</script>

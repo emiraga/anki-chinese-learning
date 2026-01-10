@@ -1,0 +1,86 @@
+<div class="connect-dots-container back-side">
+  <div class="result-header">Correct Answers</div>
+
+  <div id="answer-list"></div>
+
+  <hr class="divider">
+
+  <div class="front-side-container">
+    {{FrontSide}}
+  </div>
+</div>
+
+<script>
+(function() {
+  // Parse Anki fields
+  const leftRaw = "{{Left}}";
+  const rightRaw = "{{Right}}";
+
+  const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
+  const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);
+
+  // Color palette (same as front)
+  const colors = [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+    '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1'
+  ];
+
+  // Get unique right items for consistent coloring
+  const uniqueRight = [...new Set(rightItems)];
+
+  function getColorForRight(rightValue) {
+    const idx = uniqueRight.indexOf(rightValue);
+    return colors[idx % colors.length];
+  }
+
+  // Render correct answer pairs
+  function renderAnswers() {
+    const container = document.getElementById('answer-list');
+    container.innerHTML = '';
+
+    leftItems.forEach((leftItem, idx) => {
+      const rightItem = rightItems[idx] || '???';
+      const color = getColorForRight(rightItem);
+
+      const row = document.createElement('div');
+      row.className = 'answer-row';
+
+      const leftSpan = document.createElement('span');
+      leftSpan.className = 'answer-left';
+      leftSpan.textContent = leftItem;
+      leftSpan.style.borderColor = color;
+      leftSpan.style.backgroundColor = color + '20';
+
+      const arrow = document.createElement('span');
+      arrow.className = 'answer-arrow';
+      arrow.textContent = '→';
+
+      const rightSpan = document.createElement('span');
+      rightSpan.className = 'answer-right';
+      rightSpan.textContent = rightItem;
+      rightSpan.style.borderColor = color;
+      rightSpan.style.backgroundColor = color + '20';
+
+      row.appendChild(leftSpan);
+      row.appendChild(arrow);
+      row.appendChild(rightSpan);
+      container.appendChild(row);
+    });
+  }
+
+  renderAnswers();
+
+  // Disable front-side interactions
+  const frontContainer = document.querySelector('.front-side-container');
+  if (frontContainer) {
+    frontContainer.style.pointerEvents = 'none';
+    frontContainer.style.opacity = '0.6';
+
+    // Hide the status bar in the embedded front
+    const statusBar = frontContainer.querySelector('.status-bar');
+    if (statusBar) {
+      statusBar.style.display = 'none';
+    }
+  }
+})();
+</script>
