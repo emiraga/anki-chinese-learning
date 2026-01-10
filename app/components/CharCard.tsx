@@ -28,10 +28,6 @@ const CharPinyinSoundMeaning: React.FC<{
   char: CharacterType;
   showZhuyin?: boolean;
 }> = ({ char, showZhuyin }) => {
-  if (!char.withSound) {
-    return <div>{char.meaning2}</div>;
-  }
-
   return (
     <>
       <PinyinList pinyin={char.pinyin} showZhuyin={showZhuyin} />{" "}

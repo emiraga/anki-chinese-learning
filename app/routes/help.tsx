@@ -63,6 +63,34 @@ export default function Help() {
               </p>
             </div>
 
+            <div className="border-l-4 border-purple-500 pl-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Current Study Phrase Navigation
+              </h3>
+              <div className="flex items-center gap-4 mb-2">
+                <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">
+                  S
+                </kbd>
+                <span className="text-gray-700 dark:text-gray-300">
+                  Press anywhere to navigate to the current study phrase
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Press the <strong>S</strong> key on any page to navigate to the
+                page for the card currently being studied in Anki. This fetches
+                the Traditional field from the current Anki card and takes you
+                to{" "}
+                <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                  /char/[traditional]
+                </code>{" "}
+                for single characters or{" "}
+                <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                  /phrase/[traditional]
+                </code>{" "}
+                for phrases.
+              </p>
+            </div>
+
             <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
               Note: These shortcuts are disabled when typing in input fields or
               text areas.
@@ -142,11 +170,15 @@ export default function Help() {
               <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">
                 P
               </kbd>{" "}
-              shortcut for quick syllable lookup or{" "}
+              shortcut for quick syllable lookup,{" "}
               <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">
                 H
               </kbd>{" "}
-              for character lookup
+              for character lookup, or{" "}
+              <kbd className="px-1 bg-blue-200 dark:bg-blue-800 rounded text-xs">
+                S
+              </kbd>{" "}
+              to jump to the current study phrase
             </li>
           </ol>
         </div>
