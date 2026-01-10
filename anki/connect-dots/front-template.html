@@ -63,7 +63,7 @@
   ];
 
   // State
-  let selectedLeftIndex = null;
+  let selectedLeftIndices = new Set(); // multiple selection
   let connections = {}; // leftIndex -> rightValue
   let rightUsageCount = {}; // rightValue -> count
 
@@ -85,7 +85,7 @@
       div.className = 'item left-item';
       div.dataset.index = idx;
 
-      if (selectedLeftIndex === idx) {
+      if (selectedLeftIndices.has(idx)) {
         div.classList.add('selected');
       }
 
@@ -171,15 +171,16 @@
   function updateStatus() {
     const connected = Object.keys(connections).length;
     const total = leftItems.length;
+    const selected = selectedLeftIndices.size;
     document.getElementById('progress').textContent = connected + ' / ' + total;
 
     const statusText = document.getElementById('status-text');
-    if (selectedLeftIndex !== null) {
-      statusText.textContent = 'Now tap a right item to connect';
+    if (selected > 0) {
+      statusText.textContent = selected + ' selected - tap right to connect';
     } else if (connected === total) {
       statusText.textContent = 'All connected! Flip to check';
     } else {
-      statusText.textContent = 'Tap a left item to start';
+      statusText.textContent = 'Tap left items to select';
     }
   }
 
@@ -189,25 +190,27 @@
       const oldRight = connections[idx];
       rightUsageCount[oldRight]--;
       delete connections[idx];
-      selectedLeftIndex = null;
-    } else if (selectedLeftIndex === idx) {
+      selectedLeftIndices.delete(idx);
+    } else if (selectedLeftIndices.has(idx)) {
       // Deselect
-      selectedLeftIndex = null;
+      selectedLeftIndices.delete(idx);
     } else {
-      // Select this item
-      selectedLeftIndex = idx;
+      // Add to selection
+      selectedLeftIndices.add(idx);
     }
 
     render();
   }
 
   function handleRightClick(rightValue) {
-    if (selectedLeftIndex === null) return;
+    if (selectedLeftIndices.size === 0) return;
 
-    // Connect
-    connections[selectedLeftIndex] = rightValue;
-    rightUsageCount[rightValue]++;
-    selectedLeftIndex = null;
+    // Connect all selected left items to this right item
+    selectedLeftIndices.forEach(idx => {
+      connections[idx] = rightValue;
+      rightUsageCount[rightValue]++;
+    });
+    selectedLeftIndices.clear();
 
     render();
   }
