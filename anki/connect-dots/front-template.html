@@ -48,6 +48,10 @@
   }
   const shuffledRight = shuffle(uniqueRight);
 
+  // Create shuffled indices for left items display order
+  const leftIndices = leftItems.map((_, i) => i);
+  const shuffledLeftIndices = shuffle(leftIndices);
+
   // Color palette for connections
   const colors = [
     '#3b82f6', // blue
@@ -80,7 +84,9 @@
     const container = document.getElementById('left-items');
     container.innerHTML = '';
 
-    leftItems.forEach((item, idx) => {
+    // Render left items in shuffled order
+    shuffledLeftIndices.forEach(idx => {
+      const item = leftItems[idx];
       const div = document.createElement('div');
       div.className = 'item left-item';
       div.dataset.index = idx;
