@@ -1,4 +1,3 @@
-can you add warning that number of items in left and right don't match and card should be fixed first?
 ---------
 on mobile clicking anything flips the card to back side
 ---------

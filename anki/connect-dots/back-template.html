@@ -1,86 +1,130 @@
 <div class="connect-dots-container back-side">
-  <div class="result-header">Correct Answers</div>
+  <div id="error-banner" class="error-banner" style="display: none;"></div>
+  <div id="score-header" class="score-header"></div>
 
-  <div id="answer-list"></div>
-
-  <hr class="divider">
-
-  <div class="front-side-container">
-    {{FrontSide}}
-  </div>
+  <div id="results-list"></div>
 </div>
 
 <script>
 (function() {
-  // Parse Anki fields
+  // Parse Anki fields (correct answers)
   const leftRaw = "{{Left}}";
   const rightRaw = "{{Right}}";
 
   const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
-  const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);
+  const correctRight = rightRaw.split(',').map(s => s.trim()).filter(s => s);
 
-  // Color palette (same as front)
-  const colors = [
-    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1'
-  ];
-
-  // Get unique right items for consistent coloring
-  const uniqueRight = [...new Set(rightItems)];
-
-  function getColorForRight(rightValue) {
-    const idx = uniqueRight.indexOf(rightValue);
-    return colors[idx % colors.length];
+  // Validate item counts match
+  if (leftItems.length !== correctRight.length) {
+    const banner = document.getElementById('error-banner');
+    banner.style.display = 'block';
+    banner.innerHTML = '<strong>Card Error:</strong> Left has ' + leftItems.length +
+      ' items, Right has ' + correctRight.length + ' items. Please fix this card.';
   }
 
-  // Render correct answer pairs
-  function renderAnswers() {
-    const container = document.getElementById('answer-list');
-    container.innerHTML = '';
-
-    leftItems.forEach((leftItem, idx) => {
-      const rightItem = rightItems[idx] || '???';
-      const color = getColorForRight(rightItem);
-
-      const row = document.createElement('div');
-      row.className = 'answer-row';
-
-      const leftSpan = document.createElement('span');
-      leftSpan.className = 'answer-left';
-      leftSpan.textContent = leftItem;
-      leftSpan.style.borderColor = color;
-      leftSpan.style.backgroundColor = color + '20';
-
-      const arrow = document.createElement('span');
-      arrow.className = 'answer-arrow';
-      arrow.textContent = '→';
-
-      const rightSpan = document.createElement('span');
-      rightSpan.className = 'answer-right';
-      rightSpan.textContent = rightItem;
-      rightSpan.style.borderColor = color;
-      rightSpan.style.backgroundColor = color + '20';
-
-      row.appendChild(leftSpan);
-      row.appendChild(arrow);
-      row.appendChild(rightSpan);
-      container.appendChild(row);
-    });
-  }
-
-  renderAnswers();
-
-  // Disable front-side interactions
-  const frontContainer = document.querySelector('.front-side-container');
-  if (frontContainer) {
-    frontContainer.style.pointerEvents = 'none';
-    frontContainer.style.opacity = '0.6';
-
-    // Hide the status bar in the embedded front
-    const statusBar = frontContainer.querySelector('.status-bar');
-    if (statusBar) {
-      statusBar.style.display = 'none';
+  // Try to get user's answers from sessionStorage
+  let userConnections = {};
+  try {
+    const saved = sessionStorage.getItem('connectDotsState');
+    if (saved) {
+      const state = JSON.parse(saved);
+      userConnections = state.connections || {};
+    }
+  } catch (e) {
+    // Fallback to window variable
+    if (window.connectDotsState) {
+      userConnections = window.connectDotsState.connections || {};
     }
   }
+
+  // Calculate score
+  let correct = 0;
+  let total = leftItems.length;
+
+  leftItems.forEach((item, idx) => {
+    const userAnswer = userConnections[idx];
+    const correctAnswer = correctRight[idx];
+    if (userAnswer === correctAnswer) {
+      correct++;
+    }
+  });
+
+  // Render score header
+  const scoreHeader = document.getElementById('score-header');
+  const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  if (correct === total) {
+    scoreHeader.className = 'score-header score-perfect';
+    scoreHeader.textContent = 'Perfect! ' + correct + '/' + total;
+  } else if (percentage >= 50) {
+    scoreHeader.className = 'score-header score-good';
+    scoreHeader.textContent = 'Score: ' + correct + '/' + total;
+  } else {
+    scoreHeader.className = 'score-header score-poor';
+    scoreHeader.textContent = 'Score: ' + correct + '/' + total;
+  }
+
+  // Render results
+  const container = document.getElementById('results-list');
+  container.innerHTML = '';
+
+  leftItems.forEach((leftItem, idx) => {
+    const userAnswer = userConnections[idx];
+    const correctAnswer = correctRight[idx];
+    const isCorrect = userAnswer === correctAnswer;
+    const hasAnswer = userAnswer !== undefined;
+
+    const row = document.createElement('div');
+    row.className = 'result-row ' + (isCorrect ? 'result-correct' : 'result-wrong');
+
+    // Left item
+    const leftSpan = document.createElement('span');
+    leftSpan.className = 'result-left';
+    leftSpan.textContent = leftItem;
+    row.appendChild(leftSpan);
+
+    // Arrow
+    const arrow = document.createElement('span');
+    arrow.className = 'result-arrow';
+    arrow.textContent = '→';
+    row.appendChild(arrow);
+
+    // User's answer (or missing indicator)
+    const userSpan = document.createElement('span');
+    userSpan.className = 'result-user';
+    if (hasAnswer) {
+      userSpan.textContent = userAnswer;
+      if (isCorrect) {
+        userSpan.classList.add('answer-correct');
+      } else {
+        userSpan.classList.add('answer-wrong');
+      }
+    } else {
+      userSpan.textContent = '(no answer)';
+      userSpan.classList.add('answer-missing');
+    }
+    row.appendChild(userSpan);
+
+    // Status icon
+    const icon = document.createElement('span');
+    icon.className = 'result-icon';
+    icon.textContent = isCorrect ? '✓' : '✗';
+    row.appendChild(icon);
+
+    // If wrong, show correct answer
+    if (!isCorrect) {
+      const correction = document.createElement('div');
+      correction.className = 'result-correction';
+      correction.textContent = 'Correct: ' + correctAnswer;
+      row.appendChild(correction);
+    }
+
+    container.appendChild(row);
+  });
+
+  // Clear the saved state for next card
+  try {
+    sessionStorage.removeItem('connectDotsState');
+  } catch (e) {}
 })();
 </script>

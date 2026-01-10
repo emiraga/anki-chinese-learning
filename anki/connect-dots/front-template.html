@@ -1,4 +1,5 @@
 <div class="connect-dots-container">
+  <div id="error-banner" class="error-banner" style="display: none;"></div>
   <div class="columns">
     <div class="column left-column">
       <div class="column-header">Match</div>
@@ -24,6 +25,14 @@
 
   const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
   const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);
+
+  // Validate item counts match
+  if (leftItems.length !== rightItems.length) {
+    const banner = document.getElementById('error-banner');
+    banner.style.display = 'block';
+    banner.innerHTML = '<strong>Card Error:</strong> Left has ' + leftItems.length +
+      ' items, Right has ' + rightItems.length + ' items. Please fix this card.';
+  }
 
   // Get unique right items for display
   const uniqueRight = [...new Set(rightItems)];
@@ -203,18 +212,27 @@
     render();
   }
 
+  function saveState() {
+    // Save to sessionStorage for back template to read
+    const state = {
+      connections: connections,
+      leftItems: leftItems,
+      rightItems: rightItems
+    };
+    try {
+      sessionStorage.setItem('connectDotsState', JSON.stringify(state));
+    } catch (e) {
+      // Fallback: save to a global variable
+      window.connectDotsState = state;
+    }
+  }
+
   function render() {
     renderLeft();
     renderRight();
     updateStatus();
+    saveState();
   }
-
-  // Store connections for back template
-  window.connectDotsState = {
-    connections: connections,
-    leftItems: leftItems,
-    rightItems: rightItems
-  };
 
   // Prevent card flip on container
   const container = document.querySelector('.connect-dots-container');
