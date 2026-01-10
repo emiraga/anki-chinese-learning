@@ -565,6 +565,148 @@ class ConnectDotsManager:
         return stats
 
 
+def list_sound_component_frequencies(top_n: int = 50) -> None:
+    """
+    List sound components by frequency from all Hanzi notes.
+
+    Args:
+        top_n: Number of top sound components to display
+    """
+    print("=== Sound Component Frequency Analysis ===\n")
+
+    # Query all Hanzi notes with a sound component
+    query = 'note:Hanzi -is:suspended "Sound component character:_*"'
+    note_ids = find_notes_by_query(query)
+
+    if not note_ids:
+        print("No Hanzi notes with sound components found")
+        return
+
+    print(f"Analyzing {len(note_ids)} Hanzi notes with sound components...\n")
+
+    component_counts: dict[str, int] = {}
+    component_examples: dict[str, list[str]] = {}
+
+    # Process in batches
+    batch_size = 100
+    for i in range(0, len(note_ids), batch_size):
+        batch_ids = note_ids[i:i + batch_size]
+        notes_info = get_notes_info(batch_ids)
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+            sound_component = note['fields'].get('Sound component character', {}).get('value', '').strip()
+
+            if not sound_component:
+                continue
+
+            component_counts[sound_component] = component_counts.get(sound_component, 0) + 1
+            if sound_component not in component_examples:
+                component_examples[sound_component] = []
+            if len(component_examples[sound_component]) < 5 and traditional:
+                example = f"{traditional}({pinyin})" if pinyin else traditional
+                component_examples[sound_component].append(example)
+
+    if not component_counts:
+        print("No sound components found")
+        return
+
+    # Sort by frequency (descending)
+    sorted_components = sorted(component_counts.items(), key=lambda x: x[1], reverse=True)
+
+    print(f"Found {len(sorted_components)} unique sound components\n")
+    print(f"Top {min(top_n, len(sorted_components))} sound components by frequency:\n")
+    print(f"{'Rank':<6}{'Component':<12}{'Count':<8}Examples")
+    print("-" * 70)
+
+    for rank, (component, count) in enumerate(sorted_components[:top_n], 1):
+        examples = ", ".join(component_examples.get(component, []))
+        print(f"{rank:<6}{component:<12}{count:<8}{examples}")
+
+    print(f"\n=== Summary ===")
+    print(f"Total unique sound components: {len(sorted_components)}")
+    print(f"Total characters with sound components: {sum(component_counts.values())}")
+
+    cache_stats = _cache.stats()
+    print(f"\n=== Cache Stats ===")
+    print(f"Cached queries: {cache_stats['queries']}")
+    print(f"Cached notes: {cache_stats['notes']}")
+
+
+def list_syllable_frequencies(top_n: int = 50) -> None:
+    """
+    List syllables by frequency from all single-character Hanzi notes.
+
+    Args:
+        top_n: Number of top syllables to display
+    """
+    print("=== Syllable Frequency Analysis ===\n")
+
+    # Query all single-character Hanzi notes
+    query = 'note:Hanzi -is:suspended'
+    note_ids = find_notes_by_query(query)
+
+    if not note_ids:
+        print("No Hanzi notes found")
+        return
+
+    print(f"Analyzing {len(note_ids)} Hanzi notes...\n")
+
+    syllable_counts: dict[str, int] = {}
+    syllable_examples: dict[str, list[str]] = {}
+
+    # Process in batches
+    batch_size = 100
+    for i in range(0, len(note_ids), batch_size):
+        batch_ids = note_ids[i:i + batch_size]
+        notes_info = get_notes_info(batch_ids)
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+
+            if not traditional or not pinyin:
+                continue
+
+            # Only consider single-character notes
+            if len(traditional) != 1:
+                continue
+
+            syllable = remove_tone_marks(pinyin)
+            if syllable:
+                syllable_counts[syllable] = syllable_counts.get(syllable, 0) + 1
+                if syllable not in syllable_examples:
+                    syllable_examples[syllable] = []
+                if len(syllable_examples[syllable]) < 5:
+                    syllable_examples[syllable].append(f"{traditional}({pinyin})")
+
+    if not syllable_counts:
+        print("No syllables found")
+        return
+
+    # Sort by frequency (descending)
+    sorted_syllables = sorted(syllable_counts.items(), key=lambda x: x[1], reverse=True)
+
+    print(f"Found {len(sorted_syllables)} unique syllables\n")
+    print(f"Top {min(top_n, len(sorted_syllables))} syllables by frequency:\n")
+    print(f"{'Rank':<6}{'Syllable':<12}{'Count':<8}Examples")
+    print("-" * 60)
+
+    for rank, (syllable, count) in enumerate(sorted_syllables[:top_n], 1):
+        examples = ", ".join(syllable_examples.get(syllable, []))
+        print(f"{rank:<6}{syllable:<12}{count:<8}{examples}")
+
+    print(f"\n=== Summary ===")
+    print(f"Total syllables: {len(sorted_syllables)}")
+    print(f"Total characters analyzed: {sum(syllable_counts.values())}")
+
+    cache_stats = _cache.stats()
+    print(f"\n=== Cache Stats ===")
+    print(f"Cached queries: {cache_stats['queries']}")
+    print(f"Cached notes: {cache_stats['notes']}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Create and update ConnectDots notes in Anki"
@@ -574,7 +716,31 @@ def main():
         action="store_true",
         help="Show what would be done without making changes"
     )
+    parser.add_argument(
+        "--list-syllables",
+        action="store_true",
+        help="List syllables by frequency instead of processing generators"
+    )
+    parser.add_argument(
+        "--list-sound-components",
+        action="store_true",
+        help="List sound components by frequency instead of processing generators"
+    )
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=50,
+        help="Number of top items to show (default: 50)"
+    )
     args = parser.parse_args()
+
+    if args.list_syllables:
+        list_syllable_frequencies(top_n=args.top)
+        return
+
+    if args.list_sound_components:
+        list_sound_component_frequencies(top_n=args.top)
+        return
 
     print("=== ConnectDots Note Manager ===\n")
 
@@ -582,10 +748,16 @@ def main():
     generators: list[ConnectDotsGenerator] = []
 
     generators.append(SoundComponentHanziToPinyin('隹'))
+    generators.append(SoundComponentHanziToPinyin('青'))
+    generators.append(SoundComponentHanziToPinyin('乍'))
+    generators.append(SoundComponentHanziToPinyin('艮'))
+    generators.append(SoundComponentHanziToPinyin('昜'))
     generators.append(SyllableHanziToPinyin('shi'))
+    generators.append(SyllableHanziToPinyin('zhi'))
     generators.append(SyllableHanziToPinyin('ji'))
     generators.append(SyllableHanziToPinyin('xi'))
-    generators.append(SyllableHanziToPinyin('sui'))
+    generators.append(SyllableHanziToPinyin('yi'))
+    generators.append(SyllableHanziToPinyin('li'))
     generators.append(TagTraditionalToMeaning('chinese::category::food'))
 
     if not generators:

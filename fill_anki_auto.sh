@@ -4,6 +4,7 @@ set -x
 
 ./utils/hanzi/fill_hanzi_notes.py
 ./utils/hanzi/clean_notes.py
+./utils/hanzi/connect_dots_notes.py
 
 ./utils/zhuyin/fill_zhuyin_anki.py
 
