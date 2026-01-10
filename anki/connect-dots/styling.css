@@ -47,6 +47,12 @@
   min-width: 0;
 }
 
+.right-column {
+  position: sticky;
+  top: 16px;
+  align-self: flex-start;
+}
+
 .column-header {
   font-size: 14px;
   font-weight: 600;
@@ -319,6 +325,10 @@
 
   .column-header {
     text-align: center;
+  }
+
+  .right-column {
+    position: static;
   }
 }
 
