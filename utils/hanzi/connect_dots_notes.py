@@ -350,6 +350,49 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
         return [ConnectDotsNote(key=key, left=left, right=right)]
 
 
+class PropHanziToPinyin(ConnectDotsGenerator):
+    """
+    Generate notes mapping Hanzi with a specific prop tag to their pinyin.
+
+    Queries Hanzi notes that have a tag like "prop::{prop_name}".
+    Left = Traditional characters, Right = Pinyin pronunciations
+    """
+
+    def __init__(self, prop_name: str):
+        self.prop_name = prop_name
+
+    @property
+    def generator_type(self) -> str:
+        return "prop"
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        # Query Hanzi notes with this prop tag
+        query = f'note:Hanzi -is:suspended "tag:prop::{self.prop_name}"'
+        note_ids = find_notes_by_query(query)
+
+        if not note_ids:
+            return []
+
+        notes_info = get_notes_info(note_ids)
+
+        left = []
+        right = []
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+
+            if traditional and pinyin:
+                left.append(traditional)
+                right.append(pinyin)
+
+        if not left:
+            return []
+
+        key = f"{self.generator_type}:{self.prop_name}"
+        return [ConnectDotsNote(key=key, left=left, right=right)]
+
+
 class TagTraditionalToMeaning(ConnectDotsGenerator):
     """
     Generate notes mapping Traditional to Meaning for notes with a specific tag.
@@ -766,6 +809,9 @@ def main():
 
     # Manual tag generators
     generators.append(TagTraditionalToMeaning('chinese::category::food'))
+
+    # Manual tag props
+    generators.append(PropHanziToPinyin('square'))
 
     if not generators:
         print("No generators to run")
