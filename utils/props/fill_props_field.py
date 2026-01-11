@@ -113,6 +113,39 @@ def extract_mnemonic_pegs(tags):
     return "; ".join(filter(None, [actor, place, tone]))
 
 
+def extract_anki_tags(tags):
+    """
+    Extract tags that are not prop::, actor::, place::, or tone:: prefixed
+
+    Args:
+        tags (list): List of tags from a note
+
+    Returns:
+        str: Comma-separated remaining tags (sorted alphabetically)
+    """
+    if not tags:
+        return ""
+
+    special_prefixes = (
+        "auto-generated",
+        "prop::",
+        "actor::",
+        "place::",
+        "tone::",
+        "TOCFL::",
+        "chinese::repeated-duplicated-prop",
+        "chinese::not-learning-sound-yet",
+        "chinese::multiple-pronounciation-character",
+    )
+    remaining_tags = [tag for tag in tags if not tag.startswith(special_prefixes)]
+
+    if not remaining_tags:
+        return ""
+
+    remaining_tags.sort()
+    return ", ".join(remaining_tags)
+
+
 def load_prop_hanzi_mapping():
     """
     Load all Props notes and create a mapping from prop name to Hanzi
@@ -157,7 +190,7 @@ def find_notes_with_tags(note_type):
         list: List of note IDs
     """
     # Search for notes with any of the relevant tags
-    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::*)'
+    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::*)'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -218,7 +251,7 @@ def update_note_fields(note_id, fields_dict):
 
 def update_fields_for_note(note_info, prop_hanzi_map):
     """
-    Update Props and Mnemonic pegs fields for a single note based on its tags
+    Update Props, Mnemonic pegs, and Anki Tags fields for a single note based on its tags
 
     Args:
         note_info (dict): Note information dictionary
@@ -245,6 +278,15 @@ def update_fields_for_note(note_info, prop_hanzi_map):
     if new_pegs and current_pegs != new_pegs:
         fields_to_update['Mnemonic pegs'] = new_pegs
 
+    # Process Anki Tags field (remaining tags not matching special prefixes)
+    current_anki_tags = note_info['fields'].get('Anki Tags', {}).get('value', '').strip()
+    new_anki_tags = extract_anki_tags(tags)
+    if new_anki_tags:
+        print(note_info['fields'].get('Traditional', '?'), new_anki_tags)
+
+    if current_anki_tags != new_anki_tags:
+        fields_to_update['Anki Tags'] = new_anki_tags
+
     # Only update if there are changes
     if not fields_to_update:
         return False
@@ -265,7 +307,7 @@ def update_fields_for_note(note_info, prop_hanzi_map):
 
 def main():
     """
-    Main function to process all note types and update Props and Mnemonic pegs fields
+    Main function to process all note types and update Props, Mnemonic pegs, and Anki Tags fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
@@ -274,7 +316,7 @@ def main():
     if not prop_hanzi_map:
         raise Exception("Failed to load prop to Hanzi mapping")
 
-    note_types = ["Hanzi"]
+    note_types = ["Hanzi", "TOCFL", "Dangdai", "MyWords"]
     batch_size = 100
 
     for note_type in note_types:
