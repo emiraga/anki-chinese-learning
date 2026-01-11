@@ -42,12 +42,6 @@ const useAnkiHanziProgress = () => {
   const [charactersStartedLearning, setCharactersStartedLearning] = useState<{
     [key: string]: number;
   }>({});
-  const [dailyLearnedCharacters, setDailyLearnedCharacters] = useState<{
-    [key: string]: number;
-  }>({});
-  const [dailyStartedCharacters, setDailyStartedCharacters] = useState<{
-    [key: string]: number;
-  }>({});
   const [dailyLearnedCharactersList, setDailyLearnedCharactersList] = useState<{
     [key: string]: string[];
   }>({});
@@ -55,7 +49,7 @@ const useAnkiHanziProgress = () => {
     [key: string]: string[];
   }>({});
   const [learningTimeDistribution, setLearningTimeDistribution] = useState<
-    number[]
+    { char: string; days: number }[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,14 +132,12 @@ const useAnkiHanziProgress = () => {
         setStage("Processing reviews to calculate progress...");
 
         // 4. Process reviews to build the daily character graph and learning time distribution
-        const dailyLearnedCharacters: { [key: string]: number } = {};
-        const dailyStartedCharacters: { [key: string]: number } = {};
         const dailyLearnedCharactersList: { [key: string]: string[] } = {};
         const dailyStartedCharactersList: { [key: string]: string[] } = {};
         const seenCharacters = new Set(); // To track uniquely learned characters
         const startedCharacters = new Set(); // To track uniquely started characters
         const characterFirstEncounter: { [key: string]: number } = {}; // Track first review time
-        const learningTimes: number[] = []; // Days from first encounter to learned
+        const learningTimes: { char: string; days: number }[] = []; // Character and days from first encounter to learned
 
         // Sort reviews by timestamp to ensure chronological processing
         // Note: The 'id' in reviews is the reviewTime in milliseconds
@@ -171,8 +163,6 @@ const useAnkiHanziProgress = () => {
                 const reviewDate = new Date(review.id).toLocaleDateString(
                   "en-CA"
                 ); // YYYY-MM-DD
-                dailyStartedCharacters[reviewDate] =
-                  (dailyStartedCharacters[reviewDate] || 0) + 1;
                 if (!dailyStartedCharactersList[reviewDate]) {
                   dailyStartedCharactersList[reviewDate] = [];
                 }
@@ -194,9 +184,6 @@ const useAnkiHanziProgress = () => {
                 const reviewDate = new Date(review.id).toLocaleDateString(
                   "en-CA"
                 ); // YYYY-MM-DD
-                // Add this character to the count for this date
-                dailyLearnedCharacters[reviewDate] =
-                  (dailyLearnedCharacters[reviewDate] || 0) + 1;
                 if (!dailyLearnedCharactersList[reviewDate]) {
                   dailyLearnedCharactersList[reviewDate] = [];
                 }
@@ -210,34 +197,32 @@ const useAnkiHanziProgress = () => {
                 const timeDifferenceDays = Math.ceil(
                   timeDifferenceMs / (1000 * 60 * 60 * 24)
                 );
-                learningTimes.push(timeDifferenceDays);
+                learningTimes.push({ char, days: timeDifferenceDays });
               }
             }
           }
         });
 
-        // Convert daily data to cumulative graph data
-        const toCumulative = (daily: { [key: string]: number }) => {
+        // Convert daily character lists to cumulative count data
+        const toCumulative = (daily: { [key: string]: string[] }) => {
           const sorted = Object.keys(daily).sort();
           let count = 0;
           const cumulative: { [key: string]: number } = {};
           sorted.forEach((date) => {
-            count += daily[date];
+            count += daily[date].length;
             cumulative[date] = count;
           });
           return cumulative;
         };
 
-        const cumulativeGraphData = toCumulative(dailyLearnedCharacters);
-        const cumulativeStartedGraphData = toCumulative(dailyStartedCharacters);
+        const cumulativeGraphData = toCumulative(dailyLearnedCharactersList);
+        const cumulativeStartedGraphData = toCumulative(dailyStartedCharactersList);
 
         setProgressPercentage(0);
         setStage("Finalizing results...");
 
         setCharacterProgress(cumulativeGraphData);
         setCharactersStartedLearning(cumulativeStartedGraphData);
-        setDailyLearnedCharacters(dailyLearnedCharacters);
-        setDailyStartedCharacters(dailyStartedCharacters);
         setDailyLearnedCharactersList(dailyLearnedCharactersList);
         setDailyStartedCharactersList(dailyStartedCharactersList);
         setLearningTimeDistribution(learningTimes);
@@ -260,8 +245,6 @@ const useAnkiHanziProgress = () => {
   return {
     characterProgress,
     charactersStartedLearning,
-    dailyLearnedCharacters,
-    dailyStartedCharacters,
     dailyLearnedCharactersList,
     dailyStartedCharactersList,
     learningTimeDistribution,
@@ -426,20 +409,37 @@ const CustomHistogramTooltip = ({
       count: number;
       binStart: number;
       binEnd: number;
+      chars: string[];
     };
   }[];
 }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const displayLimit = 50;
+    const hasMore = data.chars.length > displayLimit;
+    const displayChars = hasMore ? data.chars.slice(0, displayLimit) : data.chars;
+
     return (
-      <TooltipWrapper>
+      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-w-xs">
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {data.binStart}-{data.binEnd} days
         </p>
         <p className="text-sm text-purple-600 dark:text-purple-400">
           {data.count} characters
         </p>
-      </TooltipWrapper>
+        {data.chars.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+            <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
+              {displayChars.join(" ")}
+              {hasMore && (
+                <span className="text-gray-500 dark:text-gray-400">
+                  {" "}... +{data.chars.length - displayLimit} more
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+      </div>
     );
   }
   return null;
@@ -447,29 +447,31 @@ const CustomHistogramTooltip = ({
 
 // Learning Time Distribution Histogram Component
 const LearningTimeDistributionChart: React.FC<{
-  learningTimeDistribution: number[];
+  learningTimeDistribution: { char: string; days: number }[];
 }> = ({ learningTimeDistribution }) => {
   if (learningTimeDistribution.length === 0) {
     return <div>No learning time data to display</div>;
   }
 
   // Create histogram data with bins
-  const maxDays = Math.max(...learningTimeDistribution);
+  const allDays = learningTimeDistribution.map((item) => item.days);
+  const maxDays = Math.max(...allDays);
   const binSize = Math.max(1, Math.ceil(maxDays / 40)); // Aim for ~40 bins
   const numBins = Math.ceil(maxDays / binSize);
 
   const histogramData = Array.from({ length: numBins }, (_, i) => {
     const binStart = i * binSize;
     const binEnd = (i + 1) * binSize;
-    const count = learningTimeDistribution.filter(
-      (days) => days >= binStart && days < binEnd
-    ).length;
+    const itemsInBin = learningTimeDistribution.filter(
+      (item) => item.days >= binStart && item.days < binEnd
+    );
 
     return {
       binLabel: `${binStart}-${binEnd - 1}`,
       binStart,
       binEnd: binEnd - 1,
-      count,
+      count: itemsInBin.length,
+      chars: itemsInBin.map((item) => item.char),
       days: binStart + binSize / 2, // Midpoint for display
     };
   }).filter((bin) => bin.count > 0); // Only show bins with data
@@ -477,12 +479,10 @@ const LearningTimeDistributionChart: React.FC<{
   // Calculate statistics
   const avgLearningTime =
     Math.round(
-      (learningTimeDistribution.reduce((a, b) => a + b, 0) /
-        learningTimeDistribution.length) *
-        10
+      (allDays.reduce((a, b) => a + b, 0) / allDays.length) * 10
     ) / 10;
 
-  const sortedTimes = [...learningTimeDistribution].sort((a, b) => a - b);
+  const sortedTimes = [...allDays].sort((a, b) => a - b);
   const medianLearningTime =
     sortedTimes.length % 2 === 0
       ? (sortedTimes[sortedTimes.length / 2 - 1] +
@@ -498,7 +498,7 @@ const LearningTimeDistributionChart: React.FC<{
       <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
         <span className="mr-4">Average: {avgLearningTime} days</span>
         <span className="mr-4">Median: {medianLearningTime} days</span>
-        <span>Total characters: {learningTimeDistribution.length}</span>
+        <span>Total characters: {allDays.length}</span>
       </div>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
@@ -702,7 +702,7 @@ const formatXAxisDate = (tickItem: string) => {
 // Helper function to get complete date range from data objects
 // Returns all dates between the first and last date found in any of the data objects
 const getCompleteDateRange = (
-  ...dataObjects: { [key: string]: number }[]
+  ...dataObjects: { [key: string]: unknown }[]
 ): string[] => {
   const existingDates = dataObjects.flatMap((obj) => Object.keys(obj)).sort();
 
@@ -746,7 +746,7 @@ const CustomDailyTooltipWithCharacters = ({
     const data = payload[0].payload;
 
     return (
-      <TooltipWrapper>
+      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-w-xs">
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {date}
         </p>
@@ -760,7 +760,7 @@ const CustomDailyTooltipWithCharacters = ({
             <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
               Started learning:
             </p>
-            <p className="text-sm text-gray-800 dark:text-gray-200">
+            <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
               {data.startedChars.join(" ")}
             </p>
           </div>
@@ -770,12 +770,12 @@ const CustomDailyTooltipWithCharacters = ({
             <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
               Fully learned:
             </p>
-            <p className="text-sm text-gray-800 dark:text-gray-200">
+            <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
               {data.learnedChars.join(" ")}
             </p>
           </div>
         )}
-      </TooltipWrapper>
+      </div>
     );
   }
   return null;
@@ -783,19 +783,15 @@ const CustomDailyTooltipWithCharacters = ({
 
 // Daily Incremental Chart Component
 const DailyIncrementalChart: React.FC<{
-  dailyLearnedCharacters: { [key: string]: number };
-  dailyStartedCharacters: { [key: string]: number };
   dailyLearnedCharactersList: { [key: string]: string[] };
   dailyStartedCharactersList: { [key: string]: string[] };
 }> = ({
-  dailyLearnedCharacters,
-  dailyStartedCharacters,
   dailyLearnedCharactersList,
   dailyStartedCharactersList,
 }) => {
   const sortedDates = getCompleteDateRange(
-    dailyLearnedCharacters,
-    dailyStartedCharacters
+    dailyLearnedCharactersList,
+    dailyStartedCharactersList
   );
 
   if (sortedDates.length === 0) {
@@ -805,16 +801,22 @@ const DailyIncrementalChart: React.FC<{
   // Create combined data with zeros for missing dates
   const allData = sortedDates.map((date) => ({
     date,
-    learned: dailyLearnedCharacters[date] || 0,
-    started: dailyStartedCharacters[date] || 0,
+    learned: dailyLearnedCharactersList[date]?.length || 0,
+    started: dailyStartedCharactersList[date]?.length || 0,
     learnedChars: dailyLearnedCharactersList[date] || [],
     startedChars: dailyStartedCharactersList[date] || [],
     dateObj: new Date(date),
   }));
 
   // Calculate max value for Y-axis
-  const maxLearnedValue = Math.max(...Object.values(dailyLearnedCharacters), 0);
-  const maxStartedValue = Math.max(...Object.values(dailyStartedCharacters), 0);
+  const maxLearnedValue = Math.max(
+    ...Object.values(dailyLearnedCharactersList).map((chars) => chars.length),
+    0
+  );
+  const maxStartedValue = Math.max(
+    ...Object.values(dailyStartedCharactersList).map((chars) => chars.length),
+    0
+  );
   const yAxisMax = Math.ceil(Math.max(maxLearnedValue, maxStartedValue) * 1.1);
 
   return (
@@ -1078,8 +1080,6 @@ export const AnkiHanziProgress = () => {
   const {
     characterProgress,
     charactersStartedLearning,
-    dailyLearnedCharacters,
-    dailyStartedCharacters,
     dailyLearnedCharactersList,
     dailyStartedCharactersList,
     learningTimeDistribution,
@@ -1228,8 +1228,6 @@ export const AnkiHanziProgress = () => {
 
         {/* Daily Incremental Chart */}
         <DailyIncrementalChart
-          dailyLearnedCharacters={dailyLearnedCharacters}
-          dailyStartedCharacters={dailyStartedCharacters}
           dailyLearnedCharactersList={dailyLearnedCharactersList}
           dailyStartedCharactersList={dailyStartedCharactersList}
         />
