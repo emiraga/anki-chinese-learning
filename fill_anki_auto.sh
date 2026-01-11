@@ -5,12 +5,11 @@ set -x
 ./utils/hanzi/fill_hanzi_notes.py
 ./utils/hanzi/clean_notes.py
 ./utils/hanzi/connect_dots_notes.py
+./utils/hanzi/fill_props_field.py
 
 ./utils/zhuyin/fill_zhuyin_anki.py
 
 ./utils/tts/fill_audio_anki.py --use-pinyin-hint
-
-./utils/props/fill_props_field.py
 
 ./utils/hanziyuan/convert.py
 
