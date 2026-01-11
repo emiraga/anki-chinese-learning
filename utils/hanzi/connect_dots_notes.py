@@ -521,8 +521,6 @@ class ConnectDotsManager:
         print(f"Found {len(existing_notes)} existing notes")
 
         for generator in generators:
-            print(f"\nProcessing {generator.__class__.__name__}...")
-
             try:
                 notes = generator.generate_notes()
             except Exception as e:

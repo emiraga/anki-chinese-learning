@@ -48,6 +48,12 @@ const useAnkiHanziProgress = () => {
   const [dailyStartedCharacters, setDailyStartedCharacters] = useState<{
     [key: string]: number;
   }>({});
+  const [dailyLearnedCharactersList, setDailyLearnedCharactersList] = useState<{
+    [key: string]: string[];
+  }>({});
+  const [dailyStartedCharactersList, setDailyStartedCharactersList] = useState<{
+    [key: string]: string[];
+  }>({});
   const [learningTimeDistribution, setLearningTimeDistribution] = useState<
     number[]
   >([]);
@@ -134,6 +140,8 @@ const useAnkiHanziProgress = () => {
         // 4. Process reviews to build the daily character graph and learning time distribution
         const dailyLearnedCharacters: { [key: string]: number } = {};
         const dailyStartedCharacters: { [key: string]: number } = {};
+        const dailyLearnedCharactersList: { [key: string]: string[] } = {};
+        const dailyStartedCharactersList: { [key: string]: string[] } = {};
         const seenCharacters = new Set(); // To track uniquely learned characters
         const startedCharacters = new Set(); // To track uniquely started characters
         const characterFirstEncounter: { [key: string]: number } = {}; // Track first review time
@@ -165,6 +173,10 @@ const useAnkiHanziProgress = () => {
                 ); // YYYY-MM-DD
                 dailyStartedCharacters[reviewDate] =
                   (dailyStartedCharacters[reviewDate] || 0) + 1;
+                if (!dailyStartedCharactersList[reviewDate]) {
+                  dailyStartedCharactersList[reviewDate] = [];
+                }
+                dailyStartedCharactersList[reviewDate].push(char);
                 startedCharacters.add(char);
               }
             }
@@ -185,6 +197,10 @@ const useAnkiHanziProgress = () => {
                 // Add this character to the count for this date
                 dailyLearnedCharacters[reviewDate] =
                   (dailyLearnedCharacters[reviewDate] || 0) + 1;
+                if (!dailyLearnedCharactersList[reviewDate]) {
+                  dailyLearnedCharactersList[reviewDate] = [];
+                }
+                dailyLearnedCharactersList[reviewDate].push(char);
                 seenCharacters.add(char); // Mark as learned
 
                 // Calculate learning time in days
@@ -222,6 +238,8 @@ const useAnkiHanziProgress = () => {
         setCharactersStartedLearning(cumulativeStartedGraphData);
         setDailyLearnedCharacters(dailyLearnedCharacters);
         setDailyStartedCharacters(dailyStartedCharacters);
+        setDailyLearnedCharactersList(dailyLearnedCharactersList);
+        setDailyStartedCharactersList(dailyStartedCharactersList);
         setLearningTimeDistribution(learningTimes);
 
         setProgressPercentage(100);
@@ -244,6 +262,8 @@ const useAnkiHanziProgress = () => {
     charactersStartedLearning,
     dailyLearnedCharacters,
     dailyStartedCharacters,
+    dailyLearnedCharactersList,
+    dailyStartedCharactersList,
     learningTimeDistribution,
     loading,
     error,
@@ -703,11 +723,76 @@ const getCompleteDateRange = (
   return dates;
 };
 
+// Custom tooltip component for daily chart with character lists
+const CustomDailyTooltipWithCharacters = ({
+  active,
+  payload,
+  label,
+}: {
+  active: boolean;
+  label: string;
+  payload: {
+    name: string;
+    value: number;
+    color: string;
+    payload: {
+      learnedChars: string[];
+      startedChars: string[];
+    };
+  }[];
+}) => {
+  if (active && payload && payload.length) {
+    const date = new Date(label).toLocaleDateString("en-CA");
+    const data = payload[0].payload;
+
+    return (
+      <TooltipWrapper>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {date}
+        </p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value} characters
+          </p>
+        ))}
+        {data.startedChars && data.startedChars.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+            <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
+              Started learning:
+            </p>
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              {data.startedChars.join(" ")}
+            </p>
+          </div>
+        )}
+        {data.learnedChars && data.learnedChars.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
+              Fully learned:
+            </p>
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              {data.learnedChars.join(" ")}
+            </p>
+          </div>
+        )}
+      </TooltipWrapper>
+    );
+  }
+  return null;
+};
+
 // Daily Incremental Chart Component
 const DailyIncrementalChart: React.FC<{
   dailyLearnedCharacters: { [key: string]: number };
   dailyStartedCharacters: { [key: string]: number };
-}> = ({ dailyLearnedCharacters, dailyStartedCharacters }) => {
+  dailyLearnedCharactersList: { [key: string]: string[] };
+  dailyStartedCharactersList: { [key: string]: string[] };
+}> = ({
+  dailyLearnedCharacters,
+  dailyStartedCharacters,
+  dailyLearnedCharactersList,
+  dailyStartedCharactersList,
+}) => {
   const sortedDates = getCompleteDateRange(
     dailyLearnedCharacters,
     dailyStartedCharacters
@@ -722,6 +807,8 @@ const DailyIncrementalChart: React.FC<{
     date,
     learned: dailyLearnedCharacters[date] || 0,
     started: dailyStartedCharacters[date] || 0,
+    learnedChars: dailyLearnedCharactersList[date] || [],
+    startedChars: dailyStartedCharactersList[date] || [],
     dateObj: new Date(date),
   }));
 
@@ -768,7 +855,13 @@ const DailyIncrementalChart: React.FC<{
           />
           <Tooltip
             cursor={false}
-            content={<CustomDailyTooltip active={false} label="" payload={[]} />}
+            content={
+              <CustomDailyTooltipWithCharacters
+                active={false}
+                label=""
+                payload={[]}
+              />
+            }
           />
 
           {/* Characters started learning line */}
@@ -987,6 +1080,8 @@ export const AnkiHanziProgress = () => {
     charactersStartedLearning,
     dailyLearnedCharacters,
     dailyStartedCharacters,
+    dailyLearnedCharactersList,
+    dailyStartedCharactersList,
     learningTimeDistribution,
     loading,
     error,
@@ -1135,6 +1230,8 @@ export const AnkiHanziProgress = () => {
         <DailyIncrementalChart
           dailyLearnedCharacters={dailyLearnedCharacters}
           dailyStartedCharacters={dailyStartedCharacters}
+          dailyLearnedCharactersList={dailyLearnedCharactersList}
+          dailyStartedCharactersList={dailyStartedCharactersList}
         />
 
         {/* Learning Time Distribution Chart */}
