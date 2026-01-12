@@ -138,7 +138,10 @@ export default function CharDetail() {
     : [];
 
   // Build tabs array dynamically based on loaded content
-  const tabs = [{ id: "general", label: "General" }];
+  const tabs = [
+    { id: "general", label: "General" },
+    { id: "phrases", label: "Phrases" },
+  ];
 
   if (!dongLoading && !dongError && dongCharacter) {
     tabs.push({ id: "dong", label: "Dong Chinese" });
@@ -168,6 +171,14 @@ export default function CharDetail() {
   if (hasPlecoOutlierData) {
     tabs.push({ id: "plecooutlier", label: "Pleco Outlier" });
   }
+
+  const samePronounciation = Object.values(characters)
+    .filter(
+      (c) =>
+        char.traditional !== c.traditional &&
+        char.pinyin[0].pinyinAccented == c.pinyin[0].pinyinAccented,
+    )
+    .sort((a, b) => a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable));
 
   return (
     <MainFrame>
@@ -256,22 +267,6 @@ export default function CharDetail() {
                 <hr className="my-4" />
               </>
             ) : undefined}
-            <PhraseList phrases={filteredPhrases} />
-            <hr className="my-4" />
-            <h2 className="text-2xl">Known character phrases:</h2>
-            <SearchMorePhrases
-              noteTypes={noteTypes}
-              search={char.traditional}
-              filterKnownChars={true}
-            />
-            <hr className="my-4" />
-            <h2 className="text-2xl">Phrases with unknown characters:</h2>
-            <SearchMorePhrases
-              noteTypes={noteTypes}
-              search={char.traditional}
-              filterUnknownChars={true}
-            />
-            <hr className="my-4" />
             {charsUsingAsProp.length > 0 && propForThisChar && (
               <>
                 <h2 className="text-2xl">
@@ -289,13 +284,12 @@ export default function CharDetail() {
               </>
             )}
 
-            {char.exampleSentences ? (
+            {samePronounciation.length > 0 ? (
               <>
-                <h2 className="text-2xl">Example sentences:</h2>
-                <div
-                  className=""
-                  dangerouslySetInnerHTML={{ __html: char.exampleSentences }}
-                />
+                <h2 className="text-2xl">Same pronounciation:</h2>
+                {samePronounciation.map((c, i) => (
+                  <CharCardDetails key={i} char={c} />
+                ))}
                 <hr className="my-4" />
               </>
             ) : undefined}
@@ -347,6 +341,39 @@ export default function CharDetail() {
                 <hr className="my-4" />
               </>
             )}
+          </>
+        )}
+
+        {activeTab === "phrases" && (
+          <>
+            <CharCardDetails char={char} />
+            <hr className="my-4" />
+            <PhraseList phrases={filteredPhrases} />
+            <hr className="my-4" />
+            <h2 className="text-2xl">Known character phrases:</h2>
+            <SearchMorePhrases
+              noteTypes={noteTypes}
+              search={char.traditional}
+              filterKnownChars={true}
+            />
+            <hr className="my-4" />
+            <h2 className="text-2xl">Phrases with unknown characters:</h2>
+            <SearchMorePhrases
+              noteTypes={noteTypes}
+              search={char.traditional}
+              filterUnknownChars={true}
+            />
+
+            {char.exampleSentences ? (
+              <>
+                <hr className="my-4" />
+                <h2 className="text-2xl">Example sentences:</h2>
+                <div
+                  className=""
+                  dangerouslySetInnerHTML={{ __html: char.exampleSentences }}
+                />
+              </>
+            ) : undefined}
           </>
         )}
 
