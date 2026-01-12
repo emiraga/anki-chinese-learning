@@ -289,6 +289,17 @@ export default function CharDetail() {
               </>
             )}
 
+            {char.exampleSentences ? (
+              <>
+                <h2 className="text-2xl">Example sentences:</h2>
+                <div
+                  className=""
+                  dangerouslySetInnerHTML={{ __html: char.exampleSentences }}
+                />
+                <hr className="my-4" />
+              </>
+            ) : undefined}
+
             {/* Loading Errors Section */}
             {(dongError ||
               yellowBridgeError ||
