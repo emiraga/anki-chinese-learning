@@ -42,6 +42,9 @@ export const CharListConflicts: React.FC<{
         {title} ({conflicts.length}):
       </h3>
       <div className="block">
+        {conflicts.map((c) => c.character.traditional)}
+      </div>
+      <div className="block">
         {conflicts.map((conflict, i) => {
           const v = conflict.character;
           const reason = conflict.reason;
@@ -111,7 +114,7 @@ export const CharListConflicts: React.FC<{
                       <span className="ml-10" key={i}>
                         {p}
                       </span>
-                    )
+                    ),
                   )}
                 </p>
               </div>

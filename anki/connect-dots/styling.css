@@ -1,8 +1,10 @@
 /* Connect the Dots - Anki Card Styling */
 
 .card {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 18px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 20px;
   background: #1a1a2e;
   color: #eee;
   padding: 16px;
@@ -273,7 +275,7 @@
 /* Mobile optimizations */
 @media (max-width: 480px) {
   .card {
-    font-size: 16px;
+    font-size: 20px;
     padding: 12px;
   }
 
