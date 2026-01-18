@@ -33,7 +33,7 @@ export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   ],
   Dangdai: [
     // { name: "traditional", deck: "Chinese::A Course in Contemporary Chinese" },
-    { name: "meaning", deck: "Chinese::A Course in Contemporary Chinese" },
+    { name: "meaning", deck: "Chinese::Phrases" },
     { name: "listening", deck: "Chinese::Listening" },
   ],
 };
