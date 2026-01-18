@@ -8,6 +8,7 @@
     "dev": "react-router dev --port 5173",
     "start": "react-router-serve ./build/server/index.js",
     "test": "jest",
+    "test:python": "uv run --script utils/hanzi/test_connect_dots_notes.py",
     "typecheck": "react-router typegen && tsc && npm run typecheck --prefix public/tone_trainer",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"

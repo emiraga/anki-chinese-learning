@@ -234,6 +234,50 @@ class ConnectDotsNote:
         """Get comma-separated right elements, sorted by corresponding left"""
         return ", ".join([escape_comma(r) for _, r in self.get_sorted_pairs()])
 
+    def split_if_needed(self, max_items: int = 10) -> list['ConnectDotsNote']:
+        """
+        Split into multiple notes if there are more than max_items.
+
+        Args:
+            max_items: Maximum items per note before splitting
+
+        Returns:
+            List of ConnectDotsNote objects (may be just [self] if no split needed)
+        """
+        if len(self.left) <= max_items:
+            return [self]
+
+        # Get sorted pairs for consistent splitting
+        sorted_pairs = self.get_sorted_pairs()
+
+        # Calculate number of notes needed (ceiling division)
+        num_notes = -(-len(sorted_pairs) // max_items)
+
+        # Items per note (approximately equal distribution)
+        items_per_note = len(sorted_pairs) // num_notes
+        remainder = len(sorted_pairs) % num_notes
+
+        notes = []
+        index = 0
+        for i in range(num_notes):
+            # Distribute remainder across first 'remainder' notes
+            count = items_per_note + (1 if i < remainder else 0)
+
+            # Determine key: first note keeps original, others get :2, :3, etc.
+            if i == 0:
+                key = self.key
+            else:
+                key = f"{self.key}:{i + 1}"
+
+            pairs_slice = sorted_pairs[index:index + count]
+            left_slice = [left for left, _ in pairs_slice]
+            right_slice = [right for _, right in pairs_slice]
+
+            notes.append(ConnectDotsNote(key=key, left=left_slice, right=right_slice))
+            index += count
+
+        return notes
+
 
 class ConnectDotsGenerator(ABC):
     """Base class for generating ConnectDots notes"""
@@ -572,28 +616,32 @@ class ConnectDotsManager:
                 continue
 
             for note in notes:
-                processed_keys.add(note.key)
-                try:
-                    existing = existing_notes.get(note.key)
+                # Split notes that have more than 10 items
+                split_notes = note.split_if_needed(max_items=10)
 
-                    if existing:
-                        # Check if content changed
-                        new_left = note.left_str()
-                        new_right = note.right_str()
+                for split_note in split_notes:
+                    processed_keys.add(split_note.key)
+                    try:
+                        existing = existing_notes.get(split_note.key)
 
-                        if existing['left'] == new_left and existing['right'] == new_right:
-                            print(f"  Unchanged: {note.key}")
-                            stats['unchanged'] += 1
+                        if existing:
+                            # Check if content changed
+                            new_left = split_note.left_str()
+                            new_right = split_note.right_str()
+
+                            if existing['left'] == new_left and existing['right'] == new_right:
+                                print(f"  Unchanged: {split_note.key}")
+                                stats['unchanged'] += 1
+                            else:
+                                self.update_note(existing['noteId'], split_note)
+                                stats['updated'] += 1
                         else:
-                            self.update_note(existing['noteId'], note)
-                            stats['updated'] += 1
-                    else:
-                        self.create_note(note)
-                        stats['created'] += 1
+                            self.create_note(split_note)
+                            stats['created'] += 1
 
-                except Exception as e:
-                    print(f"  Error processing note '{note.key}': {e}")
-                    stats['errors'] += 1
+                    except Exception as e:
+                        print(f"  Error processing note '{split_note.key}': {e}")
+                        stats['errors'] += 1
 
         # Check for untracked notes
         untracked_keys = set(existing_notes.keys()) - processed_keys
