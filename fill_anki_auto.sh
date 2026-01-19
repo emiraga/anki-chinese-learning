@@ -2,7 +2,7 @@
 
 set -x
 
-./utils/hanzi/fill_hanzi_notes.py
+./utils/hanzi/fill_hanzi_chars.py
 ./utils/hanzi/clean_notes.py
 ./utils/hanzi/connect_dots_notes.py
 ./utils/hanzi/fill_props_field.py
