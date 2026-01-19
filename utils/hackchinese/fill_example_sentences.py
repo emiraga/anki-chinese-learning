@@ -162,6 +162,65 @@ def can_use_sentence(sentence_text: str, learned_chars: Set[str]) -> bool:
     return True
 
 
+ANKI_SENTENCE_NOTE_TYPES = ["TOCFL", "Dangdai", "MyWords"]
+
+
+def load_anki_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, str]]]:
+    """
+    Load sentences/words from Anki note types (TOCFL, Dangdai, MyWords).
+    These have higher priority than HackChinese data.
+
+    Args:
+        learned_chars: Set of learned characters
+
+    Returns:
+        Dict mapping character to list of (traditional, meaning) tuples
+    """
+    char_sentences: Dict[str, List[Tuple[str, str]]] = {}
+    total_sentences = 0
+
+    for note_type in ANKI_SENTENCE_NOTE_TYPES:
+        search_query = f'note:{note_type} -is:suspended'
+        response = anki_connect_request("findNotes", {"query": search_query})
+
+        if not response or not response.get("result"):
+            print(f"No {note_type} notes found for sentences")
+            continue
+
+        note_ids = response["result"]
+        print(f"Found {len(note_ids)} {note_type} notes for sentences")
+
+        notes_info = anki_connect_request("notesInfo", {"notes": note_ids})
+
+        if not notes_info or not notes_info.get("result"):
+            continue
+
+        for note_info in notes_info["result"]:
+            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            meaning = note_info['fields'].get('Meaning', {}).get('value', '').strip()
+
+            if not traditional or not meaning:
+                continue
+
+            # Check if all characters in this word are learned
+            if not can_use_sentence(traditional, learned_chars):
+                continue
+
+            # Add this word to all learned characters that appear in it
+            for char in traditional:
+                if char in learned_chars:
+                    if char not in char_sentences:
+                        char_sentences[char] = []
+
+                    sentence_tuple = (traditional, meaning)
+                    if sentence_tuple not in char_sentences[char]:
+                        char_sentences[char].append(sentence_tuple)
+                        total_sentences += 1
+
+    print(f"Loaded {total_sentences} Anki sentences for {len(char_sentences)} characters")
+    return char_sentences
+
+
 def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tuple[str, str]]]]:
     """
     Load all sentences and compounds from HackChinese word JSON files, grouped by character
@@ -244,29 +303,55 @@ def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tupl
     return char_data
 
 
-def generate_example_sentences_html(sentences: List[Tuple[str, str]], compounds: List[Tuple[str, str]]) -> str:
+def generate_example_sentences_html(
+    anki_sentences: List[Tuple[str, str]],
+    sentences: List[Tuple[str, str]],
+    compounds: List[Tuple[str, str]]
+) -> str:
     """
-    Generate HTML for Example sentences field (includes sentences and compounds)
+    Generate HTML for Example sentences field (includes anki sentences, HackChinese sentences and compounds)
 
     Args:
-        sentences (List[Tuple[str, str]]): List of (traditional, english) tuples for sentences
-        compounds (List[Tuple[str, str]]): List of (traditional, english) tuples for compounds
+        anki_sentences (List[Tuple[str, str]]): List of (traditional, english) tuples from Anki notes (highest priority)
+        sentences (List[Tuple[str, str]]): List of (traditional, english) tuples for HackChinese sentences
+        compounds (List[Tuple[str, str]]): List of (traditional, english) tuples for HackChinese compounds
 
     Returns:
         str: HTML string
     """
-    if not sentences and not compounds:
+    if not anki_sentences and not sentences and not compounds:
         return ""
 
     html_parts = []
+    seen_traditional: Set[str] = set()
 
-    # Add sentences
+    # Add Anki sentences first (highest priority)
+    if anki_sentences:
+        for trad, eng in anki_sentences[0:10]:
+            html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+            seen_traditional.add(trad)
+
+    # Add HackChinese sentences (skip duplicates)
     if sentences:
-        for trad, eng in sentences[0:10]:
-            html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+        count = 0
+        for trad, eng in sentences:
+            if trad not in seen_traditional:
+                html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+                seen_traditional.add(trad)
+                count += 1
+                if count >= 10:
+                    break
+
+    # Add HackChinese compounds (skip duplicates)
     if compounds:
-        for trad, eng in compounds[0:10]:
-            html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+        count = 0
+        for trad, eng in compounds:
+            if trad not in seen_traditional:
+                html_parts.append(f"<p><b>{trad}</b><br>{eng}</p>")
+                seen_traditional.add(trad)
+                count += 1
+                if count >= 10:
+                    break
 
     return "\n".join(html_parts)
 
@@ -289,7 +374,11 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         print("No learned characters found. Cannot proceed.")
         return
 
-    # Load all sentences and compounds
+    # Load Anki sentences (highest priority)
+    print("\nLoading sentences from Anki notes (TOCFL, Dangdai, MyWords)...")
+    anki_sentences = load_anki_sentences(learned_chars)
+
+    # Load all sentences and compounds from HackChinese
     print("\nLoading sentences and compounds from HackChinese data...")
     char_data = load_all_word_data(learned_chars)
 
@@ -359,16 +448,19 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
             # Get current field value
             current_value = note_info['fields'].get('Example sentences', {}).get('value', '').strip()
 
-            # Get sentences and compounds for this character
+            # Get Anki sentences for this character (highest priority)
+            char_anki_sentences = anki_sentences.get(char, [])
+
+            # Get HackChinese sentences and compounds for this character
             char_info = char_data.get(char, {"sentences": [], "compounds": []})
             sentences = char_info["sentences"]
             compounds = char_info["compounds"]
 
-            if not sentences and not compounds:
+            if not char_anki_sentences and not sentences and not compounds:
                 no_sentences_count += 1
                 new_html = ""
             else:
-                new_html = generate_example_sentences_html(sentences, compounds)
+                new_html = generate_example_sentences_html(char_anki_sentences, sentences, compounds)
 
             # Check if update is needed
             if current_value == new_html:
@@ -377,8 +469,10 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
 
             if dry_run:
                 print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Would update Example sentences")
-                print(f"  Found {len(sentences)} sentences, {len(compounds)} compounds")
-                if sentences:
+                print(f"  Found {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese sentences, {len(compounds)} compounds")
+                if char_anki_sentences:
+                    print(f"  First Anki sentence: {char_anki_sentences[0][0]}")
+                elif sentences:
                     print(f"  First sentence: {sentences[0][0]}")
                 elif compounds:
                     print(f"  First compound: {compounds[0][0]}")
@@ -386,7 +480,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
             else:
                 # Update the note
                 update_note_field(note_id, "Example sentences", new_html)
-                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(sentences)} sentences, {len(compounds)} compounds")
+                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese, {len(compounds)} compounds")
                 updated_count += 1
 
         except Exception as e:
