@@ -148,9 +148,9 @@ def check_traditional_exists(traditional):
         raise Exception(f"Failed to check if Traditional field exists: {error}")
 
 
-def create_my_words_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::Phrases", set_due_today=True):
+def create_tocfl_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::Phrases", set_due_today=True):
     """
-    Create a new MyWords note
+    Create a new TOCFL note
 
     Args:
         traditional (str): Traditional Chinese text
@@ -173,7 +173,7 @@ def create_my_words_note(traditional, pinyin, zhuyin, meaning, deck_name="Chines
     response = anki_connect_request("addNote", {
         "note": {
             "deckName": deck_name,
-            "modelName": "MyWords",
+            "modelName": "TOCFL",
             "fields": {
                 "Traditional": traditional,
                 "Pinyin": pinyin,
@@ -230,10 +230,10 @@ def create_my_words_note(traditional, pinyin, zhuyin, meaning, deck_name="Chines
 
 def main():
     """
-    Main function to add a word to Anki MyWords note type
+    Main function to add a word to Anki TOCFL note type
     """
     parser = argparse.ArgumentParser(
-        description="Add a Chinese word to Anki MyWords note type with automatic translation and pinyin generation"
+        description="Add a Chinese word to Anki TOCFL note type with automatic translation and pinyin generation"
     )
     parser.add_argument(
         "traditional",
@@ -241,8 +241,8 @@ def main():
     )
     parser.add_argument(
         "--note",
-        default="MyWords",
-        help="Note type to use (default: MyWords)"
+        default="TOCFL",
+        help="Note type to use (default: TOCFL)"
     )
     parser.add_argument(
         "--deck",
@@ -270,8 +270,8 @@ def main():
 
     args = parser.parse_args()
 
-    if args.note != "MyWords":
-        print("⚠ Warning: This script is designed for MyWords note type. Other note types may not work correctly.")
+    if args.note != "TOCFL":
+        print("⚠ Warning: This script is designed for TOCFL note type. Other note types may not work correctly.")
 
     print(f"=== Adding word to Anki ({args.note}) ===")
     print(f"Traditional: {args.traditional}")
@@ -349,7 +349,7 @@ def main():
 
         # Step 3: Create the note
         print(f"\n⋯ Creating note in deck '{args.deck}'...")
-        note_id = create_my_words_note(
+        note_id = create_tocfl_note(
             traditional=args.traditional,
             pinyin=pinyin,
             zhuyin=zhuyin,
