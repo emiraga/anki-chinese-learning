@@ -52,42 +52,6 @@ function TodoPhrases() {
   );
 }
 
-function SuspendedMyWords() {
-  const [suspended, setSuspended] = useState<NoteInfo[] | undefined>(undefined);
-
-  useEffect(() => {
-    const load = async () => {
-      const notesId = await anki.note.findNotes({
-        query: "note:MyWords is:suspended",
-      });
-      const notes = await anki.note.notesInfo({ notes: notesId });
-      setSuspended(notes);
-    };
-    load();
-  }, []);
-
-  if (!suspended) {
-    return <div>Loading...</div>;
-  }
-
-  if (suspended.length === 0) {
-    return undefined;
-  }
-
-  return (
-    <>
-      <h3 className="font-serif text-3xl">Suspended my words:</h3>
-      {suspended.map((note, i) => (
-        <div key={i}>
-          🚨 Suspended phrase:{" "}
-          <PhraseLink value={note.fields["Traditional"].value} /> -{" "}
-          {note.fields["Meaning"].value}
-        </div>
-      ))}
-    </>
-  );
-}
-
 export function SearchMorePhrases({
   noteTypes: noteTypes,
   withTags,
@@ -235,9 +199,6 @@ function NextCharsByFrequency({}: {}) {
 export const MorePhrases: React.FC<{}> = ({}) => {
   return (
     <>
-      <section className="block m-4">
-        <SuspendedMyWords />
-      </section>
       <section className="block m-4">
         <TodoPhrases />
       </section>

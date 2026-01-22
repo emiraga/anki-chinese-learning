@@ -159,75 +159,47 @@ function IntegrityPropNames() {
   );
 }
 
-function DuplicatePhrase({
-  source,
-  fromOthers,
-}: {
-  source: string;
-  fromOthers: string[];
-}) {
+function DuplicatePhrase({ source }: { source: string }) {
   const { phrases } = useOutletContext<OutletContext>();
   const [deletedNotes, setDeletedNotes] = useState<Set<number>>(new Set());
 
-  const otherPhrases = phrases.filter(
-    (phrase) => phrase.source !== source && fromOthers.includes(phrase.source),
+  // Find phrases from the specified source
+  const sourcePhrases = phrases.filter((phrase) => phrase.source === source);
+
+  // Count occurrences of each traditional value
+  const traditionalCounts = new Map<string, number>();
+  for (const phrase of sourcePhrases) {
+    traditionalCounts.set(
+      phrase.traditional,
+      (traditionalCounts.get(phrase.traditional) || 0) + 1,
+    );
+  }
+
+  // Find duplicates (traditional values that appear more than once)
+  const duplicateTraditionals = new Set(
+    [...traditionalCounts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([traditional]) => traditional),
   );
 
-  const other = new Set(otherPhrases.map((phrase) => phrase.traditional));
-
-  const filtered = phrases
-    .filter(
-      (phrase) => phrase.source === source && other.has(phrase.traditional),
-    )
+  const filtered = sourcePhrases
+    .filter((phrase) => duplicateTraditionals.has(phrase.traditional))
     .filter((phrase) => !deletedNotes.has(phrase.noteId));
 
   if (filtered.length === 0) {
     return undefined;
   }
 
-  // Check for meaning substring matches
-  const meaningSubstringMatches = filtered.filter((phrase) => {
-    const otherVariants = otherPhrases.filter(
-      (p) => p.traditional === phrase.traditional,
-    );
+  // Group by traditional for display
+  const groupedByTraditional = new Map<string, typeof filtered>();
+  for (const phrase of filtered) {
+    const group = groupedByTraditional.get(phrase.traditional) || [];
+    group.push(phrase);
+    groupedByTraditional.set(phrase.traditional, group);
+  }
 
-    // Split source meaning by comma and check if all parts appear in other translations
-    const sourceParts = phrase.meaning
-      .toLowerCase()
-      .split(",")
-      .map((part) => part.trim());
-
-    return otherVariants.some((variant) => {
-      const variantMeaning = variant.meaning.toLowerCase();
-
-      // Check if the entire source meaning is a substring
-      if (variantMeaning.includes(phrase.meaning.toLowerCase())) {
-        return true;
-      }
-
-      // Check if all source parts appear in the variant meaning
-      return (
-        sourceParts.length > 1 &&
-        sourceParts.every(
-          (part) => part.length > 0 && variantMeaning.includes(part),
-        )
-      );
-    });
-  });
-
-  // Sort filtered to show meaning matches first
-  const sortedFiltered = [
-    ...meaningSubstringMatches,
-    ...filtered.filter((phrase) => !meaningSubstringMatches.includes(phrase)),
-  ];
-
-  const handleDeleteNote = async (
-    noteId: number,
-    traditional: string,
-    isMeaningSubstring: boolean = false,
-  ) => {
+  const handleDeleteNote = async (noteId: number, traditional: string) => {
     if (
-      isMeaningSubstring ||
       confirm(
         `Delete ${source} note for "${traditional}"? This cannot be undone.`,
       )
@@ -241,16 +213,19 @@ function DuplicatePhrase({
     }
   };
 
+  // Get unique traditional values for display
+  const uniqueTraditionals = [...groupedByTraditional.keys()];
+
   return (
     <>
       <h3 className="font-serif text-3xl">
-        Duplicate phrase ({filtered.length}):
+        Duplicate phrases in {source} ({uniqueTraditionals.length} duplicates,{" "}
+        {filtered.length} total entries):
       </h3>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse border border-gray-300 dark:border-gray-600 mt-4 table-fixed">
           <colgroup>
             <col className="w-32" />
-            <col className="w-80" />
             <col className="w-auto" />
           </colgroup>
           <thead>
@@ -259,160 +234,119 @@ function DuplicatePhrase({
                 Traditional
               </th>
               <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
-                Source Translation
-              </th>
-              <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 text-left">
-                Other Translations
+                Duplicate Entries
               </th>
             </tr>
           </thead>
           <tbody>
-            {sortedFiltered.map((phrase, i) => {
-              const otherVariants = otherPhrases.filter(
-                (p) => p.traditional === phrase.traditional,
-              );
+            {uniqueTraditionals.map((traditional) => {
+              const duplicates = groupedByTraditional.get(traditional) || [];
 
-              const hasPinyinMismatch = otherVariants.some(
-                (variant) => variant.pinyin !== phrase.pinyin,
-              );
-
-              const isMeaningSubstring =
-                meaningSubstringMatches.includes(phrase);
+              // Check if there are pinyin mismatches among duplicates
+              const pinyinValues = new Set(duplicates.map((d) => d.pinyin));
+              const hasPinyinMismatch = pinyinValues.size > 1;
 
               return (
                 <tr
-                  key={i}
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 h-32 ${
+                  key={traditional}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
                     hasPinyinMismatch
                       ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
                       : ""
                   }`}
                 >
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 font-medium align-top">
-                    <div className="flex flex-col gap-2 h-full justify-between">
+                    <div className="flex flex-col gap-2">
                       <div>
-                        <PhraseLink value={phrase.traditional} />
+                        <PhraseLink value={traditional} />
                       </div>
                       <button
                         className="rounded-xl bg-gray-100 dark:bg-gray-900 px-2 py-1 text-xs text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors self-start"
                         onClick={async () => {
                           await ankiOpenBrowse(
-                            `Traditional:${phrase.traditional} -is:new -is:suspended`,
+                            `Traditional:${traditional} note:${source}`,
                           );
                         }}
                       >
-                        All notes
+                        All in Anki
                       </button>
                     </div>
                   </td>
                   <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 align-top">
-                    <div className="text-sm h-full flex flex-col justify-between">
-                      <div>
-                        <div className="font-medium">
-                          {source}: <PhraseMeaning meaning={phrase.meaning} />
-                          {isMeaningSubstring && " ✅"}
-                        </div>
-                        <div
-                          className={`${
-                            hasPinyinMismatch
-                              ? "text-red-600 dark:text-red-400 font-semibold"
-                              : "text-gray-600 dark:text-gray-400"
-                          }`}
-                        >
-                          {hasPinyinMismatch && "⚠️ "}
-                          {phrase.pinyin}
-                          <AnkiAudioPlayer audioField={phrase.audio} />
-                          {hasPinyinMismatch && " ❗"}
-                        </div>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        <button
-                          className="rounded-xl bg-blue-100 dark:bg-blue-900 px-2 py-1 text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                          onClick={async () => {
-                            await ankiOpenBrowse(
-                              `Traditional:${phrase.traditional} note:${source}`,
-                            );
-                          }}
-                        >
-                          anki
-                        </button>
-                        <button
-                          className="rounded-xl bg-red-100 dark:bg-red-900 px-2 py-1 text-xs text-red-500 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-                          onClick={() =>
-                            handleDeleteNote(
-                              phrase.noteId,
-                              phrase.traditional,
-                              isMeaningSubstring,
-                            )
-                          }
-                        >
-                          delete
-                        </button>
-                        {phrase.audio &&
-                          otherVariants.some((v) => v.source === "TOCFL") && (
-                            <button
-                              className="rounded-xl bg-purple-100 dark:bg-purple-900 px-2 py-1 text-xs text-purple-500 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
-                              onClick={async () => {
-                                const tocflVariant = otherVariants.find(
-                                  (v) => v.source === "TOCFL",
-                                );
-                                if (!tocflVariant) return;
-                                await anki.note.updateNoteFields({
-                                  note: {
-                                    id: tocflVariant.noteId,
-                                    fields: { Audio: phrase.audio },
-                                  },
-                                });
-                                alert("Audio copied to TOCFL note!");
-                              }}
-                            >
-                              Use this sound
-                            </button>
-                          )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-4 py-2 align-top">
-                    <div className="h-full flex flex-col justify-between">
-                      <div>
-                        {otherVariants.map((variant, j) => {
-                          const isPinyinDifferent =
-                            variant.pinyin !== phrase.pinyin;
-                          return (
-                            <div key={j} className="text-sm mb-2 last:mb-0">
-                              <div className="font-medium">
-                                {variant.source}:{" "}
-                                <PhraseMeaning meaning={variant.meaning} />
-                              </div>
-                              <div
-                                className={`${
-                                  isPinyinDifferent
-                                    ? "text-red-600 dark:text-red-400 font-semibold"
-                                    : "text-gray-600 dark:text-gray-400"
-                                }`}
-                              >
-                                {isPinyinDifferent && "⚠️ "}
-                                {variant.pinyin}
-                                <AnkiAudioPlayer audioField={variant.audio} />
-                                {isPinyinDifferent && " ❗"}
-                              </div>
+                    <div className="space-y-3">
+                      {duplicates.map((phrase, j) => {
+                        const isPinyinDifferent =
+                          hasPinyinMismatch &&
+                          phrase.pinyin !== duplicates[0].pinyin;
+                        return (
+                          <div
+                            key={j}
+                            className="text-sm border-b border-gray-200 dark:border-gray-700 pb-2 last:border-b-0"
+                          >
+                            <div className="font-medium">
+                              <PhraseMeaning meaning={phrase.meaning} />
+                              {phrase.partOfSpeech && (
+                                <span className="ml-2 text-xs text-purple-600 dark:text-purple-400">
+                                  [{phrase.partOfSpeech}]
+                                </span>
+                              )}
                             </div>
-                          );
-                        })}
-                      </div>
-                      <button
-                        className="rounded-xl bg-green-100 dark:bg-green-900 px-2 py-1 text-xs text-green-500 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 transition-colors mt-1 self-start"
-                        onClick={async () => {
-                          const otherSources = otherVariants
-                            .map((v) => v.source)
-                            .join(" OR note:");
-                          await ankiOpenBrowse(
-                            `Traditional:${phrase.traditional} (note:${otherSources})`,
-                          );
-                        }}
-                      >
-                        anki
-                      </button>
+                            <div
+                              className={`${
+                                isPinyinDifferent
+                                  ? "text-red-600 dark:text-red-400 font-semibold"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }`}
+                            >
+                              {isPinyinDifferent && "⚠️ "}
+                              {phrase.pinyin}
+                              <AnkiAudioPlayer audioField={phrase.audio} />
+                              {isPinyinDifferent && " ❗"}
+                            </div>
+                            <div className="flex gap-1 mt-1">
+                              <button
+                                className="rounded-xl bg-blue-100 dark:bg-blue-900 px-2 py-1 text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                onClick={async () => {
+                                  await ankiOpenBrowse(`nid:${phrase.noteId}`);
+                                }}
+                              >
+                                anki
+                              </button>
+                              <button
+                                className="rounded-xl bg-red-100 dark:bg-red-900 px-2 py-1 text-xs text-red-500 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                                onClick={() =>
+                                  handleDeleteNote(phrase.noteId, traditional)
+                                }
+                              >
+                                delete
+                              </button>
+                              {phrase.audio && duplicates.length > 1 && (
+                                <button
+                                  className="rounded-xl bg-purple-100 dark:bg-purple-900 px-2 py-1 text-xs text-purple-500 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+                                  onClick={async () => {
+                                    const others = duplicates.filter(
+                                      (d) => d.noteId !== phrase.noteId,
+                                    );
+                                    for (const other of others) {
+                                      await anki.note.updateNoteFields({
+                                        note: {
+                                          id: other.noteId,
+                                          fields: { Audio: phrase.audio },
+                                        },
+                                      });
+                                    }
+                                    alert(
+                                      `Audio copied to ${others.length} other note(s)!`,
+                                    );
+                                  }}
+                                >
+                                  Use this audio
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </td>
                 </tr>
@@ -1030,8 +964,8 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
         <IntegrityCharacterZhuyin />
       </section>
       <section className="block m-4">
-        <DuplicatePhrase source="MyWords" fromOthers={["TOCFL"]} />
-        <DuplicatePhrase source="Dangdai" fromOthers={["TOCFL", "MyWords"]} />
+        <DuplicatePhrase source="TOCFL" />
+        <DuplicatePhrase source="Hanzi" />
       </section>
 
       <section className="block m-4">
@@ -1051,7 +985,6 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
         <section className="block m-4">
           <MixedSuspension noteType="TOCFL" notesByCards={notesByCards} />
           <MixedSuspension noteType="Hanzi" notesByCards={notesByCards} />
-          <MixedSuspension noteType="MyWords" notesByCards={notesByCards} />
         </section>
       )}
       {!loading && (
