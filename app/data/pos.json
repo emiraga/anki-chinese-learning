@@ -1,0 +1,41 @@
+{
+  "Adv": ["adverb", "副詞", "很、不、常、到處、也、 就、難道"],
+  "Conj": ["conjunction", "連詞", "和、跟，而且、雖然、 因為"],
+  "Det": ["determiner", "限定詞", "這、那、某、每、哪"],
+  "M": ["measure", "量詞", "個、張、碗、次、頓、 公尺"],
+  "N": ["noun", "名詞", "水、五、昨天、學校、 他、幾"],
+  "Prep": ["preposition", "介詞", "從、對、向、跟、在、 給"],
+  "Ptc": ["particle", "助詞", "的、得、啊、嗎、完、 掉、把、喂"],
+  "V": ["verb", "動詞", "買、做、說"],
+  "Vi": ["intransitive action verbs", "不及物動作動詞", "跑、坐、睡、笑"],
+  "V-sep": [
+    "intransitive action verbs, separable",
+    "不及物動作離合詞",
+    "唱歌、上網、打架"
+  ],
+  "Vs": ["intransitive state verbs", "不及物狀態動詞", "冷、高、漂亮"],
+  "Vst": ["transitive state verbs", "及物狀態動詞", "關心、喜歡、同意"],
+  "Vs-attr": [
+    "intransitive state verbs, attributive only",
+    "唯定不及物狀態動詞",
+    "野生、公共、新興"
+  ],
+  "Vs-pred": [
+    "intransitive state verbs, predicative only",
+    "唯謂不及物狀態動詞",
+    "夠、多、少"
+  ],
+  "Vs-sep": [
+    "intransitive state verbs, separable",
+    "不及物狀態離合詞",
+    "放心、幽默、生氣"
+  ],
+  "Vaux": ["auxiliary verbs", "助動詞", "會、可以、應該"],
+  "Vp": ["intransitive process verbs", "不及物變化動詞", "破、壞、死、感冒"],
+  "Vpt": ["transitive process verbs", "及物變化動詞", "忘記、變成、丟"],
+  "Vp-sep": [
+    "intransitive process verbs, separable",
+    "不及物變化離合詞",
+    "結婚、生病、畢業"
+  ]
+}
