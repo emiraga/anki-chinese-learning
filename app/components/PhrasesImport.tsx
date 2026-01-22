@@ -19,7 +19,7 @@ export interface ExtractedPhrase {
 const PhrasesImport: React.FC = () => {
   const [inputText, setInputText] = useState<string>("");
   const [extractedPhrases, setExtractedPhrases] = useState<ExtractedPhrase[]>(
-    []
+    [],
   );
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isAddingToAnki, setIsAddingToAnki] = useState<boolean>(false);
@@ -141,7 +141,7 @@ IMPORTANT RULES:
       if (parsedResponse.phrases && parsedResponse.phrases.length > 0) {
         // Check for duplicates using direct Anki search
         const traditionalPhrases = parsedResponse.phrases.map(
-          (p: ExtractedPhrase) => p.traditional
+          (p: ExtractedPhrase) => p.traditional,
         );
         const searchQuery = traditionalPhrases
           .map((phrase) => `Traditional:"${phrase}"`)
@@ -170,7 +170,7 @@ IMPORTANT RULES:
           (phrase: ExtractedPhrase) => ({
             ...phrase,
             isDuplicate: ankiDuplicates.has(phrase.traditional),
-          })
+          }),
         );
         setExtractedPhrases(phrasesWithDuplicateCheck);
       } else {
@@ -179,7 +179,7 @@ IMPORTANT RULES:
     } catch (e) {
       console.error(e);
       setError(
-        "Failed to extract phrases. Please check your API key and network connection."
+        "Failed to extract phrases. Please check your API key and network connection.",
       );
     } finally {
       setIsProcessing(false);
@@ -195,7 +195,7 @@ IMPORTANT RULES:
 
   const handleDeletePhrase = (indexToDelete: number) => {
     setExtractedPhrases((phrases) =>
-      phrases.filter((_, index) => index !== indexToDelete)
+      phrases.filter((_, index) => index !== indexToDelete),
     );
   };
 
@@ -237,6 +237,7 @@ IMPORTANT RULES:
         deckName: deckName,
         modelName: noteType.noteType,
         fields: {
+          ID: "my_" + phrase.traditional,
           Traditional: phrase.traditional,
           Pinyin: phrase.pinyin,
           Meaning: phrase.meaning,
@@ -258,7 +259,7 @@ IMPORTANT RULES:
         if (successCount > 0) {
           // Get successful note IDs
           const successfulNoteIds = results.filter(
-            (id) => id !== null
+            (id) => id !== null,
           ) as string[];
 
           // Get cards for the created notes and set due date to today
@@ -283,7 +284,7 @@ IMPORTANT RULES:
           setAnkiSuccess(
             `Successfully added ${successCount} phrases to Anki${
               failureCount > 0 ? ` (${failureCount} failed)` : ""
-            }.`
+            }.`,
           );
           // Remove successfully added phrases
           const failedIndices = new Set();
@@ -292,8 +293,10 @@ IMPORTANT RULES:
           });
           setExtractedPhrases((phrases) =>
             phrases.filter((phrase) =>
-              failedIndices.has(extractedPhrases.findIndex((p) => p === phrase))
-            )
+              failedIndices.has(
+                extractedPhrases.findIndex((p) => p === phrase),
+              ),
+            ),
           );
         } else {
           setError("Failed to add any phrases to Anki.");
@@ -304,7 +307,7 @@ IMPORTANT RULES:
     } catch (e) {
       console.error(e);
       setError(
-        "Error adding phrases to Anki. Please check your Anki connection."
+        "Error adding phrases to Anki. Please check your Anki connection.",
       );
     } finally {
       setIsAddingToAnki(false);
@@ -370,8 +373,8 @@ IMPORTANT RULES:
           {isProcessing
             ? "Extracting..."
             : phrasesLoading
-            ? "Loading existing phrases..."
-            : "Extract Phrases"}
+              ? "Loading existing phrases..."
+              : "Extract Phrases"}
         </button>
         <button
           onClick={handleClear}
