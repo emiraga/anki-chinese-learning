@@ -175,6 +175,7 @@ def create_tocfl_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::
             "deckName": deck_name,
             "modelName": "TOCFL",
             "fields": {
+                "ID": "my_" + traditional,
                 "Traditional": traditional,
                 "Pinyin": pinyin,
                 "Zhuyin": zhuyin,

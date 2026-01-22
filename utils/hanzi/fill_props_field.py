@@ -241,8 +241,8 @@ def find_notes_with_tags(note_type):
     Returns:
         list: List of note IDs
     """
-    # Search for notes with any of the relevant tags, or non-empty POS with empty POS Description
-    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:"))'
+    # Search for notes with any of the relevant tags, non-empty POS with empty POS Description, or empty ID
+    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -351,6 +351,14 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
 
         if current_pos_desc != new_pos_desc:
             fields_to_update['POS Description'] = new_pos_desc
+
+    # Process ID field - only if empty, set to "my_" + Traditional
+    if 'ID' in note_info['fields'] and 'Traditional' in note_info['fields']:
+        current_id = note_info['fields'].get('ID', {}).get('value', '').strip()
+        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+
+        if not current_id and traditional:
+            fields_to_update['ID'] = f"my_{traditional}"
 
     # Only update if there are changes
     if not fields_to_update:
