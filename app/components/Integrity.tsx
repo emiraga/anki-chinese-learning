@@ -14,6 +14,7 @@ import pinyinToZhuyin from "zhuyin-improved";
 import { LoadingProgressBar } from "./LoadingProgressBar";
 import { PhraseLink, PhraseMeaning } from "./Phrase";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
+import { POSList } from "./POSDisplay";
 import {
   getCharacterMnemonicTags,
   shouldHaveMnemonicTags,
@@ -286,8 +287,8 @@ function DuplicatePhrase({ source }: { source: string }) {
                             <div className="font-medium">
                               <PhraseMeaning meaning={phrase.meaning} />
                               {phrase.partOfSpeech && (
-                                <span className="ml-2 text-xs text-purple-600 dark:text-purple-400">
-                                  [{phrase.partOfSpeech}]
+                                <span className="ml-2 text-xs">
+                                  [<POSList posString={phrase.partOfSpeech} />]
                                 </span>
                               )}
                             </div>

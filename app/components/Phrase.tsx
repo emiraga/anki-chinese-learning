@@ -5,6 +5,7 @@ import { Link, useOutletContext } from "react-router";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import type { OutletContext } from "~/data/types";
 import { HanziText } from "./HanziText";
+import { POSList } from "./POSDisplay";
 
 export const PhraseCard: React.FC<{ phraseHanzi: string }> = ({
   phraseHanzi,
@@ -154,11 +155,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                   <AnkiAudioPlayer audioField={phrase.audio} />
                 </td>
                 <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
-                  <span
-                    dangerouslySetInnerHTML={{
-                      __html: phrase.partOfSpeech || "",
-                    }}
-                  ></span>
+                  <POSList posString={phrase.partOfSpeech || ""} />
                 </td>
                 <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
                   <div className="max-w-md truncate">
