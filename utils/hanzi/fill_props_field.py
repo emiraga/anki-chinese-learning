@@ -6,7 +6,57 @@
 # ]
 # ///
 
+import json
+import os
 import requests
+
+
+def load_pos_mapping():
+    """
+    Load POS mapping from pos.json file
+
+    Returns:
+        dict: Dictionary mapping POS codes to [name, chinese_name, examples]
+    """
+    # Get the path to pos.json relative to this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    pos_json_path = os.path.join(script_dir, '..', '..', 'app', 'data', 'pos.json')
+
+    with open(pos_json_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def format_pos_description(pos_value, pos_mapping):
+    """
+    Format POS value into a description with name and examples
+
+    Args:
+        pos_value (str): The POS field value (may contain multiple values separated by "/")
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+
+    Returns:
+        tuple: (formatted_description, list of unknown POS codes)
+    """
+    if not pos_value or not pos_value.strip():
+        return "", []
+
+    pos_codes = [code.strip() for code in pos_value.split('/')]
+    descriptions = []
+    unknown_codes = []
+
+    for code in pos_codes:
+        if not code:
+            continue
+
+        if code in pos_mapping:
+            entry = pos_mapping[code]
+            name = entry[0]  # English name
+            examples = entry[2]  # Chinese examples
+            descriptions.append(f"{name} ({examples})")
+        else:
+            unknown_codes.append(code)
+
+    return "\n".join(descriptions), unknown_codes
 
 
 def anki_connect_request(action, params=None):
@@ -133,6 +183,8 @@ def extract_anki_tags(tags):
         "place::",
         "tone::",
         "TOCFL::",
+        "Dangdai::Lesson::",
+        "Dangdai::Name",
         "chinese::repeated-duplicated-prop",
         "chinese::not-learning-sound-yet",
         "chinese::multiple-pronounciation-character",
@@ -181,7 +233,7 @@ def load_prop_hanzi_mapping():
 
 def find_notes_with_tags(note_type):
     """
-    Find notes that have prop::, actor::, place::, or tone:: tags
+    Find notes that have prop::, actor::, place::, tone:: tags, or non-empty POS field
 
     Args:
         note_type (str): The note type to search
@@ -189,8 +241,8 @@ def find_notes_with_tags(note_type):
     Returns:
         list: List of note IDs
     """
-    # Search for notes with any of the relevant tags
-    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::*)'
+    # Search for notes with any of the relevant tags, or non-empty POS with empty POS Description
+    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:"))'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -249,13 +301,14 @@ def update_note_fields(note_id, fields_dict):
         return False
 
 
-def update_fields_for_note(note_info, prop_hanzi_map):
+def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
     """
-    Update Props, Mnemonic pegs, and Anki Tags fields for a single note based on its tags
+    Update Props, Mnemonic pegs, Anki Tags, and POS Description fields for a single note
 
     Args:
         note_info (dict): Note information dictionary
         prop_hanzi_map (dict): Dictionary mapping prop names to Hanzi characters
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
 
     Returns:
         bool: True if updated, False if skipped or failed
@@ -281,11 +334,23 @@ def update_fields_for_note(note_info, prop_hanzi_map):
     # Process Anki Tags field (remaining tags not matching special prefixes)
     current_anki_tags = note_info['fields'].get('Anki Tags', {}).get('value', '').strip()
     new_anki_tags = extract_anki_tags(tags)
-    if new_anki_tags:
-        print(note_info['fields'].get('Traditional', '?'), new_anki_tags)
-
     if current_anki_tags != new_anki_tags:
         fields_to_update['Anki Tags'] = new_anki_tags
+
+    # Process POS Description field
+    if 'POS' in note_info['fields'] and 'POS Description' in note_info['fields']:
+        current_pos = note_info['fields'].get('POS', {}).get('value', '').strip()
+        current_pos_desc = note_info['fields'].get('POS Description', {}).get('value', '').strip()
+        new_pos_desc, unknown_codes = format_pos_description(current_pos, pos_mapping)
+
+        if unknown_codes:
+            note_identifier = note_info['fields'].get('Traditional', {}).get('value', '') or \
+                              note_info['fields'].get('Hanzi', {}).get('value', '') or \
+                              str(note_id)
+            raise ValueError(f"Unknown POS codes in note {note_identifier}: {unknown_codes}")
+
+        if current_pos_desc != new_pos_desc:
+            fields_to_update['POS Description'] = new_pos_desc
 
     # Only update if there are changes
     if not fields_to_update:
@@ -307,7 +372,7 @@ def update_fields_for_note(note_info, prop_hanzi_map):
 
 def main():
     """
-    Main function to process all note types and update Props, Mnemonic pegs, and Anki Tags fields
+    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, and POS Description fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
@@ -315,6 +380,11 @@ def main():
 
     if not prop_hanzi_map:
         raise Exception("Failed to load prop to Hanzi mapping")
+
+    # Load the POS mapping
+    print("=== Loading POS mapping ===")
+    pos_mapping = load_pos_mapping()
+    print(f"Loaded {len(pos_mapping)} POS codes")
 
     note_types = ["Hanzi", "TOCFL", "Dangdai", "MyWords"]
     batch_size = 100
@@ -338,7 +408,7 @@ def main():
                 notes_info = get_notes_info(batch_ids)
 
                 for note_info in notes_info:
-                    if update_fields_for_note(note_info, prop_hanzi_map):
+                    if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
                         total_updated += 1
                     total_processed += 1
 
