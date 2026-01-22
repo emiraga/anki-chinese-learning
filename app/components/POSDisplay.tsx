@@ -49,13 +49,18 @@ export const POSList: React.FC<{ posString: string }> = ({ posString }) => {
   // Remove HTML tags and split by common separators
   const cleanString = posString.replace(/<[^>]*>/g, "").trim();
 
-  // Split by comma, semicolon, or space (common POS separators)
-  const posParts = cleanString.split(/[,;、\s]+/).filter(Boolean);
+  // Split by comma, semicolon, slash, or space (common POS separators)
+  const posParts = cleanString.split(/[,;、/\s]+/).filter(Boolean);
 
   return (
-    <span className="inline-flex flex-wrap gap-1">
+    <span className="inline-flex flex-wrap items-center gap-1">
       {posParts.map((part, index) => (
-        <POSDisplay key={index} posKey={part.trim()} />
+        <span key={index} className="inline-flex items-center">
+          {index > 0 && (
+            <span className="text-gray-400 dark:text-gray-500 mx-1">·</span>
+          )}
+          <POSDisplay posKey={part.trim()} />
+        </span>
       ))}
     </span>
   );
