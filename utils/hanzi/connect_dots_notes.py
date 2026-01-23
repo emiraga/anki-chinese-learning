@@ -822,6 +822,20 @@ def list_syllable_frequencies(top_n: int = 50) -> None:
     print_frequency_table("Syllable Frequency Analysis", data, "Syllable", top_n)
 
 
+def get_items_above_threshold(data: FrequencyData, min_count: int) -> list[str]:
+    """
+    Get items from frequency data that meet the minimum count threshold.
+
+    Args:
+        data: FrequencyData containing counts
+        min_count: Minimum count for an item to be included
+
+    Returns:
+        List of items meeting the threshold
+    """
+    return [item for item, count in data.counts.items() if count >= min_count]
+
+
 def get_sound_components_above_threshold(min_count: int = 5) -> list[str]:
     """
     Get sound components that have at least min_count characters.
@@ -833,7 +847,21 @@ def get_sound_components_above_threshold(min_count: int = 5) -> list[str]:
         List of sound component characters meeting the threshold
     """
     data = get_sound_component_frequencies()
-    return [component for component, count in data.counts.items() if count >= min_count]
+    return get_items_above_threshold(data, min_count)
+
+
+def get_syllables_above_threshold(min_count: int = 8) -> list[str]:
+    """
+    Get syllables that have at least min_count characters.
+
+    Args:
+        min_count: Minimum number of characters for a syllable to be included
+
+    Returns:
+        List of syllables meeting the threshold
+    """
+    data = get_syllable_frequencies()
+    return get_items_above_threshold(data, min_count)
 
 
 def main():
@@ -883,8 +911,11 @@ def main():
     for component in sound_components:
         generators.append(SoundComponentHanziToPinyin(component))
 
-    # Manual syllable generators
-    for syllable in ['shi', 'zhi', 'ji', 'xi', 'yi', 'li']:
+    # Auto-add syllables with 8+ characters
+    print("Finding syllables with 8+ characters...")
+    syllables = get_syllables_above_threshold(min_count=8)
+    print(f"Found {len(syllables)} syllables\n")
+    for syllable in syllables:
         generators.append(SyllableHanziToPinyin(syllable))
 
     # Manual tag generators
