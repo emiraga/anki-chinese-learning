@@ -188,6 +188,8 @@ def extract_anki_tags(tags):
         "chinese::repeated-duplicated-prop",
         "chinese::not-learning-sound-yet",
         "chinese::multiple-pronounciation-character",
+        "card-listening-ignored-on-purpose",
+        "card-meaning-ignored-on-purpose",
     )
     remaining_tags = [tag for tag in tags if not tag.startswith(special_prefixes)]
 
