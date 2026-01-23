@@ -214,6 +214,7 @@ class ConnectDotsNote:
     key: str
     left: list[str]
     right: list[str]
+    explanation: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
@@ -221,18 +222,28 @@ class ConnectDotsNote:
                 f"Left and Right must have equal lengths: "
                 f"left={len(self.left)}, right={len(self.right)}"
             )
+        if self.explanation and len(self.explanation) != len(self.left):
+            raise ValueError(
+                f"Explanation must have same length as Left/Right: "
+                f"explanation={len(self.explanation)}, left={len(self.left)}"
+            )
 
-    def get_sorted_pairs(self) -> list[tuple[str, str]]:
-        """Get (left, right) pairs sorted by left element"""
-        return sorted(zip(self.left, self.right), key=lambda x: x[0])
+    def get_sorted_tuples(self) -> list[tuple[str, str, str]]:
+        """Get (left, right, explanation) tuples sorted by left element"""
+        explanations = self.explanation if self.explanation else [''] * len(self.left)
+        return sorted(zip(self.left, self.right, explanations), key=lambda x: x[0])
 
     def left_str(self) -> str:
         """Get comma-separated left elements, sorted"""
-        return ", ".join([escape_comma(l) for l, _ in self.get_sorted_pairs()])
+        return ", ".join([escape_comma(l) for l, _, _ in self.get_sorted_tuples()])
 
     def right_str(self) -> str:
         """Get comma-separated right elements, sorted by corresponding left"""
-        return ", ".join([escape_comma(r) for _, r in self.get_sorted_pairs()])
+        return ", ".join([escape_comma(r) for _, r, _ in self.get_sorted_tuples()])
+
+    def explanation_str(self) -> str:
+        """Get comma-separated explanation elements, sorted by corresponding left"""
+        return ", ".join([escape_comma(e) for _, _, e in self.get_sorted_tuples()])
 
     def split_if_needed(self, max_items: int = 10) -> list['ConnectDotsNote']:
         """
@@ -247,15 +258,15 @@ class ConnectDotsNote:
         if len(self.left) <= max_items:
             return [self]
 
-        # Get sorted pairs for consistent splitting
-        sorted_pairs = self.get_sorted_pairs()
+        # Get sorted tuples for consistent splitting
+        sorted_tuples = self.get_sorted_tuples()
 
         # Calculate number of notes needed (ceiling division)
-        num_notes = -(-len(sorted_pairs) // max_items)
+        num_notes = -(-len(sorted_tuples) // max_items)
 
         # Items per note (approximately equal distribution)
-        items_per_note = len(sorted_pairs) // num_notes
-        remainder = len(sorted_pairs) % num_notes
+        items_per_note = len(sorted_tuples) // num_notes
+        remainder = len(sorted_tuples) % num_notes
 
         notes = []
         index = 0
@@ -269,11 +280,17 @@ class ConnectDotsNote:
             else:
                 key = f"{self.key}:{i + 1}"
 
-            pairs_slice = sorted_pairs[index:index + count]
-            left_slice = [left for left, _ in pairs_slice]
-            right_slice = [right for _, right in pairs_slice]
+            tuples_slice = sorted_tuples[index:index + count]
+            left_slice = [left for left, _, _ in tuples_slice]
+            right_slice = [right for _, right, _ in tuples_slice]
+            explanation_slice = [expl for _, _, expl in tuples_slice]
 
-            notes.append(ConnectDotsNote(key=key, left=left_slice, right=right_slice))
+            notes.append(ConnectDotsNote(
+                key=key,
+                left=left_slice,
+                right=right_slice,
+                explanation=explanation_slice if self.explanation else []
+            ))
             index += count
 
         return notes
@@ -321,20 +338,23 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
 
         left = []
         right = []
+        explanation = []
 
         for note in notes_info:
             traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
             pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+            meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
 
             if traditional and pinyin:
                 left.append(traditional)
                 right.append(pinyin)
+                explanation.append(meaning)
 
         if not left:
             return []
 
         key = f"{self.generator_type}:{self.sound_component}"
-        return [ConnectDotsNote(key=key, left=left, right=right)]
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
 
 
 class SyllableHanziToPinyin(ConnectDotsGenerator):
@@ -363,6 +383,7 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
 
         left = []
         right = []
+        explanation = []
 
         # Process in batches
         batch_size = 100
@@ -373,6 +394,7 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
             for note in notes_info:
                 traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
                 pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+                meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
 
                 if not traditional or not pinyin:
                     continue
@@ -386,12 +408,13 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
                 if syllable == self.syllable:
                     left.append(traditional)
                     right.append(pinyin)
+                    explanation.append(meaning)
 
         if not left:
             return []
 
         key = f"{self.generator_type}:{self.syllable}"
-        return [ConnectDotsNote(key=key, left=left, right=right)]
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
 
 
 class PropHanziToPinyin(ConnectDotsGenerator):
@@ -421,20 +444,23 @@ class PropHanziToPinyin(ConnectDotsGenerator):
 
         left = []
         right = []
+        explanation = []
 
         for note in notes_info:
             traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
             pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+            meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
 
             if traditional and pinyin:
                 left.append(traditional)
                 right.append(pinyin)
+                explanation.append(meaning)
 
         if not left:
             return []
 
         key = f"{self.generator_type}:{self.prop_name}"
-        return [ConnectDotsNote(key=key, left=left, right=right)]
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
 
 
 class TagTraditionalToMeaning(ConnectDotsGenerator):
@@ -521,6 +547,7 @@ class ConnectDotsManager:
                     'noteId': note['noteId'],
                     'left': note['fields'].get('Left', {}).get('value', '').strip(),
                     'right': note['fields'].get('Right', {}).get('value', '').strip(),
+                    'explanation': note['fields'].get('Explanation', {}).get('value', '').strip(),
                 }
 
         return existing
@@ -547,6 +574,7 @@ class ConnectDotsManager:
                     "Key": note.key,
                     "Left": note.left_str(),
                     "Right": note.right_str(),
+                    "Explanation": note.explanation_str(),
                 },
                 "tags": ["auto-generated", "connect-dots"]
             }
@@ -578,6 +606,7 @@ class ConnectDotsManager:
                     "Key": note.key,
                     "Left": note.left_str(),
                     "Right": note.right_str(),
+                    "Explanation": note.explanation_str(),
                 }
             }
         })
@@ -628,8 +657,11 @@ class ConnectDotsManager:
                             # Check if content changed
                             new_left = split_note.left_str()
                             new_right = split_note.right_str()
+                            new_explanation = split_note.explanation_str()
 
-                            if existing['left'] == new_left and existing['right'] == new_right:
+                            if (existing['left'] == new_left and
+                                existing['right'] == new_right and
+                                existing['explanation'] == new_explanation):
                                 print(f"  Unchanged: {split_note.key}")
                                 stats['unchanged'] += 1
                             else:

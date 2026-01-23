@@ -10,9 +10,11 @@
   // Parse Anki fields (correct answers)
   const leftRaw = "{{Left}}";
   const rightRaw = "{{Right}}";
+  const explanationRaw = "{{Explanation}}";
 
   const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
   const correctRight = rightRaw.split(',').map(s => s.trim()).filter(s => s);
+  const explanations = explanationRaw.split(',').map(s => s.trim());
 
   // Validate item counts match
   if (leftItems.length !== correctRight.length) {
@@ -117,6 +119,15 @@
       correction.className = 'result-correction';
       correction.textContent = 'Correct: ' + correctAnswer;
       row.appendChild(correction);
+    }
+
+    // Show explanation if available
+    const explanation = explanations[idx];
+    if (explanation) {
+      const explanationDiv = document.createElement('div');
+      explanationDiv.className = 'result-explanation';
+      explanationDiv.textContent = explanation;
+      row.appendChild(explanationDiv);
     }
 
     container.appendChild(row);
