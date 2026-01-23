@@ -18,6 +18,42 @@ import requests
 from collections import Counter
 import argparse
 import re
+import csv
+from pathlib import Path
+
+
+def load_frequency_data(csv_path):
+    """
+    Load frequency data from CSV file
+
+    Args:
+        csv_path (str): Path to the frequency CSV file
+
+    Returns:
+        dict: Mapping of character to frequency data (written_frequency, spoken_frequency)
+    """
+    frequency_data = {}
+    with open(csv_path, 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            traditional = row['traditional']
+            # Handle alternative characters separated by / or ／
+            # Take only the first character
+            if '/' in traditional:
+                traditional = traditional.split('/')[0]
+            elif '／' in traditional:
+                traditional = traditional.split('／')[0]
+
+            # Only consider single characters
+            if len(traditional) == 1:
+                frequency_data[traditional] = {
+                    'written': int(row['written_frequency']),
+                    'spoken': int(row['spoken_frequency']),
+                    'rank': int(row['no']),
+                    'grade': row['grade'],
+                    'level': row['level'],
+                }
+    return frequency_data
 
 
 def anki_connect_request(action, params=None):
@@ -200,10 +236,32 @@ def main():
         default=["TOCFL", "Dangdai", "MyWords"],
         help="Note types to search in (default: TOCFL Dangdai MyWords)"
     )
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument(
+        "--csv-written",
+        action="store_true",
+        help="Use written frequency from data/frequency.csv instead of phrase counts"
+    )
+    source_group.add_argument(
+        "--csv-spoken",
+        action="store_true",
+        help="Use spoken frequency from data/frequency.csv instead of phrase counts"
+    )
     args = parser.parse_args()
 
+    # Determine source mode
+    if args.csv_written:
+        source_mode = "written"
+        freq_label = "Written"
+    elif args.csv_spoken:
+        source_mode = "spoken"
+        freq_label = "Spoken"
+    else:
+        source_mode = "phrases"
+        freq_label = "Count"
+
     print("=" * 60)
-    print("Finding most frequent suspended characters in phrases")
+    print(f"Finding most frequent suspended characters ({source_mode})")
     print("=" * 60)
 
     # Step 1: Get suspended Hanzi characters
@@ -213,25 +271,46 @@ def main():
         print("\nNo suspended Hanzi characters found. Nothing to do.")
         return
 
-    # Step 2: Get active Hanzi characters (to exclude from results)
+    # Step 2: Get active Hanzi characters (for summary)
     active_chars = get_active_hanzi_characters()
 
-    # Step 3: Count character frequency in phrase notes
-    # Only count suspended characters (not active ones)
-    char_counts = count_characters_in_phrases(args.note_types, suspended_chars)
+    # Step 3: Get character frequencies based on source mode
+    if source_mode == "phrases":
+        char_counts = count_characters_in_phrases(args.note_types, suspended_chars)
+        if not char_counts:
+            print("\nNo suspended characters found in phrase notes.")
+            return
+        sorted_chars = char_counts.most_common(args.top)
+    else:
+        # Load frequency data from CSV
+        script_dir = Path(__file__).parent
+        csv_path = script_dir.parent.parent / "data" / "frequency.csv"
+        if not csv_path.exists():
+            raise FileNotFoundError(f"Frequency CSV not found at {csv_path}")
 
-    if not char_counts:
-        print("\nNo suspended characters found in phrase notes.")
-        return
+        print(f"\nLoading frequency data from {csv_path}")
+        frequency_data = load_frequency_data(csv_path)
+        print(f"Loaded frequency data for {len(frequency_data)} characters")
+
+        # Filter to only suspended characters and sort by frequency
+        char_counts = Counter()
+        for char in suspended_chars:
+            if char in frequency_data:
+                char_counts[char] = frequency_data[char][source_mode]
+
+        if not char_counts:
+            print(f"\nNo suspended characters found in frequency data.")
+            return
+        sorted_chars = char_counts.most_common(args.top)
 
     # Step 4: Display results
     print("\n" + "=" * 60)
-    print(f"Top {args.top} most frequent suspended characters in phrases")
+    print(f"Top {args.top} most frequent suspended characters ({source_mode})")
     print("=" * 60)
-    print(f"{'Rank':<6}{'Char':<6}{'Count':<10}")
+    print(f"{'Rank':<6}{'Char':<6}{freq_label:<10}")
     print("-" * 22)
 
-    for rank, (char, count) in enumerate(char_counts.most_common(args.top), 1):
+    for rank, (char, count) in enumerate(sorted_chars, 1):
         print(f"{rank:<6}{char:<6}{count:<10}")
 
     # Summary statistics
