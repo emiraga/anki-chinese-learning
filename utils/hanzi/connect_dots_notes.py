@@ -243,6 +243,8 @@ class ConnectDotsNote:
 
     def explanation_str(self) -> str:
         """Get comma-separated explanation elements, sorted by corresponding left"""
+        if not self.explanation:
+            return ""
         return ", ".join([escape_comma(e) for _, _, e in self.get_sorted_tuples()])
 
     def split_if_needed(self, max_items: int = 10) -> list['ConnectDotsNote']:
