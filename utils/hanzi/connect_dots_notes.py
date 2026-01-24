@@ -520,7 +520,7 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
 class ConnectDotsManager:
     """Manager for creating and updating ConnectDots notes in Anki"""
 
-    DECK_NAME = "Chinese"
+    DECK_NAME = "Chinese::CharsProps"
     NOTE_TYPE = "ConnectDots"
 
     def __init__(self, dry_run: bool = False):
