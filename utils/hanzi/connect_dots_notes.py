@@ -526,6 +526,21 @@ class ConnectDotsManager:
     def __init__(self, dry_run: bool = False):
         self.dry_run = dry_run
 
+    def _get_card_ids_for_note(self, note_id: int) -> list[int]:
+        """
+        Get card IDs associated with a note.
+
+        Args:
+            note_id: The note ID
+
+        Returns:
+            List of card IDs for this note
+        """
+        response = anki_connect_request("findCards", {
+            "query": f"nid:{note_id}"
+        })
+        return response.get("result", [])
+
     def get_existing_notes(self) -> dict[str, dict]:
         """
         Get all existing ConnectDots notes indexed by Key
@@ -612,6 +627,18 @@ class ConnectDotsManager:
                 }
             }
         })
+
+        # Reset due date to today and interval to 1 day using "1!"
+        card_ids = self._get_card_ids_for_note(note_id)
+        if card_ids:
+            anki_connect_request("setDueDate", {
+                "cards": card_ids,
+                "days": "1!"
+            })
+            anki_connect_request("setDueDate", {
+                "cards": card_ids,
+                "days": "0"
+            })
 
         print(f"  Updated note {note_id} for key '{note.key}'")
 
