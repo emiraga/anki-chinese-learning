@@ -383,7 +383,7 @@ def create_hanzi_note(char, pinyin, simplified, meaning=""):
     # Create the note
     response = anki_connect_request("addNote", {
         "note": {
-            "deckName": "Chinese",  # Adjust deck name as needed
+            "deckName": "Chinese::CharsProps",  # Adjust deck name as needed
             "modelName": "Hanzi",
             "fields": {
                 "Traditional": char,

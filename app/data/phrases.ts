@@ -35,6 +35,12 @@ const IGNORE_PHRASES = new Set([
   "不要",
   "兩碗",
   "兩杯",
+  "你的",
+  "我是",
+  "這是",
+  "一天",
+  "要用",
+  "你來",
 ]);
 
 export { IGNORE_PHRASE_CHARS, IGNORE_PHRASES };
