@@ -243,7 +243,7 @@ export const MorePhrases: React.FC<{}> = ({}) => {
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
             <SearchMorePhrases
-              noteTypes={["Dangdai"]}
+              noteTypes={["TOCFL"]}
               withTags={["Dangdai::Lesson::" + DANGDAI_NEXT_LEVEL]}
               filterKnownChars={false}
             />

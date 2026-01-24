@@ -137,7 +137,7 @@ def check_traditional_exists(traditional):
     # Search for notes with this exact Traditional field value
     # Using quotes for exact match
     response = anki_connect_request("findNotes", {
-        "query": f'Traditional:"{traditional}"'
+        "query": f'note:TOCFL Traditional:"{traditional}"'
     })
 
     if response and response.get("result") is not None:
