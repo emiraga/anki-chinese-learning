@@ -11,6 +11,33 @@ import os
 import requests
 
 
+def remove_tone_from_pinyin(pinyin_accented):
+    """
+    Remove tone marks from accented pinyin to get the base syllable
+
+    Args:
+        pinyin_accented (str): Accented pinyin (e.g., "mā", "má", "mǎ", "mà")
+
+    Returns:
+        str: Base syllable without tone (e.g., "ma")
+    """
+    # Map of accented vowels to base vowels
+    tone_map = {
+        'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
+        'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
+        'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
+        'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
+        'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
+        'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü',
+    }
+
+    result = pinyin_accented.lower()
+    for accented, base in tone_map.items():
+        result = result.replace(accented, base)
+
+    return result
+
+
 def load_pos_mapping():
     """
     Load POS mapping from pos.json file
@@ -233,9 +260,59 @@ def load_prop_hanzi_mapping():
     return prop_hanzi_map
 
 
+def load_pinyin_mappings():
+    """
+    Load all enabled Hanzi notes and create mappings from pinyin/syllable to traditional characters
+
+    Returns:
+        tuple: (pinyin_to_chars, syllable_to_chars) - dictionaries mapping to lists of traditional characters
+    """
+    # Search for all enabled (non-suspended) Hanzi notes
+    response = anki_connect_request("findNotes", {"query": "note:Hanzi -is:suspended"})
+
+    if not response or not response.get("result"):
+        print("No Hanzi notes found")
+        return {}, {}
+
+    note_ids = response["result"]
+    print(f"Found {len(note_ids)} enabled Hanzi notes")
+
+    # Get detailed information about all Hanzi notes
+    notes_info = get_notes_info(note_ids)
+
+    # Create both mappings
+    pinyin_to_chars = {}
+    syllable_to_chars = {}
+
+    for note_info in notes_info:
+        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+        pinyin_accented = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+
+        if not traditional or not pinyin_accented:
+            continue
+
+        pinyin_lower = pinyin_accented.lower()
+        syllable = remove_tone_from_pinyin(pinyin_accented)
+
+        # Add to pinyin mapping (exact match including tone)
+        if pinyin_lower not in pinyin_to_chars:
+            pinyin_to_chars[pinyin_lower] = []
+        pinyin_to_chars[pinyin_lower].append(traditional)
+
+        # Add to syllable mapping (without tone)
+        if syllable not in syllable_to_chars:
+            syllable_to_chars[syllable] = []
+        syllable_to_chars[syllable].append(traditional)
+
+    print(f"Created pinyin mapping for {len(pinyin_to_chars)} pinyin values")
+    print(f"Created syllable mapping for {len(syllable_to_chars)} syllables")
+    return pinyin_to_chars, syllable_to_chars
+
+
 def find_notes_with_tags(note_type):
     """
-    Find notes that have prop::, actor::, place::, tone:: tags, or non-empty POS field
+    Find notes that have prop::, actor::, place::, tone:: tags, non-empty POS field,
+    empty ID, or need Same Syllable Traditional field filled
 
     Args:
         note_type (str): The note type to search
@@ -243,8 +320,14 @@ def find_notes_with_tags(note_type):
     Returns:
         list: List of note IDs
     """
-    # Search for notes with any of the relevant tags, non-empty POS with empty POS Description, or empty ID
-    search_query = f'note:{note_type} (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
+    # Build the base conditions for all note types
+    base_conditions = '(tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
+
+    # For Hanzi notes, also include notes that need Same Pinyin/Syllable Traditional fields filled
+    if note_type == "Hanzi":
+        search_query = f'note:{note_type} -is:suspended ({base_conditions} OR "Same Pinyin Traditional:" OR "Same Syllable Traditional:")'
+    else:
+        search_query = f'note:{note_type} {base_conditions}'
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -303,14 +386,33 @@ def update_note_fields(note_id, fields_dict):
         return False
 
 
-def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
+def get_same_chars_field_value(traditional, key, char_mapping):
     """
-    Update Props, Mnemonic pegs, Anki Tags, and POS Description fields for a single note
+    Get the value for a "Same X Traditional" field by looking up other characters with the same key.
+
+    Args:
+        traditional (str): The current character
+        key (str): The lookup key (pinyin or syllable)
+        char_mapping (dict): Dictionary mapping keys to lists of traditional characters
+
+    Returns:
+        str: Sorted string of other characters with the same key
+    """
+    same_chars = char_mapping.get(key, [])
+    other_chars = [c for c in same_chars if c != traditional]
+    return ''.join(sorted(other_chars))
+
+
+def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars):
+    """
+    Update Props, Mnemonic pegs, Anki Tags, POS Description, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
 
     Args:
         note_info (dict): Note information dictionary
         prop_hanzi_map (dict): Dictionary mapping prop names to Hanzi characters
         pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+        pinyin_to_chars (dict): Dictionary mapping pinyin to lists of traditional characters
+        syllable_to_chars (dict): Dictionary mapping syllables to lists of traditional characters
 
     Returns:
         bool: True if updated, False if skipped or failed
@@ -362,6 +464,29 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
         if not current_id and traditional:
             fields_to_update['ID'] = f"my_{traditional}"
 
+    # Process Same Pinyin Traditional and Same Syllable Traditional fields - only for Hanzi notes
+    if 'Traditional' in note_info['fields'] and 'Pinyin' in note_info['fields']:
+        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+        pinyin_accented = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+
+        if traditional and pinyin_accented:
+            pinyin_lower = pinyin_accented.lower()
+            syllable = remove_tone_from_pinyin(pinyin_accented)
+
+            # Process Same Pinyin Traditional field (exact pinyin match including tone)
+            if 'Same Pinyin Traditional' in note_info['fields']:
+                current_value = note_info['fields'].get('Same Pinyin Traditional', {}).get('value', '').strip()
+                new_value = get_same_chars_field_value(traditional, pinyin_lower, pinyin_to_chars)
+                if current_value != new_value:
+                    fields_to_update['Same Pinyin Traditional'] = new_value
+
+            # Process Same Syllable Traditional field (syllable match without tone)
+            if 'Same Syllable Traditional' in note_info['fields']:
+                current_value = note_info['fields'].get('Same Syllable Traditional', {}).get('value', '').strip()
+                new_value = get_same_chars_field_value(traditional, syllable, syllable_to_chars)
+                if current_value != new_value:
+                    fields_to_update['Same Syllable Traditional'] = new_value
+
     # Only update if there are changes
     if not fields_to_update:
         return False
@@ -382,7 +507,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
 
 def main():
     """
-    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, and POS Description fields
+    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, POS Description, and Same Syllable Traditional fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
@@ -395,6 +520,10 @@ def main():
     print("=== Loading POS mapping ===")
     pos_mapping = load_pos_mapping()
     print(f"Loaded {len(pos_mapping)} POS codes")
+
+    # Load the pinyin and syllable to characters mappings
+    print("=== Loading Pinyin mappings ===")
+    pinyin_to_chars, syllable_to_chars = load_pinyin_mappings()
 
     note_types = ["Hanzi", "TOCFL", "Dangdai", "MyWords"]
     batch_size = 100
@@ -418,7 +547,7 @@ def main():
                 notes_info = get_notes_info(batch_ids)
 
                 for note_info in notes_info:
-                    if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping):
+                    if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars):
                         total_updated += 1
                     total_processed += 1
 

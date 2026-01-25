@@ -9,6 +9,7 @@ import styles from "./index.module.css";
 import { PhraseLink } from "./Phrase";
 import { DANGDAI_NEXT_LEVEL, TOCFL_NEXT_LEVEL } from "~/data/status";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
+import { POSList } from "./POSDisplay";
 
 function TodoPhrases() {
   const [notes, setNotes] = useState<NoteInfo[] | undefined>(undefined);
@@ -149,7 +150,9 @@ export function SearchMorePhrases({
             >
               enable
             </button>
+            <POSList posString={note.fields["POS"]?.value || ""} />
             <span
+              className="ml-2"
               dangerouslySetInnerHTML={{
                 __html: note.fields["Meaning"]?.value,
               }}
