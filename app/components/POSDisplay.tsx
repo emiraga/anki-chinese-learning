@@ -1,8 +1,21 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { POS } from "~/data/pos";
 
 export const POSDisplay: React.FC<{ posKey: string }> = ({ posKey }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (showTooltip && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.top + window.scrollY - 8,
+        left: rect.left + rect.width / 2 + window.scrollX,
+      });
+    }
+  }, [showTooltip]);
 
   if (!posKey) {
     return null;
@@ -20,23 +33,33 @@ export const POSDisplay: React.FC<{ posKey: string }> = ({ posKey }) => {
 
   return (
     <span
-      className="relative inline-block cursor-help"
+      ref={triggerRef}
+      className="inline-block cursor-help"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
       <span className="text-purple-600 dark:text-purple-400 font-medium">
         {posKey}
       </span>
-      {showTooltip && (
-        <div className="absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm rounded-lg shadow-lg whitespace-nowrap">
-          <div className="font-semibold">{englishName}</div>
-          <div className="text-gray-300 dark:text-gray-600">{chineseName}</div>
-          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            e.g. {examples}
-          </div>
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-100" />
-        </div>
-      )}
+      {showTooltip &&
+        createPortal(
+          <div
+            className="fixed z-[9999] px-3 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm rounded-lg shadow-lg whitespace-nowrap"
+            style={{
+              top: tooltipPosition.top,
+              left: tooltipPosition.left,
+              transform: "translate(-50%, -100%)",
+            }}
+          >
+            <div className="font-semibold">{englishName}</div>
+            <div className="text-gray-300 dark:text-gray-600">{chineseName}</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              e.g. {examples}
+            </div>
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-100" />
+          </div>,
+          document.body
+        )}
     </span>
   );
 };
