@@ -10,13 +10,17 @@
 """
 Script to create and update ConnectDots notes in Anki.
 
-ConnectDots notes have three fields:
+ConnectDots notes have these fields:
 - Key: unique lookup identifier
 - Left: comma-separated list of elements
 - Right: comma-separated list of elements (same count as Left)
+- Explanation: comma-separated explanations (optional)
+- Fake Right: right values from sibling notes for increased difficulty (optional)
 
 The script supports multiple generator types, each with different query criteria
 and element mapping logic.
+
+Tests: See test_connect_dots_notes.py (run with: uv run test_connect_dots_notes.py)
 """
 
 from abc import ABC, abstractmethod
@@ -258,9 +262,13 @@ class ConnectDotsNote:
         """
         Split into multiple notes if there are more than max_items.
 
-        Each split note gets a 'fake_right' field containing right values from
-        sibling notes (other notes in the same series). This makes flashcards
-        more challenging by showing all possible options.
+        Uses interleaved distribution by right value to maximize diversity:
+        items are sorted by (right, left), then distributed round-robin across
+        notes. This ensures each split note contains items from all available
+        right values when possible.
+
+        Each split note also gets a 'fake_right' field containing right values
+        from sibling notes (other notes in the same series).
 
         Args:
             max_items: Maximum items per note before splitting
@@ -271,38 +279,36 @@ class ConnectDotsNote:
         if len(self.left) <= max_items:
             return [self]
 
-        # Get sorted tuples for consistent splitting
-        sorted_tuples = self.get_sorted_tuples()
+        # Sort by (right, left) to group by right value, then interleave
+        # This maximizes diversity of right values in each split note
+        explanations = self.explanation if self.explanation else [''] * len(self.left)
+        sorted_tuples = sorted(
+            zip(self.left, self.right, explanations),
+            key=lambda x: (x[1], x[0])  # Sort by (right, left)
+        )
 
         # Calculate number of notes needed (ceiling division)
         num_notes = -(-len(sorted_tuples) // max_items)
 
-        # Items per note (approximately equal distribution)
-        items_per_note = len(sorted_tuples) // num_notes
-        remainder = len(sorted_tuples) % num_notes
-
-        # First pass: create notes without fake_right
+        # Initialize buckets for each note
         notes_data: list[tuple[str, list[str], list[str], list[str]]] = []
-        index = 0
         for i in range(num_notes):
-            # Distribute remainder across first 'remainder' notes
-            count = items_per_note + (1 if i < remainder else 0)
-
             # Determine key: first note keeps original, others get :2, :3, etc.
             if i == 0:
                 key = self.key
             else:
                 key = f"{self.key}:{i + 1}"
+            notes_data.append((key, [], [], []))
 
-            tuples_slice = sorted_tuples[index:index + count]
-            left_slice = [left for left, _, _ in tuples_slice]
-            right_slice = [right for _, right, _ in tuples_slice]
-            explanation_slice = [expl for _, _, expl in tuples_slice]
+        # Interleaved distribution: item i goes to note (i % num_notes)
+        for i, (left, right, expl) in enumerate(sorted_tuples):
+            note_idx = i % num_notes
+            key, left_list, right_list, expl_list = notes_data[note_idx]
+            left_list.append(left)
+            right_list.append(right)
+            expl_list.append(expl)
 
-            notes_data.append((key, left_slice, right_slice, explanation_slice))
-            index += count
-
-        # Second pass: calculate fake_right for each note
+        # Calculate fake_right for each note
         # Collect all unique right values across all notes
         all_right_values = set(right for _, right, _ in sorted_tuples)
 
@@ -310,7 +316,12 @@ class ConnectDotsNote:
         for key, left_slice, right_slice, explanation_slice in notes_data:
             # fake_right = all right values minus this note's right values
             this_note_right = set(right_slice)
-            fake_right = sorted(all_right_values - this_note_right)
+            fake_right_candidates = sorted(all_right_values - this_note_right)
+
+            # Limit fake_right so that: len(left) >= len(unique_right) + len(fake_right)
+            # This ensures there aren't more options than items to match
+            max_fake_right = len(left_slice) - len(this_note_right)
+            fake_right = fake_right_candidates[:max(0, max_fake_right)]
 
             notes.append(ConnectDotsNote(
                 key=key,

@@ -130,23 +130,36 @@ class TestConnectDotsNoteSplitting:
             for l, r in zip(split_note.left, split_note.right):
                 assert original_pairs[l] == r
 
-    def test_splitting_respects_sorted_order(self):
-        """Items should be split based on sorted order of left elements"""
-        # Provide unsorted input
-        left = ["Z", "A", "M", "B", "Y", "C", "X", "D", "W", "E", "V", "F"]
-        right = ["z", "a", "m", "b", "y", "c", "x", "d", "w", "e", "v", "f"]
+    def test_interleaved_distribution_maximizes_diversity(self):
+        """Items should be distributed to maximize right value diversity in each note"""
+        # 20 items with 4 distinct right values (5 each)
+        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + \
+               [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
+        right = ["mā"] * 5 + ["má"] * 5 + ["mǎ"] * 5 + ["mà"] * 5
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
         result = note.split_if_needed(max_items=10)
 
-        # First note should have alphabetically earlier characters
-        # After sorting: A, B, C, D, E, F, M, V, W, X, Y, Z
-        # Split into 6 and 6: [A,B,C,D,E,F] and [M,V,W,X,Y,Z]
         assert len(result) == 2
-        assert sorted(result[0].left) == result[0].left  # Already sorted within note
-        assert sorted(result[1].left) == result[1].left
-        # First note should have "earlier" letters
-        assert max(result[0].left) < min(result[1].left)
+        # Both notes should have all 4 tones represented
+        for split_note in result:
+            unique_tones = set(split_note.right)
+            assert len(unique_tones) == 4, f"Expected 4 tones, got {unique_tones}"
+
+    def test_sorted_by_right_then_left(self):
+        """Items should be sorted by (right, left) before interleaving"""
+        left = ["B", "A", "D", "C"]
+        right = ["2", "1", "2", "1"]
+        note = ConnectDotsNote(key="test:key", left=left, right=right)
+
+        result = note.split_if_needed(max_items=2)
+
+        # Sorted by (right, left): (1,A), (1,C), (2,B), (2,D)
+        # Interleaved: note0 gets (1,A), (2,B); note1 gets (1,C), (2,D)
+        assert len(result) == 2
+        # Both notes should have both right values
+        assert set(result[0].right) == {"1", "2"}
+        assert set(result[1].right) == {"1", "2"}
 
     def test_custom_max_items(self):
         """split_if_needed should respect custom max_items parameter"""
@@ -241,6 +254,124 @@ class TestConnectDotsNoteStringOutput:
 
         # ASCII comma should be escaped to fullwidth comma + variation selector
         assert "，︀" in note.left_str()
+
+    def test_fake_right_str_sorted(self):
+        """fake_right_str should return comma-separated sorted elements"""
+        note = ConnectDotsNote(
+            key="test:key",
+            left=["A"],
+            right=["1"],
+            fake_right=["3", "2", "4"]
+        )
+
+        assert note.fake_right_str() == "2, 3, 4"
+
+    def test_fake_right_str_empty(self):
+        """fake_right_str should return empty string when no fake_right"""
+        note = ConnectDotsNote(key="test:key", left=["A"], right=["1"])
+
+        assert note.fake_right_str() == ""
+
+
+class TestConnectDotsNoteFakeRight:
+    """Tests for fake_right functionality"""
+
+    def test_fake_right_empty_when_no_split(self):
+        """Notes that don't split should have empty fake_right"""
+        note = ConnectDotsNote(key="test:key", left=["A", "B"], right=["1", "2"])
+
+        result = note.split_if_needed(max_items=10)
+
+        assert len(result) == 1
+        assert result[0].fake_right == []
+
+    def test_fake_right_populated_when_split_missing_values(self):
+        """Split notes missing some right values should have them in fake_right"""
+        # 22 items with uneven distribution: 10 mā, 6 má, 4 mǎ, 2 mà
+        left = [f"T1_{i}" for i in range(10)] + [f"T2_{i}" for i in range(6)] + \
+               [f"T3_{i}" for i in range(4)] + [f"T4_{i}" for i in range(2)]
+        right = ["mā"] * 10 + ["má"] * 6 + ["mǎ"] * 4 + ["mà"] * 2
+        note = ConnectDotsNote(key="test:key", left=left, right=right)
+
+        result = note.split_if_needed(max_items=8)
+
+        # With interleaving, some notes may not have all 4 tones
+        # fake_right should contain the missing tones
+        all_tones = {"mā", "má", "mǎ", "mà"}
+        for split_note in result:
+            actual_tones = set(split_note.right)
+            fake_tones = set(split_note.fake_right)
+            # fake_right should be exactly the missing tones
+            assert fake_tones == all_tones - actual_tones
+            # Together they should cover all tones
+            assert actual_tones | fake_tones == all_tones
+
+    def test_fake_right_empty_when_all_values_present(self):
+        """Split notes with all right values should have empty fake_right"""
+        # 20 items with 4 tones, evenly distributed
+        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + \
+               [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
+        right = ["mā"] * 5 + ["má"] * 5 + ["mǎ"] * 5 + ["mà"] * 5
+        note = ConnectDotsNote(key="test:key", left=left, right=right)
+
+        result = note.split_if_needed(max_items=10)
+
+        # Both notes should have all 4 tones, so fake_right should be empty
+        for split_note in result:
+            assert len(set(split_note.right)) == 4
+            assert split_note.fake_right == []
+
+    def test_fake_right_does_not_include_own_values(self):
+        """fake_right should never include values already in right"""
+        left = [f"char{i}" for i in range(15)]
+        right = ["a"] * 5 + ["b"] * 5 + ["c"] * 5
+        note = ConnectDotsNote(key="test:key", left=left, right=right)
+
+        result = note.split_if_needed(max_items=8)
+
+        for split_note in result:
+            own_values = set(split_note.right)
+            fake_values = set(split_note.fake_right)
+            # No overlap between right and fake_right
+            assert own_values & fake_values == set()
+
+    def test_fake_right_limited_by_left_count(self):
+        """fake_right should be limited so len(left) >= len(unique_right) + len(fake_right)"""
+        # 12 items with 2 unique right values, split into notes of 6
+        # Each note: 6 left items, 2 unique right -> max 4 fake_right
+        left = [f"char{i}" for i in range(12)]
+        right = ["a"] * 6 + ["b"] * 6
+        note = ConnectDotsNote(key="test:key", left=left, right=right)
+
+        result = note.split_if_needed(max_items=6)
+
+        for split_note in result:
+            unique_right_count = len(set(split_note.right))
+            fake_right_count = len(split_note.fake_right)
+            left_count = len(split_note.left)
+            # Verify the constraint: left >= unique_right + fake_right
+            assert left_count >= unique_right_count + fake_right_count
+
+    def test_fake_right_limit_truncates_when_needed(self):
+        """fake_right should be truncated when there are many potential fake values"""
+        # Create scenario with many unique right values
+        # 20 items with 10 unique right values, split into 2 notes of 10
+        left = [f"char{i}" for i in range(20)]
+        right = [f"tone{i % 10}" for i in range(20)]  # 10 unique values
+        note = ConnectDotsNote(key="test:key", left=left, right=right)
+
+        result = note.split_if_needed(max_items=10)
+
+        for split_note in result:
+            unique_right_count = len(set(split_note.right))
+            fake_right_count = len(split_note.fake_right)
+            left_count = len(split_note.left)
+            # Each note has 10 left items
+            # With interleaving, each note should have all 10 unique right values
+            # So max fake_right = 10 - 10 = 0
+            assert left_count >= unique_right_count + fake_right_count
+            # Verify constraint holds even if there were candidates
+            assert fake_right_count <= left_count - unique_right_count
 
 
 if __name__ == "__main__":
