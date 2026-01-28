@@ -22,9 +22,11 @@
   // Parse Anki fields
   const leftRaw = "{{Left}}";
   const rightRaw = "{{Right}}";
+  const fakeRightRaw = "{{Fake Right}}";
 
   const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
   const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);
+  const fakeRightItems = fakeRightRaw.split(',').map(s => s.trim()).filter(s => s);
 
   // Validate item counts match
   if (leftItems.length !== rightItems.length) {
@@ -34,8 +36,8 @@
       ' items, Right has ' + rightItems.length + ' items. Please fix this card.';
   }
 
-  // Get unique right items for display
-  const uniqueRight = [...new Set(rightItems)];
+  // Get unique right items for display (real + fake combined)
+  const uniqueRight = [...new Set([...rightItems, ...fakeRightItems])];
 
   // Shuffle unique right items
   function shuffle(arr) {

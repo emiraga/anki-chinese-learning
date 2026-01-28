@@ -215,6 +215,7 @@ class ConnectDotsNote:
     left: list[str]
     right: list[str]
     explanation: list[str] = field(default_factory=list)
+    fake_right: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
@@ -247,9 +248,19 @@ class ConnectDotsNote:
             return ""
         return ", ".join([escape_comma(e) for _, _, e in self.get_sorted_tuples()])
 
+    def fake_right_str(self) -> str:
+        """Get comma-separated fake right elements, sorted"""
+        if not self.fake_right:
+            return ""
+        return ", ".join([escape_comma(r) for r in sorted(self.fake_right)])
+
     def split_if_needed(self, max_items: int = 10) -> list['ConnectDotsNote']:
         """
         Split into multiple notes if there are more than max_items.
+
+        Each split note gets a 'fake_right' field containing right values from
+        sibling notes (other notes in the same series). This makes flashcards
+        more challenging by showing all possible options.
 
         Args:
             max_items: Maximum items per note before splitting
@@ -270,7 +281,8 @@ class ConnectDotsNote:
         items_per_note = len(sorted_tuples) // num_notes
         remainder = len(sorted_tuples) % num_notes
 
-        notes = []
+        # First pass: create notes without fake_right
+        notes_data: list[tuple[str, list[str], list[str], list[str]]] = []
         index = 0
         for i in range(num_notes):
             # Distribute remainder across first 'remainder' notes
@@ -287,13 +299,26 @@ class ConnectDotsNote:
             right_slice = [right for _, right, _ in tuples_slice]
             explanation_slice = [expl for _, _, expl in tuples_slice]
 
+            notes_data.append((key, left_slice, right_slice, explanation_slice))
+            index += count
+
+        # Second pass: calculate fake_right for each note
+        # Collect all unique right values across all notes
+        all_right_values = set(right for _, right, _ in sorted_tuples)
+
+        notes = []
+        for key, left_slice, right_slice, explanation_slice in notes_data:
+            # fake_right = all right values minus this note's right values
+            this_note_right = set(right_slice)
+            fake_right = sorted(all_right_values - this_note_right)
+
             notes.append(ConnectDotsNote(
                 key=key,
                 left=left_slice,
                 right=right_slice,
-                explanation=explanation_slice if self.explanation else []
+                explanation=explanation_slice if self.explanation else [],
+                fake_right=fake_right
             ))
-            index += count
 
         return notes
 
@@ -565,6 +590,7 @@ class ConnectDotsManager:
                     'left': note['fields'].get('Left', {}).get('value', '').strip(),
                     'right': note['fields'].get('Right', {}).get('value', '').strip(),
                     'explanation': note['fields'].get('Explanation', {}).get('value', '').strip(),
+                    'fake_right': note['fields'].get('Fake Right', {}).get('value', '').strip(),
                 }
 
         return existing
@@ -592,6 +618,7 @@ class ConnectDotsManager:
                     "Left": note.left_str(),
                     "Right": note.right_str(),
                     "Explanation": note.explanation_str(),
+                    "Fake Right": note.fake_right_str(),
                 },
                 "tags": ["auto-generated", "connect-dots"]
             }
@@ -624,6 +651,7 @@ class ConnectDotsManager:
                     "Left": note.left_str(),
                     "Right": note.right_str(),
                     "Explanation": note.explanation_str(),
+                    "Fake Right": note.fake_right_str(),
                 }
             }
         })
@@ -687,10 +715,12 @@ class ConnectDotsManager:
                             new_left = split_note.left_str()
                             new_right = split_note.right_str()
                             new_explanation = split_note.explanation_str()
+                            new_fake_right = split_note.fake_right_str()
 
                             if (existing['left'] == new_left and
                                 existing['right'] == new_right and
-                                existing['explanation'] == new_explanation):
+                                existing['explanation'] == new_explanation and
+                                existing['fake_right'] == new_fake_right):
                                 print(f"  Unchanged: {split_note.key}")
                                 stats['unchanged'] += 1
                             else:
