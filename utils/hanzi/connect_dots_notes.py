@@ -559,8 +559,9 @@ class ConnectDotsManager:
     DECK_NAME = "Chinese::CharsProps"
     NOTE_TYPE = "ConnectDots"
 
-    def __init__(self, dry_run: bool = False):
+    def __init__(self, dry_run: bool = False, skip_reschedule: bool = False):
         self.dry_run = dry_run
+        self.skip_reschedule = skip_reschedule
 
     def _get_card_ids_for_note(self, note_id: int) -> list[int]:
         """
@@ -668,20 +669,21 @@ class ConnectDotsManager:
         })
 
         # Reset due date to today and interval to 1 day using "1!"
-        card_ids = self._get_card_ids_for_note(note_id)
-        if card_ids:
-            anki_connect_request("setDueDate", {
-                "cards": card_ids,
-                "days": "1!"
-            })
-            anki_connect_request("setDueDate", {
-                "cards": card_ids,
-                "days": "0"
-            })
+        if not self.skip_reschedule:
+            card_ids = self._get_card_ids_for_note(note_id)
+            if card_ids:
+                anki_connect_request("setDueDate", {
+                    "cards": card_ids,
+                    "days": "1!"
+                })
+                anki_connect_request("setDueDate", {
+                    "cards": card_ids,
+                    "days": "0"
+                })
 
         print(f"  Updated note {note_id} for key '{note.key}'")
 
-    def process_generators(self, generators: list[ConnectDotsGenerator]) -> dict:
+    def process_generators(self, generators: list[ConnectDotsGenerator]) -> tuple[dict, dict[str, list[ConnectDotsNote]]]:
         """
         Process all generators and create/update notes as needed
 
@@ -689,7 +691,7 @@ class ConnectDotsManager:
             generators: List of generator instances
 
         Returns:
-            Statistics dictionary
+            Tuple of (statistics dictionary, notes_by_type dictionary)
         """
         stats = {
             'created': 0,
@@ -699,12 +701,17 @@ class ConnectDotsManager:
             'untracked': 0,
         }
         processed_keys: set[str] = set()
+        notes_by_type: dict[str, list[ConnectDotsNote]] = {}
 
         print("Fetching existing ConnectDots notes...")
         existing_notes = self.get_existing_notes()
         print(f"Found {len(existing_notes)} existing notes")
 
         for generator in generators:
+            gen_type = generator.generator_type
+            if gen_type not in notes_by_type:
+                notes_by_type[gen_type] = []
+
             try:
                 notes = generator.generate_notes()
             except Exception as e:
@@ -713,6 +720,9 @@ class ConnectDotsManager:
                 continue
 
             for note in notes:
+                # Collect pre-split notes for coverage stats
+                notes_by_type[gen_type].append(note)
+
                 # Split notes that have more than 10 items
                 split_notes = note.split_if_needed(max_items=10)
 
@@ -753,7 +763,7 @@ class ConnectDotsManager:
                 print(f"  - {key}")
             stats['untracked'] = len(untracked_keys)
 
-        return stats
+        return stats, notes_by_type
 
 
 @dataclass
@@ -906,6 +916,57 @@ def get_items_above_threshold(data: FrequencyData, min_count: int) -> list[str]:
     return [item for item, count in data.counts.items() if count >= min_count]
 
 
+@dataclass
+class CoverageStats:
+    """Statistics about Hanzi coverage in ConnectDots notes"""
+    total_hanzi: int
+    covered_characters: set[str]
+    coverage_by_type: dict[str, set[str]]  # generator_type -> set of characters
+
+    @property
+    def covered_hanzi(self) -> int:
+        return len(self.covered_characters)
+
+    @property
+    def coverage_percentage(self) -> float:
+        if self.total_hanzi == 0:
+            return 0.0
+        return (self.covered_hanzi / self.total_hanzi) * 100
+
+
+def calculate_coverage_from_notes(
+    notes_by_type: dict[str, list[ConnectDotsNote]],
+    total_hanzi: int
+) -> CoverageStats:
+    """
+    Calculate coverage statistics from generated notes.
+
+    Args:
+        notes_by_type: Dictionary mapping generator_type to list of notes
+        total_hanzi: Total count of Hanzi notes
+
+    Returns:
+        CoverageStats derived from the notes
+    """
+    covered_characters: set[str] = set()
+    coverage_by_type: dict[str, set[str]] = {}
+
+    for gen_type, notes in notes_by_type.items():
+        if gen_type not in coverage_by_type:
+            coverage_by_type[gen_type] = set()
+
+        for note in notes:
+            for char in note.left:
+                covered_characters.add(char)
+                coverage_by_type[gen_type].add(char)
+
+    return CoverageStats(
+        total_hanzi=total_hanzi,
+        covered_characters=covered_characters,
+        coverage_by_type=coverage_by_type
+    )
+
+
 def get_sound_components_above_threshold(min_count: int = 5) -> list[str]:
     """
     Get sound components that have at least min_count characters.
@@ -959,6 +1020,11 @@ def main():
         default=50,
         help="Number of top items to show (default: 50)"
     )
+    parser.add_argument(
+        "--skip-reschedule",
+        action="store_true",
+        help="Skip rescheduling cards after updating notes"
+    )
     args = parser.parse_args()
 
     if args.list_syllables:
@@ -971,7 +1037,7 @@ def main():
 
     print("=== ConnectDots Note Manager ===\n")
 
-    manager = ConnectDotsManager(dry_run=args.dry_run)
+    manager = ConnectDotsManager(dry_run=args.dry_run, skip_reschedule=args.skip_reschedule)
     generators: list[ConnectDotsGenerator] = []
 
     # Auto-add sound components with 5+ characters
@@ -999,7 +1065,13 @@ def main():
         return
 
     print(f"\nRunning {len(generators)} generator(s)...\n")
-    stats = manager.process_generators(generators)
+    stats, notes_by_type = manager.process_generators(generators)
+
+    # Get total Hanzi count for coverage calculation
+    total_hanzi = len(find_notes_by_query('note:Hanzi -is:suspended'))
+
+    # Calculate coverage from generated notes
+    coverage = calculate_coverage_from_notes(notes_by_type, total_hanzi)
 
     print("\n=== Summary ===")
     print(f"Created: {stats['created']}")
@@ -1007,6 +1079,14 @@ def main():
     print(f"Unchanged: {stats['unchanged']}")
     print(f"Untracked: {stats['untracked']}")
     print(f"Errors: {stats['errors']}")
+
+    print(f"\n=== Hanzi Coverage ===")
+    print(f"Total Hanzi: {coverage.total_hanzi}")
+    print(f"Covered: {coverage.covered_hanzi} ({coverage.coverage_percentage:.1f}%)")
+    print(f"Uncovered: {coverage.total_hanzi - coverage.covered_hanzi}")
+    print(f"\nBy generator type:")
+    for gen_type, chars in sorted(coverage.coverage_by_type.items()):
+        print(f"  {gen_type}: {len(chars)} characters")
 
     cache_stats = _cache.stats()
     print(f"\n=== Cache Stats ===")
