@@ -8,6 +8,7 @@ type PropListProps = {
   miscTags?: string[];
   ankiId?: number | null;
   onTagRemoved?: () => void;
+  characterCounts?: Record<string, number>;
 };
 
 export const PropList: React.FC<PropListProps> = ({
@@ -15,6 +16,7 @@ export const PropList: React.FC<PropListProps> = ({
   miscTags = [],
   ankiId,
   onTagRemoved,
+  characterCounts,
 }) => {
   const [removingTag, setRemovingTag] = useState<string | null>(null);
 
@@ -36,7 +38,10 @@ export const PropList: React.FC<PropListProps> = ({
     <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 mx-2">
       {props.map((prop, i) => (
         <div key={i}>
-          <PropCard prop={prop} />
+          <PropCard
+            prop={prop}
+            characterCount={characterCounts?.[prop.mainTagname]}
+          />
         </div>
       ))}
       {miscTags.map((tag) => (
