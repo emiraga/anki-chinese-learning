@@ -1,3 +1,8 @@
+<!-- Hidden data elements to safely pass Anki fields with special characters -->
+<script type="text/template" id="data-left">{{Left}}</script>
+<script type="text/template" id="data-right">{{Right}}</script>
+<script type="text/template" id="data-fake-right">{{Fake Right}}</script>
+
 <div class="connect-dots-container">
   <div id="error-banner" class="error-banner" style="display: none;"></div>
   <div class="columns">
@@ -19,10 +24,10 @@
 
 <script>
 (function() {
-  // Parse Anki fields
-  const leftRaw = "{{Left}}";
-  const rightRaw = "{{Right}}";
-  const fakeRightRaw = "{{Fake Right}}";
+  // Parse Anki fields from hidden data elements (handles quotes and special chars)
+  const leftRaw = document.getElementById('data-left').textContent;
+  const rightRaw = document.getElementById('data-right').textContent;
+  const fakeRightRaw = document.getElementById('data-fake-right').textContent;
 
   const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
   const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);

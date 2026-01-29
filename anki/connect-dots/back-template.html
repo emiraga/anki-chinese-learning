@@ -1,3 +1,8 @@
+<!-- Hidden data elements to safely pass Anki fields with special characters -->
+<script type="text/template" id="data-left">{{Left}}</script>
+<script type="text/template" id="data-right">{{Right}}</script>
+<script type="text/template" id="data-explanation">{{Explanation}}</script>
+
 <div class="connect-dots-container back-side">
   <div id="error-banner" class="error-banner" style="display: none;"></div>
   <div id="score-header" class="score-header"></div>
@@ -7,10 +12,10 @@
 
 <script>
 (function() {
-  // Parse Anki fields (correct answers)
-  const leftRaw = "{{Left}}";
-  const rightRaw = "{{Right}}";
-  const explanationRaw = "{{Explanation}}";
+  // Parse Anki fields from hidden data elements (handles quotes and special chars)
+  const leftRaw = document.getElementById('data-left').textContent;
+  const rightRaw = document.getElementById('data-right').textContent;
+  const explanationRaw = document.getElementById('data-explanation').textContent;
 
   const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
   const correctRight = rightRaw.split(',').map(s => s.trim()).filter(s => s);
