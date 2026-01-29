@@ -181,6 +181,23 @@ def escape_comma(text: str) -> str:
     return text.replace(',', '，︀')
 
 
+def pinyin_with_zhuyin(pinyin: str) -> str:
+    """
+    Convert pinyin to 'pinyin (zhuyin)' format.
+
+    Args:
+        pinyin: Pinyin with tone marks (e.g., "hǎo")
+
+    Returns:
+        Pinyin with zhuyin appended (e.g., "hǎo (ㄏㄠˇ)")
+    """
+    try:
+        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin)
+        return f"{pinyin} ({zhuyin})"
+    except Exception:
+        return pinyin
+
+
 def remove_tone_marks(pinyin: str) -> str:
     """
     Remove tone marks from pinyin to get the syllable
@@ -385,7 +402,7 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
 
             if traditional and pinyin:
                 left.append(traditional)
-                right.append(pinyin)
+                right.append(pinyin_with_zhuyin(pinyin))
                 explanation.append(meaning)
 
         if not left:
@@ -445,7 +462,7 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
                 syllable = remove_tone_marks(pinyin)
                 if syllable == self.syllable:
                     left.append(traditional)
-                    right.append(pinyin)
+                    right.append(pinyin_with_zhuyin(pinyin))
                     explanation.append(meaning)
 
         if not left:
@@ -491,7 +508,7 @@ class PropHanziToPinyin(ConnectDotsGenerator):
 
             if traditional and pinyin:
                 left.append(traditional)
-                right.append(pinyin)
+                right.append(pinyin_with_zhuyin(pinyin))
                 explanation.append(meaning)
 
         if not left:

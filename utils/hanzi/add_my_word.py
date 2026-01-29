@@ -63,7 +63,7 @@ def pinyin_to_zhuyin(pinyin_text):
         raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}")
 
 
-def translate_with_gemini(traditional_text, client, model_name="gemini-2.0-flash-exp", max_retries=3):
+def translate_with_gemini(traditional_text, client, model_name="gemini-2.5-flash", max_retries=3):
     """
     Use Google Gemini API to translate Chinese text to English
     Better at understanding idioms and colloquial expressions
