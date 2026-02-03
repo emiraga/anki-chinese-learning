@@ -233,7 +233,7 @@ def main():
     parser.add_argument(
         "--note-types",
         nargs="+",
-        default=["TOCFL", "Dangdai", "MyWords"],
+        default=["TOCFL"],
         help="Note types to search in (default: TOCFL Dangdai MyWords)"
     )
     source_group = parser.add_mutually_exclusive_group()

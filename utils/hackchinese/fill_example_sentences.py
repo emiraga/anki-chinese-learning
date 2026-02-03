@@ -162,7 +162,7 @@ def can_use_sentence(sentence_text: str, learned_chars: Set[str]) -> bool:
     return True
 
 
-ANKI_SENTENCE_NOTE_TYPES = ["TOCFL", "Dangdai", "MyWords"]
+ANKI_SENTENCE_NOTE_TYPES = ["TOCFL"]
 
 
 def load_anki_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, str]]]:

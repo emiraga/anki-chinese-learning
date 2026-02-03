@@ -436,7 +436,7 @@ def process_single_character(char, dictionary, char_data=None):
     """
     # If no char_data provided, extract it from phrases
     if char_data is None:
-        note_types = ["TOCFL", "Dangdai", "MyWords"]
+        note_types = ["TOCFL"]
         all_char_data = extract_characters_from_phrases(note_types)
         char_occurrences = all_char_data.get(char, [])
     else:
@@ -524,7 +524,7 @@ def main():
     existing_chars = extract_existing_hanzi_characters()
 
     # Step 2: Extract characters from TOCFL and Dangdai
-    note_types = ["TOCFL", "Dangdai", "MyWords"]
+    note_types = ["TOCFL"]
     char_data = extract_characters_from_phrases(note_types)
 
     # Step 3: Find missing characters

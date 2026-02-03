@@ -525,7 +525,7 @@ def main():
     print("=== Loading Pinyin mappings ===")
     pinyin_to_chars, syllable_to_chars = load_pinyin_mappings()
 
-    note_types = ["Hanzi", "TOCFL", "Dangdai", "MyWords"]
+    note_types = ["Hanzi", "TOCFL"]
     batch_size = 100
 
     for note_type in note_types:

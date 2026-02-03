@@ -169,7 +169,7 @@ def main():
     """
     Main function to process all note types and update Zhuyin fields
     """
-    note_types = ["TOCFL", "MyWords", "Dangdai", "Hanzi"]
+    note_types = ["TOCFL", "Hanzi"]
 
     for note_type in note_types:
         print(f"\n=== Processing {note_type} ===")

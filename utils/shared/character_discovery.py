@@ -102,9 +102,8 @@ def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter]:
     """Collect all characters from Anki notes."""
     note_types = [
         ("TOCFL", ""),
-        ("MyWords", ""),
         ("Hanzi", ""),
-        ("Dangdai", "")
+
     ]
 
     anki_chars = set()
