@@ -32,7 +32,7 @@ import argparse
 
 
 # Thresholds for automatic generator creation
-SOUND_COMPONENT_MIN_COUNT = 5  # Minimum characters sharing a sound component
+SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
 SYLLABLE_MIN_COUNT = 8  # Minimum characters sharing a syllable
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 
@@ -45,6 +45,9 @@ PROP_NAMES = [
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
 TAG_NAMES = [
     'chinese::category::food',
+    'chinese::category::time-of-the-day',
+    'tag:chinese::category::touch',
+    'tag:chinese::category::frequency-of-doing',
 ]
 
 
@@ -844,6 +847,44 @@ def get_sound_component_frequencies() -> FrequencyData:
     return FrequencyData(counts=counts, examples=examples, total_items=len(note_ids))
 
 
+def get_tocfl_two_char_frequencies() -> FrequencyData:
+    """
+    Get character frequency data from two-character TOCFL phrases.
+
+    Returns:
+        FrequencyData with counts and examples per character
+    """
+    query = 'note:TOCFL -is:suspended'
+    note_ids = find_notes_by_query(query)
+
+    counts: dict[str, int] = {}
+    examples: dict[str, list[str]] = {}
+    total_two_char_phrases = 0
+
+    batch_size = 100
+    for i in range(0, len(note_ids), batch_size):
+        batch_ids = note_ids[i:i + batch_size]
+        notes_info = get_notes_info(batch_ids)
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+
+            if not traditional or len(traditional) != 2:
+                continue
+
+            total_two_char_phrases += 1
+
+            # Count each character in the two-character phrase
+            for char in traditional:
+                counts[char] = counts.get(char, 0) + 1
+                if char not in examples:
+                    examples[char] = []
+                if len(examples[char]) < 5:
+                    examples[char].append(traditional)
+
+    return FrequencyData(counts=counts, examples=examples, total_items=total_two_char_phrases)
+
+
 def get_syllable_frequencies() -> FrequencyData:
     """
     Get syllable frequency data from all single-character Hanzi notes.
@@ -934,6 +975,12 @@ def list_syllable_frequencies(top_n: int = 50) -> None:
     """List syllables by frequency from all single-character Hanzi notes."""
     data = get_syllable_frequencies()
     print_frequency_table("Syllable Frequency Analysis", data, "Syllable", top_n)
+
+
+def list_tocfl_two_char_frequencies(top_n: int = 50) -> None:
+    """List characters by frequency from two-character TOCFL phrases."""
+    data = get_tocfl_two_char_frequencies()
+    print_frequency_table("TOCFL Two-Character Phrase Character Frequency", data, "Character", top_n)
 
 
 def get_items_above_threshold(data: FrequencyData, min_count: int) -> list[str]:
@@ -1049,6 +1096,11 @@ def main():
         help="List sound components by frequency instead of processing generators"
     )
     parser.add_argument(
+        "--list-tocfl-chars",
+        action="store_true",
+        help="List characters by frequency from two-character TOCFL phrases"
+    )
+    parser.add_argument(
         "--top",
         type=int,
         default=50,
@@ -1067,6 +1119,10 @@ def main():
 
     if args.list_sound_components:
         list_sound_component_frequencies(top_n=args.top)
+        return
+
+    if args.list_tocfl_chars:
+        list_tocfl_two_char_frequencies(top_n=args.top)
         return
 
     print("=== ConnectDots Note Manager ===\n")
