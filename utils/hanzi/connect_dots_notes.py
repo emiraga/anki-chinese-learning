@@ -31,6 +31,23 @@ import re
 import argparse
 
 
+# Thresholds for automatic generator creation
+SOUND_COMPONENT_MIN_COUNT = 5  # Minimum characters sharing a sound component
+SYLLABLE_MIN_COUNT = 8  # Minimum characters sharing a syllable
+MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
+
+# Props to generate ConnectDots notes for (using PropHanziToPinyin generator)
+PROP_NAMES = [
+    'square',
+    'pendant',
+]
+
+# Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
+TAG_NAMES = [
+    'chinese::category::food',
+]
+
+
 @dataclass
 class AnkiCache:
     """Cache for Anki queries to avoid repeated API calls"""
@@ -275,7 +292,7 @@ class ConnectDotsNote:
             return ""
         return ", ".join([escape_comma(r) for r in sorted(self.fake_right)])
 
-    def split_if_needed(self, max_items: int = 10) -> list['ConnectDotsNote']:
+    def split_if_needed(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list['ConnectDotsNote']:
         """
         Split into multiple notes if there are more than max_items.
 
@@ -740,8 +757,8 @@ class ConnectDotsManager:
                 # Collect pre-split notes for coverage stats
                 notes_by_type[gen_type].append(note)
 
-                # Split notes that have more than 10 items
-                split_notes = note.split_if_needed(max_items=10)
+                # Split notes that exceed the maximum items threshold
+                split_notes = note.split_if_needed(max_items=MAX_ITEMS_PER_NOTE)
 
                 for split_note in split_notes:
                     processed_keys.add(split_note.key)
@@ -984,7 +1001,7 @@ def calculate_coverage_from_notes(
     )
 
 
-def get_sound_components_above_threshold(min_count: int = 5) -> list[str]:
+def get_sound_components_above_threshold(min_count: int = SOUND_COMPONENT_MIN_COUNT) -> list[str]:
     """
     Get sound components that have at least min_count characters.
 
@@ -998,7 +1015,7 @@ def get_sound_components_above_threshold(min_count: int = 5) -> list[str]:
     return get_items_above_threshold(data, min_count)
 
 
-def get_syllables_above_threshold(min_count: int = 8) -> list[str]:
+def get_syllables_above_threshold(min_count: int = SYLLABLE_MIN_COUNT) -> list[str]:
     """
     Get syllables that have at least min_count characters.
 
@@ -1057,25 +1074,27 @@ def main():
     manager = ConnectDotsManager(dry_run=args.dry_run, skip_reschedule=args.skip_reschedule)
     generators: list[ConnectDotsGenerator] = []
 
-    # Auto-add sound components with 5+ characters
-    print("Finding sound components with 5+ characters...")
-    sound_components = get_sound_components_above_threshold(min_count=5)
+    # Auto-add sound components above threshold
+    print(f"Finding sound components with {SOUND_COMPONENT_MIN_COUNT}+ characters...")
+    sound_components = get_sound_components_above_threshold(min_count=SOUND_COMPONENT_MIN_COUNT)
     print(f"Found {len(sound_components)} sound components\n")
     for component in sound_components:
         generators.append(SoundComponentHanziToPinyin(component))
 
-    # Auto-add syllables with 8+ characters
-    print("Finding syllables with 8+ characters...")
-    syllables = get_syllables_above_threshold(min_count=8)
+    # Auto-add syllables above threshold
+    print(f"Finding syllables with {SYLLABLE_MIN_COUNT}+ characters...")
+    syllables = get_syllables_above_threshold(min_count=SYLLABLE_MIN_COUNT)
     print(f"Found {len(syllables)} syllables\n")
     for syllable in syllables:
         generators.append(SyllableHanziToPinyin(syllable))
 
-    # Manual tag generators
-    generators.append(TagTraditionalToMeaning('chinese::category::food'))
+    # Tag-based generators
+    for tag_name in TAG_NAMES:
+        generators.append(TagTraditionalToMeaning(tag_name))
 
-    # Manual tag props
-    generators.append(PropHanziToPinyin('square'))
+    # Prop-based generators
+    for prop_name in PROP_NAMES:
+        generators.append(PropHanziToPinyin(prop_name))
 
     if not generators:
         print("No generators to run")
