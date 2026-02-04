@@ -105,6 +105,10 @@
 }
 
 /* Left item states */
+.left-item {
+  font-size: 36px;
+}
+
 .left-item.selected {
   border-color: #fff;
   background: #3a3a5a;

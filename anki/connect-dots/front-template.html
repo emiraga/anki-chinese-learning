@@ -73,6 +73,19 @@
     '#6366f1', // indigo
   ];
 
+  // Flip to back - reference: https://github.com/git9527/anki-awesome-select
+  function flipToBack() {
+    if (typeof pycmd !== "undefined") {
+      pycmd("ans");
+    } else if (typeof study !== "undefined") {
+      study.drawAnswer();
+    } else if (typeof AnkiDroidJS !== "undefined") {
+      showAnswer();
+    } else if (window.anki && window.sendMessage2) {
+      window.sendMessage2("ankitap", "midCenter");
+    }
+  }
+
   // State
   let selectedLeftIndices = new Set(); // multiple selection
   let connections = {}; // leftIndex -> rightValue
@@ -191,7 +204,8 @@
     if (selected > 0) {
       statusText.textContent = selected + ' selected - tap right to connect';
     } else if (connected === total) {
-      statusText.textContent = 'All connected! Flip to check';
+      statusText.textContent = 'All connected! Flipping...';
+      setTimeout(flipToBack, 500);
     } else {
       statusText.textContent = 'Tap left items to select';
     }
@@ -249,19 +263,6 @@
     updateStatus();
     saveState();
   }
-
-  // Prevent card flip on container
-  const container = document.querySelector('.connect-dots-container');
-  container.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
-  container.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-  });
-  container.addEventListener('touchstart', (e) => {
-    // Allow touch to work but stop propagation
-    e.stopPropagation();
-  });
 
   // Initial render
   render();

@@ -40,6 +40,7 @@ MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 PROP_NAMES = [
     'square',
     'pendant',
+    'water-around-the-house',
 ]
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
