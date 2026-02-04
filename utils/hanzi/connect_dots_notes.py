@@ -34,6 +34,7 @@ import argparse
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
 SYLLABLE_MIN_COUNT = 8  # Minimum characters sharing a syllable
+TWO_CHAR_PHRASE_MIN_COUNT = 4  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 
 # Props to generate ConnectDots notes for (using PropHanziToPinyin generator)
@@ -41,6 +42,7 @@ PROP_NAMES = [
     'square',
     'pendant',
     'water-around-the-house',
+    'buddhist-temple',
 ]
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
@@ -49,6 +51,14 @@ TAG_NAMES = [
     'chinese::category::time-of-the-day',
     'tag:chinese::category::touch',
     'tag:chinese::category::frequency-of-doing',
+]
+
+# Whitelist for two-character phrase generators (by common character)
+# Only characters in this list will have ConnectDots notes generated
+TWO_CHAR_PHRASE_WHITELIST = [
+    '如',
+    '例',
+    '列',
 ]
 
 
@@ -591,6 +601,59 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
         return [ConnectDotsNote(key=key, left=left, right=right)]
 
 
+class TwoCharPhraseByCharacter(ConnectDotsGenerator):
+    """
+    Generate notes mapping two-character phrases sharing a common character to their meanings.
+
+    Queries TOCFL notes that are two-character phrases containing the specified character.
+    Left = Traditional phrases, Right = Meanings
+    """
+
+    def __init__(self, character: str):
+        self.character = character
+
+    @property
+    def generator_type(self) -> str:
+        return "two_char_phrase"
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        # Query TOCFL notes (we'll filter for two-character phrases containing our character)
+        query = 'note:TOCFL -is:suspended'
+        note_ids = find_notes_by_query(query)
+
+        if not note_ids:
+            return []
+
+        left = []
+        right = []
+
+        batch_size = 100
+        for i in range(0, len(note_ids), batch_size):
+            batch_ids = note_ids[i:i + batch_size]
+            notes_info = get_notes_info(batch_ids)
+
+            for note in notes_info:
+                traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+
+                # Only two-character phrases containing our target character
+                if not traditional or len(traditional) != 2:
+                    continue
+                if self.character not in traditional:
+                    continue
+
+                meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
+
+                if traditional and meaning:
+                    left.append(traditional)
+                    right.append(meaning)
+
+        if not left:
+            return []
+
+        key = f"{self.generator_type}:{self.character}"
+        return [ConnectDotsNote(key=key, left=left, right=right)]
+
+
 class ConnectDotsManager:
     """Manager for creating and updating ConnectDots notes in Anki"""
 
@@ -1077,6 +1140,28 @@ def get_syllables_above_threshold(min_count: int = SYLLABLE_MIN_COUNT) -> list[s
     return get_items_above_threshold(data, min_count)
 
 
+def get_two_char_phrase_characters_above_threshold(
+    min_count: int = TWO_CHAR_PHRASE_MIN_COUNT,
+    whitelist: list[str] | None = None
+) -> list[str]:
+    """
+    Get characters from two-character phrases that meet the minimum count threshold.
+
+    Args:
+        min_count: Minimum number of two-char phrases for a character to be included
+        whitelist: If provided, only return characters in this list
+
+    Returns:
+        List of characters meeting the threshold (and whitelist if provided)
+    """
+    data = get_tocfl_two_char_frequencies()
+    above_threshold = get_items_above_threshold(data, min_count)
+
+    if whitelist is not None:
+        return [char for char in above_threshold if char in whitelist]
+    return above_threshold
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Create and update ConnectDots notes in Anki"
@@ -1152,6 +1237,16 @@ def main():
     # Prop-based generators
     for prop_name in PROP_NAMES:
         generators.append(PropHanziToPinyin(prop_name))
+
+    # Two-character phrase generators (by common character)
+    print(f"Finding whitelisted characters with {TWO_CHAR_PHRASE_MIN_COUNT}+ two-char phrases...")
+    two_char_characters = get_two_char_phrase_characters_above_threshold(
+        min_count=TWO_CHAR_PHRASE_MIN_COUNT,
+        whitelist=TWO_CHAR_PHRASE_WHITELIST
+    )
+    print(f"Found {len(two_char_characters)} characters: {', '.join(two_char_characters)}\n")
+    for character in two_char_characters:
+        generators.append(TwoCharPhraseByCharacter(character))
 
     if not generators:
         print("No generators to run")
