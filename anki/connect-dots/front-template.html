@@ -147,14 +147,14 @@
 
         const text = document.createElement("span");
         text.className = "item-text";
-        text.textContent = item;
+        text.innerHTML = item;
         div.appendChild(text);
 
         if (connections[idx] !== undefined) {
           const badge = document.createElement("span");
           badge.className = "connection-badge";
           badge.style.backgroundColor = getColorForRight(connections[idx]);
-          badge.textContent = connections[idx];
+          badge.innerHTML = connections[idx];
           div.appendChild(badge);
         }
 
@@ -197,7 +197,7 @@
 
         const text = document.createElement("span");
         text.className = "item-text";
-        text.textContent = item;
+        text.innerHTML = item;
         div.appendChild(text);
 
         if (rightUsageCount[item] > 0) {

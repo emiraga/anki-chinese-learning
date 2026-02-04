@@ -90,7 +90,7 @@
     // Left item
     const leftSpan = document.createElement('span');
     leftSpan.className = 'result-left';
-    leftSpan.textContent = leftItem;
+    leftSpan.innerHTML = leftItem;
     row.appendChild(leftSpan);
 
     // Arrow
@@ -103,7 +103,7 @@
     const userSpan = document.createElement('span');
     userSpan.className = 'result-user';
     if (hasAnswer) {
-      userSpan.textContent = userAnswer;
+      userSpan.innerHTML = userAnswer;
       if (isCorrect) {
         userSpan.classList.add('answer-correct');
       } else {
@@ -125,7 +125,7 @@
     if (!isCorrect) {
       const correction = document.createElement('div');
       correction.className = 'result-correction';
-      correction.textContent = 'Correct: ' + correctAnswer;
+      correction.innerHTML = 'Correct: ' + correctAnswer;
       row.appendChild(correction);
     }
 
@@ -134,7 +134,7 @@
     if (explanation) {
       const explanationDiv = document.createElement('div');
       explanationDiv.className = 'result-explanation';
-      explanationDiv.textContent = explanation;
+      explanationDiv.innerHTML = explanation;
       row.appendChild(explanationDiv);
     }
 
