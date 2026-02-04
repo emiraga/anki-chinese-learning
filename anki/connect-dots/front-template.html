@@ -106,7 +106,9 @@
     }
 
     // Detect desktop (non-touch device)
-    const isDesktop = !('ontouchstart' in window) && window.matchMedia('(min-width: 768px)').matches;
+    const isDesktop =
+      !("ontouchstart" in window) &&
+      window.matchMedia("(min-width: 768px)").matches;
 
     // State
     let selectedLeftIndices = new Set(); // multiple selection
@@ -323,21 +325,28 @@
       return null;
     }
 
-    // Keyboard handler for desktop (1-9 assigns first unassigned left to that right item)
+    // Keyboard handler for desktop (Ctrl+1-9 or Shift+1-9 assigns first unassigned left to that right item)
+    // Plain 1-4 keys are reserved for Anki grading
     if (isDesktop) {
-      document.addEventListener("keydown", function(e) {
+      document.addEventListener("keydown", function (e) {
         if (isAllConnected()) return;
+        if (!e.shiftKey && !e.ctrlKey) return; // Require Shift or Ctrl key
 
-        const num = parseInt(e.key);
-        if (num >= 1 && num <= 9 && num <= shuffledRight.length) {
-          const rightValue = shuffledRight[num - 1];
-          const leftIdx = getFirstUnassignedLeftIndex();
+        // Shift+1 produces "!" on US keyboard, so check the key code instead
+        const numMatch = e.code.match(/^Digit(\d)$/);
+        if (numMatch) {
+          const num = parseInt(numMatch[1]);
+          if (num >= 1 && num <= 9 && num <= shuffledRight.length) {
+            e.preventDefault();
+            const rightValue = shuffledRight[num - 1];
+            const leftIdx = getFirstUnassignedLeftIndex();
 
-          if (leftIdx !== null) {
-            connections[leftIdx] = rightValue;
-            rightUsageCount[rightValue]++;
-            selectedLeftIndices.clear();
-            render();
+            if (leftIdx !== null) {
+              connections[leftIdx] = rightValue;
+              rightUsageCount[rightValue]++;
+              selectedLeftIndices.clear();
+              render();
+            }
           }
         }
       });
