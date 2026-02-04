@@ -105,6 +105,9 @@
       }
     }
 
+    // Detect desktop (non-touch device)
+    const isDesktop = !('ontouchstart' in window) && window.matchMedia('(min-width: 768px)').matches;
+
     // State
     let selectedLeftIndices = new Set(); // multiple selection
     let connections = {}; // leftIndex -> rightValue
@@ -193,6 +196,14 @@
         if (rightUsageCount[item] > 0) {
           div.classList.add("used");
           div.style.backgroundColor = colors[idx % colors.length] + "20";
+        }
+
+        // Show keyboard shortcut number on desktop (1-9 only)
+        if (isDesktop && idx < 9) {
+          const keyHint = document.createElement("span");
+          keyHint.className = "key-hint";
+          keyHint.textContent = idx + 1;
+          div.appendChild(keyHint);
         }
 
         const text = document.createElement("span");
@@ -300,6 +311,36 @@
       renderRight();
       updateStatus();
       saveState();
+    }
+
+    // Get first unassigned left item index (in display order)
+    function getFirstUnassignedLeftIndex() {
+      for (const idx of shuffledLeftIndices) {
+        if (connections[idx] === undefined) {
+          return idx;
+        }
+      }
+      return null;
+    }
+
+    // Keyboard handler for desktop (1-9 assigns first unassigned left to that right item)
+    if (isDesktop) {
+      document.addEventListener("keydown", function(e) {
+        if (isAllConnected()) return;
+
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 9 && num <= shuffledRight.length) {
+          const rightValue = shuffledRight[num - 1];
+          const leftIdx = getFirstUnassignedLeftIndex();
+
+          if (leftIdx !== null) {
+            connections[leftIdx] = rightValue;
+            rightUsageCount[rightValue]++;
+            selectedLeftIndices.clear();
+            render();
+          }
+        }
+      });
     }
 
     // Initial render

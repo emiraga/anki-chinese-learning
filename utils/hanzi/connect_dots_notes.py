@@ -34,7 +34,7 @@ import argparse
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
 SYLLABLE_MIN_COUNT = 8  # Minimum characters sharing a syllable
-TWO_CHAR_PHRASE_MIN_COUNT = 4  # Minimum two-char phrases sharing a character
+TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 
 # Props to generate ConnectDots notes for (using PropHanziToPinyin generator)
