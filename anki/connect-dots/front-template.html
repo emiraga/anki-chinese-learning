@@ -1,10 +1,16 @@
 <!-- Hidden data elements to safely pass Anki fields with special characters -->
-<script type="text/template" id="data-left">{{Left}}</script>
-<script type="text/template" id="data-right">{{Right}}</script>
-<script type="text/template" id="data-fake-right">{{Fake Right}}</script>
+<script type="text/template" id="data-left">
+  {{Left}}
+</script>
+<script type="text/template" id="data-right">
+  {{Right}}
+</script>
+<script type="text/template" id="data-fake-right">
+  {{Fake Right}}
+</script>
 
 <div class="connect-dots-container">
-  <div id="error-banner" class="error-banner" style="display: none;"></div>
+  <div id="error-banner" class="error-banner" style="display: none"></div>
   <div class="columns">
     <div class="column left-column">
       <div class="column-header">Match</div>
@@ -23,248 +29,280 @@
 </div>
 
 <script>
-(function() {
-  // Parse Anki fields from hidden data elements (handles quotes and special chars)
-  const leftRaw = document.getElementById('data-left').textContent;
-  const rightRaw = document.getElementById('data-right').textContent;
-  const fakeRightRaw = document.getElementById('data-fake-right').textContent;
+  (function () {
+    // Parse Anki fields from hidden data elements (handles quotes and special chars)
+    const leftRaw = document.getElementById("data-left").textContent;
+    const rightRaw = document.getElementById("data-right").textContent;
+    const fakeRightRaw = document.getElementById("data-fake-right").textContent;
 
-  const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
-  const rightItems = rightRaw.split(',').map(s => s.trim()).filter(s => s);
-  const fakeRightItems = fakeRightRaw.split(',').map(s => s.trim()).filter(s => s);
+    const leftItems = leftRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
+    const rightItems = rightRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
+    const fakeRightItems = fakeRightRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
 
-  // Validate item counts match
-  if (leftItems.length !== rightItems.length) {
-    const banner = document.getElementById('error-banner');
-    banner.style.display = 'block';
-    banner.innerHTML = '<strong>Card Error:</strong> Left has ' + leftItems.length +
-      ' items, Right has ' + rightItems.length + ' items. Please fix this card.';
-  }
-
-  // Get unique right items for display (real + fake combined)
-  const uniqueRight = [...new Set([...rightItems, ...fakeRightItems])];
-
-  // Shuffle unique right items
-  function shuffle(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
+    // Validate item counts match
+    if (leftItems.length !== rightItems.length) {
+      const banner = document.getElementById("error-banner");
+      banner.style.display = "block";
+      banner.innerHTML =
+        "<strong>Card Error:</strong> Left has " +
+        leftItems.length +
+        " items, Right has " +
+        rightItems.length +
+        " items. Please fix this card.";
     }
-    return a;
-  }
-  const shuffledRight = shuffle(uniqueRight);
 
-  // Create shuffled indices for left items display order
-  const leftIndices = leftItems.map((_, i) => i);
-  const shuffledLeftIndices = shuffle(leftIndices);
+    // Get unique right items for display (real + fake combined)
+    const uniqueRight = [...new Set([...rightItems, ...fakeRightItems])];
 
-  // Color palette for connections
-  const colors = [
-    '#3b82f6', // blue
-    '#10b981', // green
-    '#f59e0b', // amber
-    '#ef4444', // red
-    '#8b5cf6', // purple
-    '#ec4899', // pink
-    '#06b6d4', // cyan
-    '#f97316', // orange
-    '#14b8a6', // teal
-    '#6366f1', // indigo
-  ];
-
-  // Flip to back - reference: https://github.com/git9527/anki-awesome-select
-  function flipToBack() {
-    if (typeof pycmd !== "undefined") {
-      pycmd("ans");
-    } else if (typeof study !== "undefined") {
-      study.drawAnswer();
-    } else if (typeof AnkiDroidJS !== "undefined") {
-      showAnswer();
-    } else if (window.anki && window.sendMessage2) {
-      window.sendMessage2("ankitap", "midCenter");
-    }
-  }
-
-  // State
-  let selectedLeftIndices = new Set(); // multiple selection
-  let connections = {}; // leftIndex -> rightValue
-  let rightUsageCount = {}; // rightValue -> count
-
-  // Initialize usage counts
-  shuffledRight.forEach(r => rightUsageCount[r] = 0);
-
-  // Render functions
-  function getColorForRight(rightValue) {
-    const idx = shuffledRight.indexOf(rightValue);
-    return colors[idx % colors.length];
-  }
-
-  function renderLeft() {
-    const container = document.getElementById('left-items');
-    container.innerHTML = '';
-
-    // Render left items in shuffled order
-    shuffledLeftIndices.forEach(idx => {
-      const item = leftItems[idx];
-      const div = document.createElement('div');
-      div.className = 'item left-item';
-      div.dataset.index = idx;
-
-      if (selectedLeftIndices.has(idx)) {
-        div.classList.add('selected');
+    // Shuffle unique right items
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
       }
+      return a;
+    }
+    const shuffledRight = shuffle(uniqueRight);
 
+    // Create shuffled indices for left items display order
+    const leftIndices = leftItems.map((_, i) => i);
+    const shuffledLeftIndices = shuffle(leftIndices);
+
+    // Color palette for connections
+    const colors = [
+      "#3b82f6", // blue
+      "#10b981", // green
+      "#f59e0b", // amber
+      "#ef4444", // red
+      "#8b5cf6", // purple
+      "#ec4899", // pink
+      "#06b6d4", // cyan
+      "#f97316", // orange
+      "#14b8a6", // teal
+      "#6366f1", // indigo
+    ];
+
+    // Flip to back - reference: https://github.com/git9527/anki-awesome-select
+    function flipToBack() {
+      if (typeof pycmd !== "undefined") {
+        pycmd("ans");
+      } else if (typeof study !== "undefined") {
+        study.drawAnswer();
+      } else if (typeof AnkiDroidJS !== "undefined") {
+        showAnswer();
+      } else if (window.anki && window.sendMessage2) {
+        window.sendMessage2("ankitap", "midCenter");
+      }
+    }
+
+    // State
+    let selectedLeftIndices = new Set(); // multiple selection
+    let connections = {}; // leftIndex -> rightValue
+    let rightUsageCount = {}; // rightValue -> count
+
+    // Initialize usage counts
+    shuffledRight.forEach((r) => (rightUsageCount[r] = 0));
+
+    // Check if all items are connected
+    function isAllConnected() {
+      return Object.keys(connections).length === leftItems.length;
+    }
+
+    // Render functions
+    function getColorForRight(rightValue) {
+      const idx = shuffledRight.indexOf(rightValue);
+      return colors[idx % colors.length];
+    }
+
+    function renderLeft() {
+      const container = document.getElementById("left-items");
+      container.innerHTML = "";
+
+      // Render left items in shuffled order
+      shuffledLeftIndices.forEach((idx) => {
+        const item = leftItems[idx];
+        const div = document.createElement("div");
+        div.className = "item left-item";
+        div.dataset.index = idx;
+
+        if (selectedLeftIndices.has(idx)) {
+          div.classList.add("selected");
+        }
+
+        if (connections[idx] !== undefined) {
+          div.classList.add("connected");
+          div.style.borderColor = getColorForRight(connections[idx]);
+          div.style.backgroundColor = getColorForRight(connections[idx]) + "20";
+        }
+
+        const text = document.createElement("span");
+        text.className = "item-text";
+        text.textContent = item;
+        div.appendChild(text);
+
+        if (connections[idx] !== undefined) {
+          const badge = document.createElement("span");
+          badge.className = "connection-badge";
+          badge.style.backgroundColor = getColorForRight(connections[idx]);
+          badge.textContent = connections[idx];
+          div.appendChild(badge);
+        }
+
+        div.addEventListener("click", (e) => {
+          if (!isAllConnected()) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            handleLeftClick(idx);
+          }
+          // Allow propagation when all connected so tap flips card
+        });
+        div.addEventListener("touchend", (e) => {
+          if (!isAllConnected()) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            handleLeftClick(idx);
+          }
+          // Allow propagation when all connected so tap flips card
+        });
+        container.appendChild(div);
+      });
+    }
+
+    function renderRight() {
+      const container = document.getElementById("right-items");
+      container.innerHTML = "";
+
+      shuffledRight.forEach((item, idx) => {
+        const div = document.createElement("div");
+        div.className = "item right-item";
+        div.dataset.value = item;
+        div.style.borderColor = colors[idx % colors.length];
+
+        if (rightUsageCount[item] > 0) {
+          div.classList.add("used");
+          div.style.backgroundColor = colors[idx % colors.length] + "20";
+        }
+
+        const text = document.createElement("span");
+        text.className = "item-text";
+        text.textContent = item;
+        div.appendChild(text);
+
+        if (rightUsageCount[item] > 0) {
+          const count = document.createElement("span");
+          count.className = "usage-count";
+          count.style.backgroundColor = colors[idx % colors.length];
+          count.textContent = rightUsageCount[item];
+          div.appendChild(count);
+        }
+
+        div.addEventListener("click", (e) => {
+          if (!isAllConnected()) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            handleRightClick(item);
+          }
+          // Allow propagation when all connected so tap flips card
+        });
+        div.addEventListener("touchend", (e) => {
+          if (!isAllConnected()) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            handleRightClick(item);
+          }
+          // Allow propagation when all connected so tap flips card
+        });
+        container.appendChild(div);
+      });
+    }
+
+    function updateStatus() {
+      const connected = Object.keys(connections).length;
+      const total = leftItems.length;
+      const selected = selectedLeftIndices.size;
+      document.getElementById("progress").textContent =
+        connected + " / " + total;
+
+      const statusText = document.getElementById("status-text");
+      if (selected > 0) {
+        statusText.textContent = selected + " selected - tap right to connect";
+      } else if (connected === total) {
+        statusText.textContent = "All connected! Tap anywhere to flip";
+        // Try programmatic flip as fallback (works on desktop, not iOS)
+        setTimeout(flipToBack, 500);
+      } else {
+        statusText.textContent = "Tap left items to select";
+      }
+    }
+
+    function handleLeftClick(idx) {
+      // If already connected, disconnect it
       if (connections[idx] !== undefined) {
-        div.classList.add('connected');
-        div.style.borderColor = getColorForRight(connections[idx]);
-        div.style.backgroundColor = getColorForRight(connections[idx]) + '20';
+        const oldRight = connections[idx];
+        rightUsageCount[oldRight]--;
+        delete connections[idx];
+        selectedLeftIndices.delete(idx);
+      } else if (selectedLeftIndices.has(idx)) {
+        // Deselect
+        selectedLeftIndices.delete(idx);
+      } else {
+        // Add to selection
+        selectedLeftIndices.add(idx);
       }
 
-      const text = document.createElement('span');
-      text.className = 'item-text';
-      text.textContent = item;
-      div.appendChild(text);
-
-      if (connections[idx] !== undefined) {
-        const badge = document.createElement('span');
-        badge.className = 'connection-badge';
-        badge.style.backgroundColor = getColorForRight(connections[idx]);
-        badge.textContent = connections[idx];
-        div.appendChild(badge);
-      }
-
-      div.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        handleLeftClick(idx);
-      });
-      div.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        handleLeftClick(idx);
-      });
-      container.appendChild(div);
-    });
-  }
-
-  function renderRight() {
-    const container = document.getElementById('right-items');
-    container.innerHTML = '';
-
-    shuffledRight.forEach((item, idx) => {
-      const div = document.createElement('div');
-      div.className = 'item right-item';
-      div.dataset.value = item;
-      div.style.borderColor = colors[idx % colors.length];
-
-      if (rightUsageCount[item] > 0) {
-        div.classList.add('used');
-        div.style.backgroundColor = colors[idx % colors.length] + '20';
-      }
-
-      const text = document.createElement('span');
-      text.className = 'item-text';
-      text.textContent = item;
-      div.appendChild(text);
-
-      if (rightUsageCount[item] > 0) {
-        const count = document.createElement('span');
-        count.className = 'usage-count';
-        count.style.backgroundColor = colors[idx % colors.length];
-        count.textContent = rightUsageCount[item];
-        div.appendChild(count);
-      }
-
-      div.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        handleRightClick(item);
-      });
-      div.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        handleRightClick(item);
-      });
-      container.appendChild(div);
-    });
-  }
-
-  function updateStatus() {
-    const connected = Object.keys(connections).length;
-    const total = leftItems.length;
-    const selected = selectedLeftIndices.size;
-    document.getElementById('progress').textContent = connected + ' / ' + total;
-
-    const statusText = document.getElementById('status-text');
-    if (selected > 0) {
-      statusText.textContent = selected + ' selected - tap right to connect';
-    } else if (connected === total) {
-      statusText.textContent = 'All connected! Flipping...';
-      setTimeout(flipToBack, 500);
-    } else {
-      statusText.textContent = 'Tap left items to select';
-    }
-  }
-
-  function handleLeftClick(idx) {
-    // If already connected, disconnect it
-    if (connections[idx] !== undefined) {
-      const oldRight = connections[idx];
-      rightUsageCount[oldRight]--;
-      delete connections[idx];
-      selectedLeftIndices.delete(idx);
-    } else if (selectedLeftIndices.has(idx)) {
-      // Deselect
-      selectedLeftIndices.delete(idx);
-    } else {
-      // Add to selection
-      selectedLeftIndices.add(idx);
+      render();
     }
 
+    function handleRightClick(rightValue) {
+      if (selectedLeftIndices.size === 0) return;
+
+      // Connect all selected left items to this right item
+      selectedLeftIndices.forEach((idx) => {
+        connections[idx] = rightValue;
+        rightUsageCount[rightValue]++;
+      });
+      selectedLeftIndices.clear();
+
+      render();
+    }
+
+    function saveState() {
+      // Save to sessionStorage for back template to read
+      const state = {
+        connections: connections,
+        leftItems: leftItems,
+        rightItems: rightItems,
+      };
+      try {
+        sessionStorage.setItem("connectDotsState", JSON.stringify(state));
+      } catch (e) {
+        // Fallback: save to a global variable
+        window.connectDotsState = state;
+      }
+    }
+
+    function render() {
+      renderLeft();
+      renderRight();
+      updateStatus();
+      saveState();
+    }
+
+    // Initial render
     render();
-  }
-
-  function handleRightClick(rightValue) {
-    if (selectedLeftIndices.size === 0) return;
-
-    // Connect all selected left items to this right item
-    selectedLeftIndices.forEach(idx => {
-      connections[idx] = rightValue;
-      rightUsageCount[rightValue]++;
-    });
-    selectedLeftIndices.clear();
-
-    render();
-  }
-
-  function saveState() {
-    // Save to sessionStorage for back template to read
-    const state = {
-      connections: connections,
-      leftItems: leftItems,
-      rightItems: rightItems
-    };
-    try {
-      sessionStorage.setItem('connectDotsState', JSON.stringify(state));
-    } catch (e) {
-      // Fallback: save to a global variable
-      window.connectDotsState = state;
-    }
-  }
-
-  function render() {
-    renderLeft();
-    renderRight();
-    updateStatus();
-    saveState();
-  }
-
-  // Initial render
-  render();
-})();
+  })();
 </script>
