@@ -43,6 +43,7 @@ PROP_NAMES = [
     'pendant',
     'water-around-the-house',
     'buddhist-temple',
+    'arrow',
 ]
 
 # Props with "prop-top" prefix (using PropHanziToPinyin generator with tag_prefix)
