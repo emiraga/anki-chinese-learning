@@ -13,7 +13,12 @@ Unit tests for ConnectDotsNote splitting functionality.
 """
 
 import pytest
-from connect_dots_notes import ConnectDotsNote
+from connect_dots_notes import (
+    ConnectDotsNote,
+    get_tone_number,
+    syllable_with_tone,
+    pinyin_with_zhuyin,
+)
 
 
 class TestConnectDotsNoteSplitting:
@@ -372,6 +377,69 @@ class TestConnectDotsNoteFakeRight:
             assert left_count >= unique_right_count + fake_right_count
             # Verify constraint holds even if there were candidates
             assert fake_right_count <= left_count - unique_right_count
+
+
+class TestToneHelperFunctions:
+    """Tests for tone-related helper functions"""
+
+    def test_get_tone_number_tone_1(self):
+        """Tone 1 (high flat) should return 1"""
+        assert get_tone_number("mā") == 1
+        assert get_tone_number("shī") == 1
+        assert get_tone_number("hē") == 1
+
+    def test_get_tone_number_tone_2(self):
+        """Tone 2 (rising) should return 2"""
+        assert get_tone_number("má") == 2
+        assert get_tone_number("shí") == 2
+        assert get_tone_number("hé") == 2
+
+    def test_get_tone_number_tone_3(self):
+        """Tone 3 (dipping) should return 3"""
+        assert get_tone_number("mǎ") == 3
+        assert get_tone_number("shǐ") == 3
+        assert get_tone_number("hě") == 3
+
+    def test_get_tone_number_tone_4(self):
+        """Tone 4 (falling) should return 4"""
+        assert get_tone_number("mà") == 4
+        assert get_tone_number("shì") == 4
+        assert get_tone_number("hè") == 4
+
+    def test_get_tone_number_tone_5_neutral(self):
+        """Neutral tone (no mark) should return 5"""
+        assert get_tone_number("ma") == 5
+        assert get_tone_number("de") == 5
+
+    def test_syllable_with_tone_generates_correct_pinyin(self):
+        """syllable_with_tone should generate correct toned pinyin"""
+        assert syllable_with_tone("ma", 1) == "mā"
+        assert syllable_with_tone("ma", 2) == "má"
+        assert syllable_with_tone("ma", 3) == "mǎ"
+        assert syllable_with_tone("ma", 4) == "mà"
+        assert syllable_with_tone("ma", 5) == "ma"
+
+    def test_syllable_with_tone_various_syllables(self):
+        """syllable_with_tone should work with various syllables"""
+        assert syllable_with_tone("shi", 1) == "shī"
+        assert syllable_with_tone("he", 2) == "hé"
+        assert syllable_with_tone("ni", 3) == "nǐ"
+        assert syllable_with_tone("bu", 4) == "bù"
+
+    def test_pinyin_with_zhuyin_format(self):
+        """pinyin_with_zhuyin should return 'pinyin (zhuyin)' format"""
+        result = pinyin_with_zhuyin("mā")
+        assert "mā" in result
+        assert "(" in result
+        assert ")" in result
+        # Should contain zhuyin character
+        assert "ㄇ" in result
+
+    def test_pinyin_with_zhuyin_neutral_tone(self):
+        """pinyin_with_zhuyin should handle neutral tone"""
+        result = pinyin_with_zhuyin("ma")
+        assert "ma" in result
+        assert "ㄇ" in result
 
 
 if __name__ == "__main__":

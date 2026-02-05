@@ -45,6 +45,11 @@ PROP_NAMES = [
     'buddhist-temple',
 ]
 
+# Props with "prop-top" prefix (using PropHanziToPinyin generator with tag_prefix)
+PROP_TOP_NAMES = [
+    'sheep',
+]
+
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
 TAG_NAMES = [
     'chinese::category::food',
@@ -212,6 +217,22 @@ def escape_comma(text: str) -> str:
     return text.replace(',', '，︀')
 
 
+def get_meaning_field(note: dict) -> str:
+    """
+    Get the meaning from a note, preferring "Meaning 2" over "Meaning".
+
+    Args:
+        note: Note dictionary with fields
+
+    Returns:
+        The meaning value, trying "Meaning 2" first, then "Meaning"
+    """
+    meaning_2 = note['fields'].get('Meaning 2', {}).get('value', '').strip()
+    if meaning_2:
+        return meaning_2
+    return note['fields'].get('Meaning', {}).get('value', '').strip()
+
+
 def pinyin_with_zhuyin(pinyin: str) -> str:
     """
     Convert pinyin to 'pinyin (zhuyin)' format.
@@ -241,7 +262,7 @@ def remove_tone_marks(pinyin: str) -> str:
     """
     try:
         # Convert to numbered pinyin first, then strip numbers
-        numbered = dragonmapper.transcriptions.pinyin_to_numbered_pinyin(pinyin)
+        numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin)
         # Remove the tone numbers
         return re.sub(r'[1-5]', '', numbered).lower()
     except Exception:
@@ -258,6 +279,50 @@ def remove_tone_marks(pinyin: str) -> str:
         for toned, plain in tone_map.items():
             result = result.replace(toned, plain)
         return result
+
+
+def get_tone_number(pinyin: str) -> int | None:
+    """
+    Extract the tone number from pinyin with tone marks.
+
+    Args:
+        pinyin: Pinyin with tone marks (e.g., "hǎo")
+
+    Returns:
+        Tone number (1-5) or None if cannot determine.
+        Tone 5 represents the neutral tone (no mark).
+    """
+    try:
+        numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin)
+        # Extract the number at the end
+        match = re.search(r'([1-5])$', numbered)
+        if match:
+            return int(match.group(1))
+        # No tone number means neutral tone (tone 5)
+        return 5
+    except Exception:
+        return None
+
+
+def syllable_with_tone(syllable: str, tone: int) -> str:
+    """
+    Generate pinyin with a specific tone mark.
+
+    Args:
+        syllable: Base syllable without tone (e.g., "ma")
+        tone: Tone number (1-5, where 5 is neutral)
+
+    Returns:
+        Pinyin with tone mark (e.g., "mǎ" for tone 3)
+    """
+    if tone == 5:
+        # Neutral tone - just return the syllable as-is
+        return syllable
+    try:
+        numbered = f"{syllable}{tone}"
+        return dragonmapper.transcriptions.numbered_to_accented(numbered)
+    except Exception:
+        return syllable
 
 
 @dataclass
@@ -305,6 +370,11 @@ class ConnectDotsNote:
         if not self.fake_right:
             return ""
         return ", ".join([escape_comma(r) for r in sorted(self.fake_right)])
+
+    def has_single_right_value(self) -> bool:
+        """Check if all right elements (including fake_right) are the same value."""
+        all_right_values = set(self.right) | set(self.fake_right)
+        return len(all_right_values) <= 1
 
     def split_if_needed(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list['ConnectDotsNote']:
         """
@@ -413,8 +483,8 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
         return "sound_component"
 
     def generate_notes(self) -> list[ConnectDotsNote]:
-        # Query Hanzi notes with this sound component
-        query = f'"note:Hanzi" -is:suspended "Sound component character:{self.sound_component}"'
+        # Query Hanzi notes with this sound component, including the sound component character itself
+        query = f'note:Hanzi -is:suspended ("Sound component character:{self.sound_component}" OR "Traditional:{self.sound_component}")'
         note_ids = find_notes_by_query(query)
 
         if not note_ids:
@@ -429,7 +499,7 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
         for note in notes_info:
             traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
             pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-            meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
+            meaning = get_meaning_field(note)
 
             if traditional and pinyin:
                 left.append(traditional)
@@ -470,6 +540,7 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
         left = []
         right = []
         explanation = []
+        present_tones: set[int] = set()
 
         # Process in batches
         batch_size = 100
@@ -480,7 +551,7 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
             for note in notes_info:
                 traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
                 pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-                meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
+                meaning = get_meaning_field(note)
 
                 if not traditional or not pinyin:
                     continue
@@ -495,32 +566,45 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
                     left.append(traditional)
                     right.append(pinyin_with_zhuyin(pinyin))
                     explanation.append(meaning)
+                    # Track which tones are present
+                    tone = get_tone_number(pinyin)
+                    if tone:
+                        present_tones.add(tone)
 
         if not left:
             return []
 
+        # Generate fake_right for missing tones (all 5 tones should be represented)
+        all_tones = {1, 2, 3, 4, 5}
+        missing_tones = all_tones - present_tones
+        fake_right = []
+        for tone in sorted(missing_tones):
+            pinyin_with_tone = syllable_with_tone(self.syllable, tone)
+            fake_right.append(pinyin_with_zhuyin(pinyin_with_tone))
+
         key = f"{self.generator_type}:{self.syllable}"
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation, fake_right=fake_right)]
 
 
 class PropHanziToPinyin(ConnectDotsGenerator):
     """
     Generate notes mapping Hanzi with a specific prop tag to their pinyin.
 
-    Queries Hanzi notes that have a tag like "prop::{prop_name}".
+    Queries Hanzi notes that have a tag like "{tag_prefix}::{prop_name}".
     Left = Traditional characters, Right = Pinyin pronunciations
     """
 
-    def __init__(self, prop_name: str):
+    def __init__(self, prop_name: str, tag_prefix: str = "prop"):
         self.prop_name = prop_name
+        self.tag_prefix = tag_prefix
 
     @property
     def generator_type(self) -> str:
-        return "prop"
+        return self.tag_prefix
 
     def generate_notes(self) -> list[ConnectDotsNote]:
         # Query Hanzi notes with this prop tag
-        query = f'note:Hanzi -is:suspended "tag:prop::{self.prop_name}"'
+        query = f'note:Hanzi -is:suspended "tag:{self.tag_prefix}::{self.prop_name}"'
         note_ids = find_notes_by_query(query)
 
         if not note_ids:
@@ -535,7 +619,7 @@ class PropHanziToPinyin(ConnectDotsGenerator):
         for note in notes_info:
             traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
             pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-            meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
+            meaning = get_meaning_field(note)
 
             if traditional and pinyin:
                 left.append(traditional)
@@ -584,9 +668,9 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
                 note['fields'].get('Hanzi', {}).get('value', '').strip()
             )
 
-            # Try different field names for meaning
+            # Try different field names for meaning (Meaning 2 > Meaning > English)
             meaning = (
-                note['fields'].get('Meaning', {}).get('value', '').strip() or
+                get_meaning_field(note) or
                 note['fields'].get('English', {}).get('value', '').strip()
             )
 
@@ -641,7 +725,7 @@ class TwoCharPhraseByCharacter(ConnectDotsGenerator):
                 if self.character not in traditional:
                     continue
 
-                meaning = note['fields'].get('Meaning', {}).get('value', '').strip()
+                meaning = get_meaning_field(note)
 
                 if traditional and meaning:
                     left.append(traditional)
@@ -720,6 +804,12 @@ class ConnectDotsManager:
         """
         if self.dry_run:
             print(f"  [DRY RUN] Would create note: {note.key}")
+            print(f"    Left: {note.left_str()}")
+            print(f"    Right: {note.right_str()}")
+            if note.explanation_str():
+                print(f"    Explanation: {note.explanation_str()}")
+            if note.fake_right_str():
+                print(f"    Fake Right: {note.fake_right_str()}")
             return 0
 
         response = anki_connect_request("addNote", {
@@ -744,16 +834,51 @@ class ConnectDotsManager:
         print(f"  Created note {note_id} for key '{note.key}'")
         return note_id
 
-    def update_note(self, note_id: int, note: ConnectDotsNote) -> None:
+    def update_note(
+        self,
+        note_id: int,
+        note: ConnectDotsNote,
+        existing: dict | None = None
+    ) -> None:
         """
         Update an existing ConnectDots note
 
         Args:
             note_id: The ID of the note to update
             note: The new note data
+            existing: Optional existing note data for diff display in dry run
         """
         if self.dry_run:
             print(f"  [DRY RUN] Would update note {note_id}: {note.key}")
+            new_left = note.left_str()
+            new_right = note.right_str()
+            new_explanation = note.explanation_str()
+            new_fake_right = note.fake_right_str()
+
+            if existing:
+                if existing['left'] != new_left:
+                    print(f"    Left:")
+                    print(f"      - {existing['left']}")
+                    print(f"      + {new_left}")
+                if existing['right'] != new_right:
+                    print(f"    Right:")
+                    print(f"      - {existing['right']}")
+                    print(f"      + {new_right}")
+                if existing['explanation'] != new_explanation:
+                    print(f"    Explanation:")
+                    print(f"      - {existing['explanation']}")
+                    print(f"      + {new_explanation}")
+                if existing['fake_right'] != new_fake_right:
+                    print(f"    Fake Right:")
+                    print(f"      - {existing['fake_right']}")
+                    print(f"      + {new_fake_right}")
+            else:
+                print(f"    Left: {new_left}")
+                print(f"    Right: {new_right}")
+                if new_explanation:
+                    print(f"    Explanation: {new_explanation}")
+                if new_fake_right:
+                    print(f"    Fake Right: {new_fake_right}")
             return
 
         anki_connect_request("updateNoteFields", {
@@ -798,6 +923,7 @@ class ConnectDotsManager:
             'created': 0,
             'updated': 0,
             'unchanged': 0,
+            'skipped_single_right': 0,
             'errors': 0,
             'untracked': 0,
         }
@@ -828,6 +954,12 @@ class ConnectDotsManager:
                 split_notes = note.split_if_needed(max_items=MAX_ITEMS_PER_NOTE)
 
                 for split_note in split_notes:
+                    # Skip notes where all right elements are the same (trivial matching)
+                    if split_note.has_single_right_value():
+                        print(f"  Skipped (single right value): {split_note.key}")
+                        stats['skipped_single_right'] += 1
+                        continue
+
                     processed_keys.add(split_note.key)
                     try:
                         existing = existing_notes.get(split_note.key)
@@ -846,7 +978,7 @@ class ConnectDotsManager:
                                 print(f"  Unchanged: {split_note.key}")
                                 stats['unchanged'] += 1
                             else:
-                                self.update_note(existing['noteId'], split_note)
+                                self.update_note(existing['noteId'], split_note, existing)
                                 stats['updated'] += 1
                         else:
                             self.create_note(split_note)
@@ -1238,6 +1370,10 @@ def main():
     for prop_name in PROP_NAMES:
         generators.append(PropHanziToPinyin(prop_name))
 
+    # Prop-top-based generators
+    for prop_name in PROP_TOP_NAMES:
+        generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-top"))
+
     # Two-character phrase generators (by common character)
     print(f"Finding whitelisted characters with {TWO_CHAR_PHRASE_MIN_COUNT}+ two-char phrases...")
     two_char_characters = get_two_char_phrase_characters_above_threshold(
@@ -1265,6 +1401,7 @@ def main():
     print(f"Created: {stats['created']}")
     print(f"Updated: {stats['updated']}")
     print(f"Unchanged: {stats['unchanged']}")
+    print(f"Skipped (single right): {stats['skipped_single_right']}")
     print(f"Untracked: {stats['untracked']}")
     print(f"Errors: {stats['errors']}")
 
