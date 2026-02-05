@@ -357,6 +357,36 @@ class TestConnectDotsNoteFakeRight:
             # Verify the constraint: left >= unique_right + fake_right
             assert left_count >= unique_right_count + fake_right_count
 
+    def test_fake_right_preserves_original_fake_right_on_split(self):
+        """Original fake_right values should be included in split notes' fake_right pools.
+
+        This covers the case where a syllable generator adds fake_right for missing tones
+        (e.g., tones 1 and 5 not present in any card), then the note gets split.
+        The split notes should still include those missing tones in their fake_right.
+        """
+        # 12 items across tones 2, 3, 4 (no tone 1 or 5)
+        left = [f"T2_{i}" for i in range(4)] + [f"T3_{i}" for i in range(4)] + \
+               [f"T4_{i}" for i in range(4)]
+        right = ["yú (ㄩˊ)"] * 4 + ["yǔ (ㄩˇ)"] * 4 + ["yù (ㄩˋ)"] * 4
+        # Original fake_right has tone 1 and 5 (not present in any card)
+        fake_right = ["yū (ㄩ)", "yu (ㄩ˙)"]
+        note = ConnectDotsNote(
+            key="syllable:yu", left=left, right=right, fake_right=fake_right
+        )
+
+        result = note.split_if_needed(max_items=6)
+
+        assert len(result) == 2
+        # Each split note should have the original fake_right tones available
+        all_expected = {"yú (ㄩˊ)", "yǔ (ㄩˇ)", "yù (ㄩˋ)", "yū (ㄩ)", "yu (ㄩ˙)"}
+        for split_note in result:
+            actual_right = set(split_note.right)
+            fake = set(split_note.fake_right)
+            # fake_right should not overlap with right
+            assert actual_right & fake == set()
+            # All 5 tones should be covered between right and fake_right
+            assert actual_right | fake == all_expected
+
     def test_fake_right_limit_truncates_when_needed(self):
         """fake_right should be truncated when there are many potential fake values"""
         # Create scenario with many unique right values

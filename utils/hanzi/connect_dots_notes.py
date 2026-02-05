@@ -432,8 +432,9 @@ class ConnectDotsNote:
             expl_list.append(expl)
 
         # Calculate fake_right for each note
-        # Collect all unique right values across all notes
-        all_right_values = set(right for _, right, _ in sorted_tuples)
+        # Collect all unique right values across all notes, including original fake_right
+        # (e.g., syllable generators add fake_right for missing tones)
+        all_right_values = set(right for _, right, _ in sorted_tuples) | set(self.fake_right)
 
         notes = []
         for key, left_slice, right_slice, explanation_slice in notes_data:
