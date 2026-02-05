@@ -161,7 +161,7 @@ const useAnkiHanziProgress = () => {
               // Track when character started learning (first review)
               if (!startedCharacters.has(char)) {
                 const reviewDate = new Date(review.id).toLocaleDateString(
-                  "en-CA"
+                  "en-CA",
                 ); // YYYY-MM-DD
                 if (!dailyStartedCharactersList[reviewDate]) {
                   dailyStartedCharactersList[reviewDate] = [];
@@ -182,7 +182,7 @@ const useAnkiHanziProgress = () => {
               ) {
                 // Good or Easy - character is now learned
                 const reviewDate = new Date(review.id).toLocaleDateString(
-                  "en-CA"
+                  "en-CA",
                 ); // YYYY-MM-DD
                 if (!dailyLearnedCharactersList[reviewDate]) {
                   dailyLearnedCharactersList[reviewDate] = [];
@@ -195,7 +195,7 @@ const useAnkiHanziProgress = () => {
                 const learnedTime = review.id;
                 const timeDifferenceMs = learnedTime - firstEncounterTime;
                 const timeDifferenceDays = Math.ceil(
-                  timeDifferenceMs / (1000 * 60 * 60 * 24)
+                  timeDifferenceMs / (1000 * 60 * 60 * 24),
                 );
                 learningTimes.push({ char, days: timeDifferenceDays });
               }
@@ -216,7 +216,9 @@ const useAnkiHanziProgress = () => {
         };
 
         const cumulativeGraphData = toCumulative(dailyLearnedCharactersList);
-        const cumulativeStartedGraphData = toCumulative(dailyStartedCharactersList);
+        const cumulativeStartedGraphData = toCumulative(
+          dailyStartedCharactersList,
+        );
 
         setProgressPercentage(0);
         setStage("Finalizing results...");
@@ -232,7 +234,7 @@ const useAnkiHanziProgress = () => {
       } catch (err) {
         console.error("Error fetching Anki data:", err);
         setError(
-          "Failed to fetch Anki data. Please ensure Anki is running and AnkiConnect is installed and enabled."
+          "Failed to fetch Anki data. Please ensure Anki is running and AnkiConnect is installed and enabled.",
         );
       } finally {
         setLoading(false);
@@ -259,7 +261,7 @@ const useAnkiHanziProgress = () => {
 // Simple helper function to calculate progress rate
 const calculateProgress = (characterProgress: { [key: string]: number }) => {
   const entries = Object.entries(characterProgress).sort(([a], [b]) =>
-    a.localeCompare(b)
+    a.localeCompare(b),
   );
   if (entries.length === 0) return null;
 
@@ -270,7 +272,7 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
   // Calculate elapsed days (assume intercept is 0 at first date)
   const elapsedDays =
     Math.ceil(
-      (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)
+      (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
     ) + 1;
 
   // Simple rate: characters learned / days elapsed
@@ -279,18 +281,18 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
   if (charsPerDay <= 0) return null; // No progress
 
   const daysTo2000 = Math.ceil(
-    (LEARNING_CONSTANTS.TARGET_CHARS_INTERMEDIATE - currentCount) / charsPerDay
+    (LEARNING_CONSTANTS.TARGET_CHARS_INTERMEDIATE - currentCount) / charsPerDay,
   );
   const daysTo3000 = Math.ceil(
-    (LEARNING_CONSTANTS.TARGET_CHARS_ADVANCED - currentCount) / charsPerDay
+    (LEARNING_CONSTANTS.TARGET_CHARS_ADVANCED - currentCount) / charsPerDay,
   );
 
   const currentDate = new Date();
   const dateTo2000 = new Date(
-    currentDate.getTime() + daysTo2000 * 24 * 60 * 60 * 1000
+    currentDate.getTime() + daysTo2000 * 24 * 60 * 60 * 1000,
   );
   const dateTo3000 = new Date(
-    currentDate.getTime() + daysTo3000 * 24 * 60 * 60 * 1000
+    currentDate.getTime() + daysTo3000 * 24 * 60 * 60 * 1000,
   );
 
   return {
@@ -305,13 +307,13 @@ const calculateProgress = (characterProgress: { [key: string]: number }) => {
 // Helper function to calculate monthly learning rates
 const calculateMonthlyRates = (
   characterProgress: { [key: string]: number },
-  charactersStartedLearning: { [key: string]: number }
+  charactersStartedLearning: { [key: string]: number },
 ) => {
   const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
-    a.localeCompare(b)
+    a.localeCompare(b),
   );
   const startedEntries = Object.entries(charactersStartedLearning).sort(
-    ([a], [b]) => a.localeCompare(b)
+    ([a], [b]) => a.localeCompare(b),
   );
 
   if (learnedEntries.length === 0 && startedEntries.length === 0) return [];
@@ -324,13 +326,13 @@ const calculateMonthlyRates = (
   // Process cumulative entries into monthly totals
   const processEntries = (
     entries: [string, number][],
-    field: "learned" | "started"
+    field: "learned" | "started",
   ) => {
     for (let i = 0; i < entries.length; i++) {
       const [date, cumulativeCount] = entries[i];
       const currentDate = new Date(date);
       const monthKey = `${currentDate.getFullYear()}-${String(
-        currentDate.getMonth() + 1
+        currentDate.getMonth() + 1,
       ).padStart(2, "0")}`;
 
       const prevCount = i > 0 ? entries[i - 1][1] : 0;
@@ -350,7 +352,7 @@ const calculateMonthlyRates = (
   // Calculate days in each month and learning rates
   const currentDate = new Date();
   const currentMonthKey = `${currentDate.getFullYear()}-${String(
-    currentDate.getMonth() + 1
+    currentDate.getMonth() + 1,
   ).padStart(2, "0")}`;
 
   return Object.entries(monthlyData).map(([monthKey, data]) => {
@@ -417,7 +419,9 @@ const CustomHistogramTooltip = ({
     const data = payload[0].payload;
     const displayLimit = 50;
     const hasMore = data.chars.length > displayLimit;
-    const displayChars = hasMore ? data.chars.slice(0, displayLimit) : data.chars;
+    const displayChars = hasMore
+      ? data.chars.slice(0, displayLimit)
+      : data.chars;
 
     return (
       <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-600 rounded shadow-lg max-w-xs">
@@ -429,11 +433,12 @@ const CustomHistogramTooltip = ({
         </p>
         {data.chars.length > 0 && (
           <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-            <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
+            <p className="text-sm text-gray-800 dark:text-gray-200 wrap-break-words">
               {displayChars.join(" ")}
               {hasMore && (
                 <span className="text-gray-500 dark:text-gray-400">
-                  {" "}... +{data.chars.length - displayLimit} more
+                  {" "}
+                  ... +{data.chars.length - displayLimit} more
                 </span>
               )}
             </p>
@@ -463,7 +468,7 @@ const LearningTimeDistributionChart: React.FC<{
     const binStart = i * binSize;
     const binEnd = (i + 1) * binSize;
     const itemsInBin = learningTimeDistribution.filter(
-      (item) => item.days >= binStart && item.days < binEnd
+      (item) => item.days >= binStart && item.days < binEnd,
     );
 
     return {
@@ -478,9 +483,7 @@ const LearningTimeDistributionChart: React.FC<{
 
   // Calculate statistics
   const avgLearningTime =
-    Math.round(
-      (allDays.reduce((a, b) => a + b, 0) / allDays.length) * 10
-    ) / 10;
+    Math.round((allDays.reduce((a, b) => a + b, 0) / allDays.length) * 10) / 10;
 
   const sortedTimes = [...allDays].sort((a, b) => a - b);
   const medianLearningTime =
@@ -571,12 +574,10 @@ const CustomBarTooltip = ({
           {data.monthLabel}
         </p>
         <p className="text-sm text-blue-600 dark:text-blue-400">
-          Learned: {data.learnedRate} chars/day ({data.charactersLearned}{" "}
-          total)
+          Learned: {data.learnedRate} chars/day ({data.charactersLearned} total)
         </p>
         <p className="text-sm text-green-600 dark:text-green-400">
-          Started: {data.startedRate} chars/day ({data.charactersStarted}{" "}
-          total)
+          Started: {data.startedRate} chars/day ({data.charactersStarted} total)
         </p>
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {data.daysInMonth} days{data.isCurrentMonth ? " (so far)" : ""}
@@ -594,7 +595,7 @@ const MonthlyLearningRateChart: React.FC<{
 }> = ({ characterProgress, charactersStartedLearning }) => {
   const monthlyRates = calculateMonthlyRates(
     characterProgress,
-    charactersStartedLearning
+    charactersStartedLearning,
   );
   const extrapolation = calculateProgress(characterProgress);
   const averageRate = extrapolation?.charsPerDay || 0;
@@ -760,7 +761,7 @@ const CustomDailyTooltipWithCharacters = ({
             <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
               Started learning:
             </p>
-            <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
+            <p className="text-sm text-gray-800 dark:text-gray-200 wrap-break-words">
               {data.startedChars.join(" ")}
             </p>
           </div>
@@ -770,7 +771,7 @@ const CustomDailyTooltipWithCharacters = ({
             <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">
               Fully learned:
             </p>
-            <p className="text-sm text-gray-800 dark:text-gray-200 break-words">
+            <p className="text-sm text-gray-800 dark:text-gray-200 wrap-break-words">
               {data.learnedChars.join(" ")}
             </p>
           </div>
@@ -785,13 +786,10 @@ const CustomDailyTooltipWithCharacters = ({
 const DailyIncrementalChart: React.FC<{
   dailyLearnedCharactersList: { [key: string]: string[] };
   dailyStartedCharactersList: { [key: string]: string[] };
-}> = ({
-  dailyLearnedCharactersList,
-  dailyStartedCharactersList,
-}) => {
+}> = ({ dailyLearnedCharactersList, dailyStartedCharactersList }) => {
   const sortedDates = getCompleteDateRange(
     dailyLearnedCharactersList,
-    dailyStartedCharactersList
+    dailyStartedCharactersList,
   );
 
   if (sortedDates.length === 0) {
@@ -811,11 +809,11 @@ const DailyIncrementalChart: React.FC<{
   // Calculate max value for Y-axis
   const maxLearnedValue = Math.max(
     ...Object.values(dailyLearnedCharactersList).map((chars) => chars.length),
-    0
+    0,
   );
   const maxStartedValue = Math.max(
     ...Object.values(dailyStartedCharactersList).map((chars) => chars.length),
-    0
+    0,
   );
   const yAxisMax = Math.ceil(Math.max(maxLearnedValue, maxStartedValue) * 1.1);
 
@@ -900,7 +898,7 @@ const ProgressChart: React.FC<{
 }> = ({ characterProgress, charactersStartedLearning }) => {
   const sortedDates = getCompleteDateRange(
     characterProgress,
-    charactersStartedLearning
+    charactersStartedLearning,
   );
 
   if (sortedDates.length === 0) {
@@ -909,42 +907,47 @@ const ProgressChart: React.FC<{
 
   // Prepare combined progress data for max value calculation
   const learnedEntries = Object.entries(characterProgress).sort(([a], [b]) =>
-    a.localeCompare(b)
+    a.localeCompare(b),
   );
   const startedEntries = Object.entries(charactersStartedLearning).sort(
-    ([a], [b]) => a.localeCompare(b)
+    ([a], [b]) => a.localeCompare(b),
   );
 
   // Create combined data with both metrics, ensuring cumulative values carry forward
-  const allData = sortedDates.reduce((acc, date) => {
-    const prevData = acc[acc.length - 1];
-    const prevLearnedCount = prevData?.learned || 0;
-    const prevStartedCount = prevData?.started || 0;
+  const allData = sortedDates.reduce(
+    (acc, date) => {
+      const prevData = acc[acc.length - 1];
+      const prevLearnedCount = prevData?.learned || 0;
+      const prevStartedCount = prevData?.started || 0;
 
-    // If we have data for this date, use it, otherwise use previous values
-    const learnedCount = characterProgress[date] !== undefined
-      ? characterProgress[date]
-      : prevLearnedCount;
-    const startedCount = charactersStartedLearning[date] !== undefined
-      ? charactersStartedLearning[date]
-      : prevStartedCount;
+      // If we have data for this date, use it, otherwise use previous values
+      const learnedCount =
+        characterProgress[date] !== undefined
+          ? characterProgress[date]
+          : prevLearnedCount;
+      const startedCount =
+        charactersStartedLearning[date] !== undefined
+          ? charactersStartedLearning[date]
+          : prevStartedCount;
 
-    acc.push({
-      date,
-      learned: learnedCount,
-      started: startedCount,
-      inProgress: startedCount - learnedCount,
-      dateObj: new Date(date),
-    });
+      acc.push({
+        date,
+        learned: learnedCount,
+        started: startedCount,
+        inProgress: startedCount - learnedCount,
+        dateObj: new Date(date),
+      });
 
-    return acc;
-  }, [] as Array<{
-    date: string;
-    learned: number;
-    started: number;
-    inProgress: number;
-    dateObj: Date;
-  }>);
+      return acc;
+    },
+    [] as Array<{
+      date: string;
+      learned: number;
+      started: number;
+      inProgress: number;
+      dateObj: Date;
+    }>,
+  );
 
   // Calculate max value for Y-axis from both datasets
   const maxLearnedValue = Math.max(...learnedEntries.map(([, count]) => count));
@@ -989,7 +992,9 @@ const ProgressChart: React.FC<{
           />
           <Tooltip
             cursor={false}
-            content={<CustomDailyTooltip active={false} label="" payload={[]} />}
+            content={
+              <CustomDailyTooltip active={false} label="" payload={[]} />
+            }
           />
           {/*<Legend />*/}
 
@@ -1113,7 +1118,7 @@ export const AnkiHanziProgress = () => {
 
   // Calculate total days of learning
   const entries = Object.entries(characterProgress).sort(([a], [b]) =>
-    a.localeCompare(b)
+    a.localeCompare(b),
   );
   const firstDate = entries.length > 0 ? new Date(entries[0][0]) : null;
   const lastDate =
@@ -1122,7 +1127,7 @@ export const AnkiHanziProgress = () => {
   const totalDays =
     firstDate && lastDate
       ? Math.ceil(
-          (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)
+          (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
         ) + 1
       : 0;
 
