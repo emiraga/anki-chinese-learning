@@ -309,7 +309,15 @@
     }
 
     function handleRightClick(rightValue) {
-      if (selectedLeftIndices.size === 0) return;
+      // If nothing selected, auto-connect the first unassigned left item
+      if (selectedLeftIndices.size === 0) {
+        const leftIdx = getFirstUnassignedLeftIndex();
+        if (leftIdx === null) return;
+        connections[leftIdx] = rightValue;
+        rightUsageCount[rightValue]++;
+        render();
+        return;
+      }
 
       // Connect all selected left items to this right item
       selectedLeftIndices.forEach((idx) => {
