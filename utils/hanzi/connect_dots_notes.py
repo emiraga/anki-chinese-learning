@@ -50,6 +50,11 @@ PROP_TOP_NAMES = [
     'sheep',
 ]
 
+# Props with "prop-bottom" prefix (using PropHanziToPinyin generator with tag_prefix)
+PROP_BOTTOM_NAMES = [
+    'child',
+]
+
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
 TAG_NAMES = [
     'chinese::category::food',
@@ -1373,6 +1378,10 @@ def main():
     # Prop-top-based generators
     for prop_name in PROP_TOP_NAMES:
         generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-top"))
+
+    # Prop-bottom-based generators
+    for prop_name in PROP_BOTTOM_NAMES:
+        generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-bottom"))
 
     # Two-character phrase generators (by common character)
     print(f"Finding whitelisted characters with {TWO_CHAR_PHRASE_MIN_COUNT}+ two-char phrases...")
