@@ -8,6 +8,9 @@
 <script type="text/template" id="data-fake-right">
   {{Fake Right}}
 </script>
+<script type="text/template" id="data-key">
+  {{Key}}
+</script>
 
 <div class="connect-dots-container">
   <div id="error-banner" class="error-banner" style="display: none"></div>
@@ -38,6 +41,7 @@
     const leftRaw = document.getElementById("data-left").textContent;
     const rightRaw = document.getElementById("data-right").textContent;
     const fakeRightRaw = document.getElementById("data-fake-right").textContent;
+    const keyRaw = document.getElementById("data-key").textContent.trim();
 
     const leftItems = leftRaw
       .split(",")
@@ -67,7 +71,7 @@
     // Get unique right items for display (real + fake combined)
     const uniqueRight = [...new Set([...rightItems, ...fakeRightItems])];
 
-    // Shuffle unique right items
+    // Shuffle helper
     function shuffle(arr) {
       const a = [...arr];
       for (let i = a.length - 1; i > 0; i--) {
@@ -76,7 +80,23 @@
       }
       return a;
     }
-    const shuffledRight = shuffle(uniqueRight);
+
+    // Extract tone number from a pinyin string (1-5, where 5 is neutral)
+    function getToneNumber(pinyin) {
+      if (/[āēīōūǖĀĒĪŌŪǕ]/.test(pinyin)) return 1;
+      if (/[áéíóúǘÁÉÍÓÚǗ]/.test(pinyin)) return 2;
+      if (/[ǎěǐǒǔǚǍĚǏǑǓǙ]/.test(pinyin)) return 3;
+      if (/[àèìòùǜÀÈÌÒÙǛ]/.test(pinyin)) return 4;
+      const numMatch = pinyin.match(/(\d)$/);
+      if (numMatch) return parseInt(numMatch[1]);
+      return 5; // neutral tone
+    }
+
+    // For syllable cards, sort right items by tone; otherwise shuffle
+    const isSyllableCard = keyRaw.startsWith("syllable:");
+    const shuffledRight = isSyllableCard
+      ? [...uniqueRight].sort((a, b) => getToneNumber(a) - getToneNumber(b))
+      : shuffle(uniqueRight);
 
     // Create shuffled indices for left items display order
     const leftIndices = leftItems.map((_, i) => i);
