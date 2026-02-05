@@ -141,9 +141,8 @@
     container.appendChild(row);
   });
 
-  // Clear the saved state for next card
-  try {
-    sessionStorage.removeItem('connectDotsState');
-  } catch (e) {}
+  // State is intentionally NOT cleared here — the front template of the next
+  // card handles cleanup.  This keeps the answers available if Anki re-renders
+  // the back side (e.g. auto-flip and manual flip both firing).
 })();
 </script>

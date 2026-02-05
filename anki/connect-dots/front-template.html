@@ -30,6 +30,10 @@
 
 <script>
   (function () {
+    // Clear stale state from previous card (back template no longer clears it,
+    // so that re-renders of the back side still find the answers)
+    try { sessionStorage.removeItem("connectDotsState"); } catch (e) {}
+
     // Parse Anki fields from hidden data elements (handles quotes and special chars)
     const leftRaw = document.getElementById("data-left").textContent;
     const rightRaw = document.getElementById("data-right").textContent;
@@ -114,6 +118,7 @@
     let selectedLeftIndices = new Set(); // multiple selection
     let connections = {}; // leftIndex -> rightValue
     let rightUsageCount = {}; // rightValue -> count
+    let autoFlipTimeout = null;
 
     // Initialize usage counts
     shuffledRight.forEach((r) => (rightUsageCount[r] = 0));
@@ -255,9 +260,12 @@
         statusText.textContent = selected + " selected - tap right to connect";
       } else if (connected === total) {
         statusText.textContent = "All connected! Tap anywhere to flip";
-        // Try programmatic flip as fallback (works on desktop, not iOS)
-        setTimeout(flipToBack, 500);
+        autoFlipTimeout = setTimeout(flipToBack, 500);
       } else {
+        if (autoFlipTimeout) {
+          clearTimeout(autoFlipTimeout);
+          autoFlipTimeout = null;
+        }
         statusText.textContent = "Tap left items to select";
       }
     }
@@ -329,6 +337,7 @@
     // Plain 1-4 keys are reserved for Anki grading
     if (isDesktop) {
       document.addEventListener("keydown", function (e) {
+        if (e.repeat) return; // Ignore key auto-repeat to prevent multiple rapid connections
         if (isAllConnected()) return;
         if (!e.shiftKey && !e.ctrlKey) return; // Require Shift or Ctrl key
 
