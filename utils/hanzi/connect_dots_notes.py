@@ -655,7 +655,7 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
 
     def generate_notes(self) -> list[ConnectDotsNote]:
         # Query notes with this tag
-        query = f'tag:{self.tag}'
+        query = f'-is:suspended tag:{self.tag}'
         note_ids = find_notes_by_query(query)
 
         if not note_ids:
