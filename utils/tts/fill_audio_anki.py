@@ -359,6 +359,115 @@ def find_note_by_empty_audio(note_type):
     return []
 
 
+def find_notes_by_tag(note_type, tag):
+    """Find notes with a specific tag."""
+    search_query = f'note:{note_type} tag:"{tag}" -is:suspended'
+
+    response = anki_connect_request("findNotes", {"query": search_query})
+
+    if response and response.get("result"):
+        note_ids = response["result"]
+        if note_ids:
+            print(f"Found {len(note_ids)} note(s) with tag '{tag}'")
+            return note_ids
+
+    print(f"No notes found with tag '{tag}'")
+    return []
+
+
+def remove_tag_from_note(note_id, tag):
+    """Remove a tag from a note."""
+    response = anki_connect_request("removeTags", {
+        "notes": [note_id],
+        "tags": tag
+    })
+
+    if response and response.get("error") is None:
+        print(f"Removed tag '{tag}' from note {note_id}")
+        return True
+    else:
+        raise Exception(f"Failed to remove tag '{tag}' from note {note_id}")
+
+
+def get_clean_field_value(note_info, field_name):
+    """Extract and clean a field value from note info, stripping HTML tags."""
+    return (note_info['fields'].get(field_name, {}).get('value', '')
+            .replace('<div>', '').replace('</div>', '').strip())
+
+
+def build_multi_pronunciation_audio(note_info, traditional):
+    """
+    Build text and pinyin for notes with multiple pronunciations.
+
+    Returns:
+        tuple: (text_to_speak, combined_pinyin) or (None, None) if not applicable
+    """
+    pinyin_main = get_clean_field_value(note_info, 'Pinyin')
+    pinyin_others = get_clean_field_value(note_info, 'Pinyin others')
+
+    if not pinyin_main or not pinyin_others:
+        return None, None
+
+    # Combine all pinyins: "de2" + "de5, děi" -> ["de2", "de5", "děi"]
+    all_pinyins = [pinyin_main]
+    for p in pinyin_others.split(','):
+        p = p.strip()
+        if p:
+            all_pinyins.append(p)
+
+    # Create text with repeated character separated by Chinese commas for natural pauses
+    repeated_text = '，'.join([traditional] * len(all_pinyins))
+    combined_pinyin = ' '.join(all_pinyins)
+
+    return repeated_text, combined_pinyin
+
+
+_REBUILD_AUDIO_TAG = "chinese::rebuild-audio-field"
+_MULTI_PRONUNCIATION_TAG = "chinese::multiple-pronounciation-character"
+
+
+def process_note_audio(note_id, note_info, note_type, use_pinyin_hint):
+    """
+    Process audio for a single note.
+
+    Args:
+        note_id: The note ID
+        note_info: Note information from get_note_info
+        note_type: The note type (e.g., "TOCFL", "Hanzi")
+        use_pinyin_hint: Whether to use pinyin hints from notes
+
+    Returns:
+        bool: True if audio was generated, False otherwise
+    """
+    traditional = note_info['fields']['Traditional']['value']
+    if len(traditional) == 0:
+        print("No traditional found", note_info)
+        return False
+
+    tags = note_info.get('tags', [])
+
+    # Check for Hanzi notes with multiple pronunciations
+    if note_type == "Hanzi" and _MULTI_PRONUNCIATION_TAG in tags:
+        repeated_text, combined_pinyin = build_multi_pronunciation_audio(note_info, traditional)
+        if repeated_text and combined_pinyin:
+            print(f"Multi-pronunciation character: {traditional}")
+            print(f"  Text to speak: {repeated_text}")
+            print(f"  Combined pinyin: {combined_pinyin}")
+            update_audio_for_note(note_id, note_info, repeated_text, combined_pinyin)
+            return True
+
+    # Get pinyin from note if available and flag is set
+    pinyin_hint = None
+    if use_pinyin_hint:
+        pinyin_hint = get_clean_field_value(note_info, 'Pinyin')
+        if pinyin_hint:
+            print(f"Using Pinyin field from note: {pinyin_hint}")
+
+    # Use the more efficient version that reuses note_info
+    update_audio_for_note(note_id, note_info, traditional, pinyin_hint or None)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description='Generate TTS audio for Anki notes')
     parser.add_argument('--use-pinyin-hint', action='store_true',
@@ -368,23 +477,19 @@ def main():
     # Setup Google Cloud credentials
     setup_credentials()
 
-    for noteType in ["TOCFL", "Hanzi"]:
-        for note_id in find_note_by_empty_audio(noteType)[0:100]:
+    for note_type in ["TOCFL", "Hanzi"]:
+        # First, process notes tagged for audio rebuild
+        for note_id in find_notes_by_tag(note_type, _REBUILD_AUDIO_TAG):
             note_info = get_note_info(note_id)
-            traditional = note_info['fields']['Traditional']['value']
-            if len(traditional) > 0:
-                # Get pinyin from note if available and flag is set
-                pinyin_hint = None
-                if args.use_pinyin_hint:
-                    pinyin_hint = (note_info['fields'].get('Pinyin', {}).get('value', '')
-                        .replace('<div>', '').replace('</div>', '').strip())
-                    if pinyin_hint:
-                        print(f"Using Pinyin field from note: {pinyin_hint}")
+            print(f"Rebuilding audio for note {note_id} (tagged with {_REBUILD_AUDIO_TAG})")
+            if process_note_audio(note_id, note_info, note_type, args.use_pinyin_hint):
+                # Remove the rebuild tag after successful audio generation
+                remove_tag_from_note(note_id, _REBUILD_AUDIO_TAG)
 
-                # Use the more efficient version that reuses note_info
-                update_audio_for_note(note_id, note_info, traditional, pinyin_hint or None)
-            else:
-                print("No traditional found", note_info)
+        # Then, process notes with empty audio
+        for note_id in find_note_by_empty_audio(note_type)[0:100]:
+            note_info = get_note_info(note_id)
+            process_note_audio(note_id, note_info, note_type, args.use_pinyin_hint)
 
 
 if __name__ == "__main__":
