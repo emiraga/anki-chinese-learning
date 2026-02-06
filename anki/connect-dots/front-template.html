@@ -148,6 +148,19 @@
       return Object.keys(connections).length === leftItems.length;
     }
 
+    // Check if clicking a right item will complete all connections
+    function willCompleteAllConnections() {
+      if (selectedLeftIndices.size === 0) {
+        // Auto-connect mode: will this be the last unassigned item?
+        const unassignedCount = leftItems.length - Object.keys(connections).length;
+        return unassignedCount === 1;
+      } else {
+        // Selection mode: will connecting all selected complete everything?
+        const currentConnected = Object.keys(connections).length;
+        return currentConnected + selectedLeftIndices.size === leftItems.length;
+      }
+    }
+
     // Render functions
     function getColorForRight(rightValue) {
       const idx = shuffledRight.indexOf(rightValue);
@@ -248,21 +261,25 @@
 
         div.addEventListener("click", (e) => {
           if (!isAllConnected()) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
+            // Don't stop propagation on final tap - let it flip the card (needed for iOS)
+            if (!willCompleteAllConnections()) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+            }
             handleRightClick(item);
           }
-          // Allow propagation when all connected so tap flips card
         });
         div.addEventListener("touchend", (e) => {
           if (!isAllConnected()) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
+            // Don't stop propagation on final tap - let it flip the card (needed for iOS)
+            if (!willCompleteAllConnections()) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.stopImmediatePropagation();
+            }
             handleRightClick(item);
           }
-          // Allow propagation when all connected so tap flips card
         });
         container.appendChild(div);
       });
