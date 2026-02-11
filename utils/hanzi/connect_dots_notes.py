@@ -58,6 +58,11 @@ PROP_BOTTOM_NAMES = [
     'child',
 ]
 
+# Props with "prop-right" prefix (using PropHanziToPinyin generator with tag_prefix)
+PROP_RIGHT_NAMES = [
+    'hook',
+]
+
 # Prop intersections - notes must have ALL listed props (using IntersectionGenerator)
 # Format: (key_name, [prop1, prop2, ...], tag_prefix)
 PROP_INTERSECTIONS: list[tuple[str, list[str], str]] = [
@@ -1504,6 +1509,10 @@ def main():
     # Prop-bottom-based generators
     for prop_name in PROP_BOTTOM_NAMES:
         generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-bottom"))
+
+    # Prop-right-based generators
+    for prop_name in PROP_RIGHT_NAMES:
+        generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-right"))
 
     # Prop intersection generators
     for key_name, prop_names, tag_prefix in PROP_INTERSECTIONS:
