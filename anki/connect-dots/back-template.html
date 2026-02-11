@@ -1,151 +1,168 @@
 <!-- Hidden data elements to safely pass Anki fields with special characters -->
-<script type="text/template" id="data-left">{{Left}}</script>
-<script type="text/template" id="data-right">{{Right}}</script>
-<script type="text/template" id="data-explanation">{{Explanation}}</script>
+<script type="text/template" id="data-left">
+  {{Left}}
+</script>
+<script type="text/template" id="data-right">
+  {{Right}}
+</script>
+<script type="text/template" id="data-explanation">
+  {{Explanation}}
+</script>
 
 <div class="connect-dots-container back-side">
-  <div id="error-banner" class="error-banner" style="display: none;"></div>
+  <div id="error-banner" class="error-banner" style="display: none"></div>
   <div id="score-header" class="score-header"></div>
 
   <div id="results-list"></div>
 </div>
 
 <script>
-(function() {
-  // Scroll to top when card opens
-  window.scrollTo(0, 0);
+  (function () {
+    // Scroll to top when card opens
+    window.scrollTo(0, 0);
 
-  // Parse Anki fields from hidden data elements (handles quotes and special chars)
-  const leftRaw = document.getElementById('data-left').textContent;
-  const rightRaw = document.getElementById('data-right').textContent;
-  const explanationRaw = document.getElementById('data-explanation').textContent;
+    // Parse Anki fields from hidden data elements (handles quotes and special chars)
+    const leftRaw = document.getElementById("data-left").textContent;
+    const rightRaw = document.getElementById("data-right").textContent;
+    const explanationRaw =
+      document.getElementById("data-explanation").textContent;
 
-  const leftItems = leftRaw.split(',').map(s => s.trim()).filter(s => s);
-  const correctRight = rightRaw.split(',').map(s => s.trim()).filter(s => s);
-  const explanations = explanationRaw.split(',').map(s => s.trim());
+    const leftItems = leftRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
+    const correctRight = rightRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
+    const explanations = explanationRaw.split(",").map((s) => s.trim());
 
-  // Validate item counts match
-  if (leftItems.length !== correctRight.length) {
-    const banner = document.getElementById('error-banner');
-    banner.style.display = 'block';
-    banner.innerHTML = '<strong>Card Error:</strong> Left has ' + leftItems.length +
-      ' items, Right has ' + correctRight.length + ' items. Please fix this card.';
-  }
-
-  // Try to get user's answers from sessionStorage
-  let userConnections = {};
-  try {
-    const saved = sessionStorage.getItem('connectDotsState');
-    if (saved) {
-      const state = JSON.parse(saved);
-      userConnections = state.connections || {};
+    // Validate item counts match
+    if (leftItems.length !== correctRight.length) {
+      const banner = document.getElementById("error-banner");
+      banner.style.display = "block";
+      banner.innerHTML =
+        "<strong>Card Error:</strong> Left has " +
+        leftItems.length +
+        " items, Right has " +
+        correctRight.length +
+        " items. Please fix this card.";
     }
-  } catch (e) {
-    // Fallback to window variable
-    if (window.connectDotsState) {
-      userConnections = window.connectDotsState.connections || {};
-    }
-  }
 
-  // Calculate score
-  let correct = 0;
-  let total = leftItems.length;
-
-  leftItems.forEach((item, idx) => {
-    const userAnswer = userConnections[idx];
-    const correctAnswer = correctRight[idx];
-    if (userAnswer === correctAnswer) {
-      correct++;
-    }
-  });
-
-  // Render score header
-  const scoreHeader = document.getElementById('score-header');
-  const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-  if (correct === total) {
-    scoreHeader.className = 'score-header score-perfect';
-    scoreHeader.textContent = 'Perfect! ' + correct + '/' + total;
-  } else if (percentage >= 50) {
-    scoreHeader.className = 'score-header score-good';
-    scoreHeader.textContent = 'Score: ' + correct + '/' + total;
-  } else {
-    scoreHeader.className = 'score-header score-poor';
-    scoreHeader.textContent = 'Score: ' + correct + '/' + total;
-  }
-
-  // Render results (only incorrect entries)
-  const container = document.getElementById('results-list');
-  container.innerHTML = '';
-
-  leftItems.forEach((leftItem, idx) => {
-    const userAnswer = userConnections[idx];
-    const correctAnswer = correctRight[idx];
-    const isCorrect = userAnswer === correctAnswer;
-    const hasAnswer = userAnswer !== undefined;
-
-    // Only show incorrect entries
-    if (isCorrect) return;
-
-    const row = document.createElement('div');
-    row.className = 'result-row result-wrong';
-
-    // Left item
-    const leftSpan = document.createElement('span');
-    leftSpan.className = 'result-left';
-    leftSpan.innerHTML = leftItem;
-    row.appendChild(leftSpan);
-
-    // Arrow
-    const arrow = document.createElement('span');
-    arrow.className = 'result-arrow';
-    arrow.textContent = '→';
-    row.appendChild(arrow);
-
-    // User's answer (or missing indicator)
-    const userSpan = document.createElement('span');
-    userSpan.className = 'result-user';
-    if (hasAnswer) {
-      userSpan.innerHTML = userAnswer;
-      if (isCorrect) {
-        userSpan.classList.add('answer-correct');
-      } else {
-        userSpan.classList.add('answer-wrong');
+    // Try to get user's answers from sessionStorage
+    let userConnections = {};
+    try {
+      const saved = sessionStorage.getItem("connectDotsState");
+      if (saved) {
+        const state = JSON.parse(saved);
+        userConnections = state.connections || {};
       }
+    } catch (e) {
+      // Fallback to window variable
+      if (window.connectDotsState) {
+        userConnections = window.connectDotsState.connections || {};
+      }
+    }
+
+    // Calculate score
+    let correct = 0;
+    let total = leftItems.length;
+
+    leftItems.forEach((item, idx) => {
+      const userAnswer = userConnections[idx];
+      const correctAnswer = correctRight[idx];
+      if (userAnswer === correctAnswer) {
+        correct++;
+      }
+    });
+
+    // Render score header
+    const scoreHeader = document.getElementById("score-header");
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+    if (correct === total) {
+      scoreHeader.className = "score-header score-perfect";
+      scoreHeader.textContent = "Perfect! " + correct + "/" + total;
+    } else if (percentage >= 50) {
+      scoreHeader.className = "score-header score-good";
+      scoreHeader.textContent = "Score: " + correct + "/" + total;
     } else {
-      userSpan.textContent = '(no answer)';
-      userSpan.classList.add('answer-missing');
-    }
-    row.appendChild(userSpan);
-
-    // Status icon
-    const icon = document.createElement('span');
-    icon.className = 'result-icon';
-    icon.textContent = isCorrect ? '✓' : '✗';
-    row.appendChild(icon);
-
-    // If wrong, show correct answer
-    if (!isCorrect) {
-      const correction = document.createElement('div');
-      correction.className = 'result-correction';
-      correction.innerHTML = 'Correct: ' + correctAnswer;
-      row.appendChild(correction);
+      scoreHeader.className = "score-header score-poor";
+      scoreHeader.textContent = "Score: " + correct + "/" + total;
     }
 
-    // Show explanation if available
-    const explanation = explanations[idx];
-    if (explanation) {
-      const explanationDiv = document.createElement('div');
-      explanationDiv.className = 'result-explanation';
-      explanationDiv.innerHTML = explanation;
-      row.appendChild(explanationDiv);
-    }
+    // Render results (only incorrect entries)
+    const container = document.getElementById("results-list");
+    container.innerHTML = "";
 
-    container.appendChild(row);
-  });
+    leftItems.forEach((leftItem, idx) => {
+      const userAnswer = userConnections[idx];
+      const correctAnswer = correctRight[idx];
+      const isCorrect = userAnswer === correctAnswer;
+      const hasAnswer = userAnswer !== undefined;
 
-  // State is intentionally NOT cleared here — the front template of the next
-  // card handles cleanup.  This keeps the answers available if Anki re-renders
-  // the back side (e.g. auto-flip and manual flip both firing).
-})();
+      // Only show incorrect entries
+      if (isCorrect) return;
+
+      const row = document.createElement("div");
+      row.className = "result-row result-wrong";
+
+      // Left item
+      const leftSpan = document.createElement("span");
+      leftSpan.className = "result-left";
+      leftSpan.innerHTML = leftItem;
+      row.appendChild(leftSpan);
+
+      // Arrow
+      const arrow = document.createElement("span");
+      arrow.className = "result-arrow";
+      arrow.textContent = "→";
+      row.appendChild(arrow);
+
+      // User's answer (or missing indicator)
+      const userSpan = document.createElement("span");
+      userSpan.className = "result-user";
+      if (hasAnswer) {
+        userSpan.innerHTML = userAnswer;
+        if (isCorrect) {
+          userSpan.classList.add("answer-correct");
+        } else {
+          userSpan.classList.add("answer-wrong");
+        }
+      } else {
+        userSpan.textContent = "(no answer)";
+        userSpan.classList.add("answer-missing");
+      }
+      row.appendChild(userSpan);
+
+      // Status icon
+      const icon = document.createElement("span");
+      icon.className = "result-icon";
+      icon.textContent = isCorrect ? "✓" : "✗";
+      row.appendChild(icon);
+
+      // If wrong, show correct answer
+      if (!isCorrect) {
+        const correction = document.createElement("div");
+        correction.className = "result-correction";
+        correction.innerHTML = "Correct: " + correctAnswer;
+        row.appendChild(correction);
+      }
+
+      // Show explanation if available
+      const explanation = explanations[idx];
+      if (explanation) {
+        const explanationDiv = document.createElement("div");
+        explanationDiv.className = "result-explanation";
+        explanationDiv.innerHTML = explanation;
+        row.appendChild(explanationDiv);
+      }
+
+      container.appendChild(row);
+    });
+
+    // State is intentionally NOT cleared here — the front template of the next
+    // card handles cleanup.  This keeps the answers available if Anki re-renders
+    // the back side (e.g. auto-flip and manual flip both firing).
+  })();
 </script>

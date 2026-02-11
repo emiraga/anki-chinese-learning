@@ -38,7 +38,9 @@
 
     // Clear stale state from previous card (back template no longer clears it,
     // so that re-renders of the back side still find the answers)
-    try { sessionStorage.removeItem("connectDotsState"); } catch (e) {}
+    try {
+      sessionStorage.removeItem("connectDotsState");
+    } catch (e) {}
 
     // Parse Anki fields from hidden data elements (handles quotes and special chars)
     const leftRaw = document.getElementById("data-left").textContent;
@@ -155,7 +157,8 @@
     function willCompleteAllConnections() {
       if (selectedLeftIndices.size === 0) {
         // Auto-connect mode: will this be the last unassigned item?
-        const unassignedCount = leftItems.length - Object.keys(connections).length;
+        const unassignedCount =
+          leftItems.length - Object.keys(connections).length;
         return unassignedCount === 1;
       } else {
         // Selection mode: will connecting all selected complete everything?
