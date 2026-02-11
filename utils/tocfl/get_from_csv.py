@@ -348,6 +348,8 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
 
     When CSV has POS values that Anki doesn't have, updates the Anki note's
     POS field with the combined values and clears the POS Description field.
+
+    Also updates the Context field if it's empty in Anki but available in CSV.
     """
     print("\n=== Comparing POS with Anki ===")
 
@@ -365,23 +367,25 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
     notes = get_notes_info(note_ids)
 
     differences: list[dict[str, object]] = []
+    context_updates: list[dict[str, object]] = []
     not_in_csv: list[str] = []
 
     for note in notes:
         traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
         anki_pos_raw = note["fields"].get("POS", {}).get("value", "").strip()
+        anki_context = note["fields"].get("Context", {}).get("value", "").strip()
 
         if not traditional:
             continue
-
-        anki_pos = set(parse_anki_pos(anki_pos_raw))
 
         if traditional not in mapping:
             if traditional:
                 not_in_csv.append(traditional)
             continue
 
-        csv_pos = set(mapping[traditional].part_of_speech)
+        entry = mapping[traditional]
+        anki_pos = set(parse_anki_pos(anki_pos_raw))
+        csv_pos = set(entry.part_of_speech)
 
         if anki_pos != csv_pos:
             differences.append({
@@ -393,11 +397,20 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
                 "csv_only": sorted(csv_pos - anki_pos),
             })
 
+        # Track context updates for notes with empty Context field
+        if not anki_context and entry.context:
+            context_updates.append({
+                "note_id": note["noteId"],
+                "traditional": traditional,
+                "csv_context": entry.context,
+            })
+
     # Print results
     print(f"\n=== Results ===")
     print(f"Total notes compared: {len(notes)}")
     print(f"Notes not in CSV: {len(not_in_csv)}")
     print(f"POS differences found: {len(differences)}")
+    print(f"Notes with empty Context to update: {len(context_updates)}")
 
     if differences:
         print(f"\n=== POS Differences ===")
@@ -429,6 +442,19 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
                 }
             )
         print(f"Updated {len(notes_to_update)} notes")
+
+    # Update Context field for notes with empty Context
+    if context_updates:
+        print(f"\n=== Updating {len(context_updates)} notes with Context from CSV ===")
+        for update in context_updates:
+            context_value = ", ".join(update["csv_context"])
+            print(f"  {update['traditional']}: -> {context_value}")
+
+            update_note_fields(
+                int(update["note_id"]),
+                {"Context": context_value}
+            )
+        print(f"Updated {len(context_updates)} Context fields")
 
     if not_in_csv:
         print(f"\n=== Not in CSV ({len(not_in_csv)} entries) ===")
