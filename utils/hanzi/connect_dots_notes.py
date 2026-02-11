@@ -44,6 +44,8 @@ PROP_NAMES = [
     'water-around-the-house',
     'buddhist-temple',
     'arrow',
+    'monkey',
+    'cloth-filter',
 ]
 
 # Props with "prop-top" prefix (using PropHanziToPinyin generator with tag_prefix)
@@ -55,6 +57,19 @@ PROP_TOP_NAMES = [
 PROP_BOTTOM_NAMES = [
     'child',
 ]
+
+# Prop intersections - notes must have ALL listed props (using IntersectionGenerator)
+# Format: (key_name, [prop1, prop2, ...], tag_prefix)
+PROP_INTERSECTIONS: list[tuple[str, list[str], str]] = [
+    ('small-table+insect', ['small-table', 'insect'], 'prop'),
+]
+
+# Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)
+# Format: 'key_name': 'characters_as_string'
+CUSTOM_HANZI_SETS = {
+    'continuedrama': '繼續戲劇',
+    'left-moon-meat': '腿服朋月膀脖腸肚肥股肌腳臉腦胖脾脫胸',
+}
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
 TAG_NAMES = [
@@ -745,6 +760,111 @@ class TwoCharPhraseByCharacter(ConnectDotsGenerator):
         return [ConnectDotsNote(key=key, left=left, right=right)]
 
 
+class IntersectionGenerator(ConnectDotsGenerator):
+    """
+    Generate notes from the intersection of two other generators.
+
+    Takes two generators and produces a note containing only elements
+    that appear in both generators' left values. Uses the first generator's
+    right and explanation values for the common elements.
+    """
+
+    def __init__(self, key_name: str, gen1: ConnectDotsGenerator, gen2: ConnectDotsGenerator):
+        self.key_name = key_name
+        self.gen1 = gen1
+        self.gen2 = gen2
+
+    @property
+    def generator_type(self) -> str:
+        return "intersection"
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        # Run both generators
+        notes1 = self.gen1.generate_notes()
+        notes2 = self.gen2.generate_notes()
+
+        if not notes1 or not notes2:
+            return []
+
+        # Collect all left values from generator 2
+        left_set2: set[str] = set()
+        for note in notes2:
+            left_set2.update(note.left)
+
+        # Build result from generator 1, keeping only elements also in generator 2
+        left: list[str] = []
+        right: list[str] = []
+        explanation: list[str] = []
+
+        for note in notes1:
+            for i, l in enumerate(note.left):
+                if l in left_set2:
+                    left.append(l)
+                    right.append(note.right[i])
+                    if note.explanation:
+                        explanation.append(note.explanation[i])
+
+        if not left:
+            return []
+
+        key = f"{self.generator_type}:{self.key_name}"
+        return [ConnectDotsNote(
+            key=key,
+            left=left,
+            right=right,
+            explanation=explanation if explanation else []
+        )]
+
+
+class CustomHanziToPinyin(ConnectDotsGenerator):
+    """
+    Generate notes mapping a custom set of Hanzi characters to their pinyin.
+
+    Takes a name and a string of characters, queries each character's Hanzi note,
+    and creates a ConnectDots note mapping Traditional -> Pinyin.
+    """
+
+    def __init__(self, name: str, characters: str):
+        self.name = name
+        self.characters = characters
+
+    @property
+    def generator_type(self) -> str:
+        return "custom_hanzi"
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        left = []
+        right = []
+        explanation = []
+
+        for char in self.characters:
+            # Query the Hanzi note for this character
+            query = f'note:Hanzi -is:suspended "Traditional:{char}"'
+            note_ids = find_notes_by_query(query)
+
+            if not note_ids:
+                continue
+
+            notes_info = get_notes_info(note_ids)
+
+            for note in notes_info:
+                traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+                pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+                meaning = get_meaning_field(note)
+
+                if traditional == char and pinyin:
+                    left.append(traditional)
+                    right.append(pinyin_with_zhuyin(pinyin))
+                    explanation.append(meaning)
+                    break  # Only take the first matching note per character
+
+        if not left:
+            return []
+
+        key = f"{self.generator_type}:{self.name}"
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
+
+
 class ConnectDotsManager:
     """Manager for creating and updating ConnectDots notes in Anki"""
 
@@ -1385,6 +1505,19 @@ def main():
     for prop_name in PROP_BOTTOM_NAMES:
         generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-bottom"))
 
+    # Prop intersection generators
+    for key_name, prop_names, tag_prefix in PROP_INTERSECTIONS:
+        if len(prop_names) >= 2:
+            # Start with the first two props
+            gen1 = PropHanziToPinyin(prop_names[0], tag_prefix=tag_prefix)
+            gen2 = PropHanziToPinyin(prop_names[1], tag_prefix=tag_prefix)
+            result_gen = IntersectionGenerator(key_name, gen1, gen2)
+            # Chain additional props if more than 2
+            for additional_prop in prop_names[2:]:
+                additional_gen = PropHanziToPinyin(additional_prop, tag_prefix=tag_prefix)
+                result_gen = IntersectionGenerator(key_name, result_gen, additional_gen)
+            generators.append(result_gen)
+
     # Two-character phrase generators (by common character)
     print(f"Finding whitelisted characters with {TWO_CHAR_PHRASE_MIN_COUNT}+ two-char phrases...")
     two_char_characters = get_two_char_phrase_characters_above_threshold(
@@ -1394,6 +1527,11 @@ def main():
     print(f"Found {len(two_char_characters)} characters: {', '.join(two_char_characters)}\n")
     for character in two_char_characters:
         generators.append(TwoCharPhraseByCharacter(character))
+
+    # Custom hanzi set generators
+    print(f"Adding {len(CUSTOM_HANZI_SETS)} custom hanzi set(s)...")
+    for name, characters in CUSTOM_HANZI_SETS.items():
+        generators.append(CustomHanziToPinyin(name, characters))
 
     if not generators:
         print("No generators to run")
