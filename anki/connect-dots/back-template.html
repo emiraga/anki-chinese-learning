@@ -12,6 +12,9 @@
 
 <script>
 (function() {
+  // Scroll to top when card opens
+  window.scrollTo(0, 0);
+
   // Parse Anki fields from hidden data elements (handles quotes and special chars)
   const leftRaw = document.getElementById('data-left').textContent;
   const rightRaw = document.getElementById('data-right').textContent;

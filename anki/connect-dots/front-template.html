@@ -33,6 +33,9 @@
 
 <script>
   (function () {
+    // Scroll to top when card opens
+    window.scrollTo(0, 0);
+
     // Clear stale state from previous card (back template no longer clears it,
     // so that re-renders of the back side still find the answers)
     try { sessionStorage.removeItem("connectDotsState"); } catch (e) {}
