@@ -2,8 +2,8 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#   "requests",
 #   "dragonmapper",
+#   "requests",
 # ]
 # ///
 
@@ -25,10 +25,17 @@ Tests: See test_connect_dots_notes.py (run with: uv run test_connect_dots_notes.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-import requests
 import dragonmapper.transcriptions
 import re
 import argparse
+import sys
+from pathlib import Path
+
+# Add parent directory to path for shared imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from shared.anki_utils import anki_connect_request
+from shared.character_discovery import normalize_cjk_char
 
 
 # Thresholds for automatic generator creation
@@ -150,39 +157,6 @@ _cache = AnkiCache()
 def get_cache() -> AnkiCache:
     """Get the global cache instance"""
     return _cache
-
-
-def anki_connect_request(action: str, params: dict | None = None) -> dict:
-    """
-    Send a request to anki-connect
-
-    Args:
-        action: The action to perform
-        params: Parameters for the action
-
-    Returns:
-        Response from anki-connect
-
-    Raises:
-        Exception: If request fails or returns an error
-    """
-    if params is None:
-        params = {}
-
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
-
-    response = requests.post("http://localhost:8765", json=request_data)
-    response.raise_for_status()
-    result = response.json()
-
-    if result.get("error"):
-        raise Exception(f"AnkiConnect error: {result['error']}")
-
-    return result
 
 
 def find_notes_by_query(query: str, cache: AnkiCache | None = None) -> list[int]:
@@ -791,10 +765,10 @@ class IntersectionGenerator(ConnectDotsGenerator):
         if not notes1 or not notes2:
             return []
 
-        # Collect all left values from generator 2
+        # Collect all left values from generator 2 (normalized for comparison)
         left_set2: set[str] = set()
         for note in notes2:
-            left_set2.update(note.left)
+            left_set2.update(normalize_cjk_char(l) for l in note.left)
 
         # Build result from generator 1, keeping only elements also in generator 2
         left: list[str] = []
@@ -803,7 +777,7 @@ class IntersectionGenerator(ConnectDotsGenerator):
 
         for note in notes1:
             for i, l in enumerate(note.left):
-                if l in left_set2:
+                if normalize_cjk_char(l) in left_set2:
                     left.append(l)
                     right.append(note.right[i])
                     if note.explanation:
@@ -1367,7 +1341,7 @@ def get_all_hanzi_characters() -> set[str]:
         for note in notes_info:
             traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
             if traditional and len(traditional) == 1:
-                all_chars.add(traditional)
+                all_chars.add(normalize_cjk_char(traditional))
 
     return all_chars
 
@@ -1395,8 +1369,9 @@ def calculate_coverage_from_notes(
 
         for note in notes:
             for char in note.left:
-                covered_characters.add(char)
-                coverage_by_type[gen_type].add(char)
+                normalized = normalize_cjk_char(char)
+                covered_characters.add(normalized)
+                coverage_by_type[gen_type].add(normalized)
 
     return CoverageStats(
         total_hanzi=len(all_hanzi_characters),

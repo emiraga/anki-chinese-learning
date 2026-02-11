@@ -1,10 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "requests",
-# ]
-# ///
+#!/usr/bin/env python3
 """
 Shared utilities for character discovery across dong, rtega, and yellowbridge scripts.
 
@@ -18,7 +12,8 @@ import unicodedata
 from pathlib import Path
 from collections import Counter
 from typing import Set, Tuple, List, Dict
-import requests
+
+from .anki_utils import anki_connect_request
 
 
 def normalize_cjk_char(char: str) -> str:
@@ -49,25 +44,6 @@ def extract_all_characters(text: str, normalize: bool = False) -> Set[str]:
             0x2F800 <= code_point <= 0x2FA1F):   # CJK Compatibility Ideographs Supplement
             chars.add(normalize_cjk_char(char) if normalize else char)
     return chars
-
-
-def anki_connect_request(action: str, params: Dict = None) -> Dict:
-    """Send a request to anki-connect."""
-    if params is None:
-        params = {}
-
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Error connecting to anki-connect: {e}")
 
 
 def get_notes_info_batch(note_ids: List[int]) -> List[Dict]:
