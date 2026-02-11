@@ -3,39 +3,18 @@
 # requires-python = ">=3.1"
 # dependencies = [
 #   "requests",
+#   "dragonmapper",
 # ]
 # ///
 
 import json
 import os
-import requests
+import sys
+from pathlib import Path
 
-
-def remove_tone_from_pinyin(pinyin_accented):
-    """
-    Remove tone marks from accented pinyin to get the base syllable
-
-    Args:
-        pinyin_accented (str): Accented pinyin (e.g., "mā", "má", "mǎ", "mà")
-
-    Returns:
-        str: Base syllable without tone (e.g., "ma")
-    """
-    # Map of accented vowels to base vowels
-    tone_map = {
-        'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
-        'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
-        'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
-        'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
-        'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
-        'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü',
-    }
-
-    result = pinyin_accented.lower()
-    for accented, base in tone_map.items():
-        result = result.replace(accented, base)
-
-    return result
+sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
+from anki_utils import anki_connect_request
+from pinyin_utils import remove_tone_marks
 
 
 def load_pos_mapping():
@@ -84,35 +63,6 @@ def format_pos_description(pos_value, pos_mapping):
             unknown_codes.append(code)
 
     return "\n".join(descriptions), unknown_codes
-
-
-def anki_connect_request(action, params=None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
 
 
 def extract_tagged_values(tags, prefix, suffix_map=None, separator=", ", sort=True):
@@ -292,7 +242,7 @@ def load_pinyin_mappings():
             continue
 
         pinyin_lower = pinyin_accented.lower()
-        syllable = remove_tone_from_pinyin(pinyin_accented)
+        syllable = remove_tone_marks(pinyin_accented)
 
         # Add to pinyin mapping (exact match including tone)
         if pinyin_lower not in pinyin_to_chars:
@@ -471,7 +421,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
 
         if traditional and pinyin_accented:
             pinyin_lower = pinyin_accented.lower()
-            syllable = remove_tone_from_pinyin(pinyin_accented)
+            syllable = remove_tone_marks(pinyin_accented)
 
             # Process Same Pinyin Traditional field (exact pinyin match including tone)
             if 'Same Pinyin Traditional' in note_info['fields']:
