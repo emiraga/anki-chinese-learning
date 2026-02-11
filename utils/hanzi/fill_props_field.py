@@ -4,6 +4,7 @@
 # dependencies = [
 #   "requests",
 #   "dragonmapper",
+#   "google-genai",
 # ]
 # ///
 
@@ -15,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
 from anki_utils import anki_connect_request
 from pinyin_utils import remove_tone_marks
+from gemini_utils import create_gemini_client, gemini_generate
 
 
 def load_pos_mapping():
@@ -63,6 +65,94 @@ def format_pos_description(pos_value, pos_mapping):
             unknown_codes.append(code)
 
     return "\n".join(descriptions), unknown_codes
+
+
+def build_pos_name_to_code_mapping(pos_mapping):
+    """
+    Build a reverse mapping from POS English names to their codes.
+
+    Args:
+        pos_mapping (dict): Dictionary mapping POS codes to [name, chinese_name, examples]
+
+    Returns:
+        dict: Dictionary mapping English names (lowercase) to POS codes
+    """
+    name_to_code = {}
+    for code, entry in pos_mapping.items():
+        name = entry[0].lower()  # English name, lowercase for matching
+        name_to_code[name] = code
+    return name_to_code
+
+
+def suggest_pos_with_gemini(traditional, meaning, pos_mapping, gemini_client):
+    """
+    Use Gemini AI to suggest the appropriate POS(s) for a Chinese phrase.
+    A single phrase may have multiple POS values.
+
+    Args:
+        traditional (str): Traditional Chinese text
+        meaning (str): English meaning of the phrase
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+        gemini_client: The Gemini client instance
+
+    Returns:
+        str: The suggested POS code(s) separated by "/", or empty string if unable to determine
+    """
+    # Build list of POS options with English names and examples
+    pos_options = []
+    for code, entry in pos_mapping.items():
+        name = entry[0]  # English name
+        examples = entry[2]  # Chinese examples
+        if examples:
+            pos_options.append(f"- {name} (e.g., {examples})")
+        else:
+            pos_options.append(f"- {name}")
+
+    pos_list = "\n".join(pos_options)
+
+    prompt = f"""You are a Chinese language expert. Determine the part(s) of speech (POS) for the following Chinese word/phrase.
+
+Chinese (Traditional): {traditional}
+English meaning: {meaning}
+
+Choose from this list (a word can have multiple POS if it's commonly used in different ways):
+{pos_list}
+
+Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g., "noun" or "noun, verb"). Nothing else."""
+
+    try:
+        response = gemini_generate(prompt, client=gemini_client, max_retries=2)
+        suggested_names = [name.strip().lower() for name in response.strip().split(',')]
+
+        # Build reverse mapping
+        name_to_code = build_pos_name_to_code_mapping(pos_mapping)
+
+        # Find codes for each suggested name
+        codes = []
+        for suggested_name in suggested_names:
+            # Try exact match first
+            if suggested_name in name_to_code:
+                codes.append(name_to_code[suggested_name])
+                continue
+
+            # Try partial match (in case AI returns slightly different format)
+            matched = False
+            for name, code in name_to_code.items():
+                if suggested_name in name or name in suggested_name:
+                    codes.append(code)
+                    matched = True
+                    break
+
+            if not matched:
+                raise Exception(f"  Warning: AI suggested '{suggested_name}' which doesn't match any POS")
+
+        if codes:
+            return "/".join(codes)
+
+        return ""
+
+    except Exception as e:
+        raise Exception(f"  Error getting POS suggestion from Gemini: {e}")
 
 
 def extract_tagged_values(tags, prefix, suffix_map=None, separator=", ", sort=True):
@@ -188,8 +278,7 @@ def load_prop_hanzi_mapping():
     response = anki_connect_request("findNotes", {"query": "note:Props"})
 
     if not response or not response.get("result"):
-        print("No Props notes found")
-        return {}
+        raise Exception("No Props notes found")
 
     note_ids = response["result"]
     print(f"Found {len(note_ids)} Props notes")
@@ -221,8 +310,7 @@ def load_pinyin_mappings():
     response = anki_connect_request("findNotes", {"query": "note:Hanzi -is:suspended"})
 
     if not response or not response.get("result"):
-        print("No Hanzi notes found")
-        return {}, {}
+        raise Exception("No Hanzi notes found")
 
     note_ids = response["result"]
     print(f"Found {len(note_ids)} enabled Hanzi notes")
@@ -259,13 +347,14 @@ def load_pinyin_mappings():
     return pinyin_to_chars, syllable_to_chars
 
 
-def find_notes_with_tags(note_type):
+def find_notes_with_tags(note_type, include_empty_pos=False):
     """
     Find notes that have prop::, actor::, place::, tone:: tags, non-empty POS field,
-    empty ID, or need Same Syllable Traditional field filled
+    empty ID, need Same Syllable Traditional field filled, or have empty POS field
 
     Args:
         note_type (str): The note type to search
+        include_empty_pos (bool): Whether to include notes with empty POS field
 
     Returns:
         list: List of note IDs
@@ -276,6 +365,9 @@ def find_notes_with_tags(note_type):
     # For Hanzi notes, also include notes that need Same Pinyin/Syllable Traditional fields filled
     if note_type == "Hanzi":
         search_query = f'note:{note_type} -is:suspended ({base_conditions} OR "Same Pinyin Traditional:" OR "Same Syllable Traditional:")'
+    elif note_type == "TOCFL" and include_empty_pos:
+        # Include unsuspended TOCFL notes with empty POS field for AI suggestion
+        search_query = f'note:{note_type} ({base_conditions} OR (-is:suspended "POS:"))'
     else:
         search_query = f'note:{note_type} {base_conditions}'
 
@@ -327,13 +419,12 @@ def update_note_fields(note_id, fields_dict):
         }
     })
 
-    if response and response.get("error") is None:  # anki-connect returns None on success
-        fields_str = ", ".join(f"{k}='{v}'" for k, v in fields_dict.items())
-        print(f"Updated note {note_id} with: {fields_str}")
-        return True
-    else:
-        print(f"Failed to update note {note_id}: {response}")
-        return False
+    if not response or response.get("error") is not None:
+        raise Exception(f"Failed to update note {note_id}: {response}")
+
+    fields_str = ", ".join(f"{k}='{v}'" for k, v in fields_dict.items())
+    print(f"Updated note {note_id} with: {fields_str}")
+    return True
 
 
 def get_same_chars_field_value(traditional, key, char_mapping):
@@ -353,9 +444,9 @@ def get_same_chars_field_value(traditional, key, char_mapping):
     return ''.join(sorted(other_chars))
 
 
-def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars):
+def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client=None):
     """
-    Update Props, Mnemonic pegs, Anki Tags, POS Description, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
+    Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
 
     Args:
         note_info (dict): Note information dictionary
@@ -363,6 +454,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
         pos_mapping (dict): Dictionary mapping POS codes to their descriptions
         pinyin_to_chars (dict): Dictionary mapping pinyin to lists of traditional characters
         syllable_to_chars (dict): Dictionary mapping syllables to lists of traditional characters
+        gemini_client: Optional Gemini client for AI-based POS suggestions
 
     Returns:
         bool: True if updated, False if skipped or failed
@@ -391,14 +483,25 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
     if current_anki_tags != new_anki_tags:
         fields_to_update['Anki Tags'] = new_anki_tags
 
-    # Process POS Description field
+    # Process POS field - suggest using AI if empty and Traditional ≤ 5 characters
     if 'POS' in note_info['fields'] and 'POS Description' in note_info['fields']:
         current_pos = note_info['fields'].get('POS', {}).get('value', '').strip()
+        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+        meaning = note_info['fields'].get('Meaning', {}).get('value', '').strip()
+
+        # Use AI to suggest POS if empty, Traditional ≤ 5 chars, and Gemini client available
+        if not current_pos and traditional and len(traditional) <= 5 and meaning and gemini_client:
+            print(f"  Suggesting POS for '{traditional}' ({meaning})...")
+            suggested_pos = suggest_pos_with_gemini(traditional, meaning, pos_mapping, gemini_client)
+            if suggested_pos:
+                fields_to_update['POS'] = suggested_pos
+                current_pos = suggested_pos  # Use for POS Description processing below
+
         current_pos_desc = note_info['fields'].get('POS Description', {}).get('value', '').strip()
         new_pos_desc, unknown_codes = format_pos_description(current_pos, pos_mapping)
 
         if unknown_codes:
-            note_identifier = note_info['fields'].get('Traditional', {}).get('value', '') or \
+            note_identifier = traditional or \
                               note_info['fields'].get('Hanzi', {}).get('value', '') or \
                               str(note_id)
             raise ValueError(f"Unknown POS codes in note {note_identifier}: {unknown_codes}")
@@ -447,17 +550,14 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
         print(f"  {field_name}: '{current_value}' -> '{new_value}'")
 
     # Update the note's fields
-    if update_note_fields(note_id, fields_to_update):
-        print(f"Successfully updated note {note_id}")
-        return True
-    else:
-        print(f"Failed to update note {note_id}")
-        return False
+    update_note_fields(note_id, fields_to_update)
+    print(f"Successfully updated note {note_id}")
+    return True
 
 
 def main():
     """
-    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, POS Description, and Same Syllable Traditional fields
+    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, POS, POS Description, and Same Syllable Traditional fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
@@ -475,12 +575,19 @@ def main():
     print("=== Loading Pinyin mappings ===")
     pinyin_to_chars, syllable_to_chars = load_pinyin_mappings()
 
+    # Create Gemini client for AI-based POS suggestions
+    print("=== Creating Gemini client ===")
+    gemini_client = create_gemini_client()
+    print("Gemini client created successfully")
+
     note_types = ["Hanzi", "TOCFL"]
     batch_size = 100
 
     for note_type in note_types:
         print(f"\n=== Processing {note_type} ===")
-        note_ids = find_notes_with_tags(note_type)
+        # For TOCFL, include notes with empty POS for AI suggestion
+        include_empty_pos = (note_type == "TOCFL")
+        note_ids = find_notes_with_tags(note_type, include_empty_pos=include_empty_pos)
 
         if not note_ids:
             continue
@@ -497,13 +604,12 @@ def main():
                 notes_info = get_notes_info(batch_ids)
 
                 for note_info in notes_info:
-                    if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars):
+                    if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client):
                         total_updated += 1
                     total_processed += 1
 
             except Exception as e:
-                print(f"Error processing batch {batch_num}: {e}")
-                continue
+                raise Exception(f"Error processing batch {batch_num}: {e}") from e
 
         print(f"\nCompleted processing {note_type}")
         print(f"Total processed: {total_processed}, Updated: {total_updated}")
