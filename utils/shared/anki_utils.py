@@ -94,3 +94,22 @@ def get_meaning_field(note: dict[str, Any]) -> str:
     if meaning_2:
         return meaning_2
     return note['fields'].get('Meaning', {}).get('value', '').strip()
+
+
+def update_note_fields(note_id: int, fields: dict[str, str]) -> None:
+    """
+    Update fields on an existing note.
+
+    Args:
+        note_id: The note ID to update
+        fields: Dictionary of field names to new values
+
+    Raises:
+        Exception: If the update fails
+    """
+    anki_connect_request("updateNoteFields", {
+        "note": {
+            "id": note_id,
+            "fields": fields
+        }
+    })

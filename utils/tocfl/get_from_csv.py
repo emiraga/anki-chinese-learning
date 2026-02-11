@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Add shared utils to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
-from anki_utils import find_notes_by_query, get_notes_info
+from anki_utils import find_notes_by_query, get_notes_info, update_note_fields
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "tocfl" / "20240923"
 POS_FILE = Path(__file__).parent.parent.parent / "app" / "data" / "pos.json"
@@ -345,6 +345,9 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
 
     Queries Anki for all non-suspended TOCFL notes and compares the POS field
     with the aggregated part_of_speech from the CSV mapping.
+
+    When CSV has POS values that Anki doesn't have, updates the Anki note's
+    POS field with the combined values and clears the POS Description field.
     """
     print("\n=== Comparing POS with Anki ===")
 
@@ -382,6 +385,7 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
 
         if anki_pos != csv_pos:
             differences.append({
+                "note_id": note["noteId"],
                 "traditional": traditional,
                 "anki_pos": sorted(anki_pos),
                 "csv_pos": sorted(csv_pos),
@@ -405,6 +409,26 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
                 print(f"  Only in Anki: {diff['anki_only']}")
             if diff['csv_only']:
                 print(f"  Only in CSV:  {diff['csv_only']}")
+
+    # Update Anki notes that have POS values only in CSV
+    notes_to_update = [d for d in differences if d['csv_only']]
+    if notes_to_update:
+        print(f"\n=== Updating {len(notes_to_update)} notes with CSV-only POS values ===")
+        for diff in notes_to_update:
+            # Combine all POS values (both from Anki and CSV)
+            combined_pos = sorted(set(diff['anki_pos']) | set(diff['csv_pos']))
+            new_pos_value = "/".join(combined_pos)
+
+            print(f"  {diff['traditional']}: {diff['anki_pos']} -> {combined_pos}")
+
+            update_note_fields(
+                int(diff['note_id']),
+                {
+                    "POS": new_pos_value,
+                    "POS Description": "",
+                }
+            )
+        print(f"Updated {len(notes_to_update)} notes")
 
     if not_in_csv:
         print(f"\n=== Not in CSV ({len(not_in_csv)} entries) ===")
