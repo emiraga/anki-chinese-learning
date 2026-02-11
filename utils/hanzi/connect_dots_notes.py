@@ -101,95 +101,260 @@ TWO_CHAR_PHRASE_WHITELIST = [
 
 
 @dataclass
-class AnkiCache:
-    """Cache for Anki queries to avoid repeated API calls"""
-    _query_cache: dict[str, list[int]] = field(default_factory=dict)
-    _notes_info_cache: dict[int, dict] = field(default_factory=dict)
+class HanziNote:
+    """Pre-fetched data for a single Hanzi note"""
+    note_id: int
+    traditional: str
+    pinyin: str
+    meaning: str
+    sound_component: str
+    tags: set[str]
 
-    def get_query(self, query: str) -> list[int] | None:
-        """Get cached query result"""
-        return self._query_cache.get(query)
+    @property
+    def syllable(self) -> str:
+        """Get the syllable (pinyin without tone marks)"""
+        return remove_tone_marks(self.pinyin) if self.pinyin else ""
 
-    def set_query(self, query: str, note_ids: list[int]) -> None:
-        """Cache query result"""
-        self._query_cache[query] = note_ids
+    @property
+    def tone(self) -> int | None:
+        """Get the tone number (1-5)"""
+        return get_tone_number(self.pinyin) if self.pinyin else None
 
-    def get_notes_info(self, note_ids: list[int]) -> tuple[list[dict], list[int]]:
-        """
-        Get cached notes info and return uncached IDs.
 
-        Returns:
-            Tuple of (cached_notes, uncached_ids)
-        """
-        cached = []
-        uncached = []
-        for note_id in note_ids:
-            if note_id in self._notes_info_cache:
-                cached.append(self._notes_info_cache[note_id])
-            else:
-                uncached.append(note_id)
-        return cached, uncached
+@dataclass
+class TOCFLNote:
+    """Pre-fetched data for a single TOCFL note"""
+    note_id: int
+    traditional: str
+    meaning: str
 
-    def set_notes_info(self, notes: list[dict]) -> None:
-        """Cache notes info"""
-        for note in notes:
-            note_id = note.get('noteId')
-            if note_id:
-                self._notes_info_cache[note_id] = note
 
-    def clear(self) -> None:
-        """Clear all caches"""
-        self._query_cache.clear()
-        self._notes_info_cache.clear()
+@dataclass
+class HanziDataStore:
+    """
+    Pre-fetched Hanzi and TOCFL data for efficient in-memory lookups.
+
+    This avoids making many individual API calls by fetching all data upfront.
+    """
+    hanzi_notes: list[HanziNote] = field(default_factory=list)
+    tocfl_notes: list[TOCFLNote] = field(default_factory=list)
+
+    # Indexes for fast lookup
+    _hanzi_by_traditional: dict[str, HanziNote] = field(default_factory=dict)
+    _hanzi_by_sound_component: dict[str, list[HanziNote]] = field(default_factory=dict)
+    _hanzi_by_syllable: dict[str, list[HanziNote]] = field(default_factory=dict)
+    _hanzi_by_tag: dict[str, list[HanziNote]] = field(default_factory=dict)
+    _tocfl_two_char: list[TOCFLNote] = field(default_factory=list)
+
+    def build_indexes(self) -> None:
+        """Build lookup indexes after loading notes"""
+        self._hanzi_by_traditional.clear()
+        self._hanzi_by_sound_component.clear()
+        self._hanzi_by_syllable.clear()
+        self._hanzi_by_tag.clear()
+        self._tocfl_two_char.clear()
+
+        for note in self.hanzi_notes:
+            # Index by traditional character
+            if note.traditional:
+                self._hanzi_by_traditional[note.traditional] = note
+
+            # Index by sound component
+            if note.sound_component:
+                if note.sound_component not in self._hanzi_by_sound_component:
+                    self._hanzi_by_sound_component[note.sound_component] = []
+                self._hanzi_by_sound_component[note.sound_component].append(note)
+
+            # Index by syllable (only single characters)
+            if note.traditional and len(note.traditional) == 1 and note.syllable:
+                if note.syllable not in self._hanzi_by_syllable:
+                    self._hanzi_by_syllable[note.syllable] = []
+                self._hanzi_by_syllable[note.syllable].append(note)
+
+            # Index by tag
+            for tag in note.tags:
+                if tag not in self._hanzi_by_tag:
+                    self._hanzi_by_tag[tag] = []
+                self._hanzi_by_tag[tag].append(note)
+
+        # Index two-character TOCFL notes
+        for note in self.tocfl_notes:
+            if note.traditional and len(note.traditional) == 2:
+                self._tocfl_two_char.append(note)
+
+    def get_by_traditional(self, char: str) -> HanziNote | None:
+        """Get a Hanzi note by its traditional character"""
+        return self._hanzi_by_traditional.get(char)
+
+    def get_by_sound_component(self, component: str) -> list[HanziNote]:
+        """Get all Hanzi notes with a specific sound component"""
+        return self._hanzi_by_sound_component.get(component, [])
+
+    def get_by_syllable(self, syllable: str) -> list[HanziNote]:
+        """Get all single-character Hanzi notes with a specific syllable"""
+        return self._hanzi_by_syllable.get(syllable.lower(), [])
+
+    def get_by_tag(self, tag: str) -> list[HanziNote]:
+        """Get all Hanzi notes with a specific tag"""
+        return self._hanzi_by_tag.get(tag, [])
+
+    def get_single_char_hanzi(self) -> list[HanziNote]:
+        """Get all single-character Hanzi notes"""
+        return [n for n in self.hanzi_notes if n.traditional and len(n.traditional) == 1]
+
+    def get_two_char_tocfl(self) -> list[TOCFLNote]:
+        """Get all two-character TOCFL notes"""
+        return self._tocfl_two_char
+
+    def get_two_char_tocfl_by_character(self, char: str) -> list[TOCFLNote]:
+        """Get all two-character TOCFL notes containing a specific character"""
+        return [n for n in self._tocfl_two_char if char in n.traditional]
+
+    def get_all_traditional_chars(self) -> set[str]:
+        """Get all unique single traditional characters"""
+        return {
+            normalize_cjk_char(n.traditional)
+            for n in self.hanzi_notes
+            if n.traditional and len(n.traditional) == 1
+        }
+
+    def get_sound_component_counts(self) -> dict[str, int]:
+        """Get count of characters per sound component"""
+        return {k: len(v) for k, v in self._hanzi_by_sound_component.items()}
+
+    def get_syllable_counts(self) -> dict[str, int]:
+        """Get count of characters per syllable"""
+        return {k: len(v) for k, v in self._hanzi_by_syllable.items()}
 
     def stats(self) -> dict[str, int]:
-        """Return cache statistics"""
+        """Return statistics about the data store"""
         return {
-            'queries': len(self._query_cache),
-            'notes': len(self._notes_info_cache),
+            'hanzi_notes': len(self.hanzi_notes),
+            'tocfl_notes': len(self.tocfl_notes),
+            'unique_sound_components': len(self._hanzi_by_sound_component),
+            'unique_syllables': len(self._hanzi_by_syllable),
+            'unique_tags': len(self._hanzi_by_tag),
+            'two_char_tocfl': len(self._tocfl_two_char),
         }
 
 
-# Global cache instance
-_cache = AnkiCache()
+# Global data store instance
+_data_store: HanziDataStore | None = None
 
 
-def get_cache() -> AnkiCache:
-    """Get the global cache instance"""
-    return _cache
+def get_data_store() -> HanziDataStore:
+    """Get the global data store, raising an error if not initialized"""
+    if _data_store is None:
+        raise RuntimeError("Data store not initialized. Call load_all_data() first.")
+    return _data_store
 
 
-def find_notes_by_query(query: str, cache: AnkiCache | None = None) -> list[int]:
+def load_all_data() -> HanziDataStore:
     """
-    Find notes matching a query
+    Load all Hanzi and TOCFL notes from Anki into the global data store.
+
+    This should be called once at startup before running any generators.
+
+    Returns:
+        The initialized HanziDataStore
+    """
+    global _data_store
+
+    print("Loading all Hanzi notes from Anki...")
+
+    # Fetch all unsuspended Hanzi notes
+    hanzi_query = 'note:Hanzi -is:suspended'
+    response = anki_connect_request("findNotes", {"query": hanzi_query})
+    hanzi_ids = response.get("result", [])
+
+    print(f"  Found {len(hanzi_ids)} Hanzi notes, fetching details...")
+
+    # Fetch note details in batches
+    hanzi_notes: list[HanziNote] = []
+    batch_size = 500
+    for i in range(0, len(hanzi_ids), batch_size):
+        batch_ids = hanzi_ids[i:i + batch_size]
+        response = anki_connect_request("notesInfo", {"notes": batch_ids})
+        notes_info = response.get("result", [])
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+            meaning = get_meaning_field(note)
+            sound_component = note['fields'].get('Sound component character', {}).get('value', '').strip()
+            tags = set(note.get('tags', []))
+
+            hanzi_notes.append(HanziNote(
+                note_id=note['noteId'],
+                traditional=traditional,
+                pinyin=pinyin,
+                meaning=meaning,
+                sound_component=sound_component,
+                tags=tags,
+            ))
+
+    print(f"  Loaded {len(hanzi_notes)} Hanzi notes")
+
+    # Fetch all unsuspended TOCFL notes
+    print("Loading all TOCFL notes from Anki...")
+    tocfl_query = 'note:TOCFL -is:suspended'
+    response = anki_connect_request("findNotes", {"query": tocfl_query})
+    tocfl_ids = response.get("result", [])
+
+    print(f"  Found {len(tocfl_ids)} TOCFL notes, fetching details...")
+
+    tocfl_notes: list[TOCFLNote] = []
+    for i in range(0, len(tocfl_ids), batch_size):
+        batch_ids = tocfl_ids[i:i + batch_size]
+        response = anki_connect_request("notesInfo", {"notes": batch_ids})
+        notes_info = response.get("result", [])
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            meaning = get_meaning_field(note)
+
+            tocfl_notes.append(TOCFLNote(
+                note_id=note['noteId'],
+                traditional=traditional,
+                meaning=meaning,
+            ))
+
+    print(f"  Loaded {len(tocfl_notes)} TOCFL notes")
+
+    # Create and populate the data store
+    _data_store = HanziDataStore(
+        hanzi_notes=hanzi_notes,
+        tocfl_notes=tocfl_notes,
+    )
+    _data_store.build_indexes()
+
+    stats = _data_store.stats()
+    print(f"  Built indexes: {stats['unique_sound_components']} sound components, "
+          f"{stats['unique_syllables']} syllables, {stats['unique_tags']} tags")
+
+    return _data_store
+
+
+def find_notes_by_query(query: str) -> list[int]:
+    """
+    Find notes matching a query.
 
     Args:
         query: Anki search query
-        cache: Optional cache instance (uses global cache if not provided)
 
     Returns:
         List of note IDs
     """
-    if cache is None:
-        cache = _cache
-
-    cached = cache.get_query(query)
-    if cached is not None:
-        return cached
-
     response = anki_connect_request("findNotes", {"query": query})
-    result = response.get("result", [])
-    cache.set_query(query, result)
-    return result
+    return response.get("result", [])
 
 
-def get_notes_info(note_ids: list[int], cache: AnkiCache | None = None) -> list[dict]:
+def get_notes_info(note_ids: list[int]) -> list[dict]:
     """
-    Get detailed information about multiple notes
+    Get detailed information about multiple notes.
 
     Args:
         note_ids: List of note IDs
-        cache: Optional cache instance (uses global cache if not provided)
 
     Returns:
         List of note information dictionaries
@@ -197,19 +362,8 @@ def get_notes_info(note_ids: list[int], cache: AnkiCache | None = None) -> list[
     if not note_ids:
         return []
 
-    if cache is None:
-        cache = _cache
-
-    cached_notes, uncached_ids = cache.get_notes_info(note_ids)
-
-    if not uncached_ids:
-        return cached_notes
-
-    response = anki_connect_request("notesInfo", {"notes": uncached_ids})
-    new_notes = response.get("result", [])
-    cache.set_notes_info(new_notes)
-
-    return cached_notes + new_notes
+    response = anki_connect_request("notesInfo", {"notes": note_ids})
+    return response.get("result", [])
 
 
 def escape_comma(text: str) -> str:
@@ -472,7 +626,7 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
     """
     Generate notes mapping Hanzi with same sound component to their pinyin.
 
-    Queries Hanzi notes that have a specific value in "Sound component character" field.
+    Uses pre-fetched data from HanziDataStore.
     Left = Traditional characters, Right = Pinyin pronunciations
     """
 
@@ -484,28 +638,25 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
         return "sound_component"
 
     def generate_notes(self) -> list[ConnectDotsNote]:
-        # Query Hanzi notes with this sound component, including the sound component character itself
-        query = f'note:Hanzi -is:suspended ("Sound component character:{self.sound_component}" OR "Traditional:{self.sound_component}")'
-        note_ids = find_notes_by_query(query)
+        data_store = get_data_store()
 
-        if not note_ids:
-            return []
+        # Get notes with this sound component
+        notes = data_store.get_by_sound_component(self.sound_component)
 
-        notes_info = get_notes_info(note_ids)
+        # Also include the sound component character itself if it exists
+        sound_component_note = data_store.get_by_traditional(self.sound_component)
+        if sound_component_note and sound_component_note not in notes:
+            notes = [sound_component_note] + notes
 
         left = []
         right = []
         explanation = []
 
-        for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-            meaning = get_meaning_field(note)
-
-            if traditional and pinyin:
-                left.append(traditional)
-                right.append(pinyin_with_zhuyin(pinyin))
-                explanation.append(meaning)
+        for note in notes:
+            if note.traditional and note.pinyin:
+                left.append(note.traditional)
+                right.append(pinyin_with_zhuyin(note.pinyin))
+                explanation.append(note.meaning)
 
         if not left:
             return []
@@ -518,8 +669,7 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
     """
     Generate notes mapping Hanzi with same syllable to their pinyin.
 
-    Queries Hanzi notes where the Pinyin (with diacritics removed) matches
-    the specified syllable.
+    Uses pre-fetched data from HanziDataStore.
     Left = Traditional characters, Right = Pinyin pronunciations
     """
 
@@ -531,11 +681,12 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
         return "syllable"
 
     def generate_notes(self) -> list[ConnectDotsNote]:
-        # Query all single-character Hanzi notes
-        query = 'note:Hanzi -is:suspended'
-        note_ids = find_notes_by_query(query)
+        data_store = get_data_store()
 
-        if not note_ids:
+        # Get all notes with this syllable (already filtered to single chars)
+        notes = data_store.get_by_syllable(self.syllable)
+
+        if not notes:
             return []
 
         left = []
@@ -543,34 +694,14 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
         explanation = []
         present_tones: set[int] = set()
 
-        # Process in batches
-        batch_size = 100
-        for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i:i + batch_size]
-            notes_info = get_notes_info(batch_ids)
-
-            for note in notes_info:
-                traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-                pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-                meaning = get_meaning_field(note)
-
-                if not traditional or not pinyin:
-                    continue
-
-                # Only consider single-character notes
-                if len(traditional) != 1:
-                    continue
-
-                # Check if syllable matches
-                syllable = remove_tone_marks(pinyin)
-                if syllable == self.syllable:
-                    left.append(traditional)
-                    right.append(pinyin_with_zhuyin(pinyin))
-                    explanation.append(meaning)
-                    # Track which tones are present
-                    tone = get_tone_number(pinyin)
-                    if tone:
-                        present_tones.add(tone)
+        for note in notes:
+            if note.traditional and note.pinyin:
+                left.append(note.traditional)
+                right.append(pinyin_with_zhuyin(note.pinyin))
+                explanation.append(note.meaning)
+                # Track which tones are present
+                if note.tone:
+                    present_tones.add(note.tone)
 
         if not left:
             return []
@@ -591,7 +722,7 @@ class PropHanziToPinyin(ConnectDotsGenerator):
     """
     Generate notes mapping Hanzi with a specific prop tag to their pinyin.
 
-    Queries Hanzi notes that have a tag like "{tag_prefix}::{prop_name}".
+    Uses pre-fetched data from HanziDataStore.
     Left = Traditional characters, Right = Pinyin pronunciations
     """
 
@@ -604,28 +735,21 @@ class PropHanziToPinyin(ConnectDotsGenerator):
         return self.tag_prefix
 
     def generate_notes(self) -> list[ConnectDotsNote]:
-        # Query Hanzi notes with this prop tag
-        query = f'note:Hanzi -is:suspended "tag:{self.tag_prefix}::{self.prop_name}"'
-        note_ids = find_notes_by_query(query)
+        data_store = get_data_store()
 
-        if not note_ids:
-            return []
-
-        notes_info = get_notes_info(note_ids)
+        # Get notes with the prop tag (e.g., "prop::square")
+        tag = f"{self.tag_prefix}::{self.prop_name}"
+        notes = data_store.get_by_tag(tag)
 
         left = []
         right = []
         explanation = []
 
-        for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-            meaning = get_meaning_field(note)
-
-            if traditional and pinyin:
-                left.append(traditional)
-                right.append(pinyin_with_zhuyin(pinyin))
-                explanation.append(meaning)
+        for note in notes:
+            if note.traditional and note.pinyin:
+                left.append(note.traditional)
+                right.append(pinyin_with_zhuyin(note.pinyin))
+                explanation.append(note.meaning)
 
         if not left:
             return []
@@ -690,7 +814,7 @@ class TwoCharPhraseByCharacter(ConnectDotsGenerator):
     """
     Generate notes mapping two-character phrases sharing a common character to their meanings.
 
-    Queries TOCFL notes that are two-character phrases containing the specified character.
+    Uses pre-fetched data from HanziDataStore.
     Left = Traditional phrases, Right = Meanings
     """
 
@@ -702,35 +826,18 @@ class TwoCharPhraseByCharacter(ConnectDotsGenerator):
         return "two_char_phrase"
 
     def generate_notes(self) -> list[ConnectDotsNote]:
-        # Query TOCFL notes (we'll filter for two-character phrases containing our character)
-        query = 'note:TOCFL -is:suspended'
-        note_ids = find_notes_by_query(query)
+        data_store = get_data_store()
 
-        if not note_ids:
-            return []
+        # Get two-character TOCFL notes containing this character
+        notes = data_store.get_two_char_tocfl_by_character(self.character)
 
         left = []
         right = []
 
-        batch_size = 100
-        for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i:i + batch_size]
-            notes_info = get_notes_info(batch_ids)
-
-            for note in notes_info:
-                traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-
-                # Only two-character phrases containing our target character
-                if not traditional or len(traditional) != 2:
-                    continue
-                if self.character not in traditional:
-                    continue
-
-                meaning = get_meaning_field(note)
-
-                if traditional and meaning:
-                    left.append(traditional)
-                    right.append(meaning)
+        for note in notes:
+            if note.traditional and note.meaning:
+                left.append(note.traditional)
+                right.append(note.meaning)
 
         if not left:
             return []
@@ -799,8 +906,7 @@ class CustomHanziToPinyin(ConnectDotsGenerator):
     """
     Generate notes mapping a custom set of Hanzi characters to their pinyin.
 
-    Takes a name and a string of characters, queries each character's Hanzi note,
-    and creates a ConnectDots note mapping Traditional -> Pinyin.
+    Uses pre-fetched data from HanziDataStore.
     """
 
     def __init__(self, name: str, characters: str):
@@ -812,30 +918,18 @@ class CustomHanziToPinyin(ConnectDotsGenerator):
         return "custom_hanzi"
 
     def generate_notes(self) -> list[ConnectDotsNote]:
+        data_store = get_data_store()
+
         left = []
         right = []
         explanation = []
 
         for char in self.characters:
-            # Query the Hanzi note for this character
-            query = f'note:Hanzi -is:suspended "Traditional:{char}"'
-            note_ids = find_notes_by_query(query)
-
-            if not note_ids:
-                continue
-
-            notes_info = get_notes_info(note_ids)
-
-            for note in notes_info:
-                traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-                pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-                meaning = get_meaning_field(note)
-
-                if traditional == char and pinyin:
-                    left.append(traditional)
-                    right.append(pinyin_with_zhuyin(pinyin))
-                    explanation.append(meaning)
-                    break  # Only take the first matching note per character
+            note = data_store.get_by_traditional(char)
+            if note and note.pinyin:
+                left.append(note.traditional)
+                right.append(pinyin_with_zhuyin(note.pinyin))
+                explanation.append(note.meaning)
 
         if not left:
             return []
@@ -1117,112 +1211,90 @@ def get_sound_component_frequencies() -> FrequencyData:
     """
     Get sound component frequency data from all Hanzi notes.
 
+    Uses pre-fetched data from HanziDataStore.
+
     Returns:
         FrequencyData with counts and examples per sound component
     """
-    query = 'note:Hanzi -is:suspended "Sound component character:_*"'
-    note_ids = find_notes_by_query(query)
+    data_store = get_data_store()
 
     counts: dict[str, int] = {}
     examples: dict[str, list[str]] = {}
+    total_with_sound_component = 0
 
-    batch_size = 100
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
-        notes_info = get_notes_info(batch_ids)
+    for note in data_store.hanzi_notes:
+        if not note.sound_component:
+            continue
 
-        for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
-            sound_component = note['fields'].get('Sound component character', {}).get('value', '').strip()
+        total_with_sound_component += 1
+        counts[note.sound_component] = counts.get(note.sound_component, 0) + 1
 
-            if not sound_component:
-                continue
+        if note.sound_component not in examples:
+            examples[note.sound_component] = []
+        if len(examples[note.sound_component]) < 5 and note.traditional:
+            example = f"{note.traditional}({note.pinyin})" if note.pinyin else note.traditional
+            examples[note.sound_component].append(example)
 
-            counts[sound_component] = counts.get(sound_component, 0) + 1
-            if sound_component not in examples:
-                examples[sound_component] = []
-            if len(examples[sound_component]) < 5 and traditional:
-                example = f"{traditional}({pinyin})" if pinyin else traditional
-                examples[sound_component].append(example)
-
-    return FrequencyData(counts=counts, examples=examples, total_items=len(note_ids))
+    return FrequencyData(counts=counts, examples=examples, total_items=total_with_sound_component)
 
 
 def get_tocfl_two_char_frequencies() -> FrequencyData:
     """
     Get character frequency data from two-character TOCFL phrases.
 
+    Uses pre-fetched data from HanziDataStore.
+
     Returns:
         FrequencyData with counts and examples per character
     """
-    query = 'note:TOCFL -is:suspended'
-    note_ids = find_notes_by_query(query)
+    data_store = get_data_store()
 
     counts: dict[str, int] = {}
     examples: dict[str, list[str]] = {}
-    total_two_char_phrases = 0
 
-    batch_size = 100
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
-        notes_info = get_notes_info(batch_ids)
+    two_char_notes = data_store.get_two_char_tocfl()
 
-        for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+    for note in two_char_notes:
+        # Count each character in the two-character phrase
+        for char in note.traditional:
+            counts[char] = counts.get(char, 0) + 1
+            if char not in examples:
+                examples[char] = []
+            if len(examples[char]) < 5:
+                examples[char].append(note.traditional)
 
-            if not traditional or len(traditional) != 2:
-                continue
-
-            total_two_char_phrases += 1
-
-            # Count each character in the two-character phrase
-            for char in traditional:
-                counts[char] = counts.get(char, 0) + 1
-                if char not in examples:
-                    examples[char] = []
-                if len(examples[char]) < 5:
-                    examples[char].append(traditional)
-
-    return FrequencyData(counts=counts, examples=examples, total_items=total_two_char_phrases)
+    return FrequencyData(counts=counts, examples=examples, total_items=len(two_char_notes))
 
 
 def get_syllable_frequencies() -> FrequencyData:
     """
     Get syllable frequency data from all single-character Hanzi notes.
 
+    Uses pre-fetched data from HanziDataStore.
+
     Returns:
         FrequencyData with counts and examples per syllable
     """
-    query = 'note:Hanzi -is:suspended'
-    note_ids = find_notes_by_query(query)
+    data_store = get_data_store()
 
     counts: dict[str, int] = {}
     examples: dict[str, list[str]] = {}
-    total_single_chars = 0
 
-    batch_size = 100
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
-        notes_info = get_notes_info(batch_ids)
+    single_char_notes = data_store.get_single_char_hanzi()
 
-        for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+    for note in single_char_notes:
+        if not note.pinyin:
+            continue
 
-            if not traditional or not pinyin or len(traditional) != 1:
-                continue
+        syllable = note.syllable
+        if syllable:
+            counts[syllable] = counts.get(syllable, 0) + 1
+            if syllable not in examples:
+                examples[syllable] = []
+            if len(examples[syllable]) < 5:
+                examples[syllable].append(f"{note.traditional}({note.pinyin})")
 
-            total_single_chars += 1
-            syllable = remove_tone_marks(pinyin)
-            if syllable:
-                counts[syllable] = counts.get(syllable, 0) + 1
-                if syllable not in examples:
-                    examples[syllable] = []
-                if len(examples[syllable]) < 5:
-                    examples[syllable].append(f"{traditional}({pinyin})")
-
-    return FrequencyData(counts=counts, examples=examples, total_items=total_single_chars)
+    return FrequencyData(counts=counts, examples=examples, total_items=len(single_char_notes))
 
 
 def print_frequency_table(
@@ -1261,10 +1333,11 @@ def print_frequency_table(
     print(f"Total unique {item_label.lower()}s: {len(sorted_items)}")
     print(f"Total items analyzed: {data.total_items}")
 
-    cache_stats = _cache.stats()
-    print(f"\n=== Cache Stats ===")
-    print(f"Cached queries: {cache_stats['queries']}")
-    print(f"Cached notes: {cache_stats['notes']}")
+    data_store = get_data_store()
+    data_store_stats = data_store.stats()
+    print(f"\n=== Data Store Stats ===")
+    print(f"Hanzi notes: {data_store_stats['hanzi_notes']}")
+    print(f"TOCFL notes: {data_store_stats['tocfl_notes']}")
 
 
 def list_sound_component_frequencies(top_n: int = 50) -> None:
@@ -1326,24 +1399,13 @@ def get_all_hanzi_characters() -> set[str]:
     """
     Get all single-character Hanzi from the database.
 
+    Uses pre-fetched data from HanziDataStore.
+
     Returns:
         Set of all Traditional characters from Hanzi notes
     """
-    query = 'note:Hanzi -is:suspended'
-    note_ids = find_notes_by_query(query)
-
-    all_chars: set[str] = set()
-    batch_size = 100
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
-        notes_info = get_notes_info(batch_ids)
-
-        for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-            if traditional and len(traditional) == 1:
-                all_chars.add(normalize_cjk_char(traditional))
-
-    return all_chars
+    data_store = get_data_store()
+    return data_store.get_all_traditional_chars()
 
 
 def calculate_coverage_from_notes(
@@ -1468,6 +1530,11 @@ def main():
     )
     args = parser.parse_args()
 
+    # Load all data upfront to avoid repeated API calls
+    print("=== Loading Data ===\n")
+    load_all_data()
+    print()
+
     if args.list_syllables:
         list_syllable_frequencies(top_n=args.top)
         return
@@ -1555,7 +1622,6 @@ def main():
     stats, notes_by_type = manager.process_generators(generators)
 
     # Get all Hanzi characters for coverage calculation
-    print("\nFetching all Hanzi characters for coverage analysis...")
     all_hanzi_characters = get_all_hanzi_characters()
 
     # Calculate coverage from generated notes
@@ -1583,10 +1649,11 @@ def main():
         uncovered_sorted = sorted(coverage.uncovered_characters)
         print("".join(uncovered_sorted))
 
-    cache_stats = _cache.stats()
-    print(f"\n=== Cache Stats ===")
-    print(f"Cached queries: {cache_stats['queries']}")
-    print(f"Cached notes: {cache_stats['notes']}")
+    data_store = get_data_store()
+    data_store_stats = data_store.stats()
+    print(f"\n=== Data Store Stats ===")
+    print(f"Hanzi notes: {data_store_stats['hanzi_notes']}")
+    print(f"TOCFL notes: {data_store_stats['tocfl_notes']}")
 
 
 if __name__ == "__main__":
