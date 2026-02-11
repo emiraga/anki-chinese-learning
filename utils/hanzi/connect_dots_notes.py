@@ -1331,6 +1331,7 @@ class CoverageStats:
     total_hanzi: int
     covered_characters: set[str]
     coverage_by_type: dict[str, set[str]]  # generator_type -> set of characters
+    all_characters: set[str] = field(default_factory=set)  # all Hanzi characters
 
     @property
     def covered_hanzi(self) -> int:
@@ -1342,17 +1343,45 @@ class CoverageStats:
             return 0.0
         return (self.covered_hanzi / self.total_hanzi) * 100
 
+    @property
+    def uncovered_characters(self) -> set[str]:
+        return self.all_characters - self.covered_characters
+
+
+def get_all_hanzi_characters() -> set[str]:
+    """
+    Get all single-character Hanzi from the database.
+
+    Returns:
+        Set of all Traditional characters from Hanzi notes
+    """
+    query = 'note:Hanzi -is:suspended'
+    note_ids = find_notes_by_query(query)
+
+    all_chars: set[str] = set()
+    batch_size = 100
+    for i in range(0, len(note_ids), batch_size):
+        batch_ids = note_ids[i:i + batch_size]
+        notes_info = get_notes_info(batch_ids)
+
+        for note in notes_info:
+            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            if traditional and len(traditional) == 1:
+                all_chars.add(traditional)
+
+    return all_chars
+
 
 def calculate_coverage_from_notes(
     notes_by_type: dict[str, list[ConnectDotsNote]],
-    total_hanzi: int
+    all_hanzi_characters: set[str]
 ) -> CoverageStats:
     """
     Calculate coverage statistics from generated notes.
 
     Args:
         notes_by_type: Dictionary mapping generator_type to list of notes
-        total_hanzi: Total count of Hanzi notes
+        all_hanzi_characters: Set of all Hanzi characters
 
     Returns:
         CoverageStats derived from the notes
@@ -1370,9 +1399,10 @@ def calculate_coverage_from_notes(
                 coverage_by_type[gen_type].add(char)
 
     return CoverageStats(
-        total_hanzi=total_hanzi,
+        total_hanzi=len(all_hanzi_characters),
         covered_characters=covered_characters,
-        coverage_by_type=coverage_by_type
+        coverage_by_type=coverage_by_type,
+        all_characters=all_hanzi_characters
     )
 
 
@@ -1549,11 +1579,12 @@ def main():
     print(f"\nRunning {len(generators)} generator(s)...\n")
     stats, notes_by_type = manager.process_generators(generators)
 
-    # Get total Hanzi count for coverage calculation
-    total_hanzi = len(find_notes_by_query('note:Hanzi -is:suspended'))
+    # Get all Hanzi characters for coverage calculation
+    print("\nFetching all Hanzi characters for coverage analysis...")
+    all_hanzi_characters = get_all_hanzi_characters()
 
     # Calculate coverage from generated notes
-    coverage = calculate_coverage_from_notes(notes_by_type, total_hanzi)
+    coverage = calculate_coverage_from_notes(notes_by_type, all_hanzi_characters)
 
     print("\n=== Summary ===")
     print(f"Created: {stats['created']}")
@@ -1566,10 +1597,16 @@ def main():
     print(f"\n=== Hanzi Coverage ===")
     print(f"Total Hanzi: {coverage.total_hanzi}")
     print(f"Covered: {coverage.covered_hanzi} ({coverage.coverage_percentage:.1f}%)")
-    print(f"Uncovered: {coverage.total_hanzi - coverage.covered_hanzi}")
+    print(f"Uncovered: {len(coverage.uncovered_characters)}")
     print(f"\nBy generator type:")
     for gen_type, chars in sorted(coverage.coverage_by_type.items()):
         print(f"  {gen_type}: {len(chars)} characters")
+
+    # Print uncovered characters
+    if coverage.uncovered_characters:
+        print(f"\n=== Uncovered Characters ({len(coverage.uncovered_characters)}) ===")
+        uncovered_sorted = sorted(coverage.uncovered_characters)
+        print("".join(uncovered_sorted))
 
     cache_stats = _cache.stats()
     print(f"\n=== Cache Stats ===")
