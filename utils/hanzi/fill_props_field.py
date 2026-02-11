@@ -207,12 +207,18 @@ Available POS codes (you may suggest additional ones if relevant):
 {all_pos_list}
 
 Requirements:
-1. Generate at least ONE simple, short example sentence for each POS listed above
+1. Generate at least ONE example sentence for each POS listed above
 2. If a POS has importantly different usages, generate multiple examples
 3. You MAY add examples for additional POS codes if the phrase is commonly used that way
 4. Sentences should reflect casual Taiwan Mandarin conversation
-5. Keep sentences simple and short - just enough to show correct usage
-6. Use Traditional Chinese characters
+5. Use Traditional Chinese characters
+
+CRITICAL - Sentence length:
+- Sentences MUST be very short and simple
+- Use basic vocabulary and simple grammar (casual conversation in Taiwan)
+- Each sentence should demonstrate ONE clear usage
+- NO complex or compound sentences, unless it's absolutely necessary
+- Think "flashcard example" not "textbook paragraph"
 
 Reply in this EXACT JSON format (no markdown, no code blocks):
 {{"POS_CODE": [{{"Traditional": "example sentence", "English": "translation"}}]}}
@@ -241,8 +247,7 @@ Example response format:
         validated_dict = {}
         for pos_code, examples in examples_dict.items():
             if pos_code not in pos_mapping:
-                print(f"  Warning: AI suggested unknown POS '{pos_code}', skipping")
-                continue
+                raise ValueError(f"AI suggested unknown POS '{pos_code}'")
 
             if not isinstance(examples, list):
                 continue
@@ -536,8 +541,8 @@ def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examp
             # Include unsuspended TOCFL notes with empty POS field for AI suggestion
             conditions.append('(-is:suspended "POS:")')
         if include_empty_examples:
-            # Include unsuspended TOCFL notes with empty Examples JSON field or empty Examples field
-            conditions.append('(-is:suspended ("Examples JSON:" OR "Examples:"))')
+            # Include unsuspended TOCFL notes with empty Examples JSON/Examples field, due today or tomorrow
+            conditions.append('(-is:suspended prop:due<=1 ("Examples JSON:" OR "Examples:"))')
         search_query = f'note:{note_type} ({" OR ".join(conditions)})'
     else:
         search_query = f'note:{note_type} {base_conditions}'
@@ -800,9 +805,16 @@ def main():
                 notes_info = get_notes_info(batch_ids)
 
                 for note_info in notes_info:
-                    if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client):
-                        total_updated += 1
-                    total_processed += 1
+                    try:
+                        if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client):
+                            total_updated += 1
+                        total_processed += 1
+                    except ValueError as e:
+                        # Skip notes with validation errors (e.g., unknown POS codes)
+                        note_id = note_info.get('noteId')
+                        traditional = note_info['fields'].get('Traditional', {}).get('value', '')
+                        print(f"  Skipping note {note_id} ({traditional}): {e}")
+                        total_processed += 1
 
             except Exception as e:
                 raise Exception(f"Error processing batch {batch_num}: {e}") from e
