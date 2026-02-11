@@ -1,0 +1,21 @@
+phrase
+idiom
+adverb
+conjunction
+determiner
+measure
+noun
+preposition
+particle
+verb
+intransitive action verbs
+intransitive action verbs, separable
+intransitive state verbs
+transitive state verbs
+intransitive state verbs, attributive only
+intransitive state verbs, predicative only
+intransitive state verbs, separable
+auxiliary verbs
+intransitive process verbs
+transitive process verbs
+intransitive process verbs, separable
