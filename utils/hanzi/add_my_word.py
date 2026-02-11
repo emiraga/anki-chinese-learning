@@ -13,9 +13,11 @@ import dragonmapper.transcriptions
 import dragonmapper.hanzi
 import argparse
 import sys
-import os
 from pathlib import Path
-import time
+
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.gemini_utils import create_gemini_client, translate_with_gemini
 
 
 def anki_connect_request(action, params=None):
@@ -61,42 +63,6 @@ def pinyin_to_zhuyin(pinyin_text):
         return zhuyin
     except Exception as e:
         raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}")
-
-
-def translate_with_gemini(traditional_text, client, model_name="gemini-2.5-flash", max_retries=3):
-    """
-    Use Google Gemini API to translate Chinese text to English
-    Better at understanding idioms and colloquial expressions
-
-    Args:
-        traditional_text (str): Traditional Chinese text
-        client: genai.Client instance
-        model_name (str): Model name to use
-        max_retries (int): Maximum number of retry attempts
-
-    Returns:
-        str: English translation
-    """
-    if not traditional_text or not traditional_text.strip():
-        raise ValueError("Text cannot be empty")
-
-    prompt = f"""Translate this Traditional Chinese text to English. If it contains idioms or colloquial expressions, translate the meaning, not literally.
-
-Traditional Chinese: {traditional_text}
-
-Provide only the English translation, nothing else."""
-
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(model=model_name, contents=prompt)
-            translated_text = response.text.strip()
-            return translated_text
-        except Exception as e:
-            if attempt < max_retries - 1:
-                print(f"Translation attempt {attempt + 1} failed: {e}. Retrying...")
-                time.sleep(2)
-            else:
-                raise Exception(f"Translation failed after {max_retries} attempts: {e}")
 
 
 def get_pinyin_and_zhuyin(traditional_text):
@@ -263,11 +229,6 @@ def main():
         "--meaning",
         help="Manual meaning/translation (optional, will be auto-generated if not provided)"
     )
-    parser.add_argument(
-        "--credentials",
-        type=str,
-        help="Path to Google Cloud credentials JSON file (default: utils/tts/gcloud_account.json)"
-    )
 
     args = parser.parse_args()
 
@@ -297,51 +258,9 @@ def main():
             meaning = args.meaning
             print(f"✓ Using provided meaning: {meaning}")
         else:
-            # Get Google Gemini API key
-            api_key = None
-
-            # Try to get from API key file first
-            script_dir = Path(__file__).resolve().parent
-            project_root = script_dir.parent.parent
-            api_key_path = project_root / 'utils' / 'tts' / 'gcloud_api_key.txt'
-
-            if api_key_path.exists():
-                with open(api_key_path) as f:
-                    api_key = f.read().strip()
-
-            # Try credentials JSON file
-            if not api_key:
-                credentials_path = args.credentials
-                if not credentials_path:
-                    credentials_path = project_root / 'utils' / 'tts' / 'gcloud_account.json'
-                else:
-                    credentials_path = Path(credentials_path)
-
-                if credentials_path.exists():
-                    import json
-                    with open(credentials_path) as f:
-                        creds = json.load(f)
-                        api_key = creds.get('gemini_api_key')
-
-            # Try environment variable if not in file
-            if not api_key:
-                api_key = os.environ.get('GEMINI_API_KEY')
-
-            if not api_key:
-                raise Exception(
-                    "Gemini API key not found. Please either:\n"
-                    "1. Create utils/tts/gcloud_api_key.txt with your API key\n"
-                    "2. Add 'gemini_api_key' field to utils/tts/gcloud_account.json\n"
-                    "3. Set GEMINI_API_KEY environment variable\n"
-                    "4. Use --meaning to provide translation manually\n\n"
-                    "Get an API key at: https://aistudio.google.com/apikey"
-                )
-
-            # Initialize Gemini
+            # Initialize Gemini client
             print("⋯ Initializing Google Gemini client...")
-            from google import genai
-
-            client = genai.Client(api_key=api_key)
+            client = create_gemini_client()
 
             # Translate
             print("⋯ Translating with Google Gemini...")
