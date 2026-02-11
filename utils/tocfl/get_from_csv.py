@@ -1,14 +1,21 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = []
+# dependencies = [
+#   "requests",
+# ]
 # ///
 
 import csv
 import json
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+# Add shared utils to path
+sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
+from anki_utils import find_notes_by_query, get_notes_info
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "tocfl" / "20240923"
 POS_FILE = Path(__file__).parent.parent.parent / "app" / "data" / "pos.json"
@@ -326,6 +333,87 @@ def create_mapping(words: list[TocflWord]) -> dict[str, TocflEntry]:
     return mapping
 
 
+def parse_anki_pos(pos_value: str) -> list[str]:
+    """Parse POS field from Anki, splitting on '/' delimiter."""
+    if not pos_value or not pos_value.strip():
+        return []
+    return [p.strip() for p in pos_value.split("/") if p.strip()]
+
+
+def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
+    """Compare POS data between CSV mapping and Anki TOCFL notes.
+
+    Queries Anki for all non-suspended TOCFL notes and compares the POS field
+    with the aggregated part_of_speech from the CSV mapping.
+    """
+    print("\n=== Comparing POS with Anki ===")
+
+    # Query Anki for non-suspended TOCFL notes
+    print("Fetching non-suspended TOCFL notes from Anki...")
+    note_ids = find_notes_by_query("note:TOCFL -is:suspended")
+    print(f"Found {len(note_ids)} notes")
+
+    if not note_ids:
+        print("No TOCFL notes found in Anki")
+        return
+
+    # Get note info in batches
+    print("Fetching note details...")
+    notes = get_notes_info(note_ids)
+
+    differences: list[dict[str, object]] = []
+    not_in_csv: list[str] = []
+
+    for note in notes:
+        traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
+        anki_pos_raw = note["fields"].get("POS", {}).get("value", "").strip()
+
+        if not traditional:
+            continue
+
+        anki_pos = set(parse_anki_pos(anki_pos_raw))
+
+        if traditional not in mapping:
+            if traditional:
+                not_in_csv.append(traditional)
+            continue
+
+        csv_pos = set(mapping[traditional].part_of_speech)
+
+        if anki_pos != csv_pos:
+            differences.append({
+                "traditional": traditional,
+                "anki_pos": sorted(anki_pos),
+                "csv_pos": sorted(csv_pos),
+                "anki_only": sorted(anki_pos - csv_pos),
+                "csv_only": sorted(csv_pos - anki_pos),
+            })
+
+    # Print results
+    print(f"\n=== Results ===")
+    print(f"Total notes compared: {len(notes)}")
+    print(f"Notes not in CSV: {len(not_in_csv)}")
+    print(f"POS differences found: {len(differences)}")
+
+    if differences:
+        print(f"\n=== POS Differences ===")
+        for diff in differences:
+            print(f"\n{diff['traditional']}:")
+            print(f"  Anki: {diff['anki_pos']}")
+            print(f"  CSV:  {diff['csv_pos']}")
+            if diff['anki_only']:
+                print(f"  Only in Anki: {diff['anki_only']}")
+            if diff['csv_only']:
+                print(f"  Only in CSV:  {diff['csv_only']}")
+
+    if not_in_csv:
+        print(f"\n=== Not in CSV ({len(not_in_csv)} entries) ===")
+        for trad in not_in_csv[:20]:  # Show first 20
+            print(f"  {trad}")
+        if len(not_in_csv) > 20:
+            print(f"  ... and {len(not_in_csv) - 20} more")
+
+
 if __name__ == "__main__":
     words = load_all()
     print(f"Loaded {len(words)} words across {len(LEVEL_ORDER)} levels")
@@ -336,16 +424,5 @@ if __name__ == "__main__":
     mapping = create_mapping(words)
     print(f"\nCreated mapping with {len(mapping)} unique traditional entries")
 
-    # Show some examples with multiple entries
-    multi_entry = [k for k, v in mapping.items() if len(v.entries) > 1][:3]
-    print(f"\nExamples with multiple entries:")
-    for trad in multi_entry:
-        entry = mapping[trad]
-        print(json.dumps({
-            "traditional": entry.traditional,
-            "pinyin": entry.pinyin,
-            "context": entry.context,
-            "part_of_speech": entry.part_of_speech,
-            "levels": entry.levels,
-            "entry_count": len(entry.entries),
-        }, ensure_ascii=False, indent=2))
+    # Compare POS with Anki
+    compare_pos_with_anki(mapping)
