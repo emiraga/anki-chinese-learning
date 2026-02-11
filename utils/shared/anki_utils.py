@@ -43,3 +43,54 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> d
         raise Exception(f"AnkiConnect error: {result['error']}")
 
     return result
+
+
+def find_notes_by_query(query: str) -> list[int]:
+    """
+    Find notes matching a query.
+
+    Args:
+        query: Anki search query
+
+    Returns:
+        List of note IDs
+    """
+    response = anki_connect_request("findNotes", {"query": query})
+    return response.get("result", [])
+
+
+def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
+    """
+    Get detailed information about multiple notes.
+
+    Args:
+        note_ids: List of note IDs
+
+    Returns:
+        List of note information dictionaries
+    """
+    if not note_ids:
+        return []
+
+    response = anki_connect_request("notesInfo", {"notes": note_ids})
+
+    if response and response.get("result"):
+        return response["result"]
+
+    raise Exception("Failed to fetch notes")
+
+
+def get_meaning_field(note: dict[str, Any]) -> str:
+    """
+    Get the meaning from a note, preferring "Meaning 2" over "Meaning".
+
+    Args:
+        note: Note dictionary with fields
+
+    Returns:
+        The meaning value, trying "Meaning 2" first, then "Meaning"
+    """
+    meaning_2 = note['fields'].get('Meaning 2', {}).get('value', '').strip()
+    if meaning_2:
+        return meaning_2
+    return note['fields'].get('Meaning', {}).get('value', '').strip()

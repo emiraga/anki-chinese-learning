@@ -34,8 +34,19 @@ from pathlib import Path
 # Add parent directory to path for shared imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from shared.anki_utils import anki_connect_request
+from shared.anki_utils import (
+    anki_connect_request,
+    find_notes_by_query,
+    get_notes_info,
+    get_meaning_field,
+)
 from shared.character_discovery import normalize_cjk_char
+from shared.pinyin_utils import (
+    remove_tone_marks,
+    get_tone_number,
+    syllable_with_tone,
+    pinyin_with_zhuyin,
+)
 
 
 # Thresholds for automatic generator creation
@@ -335,148 +346,9 @@ def load_all_data() -> HanziDataStore:
     return _data_store
 
 
-def find_notes_by_query(query: str) -> list[int]:
-    """
-    Find notes matching a query.
-
-    Args:
-        query: Anki search query
-
-    Returns:
-        List of note IDs
-    """
-    response = anki_connect_request("findNotes", {"query": query})
-    return response.get("result", [])
-
-
-def get_notes_info(note_ids: list[int]) -> list[dict]:
-    """
-    Get detailed information about multiple notes.
-
-    Args:
-        note_ids: List of note IDs
-
-    Returns:
-        List of note information dictionaries
-    """
-    if not note_ids:
-        return []
-
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-    return response.get("result", [])
-
-
 def escape_comma(text: str) -> str:
     """Replace ASCII comma with fullwidth comma + variation selector to avoid field delimiter conflicts"""
     return text.replace(',', '，︀')
-
-
-def get_meaning_field(note: dict) -> str:
-    """
-    Get the meaning from a note, preferring "Meaning 2" over "Meaning".
-
-    Args:
-        note: Note dictionary with fields
-
-    Returns:
-        The meaning value, trying "Meaning 2" first, then "Meaning"
-    """
-    meaning_2 = note['fields'].get('Meaning 2', {}).get('value', '').strip()
-    if meaning_2:
-        return meaning_2
-    return note['fields'].get('Meaning', {}).get('value', '').strip()
-
-
-def pinyin_with_zhuyin(pinyin: str) -> str:
-    """
-    Convert pinyin to 'pinyin (zhuyin)' format.
-
-    Args:
-        pinyin: Pinyin with tone marks (e.g., "hǎo")
-
-    Returns:
-        Pinyin with zhuyin appended (e.g., "hǎo (ㄏㄠˇ)")
-    """
-    try:
-        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin)
-        return f"{pinyin} ({zhuyin})"
-    except Exception:
-        return pinyin
-
-
-def remove_tone_marks(pinyin: str) -> str:
-    """
-    Remove tone marks from pinyin to get the syllable
-
-    Args:
-        pinyin: Pinyin with tone marks (e.g., "hǎo")
-
-    Returns:
-        Pinyin without tone marks (e.g., "hao")
-    """
-    try:
-        # Convert to numbered pinyin first, then strip numbers
-        numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin)
-        # Remove the tone numbers
-        return re.sub(r'[1-5]', '', numbered).lower()
-    except Exception:
-        # If conversion fails, try manual approach
-        tone_map = {
-            'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
-            'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
-            'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
-            'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
-            'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
-            'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü',
-        }
-        result = pinyin.lower()
-        for toned, plain in tone_map.items():
-            result = result.replace(toned, plain)
-        return result
-
-
-def get_tone_number(pinyin: str) -> int | None:
-    """
-    Extract the tone number from pinyin with tone marks.
-
-    Args:
-        pinyin: Pinyin with tone marks (e.g., "hǎo")
-
-    Returns:
-        Tone number (1-5) or None if cannot determine.
-        Tone 5 represents the neutral tone (no mark).
-    """
-    try:
-        numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin)
-        # Extract the number at the end
-        match = re.search(r'([1-5])$', numbered)
-        if match:
-            return int(match.group(1))
-        # No tone number means neutral tone (tone 5)
-        return 5
-    except Exception:
-        return None
-
-
-def syllable_with_tone(syllable: str, tone: int) -> str:
-    """
-    Generate pinyin with a specific tone mark.
-
-    Args:
-        syllable: Base syllable without tone (e.g., "ma")
-        tone: Tone number (1-5, where 5 is neutral)
-
-    Returns:
-        Pinyin with tone mark (e.g., "mǎ" for tone 3)
-    """
-    if tone == 5:
-        # Neutral tone - just return the syllable as-is
-        return syllable
-    try:
-        numbered = f"{syllable}{tone}"
-        return dragonmapper.transcriptions.numbered_to_accented(numbered)
-    except Exception:
-        return syllable
 
 
 @dataclass
@@ -622,7 +494,55 @@ class ConnectDotsGenerator(ABC):
         pass
 
 
-class SoundComponentHanziToPinyin(ConnectDotsGenerator):
+class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
+    """
+    Base class for generators that map Hanzi to Pinyin.
+
+    Subclasses must implement:
+    - generator_type: The type identifier (used in key prefix)
+    - get_key_suffix(): The suffix for the note key
+    - get_notes(): Returns the HanziNote list to process
+
+    Optionally override:
+    - get_fake_right(): Returns fake_right values for the note
+    """
+
+    @abstractmethod
+    def get_key_suffix(self) -> str:
+        """Get the suffix for the note key"""
+        pass
+
+    @abstractmethod
+    def get_notes(self) -> list[HanziNote]:
+        """Get the notes to process"""
+        pass
+
+    def get_fake_right(self, notes: list[HanziNote]) -> list[str]:
+        """Get fake_right values. Override in subclasses if needed."""
+        return []
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        notes = self.get_notes()
+
+        left = []
+        right = []
+        explanation = []
+
+        for note in notes:
+            if note.traditional and note.pinyin:
+                left.append(note.traditional)
+                right.append(pinyin_with_zhuyin(note.pinyin))
+                explanation.append(note.meaning)
+
+        if not left:
+            return []
+
+        key = f"{self.generator_type}:{self.get_key_suffix()}"
+        fake_right = self.get_fake_right(notes)
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation, fake_right=fake_right)]
+
+
+class SoundComponentHanziToPinyin(BaseHanziToPinyinGenerator):
     """
     Generate notes mapping Hanzi with same sound component to their pinyin.
 
@@ -637,10 +557,11 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
     def generator_type(self) -> str:
         return "sound_component"
 
-    def generate_notes(self) -> list[ConnectDotsNote]:
-        data_store = get_data_store()
+    def get_key_suffix(self) -> str:
+        return self.sound_component
 
-        # Get notes with this sound component
+    def get_notes(self) -> list[HanziNote]:
+        data_store = get_data_store()
         notes = data_store.get_by_sound_component(self.sound_component)
 
         # Also include the sound component character itself if it exists
@@ -648,24 +569,10 @@ class SoundComponentHanziToPinyin(ConnectDotsGenerator):
         if sound_component_note and sound_component_note not in notes:
             notes = [sound_component_note] + notes
 
-        left = []
-        right = []
-        explanation = []
-
-        for note in notes:
-            if note.traditional and note.pinyin:
-                left.append(note.traditional)
-                right.append(pinyin_with_zhuyin(note.pinyin))
-                explanation.append(note.meaning)
-
-        if not left:
-            return []
-
-        key = f"{self.generator_type}:{self.sound_component}"
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
+        return notes
 
 
-class SyllableHanziToPinyin(ConnectDotsGenerator):
+class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
     """
     Generate notes mapping Hanzi with same syllable to their pinyin.
 
@@ -680,31 +587,18 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
     def generator_type(self) -> str:
         return "syllable"
 
-    def generate_notes(self) -> list[ConnectDotsNote]:
-        data_store = get_data_store()
+    def get_key_suffix(self) -> str:
+        return self.syllable
 
-        # Get all notes with this syllable (already filtered to single chars)
-        notes = data_store.get_by_syllable(self.syllable)
+    def get_notes(self) -> list[HanziNote]:
+        return get_data_store().get_by_syllable(self.syllable)
 
-        if not notes:
-            return []
-
-        left = []
-        right = []
-        explanation = []
+    def get_fake_right(self, notes: list[HanziNote]) -> list[str]:
+        # Track which tones are present
         present_tones: set[int] = set()
-
         for note in notes:
-            if note.traditional and note.pinyin:
-                left.append(note.traditional)
-                right.append(pinyin_with_zhuyin(note.pinyin))
-                explanation.append(note.meaning)
-                # Track which tones are present
-                if note.tone:
-                    present_tones.add(note.tone)
-
-        if not left:
-            return []
+            if note.traditional and note.pinyin and note.tone:
+                present_tones.add(note.tone)
 
         # Generate fake_right for missing tones (all 5 tones should be represented)
         all_tones = {1, 2, 3, 4, 5}
@@ -714,11 +608,10 @@ class SyllableHanziToPinyin(ConnectDotsGenerator):
             pinyin_with_tone = syllable_with_tone(self.syllable, tone)
             fake_right.append(pinyin_with_zhuyin(pinyin_with_tone))
 
-        key = f"{self.generator_type}:{self.syllable}"
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation, fake_right=fake_right)]
+        return fake_right
 
 
-class PropHanziToPinyin(ConnectDotsGenerator):
+class PropHanziToPinyin(BaseHanziToPinyinGenerator):
     """
     Generate notes mapping Hanzi with a specific prop tag to their pinyin.
 
@@ -734,28 +627,12 @@ class PropHanziToPinyin(ConnectDotsGenerator):
     def generator_type(self) -> str:
         return self.tag_prefix
 
-    def generate_notes(self) -> list[ConnectDotsNote]:
-        data_store = get_data_store()
+    def get_key_suffix(self) -> str:
+        return self.prop_name
 
-        # Get notes with the prop tag (e.g., "prop::square")
+    def get_notes(self) -> list[HanziNote]:
         tag = f"{self.tag_prefix}::{self.prop_name}"
-        notes = data_store.get_by_tag(tag)
-
-        left = []
-        right = []
-        explanation = []
-
-        for note in notes:
-            if note.traditional and note.pinyin:
-                left.append(note.traditional)
-                right.append(pinyin_with_zhuyin(note.pinyin))
-                explanation.append(note.meaning)
-
-        if not left:
-            return []
-
-        key = f"{self.generator_type}:{self.prop_name}"
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
+        return get_data_store().get_by_tag(tag)
 
 
 class TagTraditionalToMeaning(ConnectDotsGenerator):
@@ -902,7 +779,7 @@ class IntersectionGenerator(ConnectDotsGenerator):
         )]
 
 
-class CustomHanziToPinyin(ConnectDotsGenerator):
+class CustomHanziToPinyin(BaseHanziToPinyinGenerator):
     """
     Generate notes mapping a custom set of Hanzi characters to their pinyin.
 
@@ -917,25 +794,17 @@ class CustomHanziToPinyin(ConnectDotsGenerator):
     def generator_type(self) -> str:
         return "custom_hanzi"
 
-    def generate_notes(self) -> list[ConnectDotsNote]:
+    def get_key_suffix(self) -> str:
+        return self.name
+
+    def get_notes(self) -> list[HanziNote]:
         data_store = get_data_store()
-
-        left = []
-        right = []
-        explanation = []
-
+        notes = []
         for char in self.characters:
             note = data_store.get_by_traditional(char)
-            if note and note.pinyin:
-                left.append(note.traditional)
-                right.append(pinyin_with_zhuyin(note.pinyin))
-                explanation.append(note.meaning)
-
-        if not left:
-            return []
-
-        key = f"{self.generator_type}:{self.name}"
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation)]
+            if note:
+                notes.append(note)
+        return notes
 
 
 class ConnectDotsManager:

@@ -10,7 +10,12 @@ import json
 import requests
 import argparse
 import re
+import sys
 from pathlib import Path
+
+# Add parent directory to path for shared imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from shared.anki_utils import get_notes_info
 
 
 def anki_connect_request(action, params=None):
@@ -58,24 +63,6 @@ def get_note_info(note_id):
         return response["result"][0]
 
     raise Exception(f"No note found for ID {note_id}")
-
-
-def get_notes_info_batch(note_ids):
-    """
-    Get detailed information about multiple notes in a single request
-
-    Args:
-        note_ids (list): List of note IDs
-
-    Returns:
-        list: List of note information dictionaries
-    """
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise Exception(f"Failed to fetch batch of {len(note_ids)} notes")
 
 
 def update_note_field(note_id, field_name, field_value):
@@ -226,7 +213,7 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
         batch_ids = all_note_ids[batch_start:batch_end]
 
         try:
-            batch_notes = get_notes_info_batch(batch_ids)
+            batch_notes = get_notes_info(batch_ids)
             all_notes_info.extend(batch_notes)
             print(f"  Fetched {batch_end}/{len(all_note_ids)} notes")
         except Exception as e:

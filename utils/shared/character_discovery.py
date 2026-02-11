@@ -13,7 +13,7 @@ from pathlib import Path
 from collections import Counter
 from typing import Set, Tuple, List, Dict
 
-from .anki_utils import anki_connect_request
+from .anki_utils import anki_connect_request, get_notes_info
 
 
 def normalize_cjk_char(char: str) -> str:
@@ -46,17 +46,6 @@ def extract_all_characters(text: str, normalize: bool = False) -> Set[str]:
     return chars
 
 
-def get_notes_info_batch(note_ids: List[int]) -> List[Dict]:
-    """Get detailed information about multiple notes in a batch."""
-    if not note_ids:
-        return []
-
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise Exception("Failed to fetch notes")
 
 
 def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> List[int]:
@@ -93,7 +82,7 @@ def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter]:
         for i in range(0, len(note_ids), batch_size):
             batch = note_ids[i:i + batch_size]
             try:
-                notes_info = get_notes_info_batch(batch)
+                notes_info = get_notes_info(batch)
 
                 for note_info in notes_info:
                     traditional = note_info['fields'].get('Traditional', {}).get('value', '')
