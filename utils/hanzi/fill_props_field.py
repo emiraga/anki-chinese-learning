@@ -155,6 +155,169 @@ Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g
         raise Exception(f"  Error getting POS suggestion from Gemini: {e}")
 
 
+def generate_examples_json_with_gemini(traditional, pos_codes, pos_mapping, gemini_client):
+    """
+    Use Gemini AI to generate example sentences for each POS of a Chinese phrase.
+
+    Args:
+        traditional (str): Traditional Chinese text
+        pos_codes (str): POS codes separated by "/" (e.g., "N/V")
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+        gemini_client: The Gemini client instance
+
+    Returns:
+        dict: Dictionary mapping POS codes to lists of example objects
+              {<POS>: [{"Traditional": <sentence>, "English": <translation>}]}
+    """
+    if not pos_codes or not pos_codes.strip():
+        return {}
+
+    # Parse POS codes and build descriptions for the prompt
+    codes = [code.strip() for code in pos_codes.split('/') if code.strip()]
+    pos_descriptions = []
+    code_to_name = {}
+
+    for code in codes:
+        if code in pos_mapping:
+            entry = pos_mapping[code]
+            name = entry[0]  # English name
+            code_to_name[code] = name
+            pos_descriptions.append(f"- {code} ({name})")
+
+    if not pos_descriptions:
+        return {}
+
+    # Build list of all available POS for AI to suggest additional ones
+    all_pos_options = []
+    for code, entry in pos_mapping.items():
+        name = entry[0]
+        all_pos_options.append(f"- {code} ({name})")
+
+    all_pos_list = "\n".join(all_pos_options)
+    pos_list = "\n".join(pos_descriptions)
+
+    prompt = f"""You are a Chinese language expert specializing in Taiwan Mandarin.
+
+Generate example sentences for the word/phrase "{traditional}".
+
+The phrase has these parts of speech:
+{pos_list}
+
+Available POS codes (you may suggest additional ones if relevant):
+{all_pos_list}
+
+Requirements:
+1. Generate at least ONE simple, short example sentence for each POS listed above
+2. If a POS has importantly different usages, generate multiple examples
+3. You MAY add examples for additional POS codes if the phrase is commonly used that way
+4. Sentences should reflect casual Taiwan Mandarin conversation
+5. Keep sentences simple and short - just enough to show correct usage
+6. Use Traditional Chinese characters
+
+Reply in this EXACT JSON format (no markdown, no code blocks):
+{{"POS_CODE": [{{"Traditional": "example sentence", "English": "translation"}}]}}
+
+Example response format:
+{{"V": [{{"Traditional": "我要吃飯。", "English": "I want to eat."}}], "N": [{{"Traditional": "這是我的飯。", "English": "This is my rice."}}]}}"""
+
+    try:
+        response = gemini_generate(prompt, client=gemini_client, max_retries=2)
+
+        # Clean up response - remove markdown code blocks if present
+        response = response.strip()
+        if response.startswith('```'):
+            # Remove opening code block
+            first_newline = response.find('\n')
+            if first_newline != -1:
+                response = response[first_newline + 1:]
+            # Remove closing code block
+            if response.endswith('```'):
+                response = response[:-3].strip()
+
+        # Parse JSON response
+        examples_dict = json.loads(response)
+
+        # Validate structure and filter to only valid POS codes
+        validated_dict = {}
+        for pos_code, examples in examples_dict.items():
+            if pos_code not in pos_mapping:
+                print(f"  Warning: AI suggested unknown POS '{pos_code}', skipping")
+                continue
+
+            if not isinstance(examples, list):
+                continue
+
+            validated_examples = []
+            for example in examples:
+                if isinstance(example, dict) and 'Traditional' in example and 'English' in example:
+                    validated_examples.append({
+                        'Traditional': example['Traditional'],
+                        'English': example['English']
+                    })
+
+            if validated_examples:
+                validated_dict[pos_code] = validated_examples
+
+        return validated_dict
+
+    except json.JSONDecodeError as e:
+        raise Exception(f"Failed to parse AI response as JSON: {e}\nResponse: {response}")
+    except Exception as e:
+        raise Exception(f"Error generating examples from Gemini: {e}")
+
+
+def format_examples_as_html(examples_json_str, pos_mapping):
+    """
+    Format Examples JSON as HTML with POS name as heading, Chinese sentence,
+    and gray English translation.
+
+    Args:
+        examples_json_str (str): JSON string with examples per POS
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+
+    Returns:
+        str: HTML formatted examples
+    """
+    if not examples_json_str or not examples_json_str.strip():
+        return ""
+
+    try:
+        examples_dict = json.loads(examples_json_str)
+    except json.JSONDecodeError:
+        return ""
+
+    if not examples_dict:
+        return ""
+
+    pos_sections = []
+
+    for pos_code, examples in examples_dict.items():
+        if not examples:
+            continue
+
+        # Get POS English name
+        if pos_code in pos_mapping:
+            pos_name = pos_mapping[pos_code][0]  # English name
+        else:
+            pos_name = pos_code
+
+        # Build section for this POS
+        section_parts = [f"<b>{pos_name}</b>"]
+
+        # Add each example
+        for example in examples:
+            if isinstance(example, dict) and 'Traditional' in example and 'English' in example:
+                chinese = example['Traditional']
+                english = example['English']
+                section_parts.append(f"{chinese}<br><span style=\"color: gray;\">{english}</span>")
+
+        # Join examples within a POS with single line break
+        pos_sections.append("<br>".join(section_parts))
+
+    # Join different POS sections with double line break
+    return "<br><br>".join(pos_sections)
+
+
 def extract_tagged_values(tags, prefix, suffix_map=None, separator=", ", sort=True):
     """
     Extract and process tags that start with a specific prefix
@@ -347,14 +510,16 @@ def load_pinyin_mappings():
     return pinyin_to_chars, syllable_to_chars
 
 
-def find_notes_with_tags(note_type, include_empty_pos=False):
+def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examples=False):
     """
     Find notes that have prop::, actor::, place::, tone:: tags, non-empty POS field,
-    empty ID, need Same Syllable Traditional field filled, or have empty POS field
+    empty ID, need Same Syllable Traditional field filled, have empty POS field,
+    or need Examples JSON field filled
 
     Args:
         note_type (str): The note type to search
         include_empty_pos (bool): Whether to include notes with empty POS field
+        include_empty_examples (bool): Whether to include notes with empty Examples JSON field
 
     Returns:
         list: List of note IDs
@@ -365,9 +530,15 @@ def find_notes_with_tags(note_type, include_empty_pos=False):
     # For Hanzi notes, also include notes that need Same Pinyin/Syllable Traditional fields filled
     if note_type == "Hanzi":
         search_query = f'note:{note_type} -is:suspended ({base_conditions} OR "Same Pinyin Traditional:" OR "Same Syllable Traditional:")'
-    elif note_type == "TOCFL" and include_empty_pos:
-        # Include unsuspended TOCFL notes with empty POS field for AI suggestion
-        search_query = f'note:{note_type} ({base_conditions} OR (-is:suspended "POS:"))'
+    elif note_type == "TOCFL":
+        conditions = [base_conditions]
+        if include_empty_pos:
+            # Include unsuspended TOCFL notes with empty POS field for AI suggestion
+            conditions.append('(-is:suspended "POS:")')
+        if include_empty_examples:
+            # Include unsuspended TOCFL notes with empty Examples JSON field or empty Examples field
+            conditions.append('(-is:suspended ("Examples JSON:" OR "Examples:"))')
+        search_query = f'note:{note_type} ({" OR ".join(conditions)})'
     else:
         search_query = f'note:{note_type} {base_conditions}'
 
@@ -446,7 +617,7 @@ def get_same_chars_field_value(traditional, key, char_mapping):
 
 def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client=None):
     """
-    Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
+    Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
 
     Args:
         note_info (dict): Note information dictionary
@@ -454,7 +625,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
         pos_mapping (dict): Dictionary mapping POS codes to their descriptions
         pinyin_to_chars (dict): Dictionary mapping pinyin to lists of traditional characters
         syllable_to_chars (dict): Dictionary mapping syllables to lists of traditional characters
-        gemini_client: Optional Gemini client for AI-based POS suggestions
+        gemini_client: Optional Gemini client for AI-based POS and examples suggestions
 
     Returns:
         bool: True if updated, False if skipped or failed
@@ -509,6 +680,30 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
         if current_pos_desc != new_pos_desc:
             fields_to_update['POS Description'] = new_pos_desc
 
+    # Process Examples JSON field - generate examples for each POS if empty and Traditional ≤ 3 chars
+    if 'Examples JSON' in note_info['fields'] and 'POS' in note_info['fields']:
+        current_examples_json = note_info['fields'].get('Examples JSON', {}).get('value', '').strip()
+        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+        # Use the potentially updated POS value
+        pos_value = fields_to_update.get('POS') or note_info['fields'].get('POS', {}).get('value', '').strip()
+
+        # Generate examples if empty, Traditional ≤ 3 chars, has POS, and Gemini client available
+        if not current_examples_json and traditional and len(traditional) <= 3 and pos_value and gemini_client:
+            print(f"  Generating examples for '{traditional}' with POS: {pos_value}...")
+            examples_dict = generate_examples_json_with_gemini(traditional, pos_value, pos_mapping, gemini_client)
+            if examples_dict:
+                fields_to_update['Examples JSON'] = json.dumps(examples_dict, ensure_ascii=False)
+
+        # Process Examples field (HTML formatted) if it exists
+        if 'Examples' in note_info['fields']:
+            current_examples_html = note_info['fields'].get('Examples', {}).get('value', '').strip()
+            # Use potentially updated Examples JSON or existing one
+            examples_json_str = fields_to_update.get('Examples JSON') or current_examples_json
+            new_examples_html = format_examples_as_html(examples_json_str, pos_mapping)
+
+            if new_examples_html and current_examples_html != new_examples_html:
+                fields_to_update['Examples'] = new_examples_html
+
     # Process ID field - only if empty, set to "my_" + Traditional
     if 'ID' in note_info['fields'] and 'Traditional' in note_info['fields']:
         current_id = note_info['fields'].get('ID', {}).get('value', '').strip()
@@ -557,7 +752,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
 
 def main():
     """
-    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, POS, POS Description, and Same Syllable Traditional fields
+    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON, and Same Syllable Traditional fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
@@ -585,9 +780,10 @@ def main():
 
     for note_type in note_types:
         print(f"\n=== Processing {note_type} ===")
-        # For TOCFL, include notes with empty POS for AI suggestion
+        # For TOCFL, include notes with empty POS and empty Examples JSON for AI suggestion
         include_empty_pos = (note_type == "TOCFL")
-        note_ids = find_notes_with_tags(note_type, include_empty_pos=include_empty_pos)
+        include_empty_examples = (note_type == "TOCFL")
+        note_ids = find_notes_with_tags(note_type, include_empty_pos=include_empty_pos, include_empty_examples=include_empty_examples)
 
         if not note_ids:
             continue
