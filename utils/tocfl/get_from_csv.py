@@ -368,7 +368,6 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
 
     differences: list[dict[str, object]] = []
     context_updates: list[dict[str, object]] = []
-    not_in_csv: list[str] = []
 
     for note in notes:
         traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
@@ -379,8 +378,6 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
             continue
 
         if traditional not in mapping:
-            if traditional:
-                not_in_csv.append(traditional)
             continue
 
         entry = mapping[traditional]
@@ -408,7 +405,6 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
     # Print results
     print(f"\n=== Results ===")
     print(f"Total notes compared: {len(notes)}")
-    print(f"Notes not in CSV: {len(not_in_csv)}")
     print(f"POS differences found: {len(differences)}")
     print(f"Notes with empty Context to update: {len(context_updates)}")
 
@@ -455,13 +451,6 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
                 {"Context": context_value}
             )
         print(f"Updated {len(context_updates)} Context fields")
-
-    if not_in_csv:
-        print(f"\n=== Not in CSV ({len(not_in_csv)} entries) ===")
-        for trad in not_in_csv[:20]:  # Show first 20
-            print(f"  {trad}")
-        if len(not_in_csv) > 20:
-            print(f"  ... and {len(not_in_csv) - 20} more")
 
 
 if __name__ == "__main__":

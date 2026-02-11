@@ -7,6 +7,8 @@ set -x
 ./utils/hanzi/connect_dots_notes.py
 ./utils/hanzi/fill_props_field.py
 
+./utils/tocfl/get_from_csv.py
+
 ./utils/zhuyin/fill_zhuyin_anki.py
 
 ./utils/tts/fill_audio_anki.py --use-pinyin-hint
