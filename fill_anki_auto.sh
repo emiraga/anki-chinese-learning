@@ -1,13 +1,15 @@
 #!/bin/sh
 
 set -x
+set -e
 
 ./utils/hanzi/fill_hanzi_chars.py
 ./utils/hanzi/clean_notes.py
 ./utils/hanzi/connect_dots_notes.py
-./utils/hanzi/fill_props_field.py
 
 ./utils/tocfl/get_from_csv.py
+
+./utils/hanzi/fill_props_field.py
 
 ./utils/zhuyin/fill_zhuyin_anki.py
 

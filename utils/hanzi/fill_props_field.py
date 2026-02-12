@@ -542,7 +542,7 @@ def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examp
             conditions.append('(-is:suspended "POS:")')
         if include_empty_examples:
             # Include unsuspended TOCFL notes with empty Examples JSON/Examples field, due today or tomorrow
-            conditions.append('(-is:suspended prop:due<=1 ("Examples JSON:" OR "Examples:"))')
+            conditions.append('(-is:suspended prop:due<=2 ("Examples JSON:" OR "Examples:"))')
         search_query = f'note:{note_type} ({" OR ".join(conditions)})'
     else:
         search_query = f'note:{note_type} {base_conditions}'
@@ -693,7 +693,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
         pos_value = fields_to_update.get('POS') or note_info['fields'].get('POS', {}).get('value', '').strip()
 
         # Generate examples if empty, Traditional ≤ 3 chars, has POS, and Gemini client available
-        if not current_examples_json and traditional and len(traditional) <= 3 and pos_value and gemini_client:
+        if not current_examples_json and traditional and len(traditional) <= 6 and pos_value and gemini_client:
             print(f"  Generating examples for '{traditional}' with POS: {pos_value}...")
             examples_dict = generate_examples_json_with_gemini(traditional, pos_value, pos_mapping, gemini_client)
             if examples_dict:

@@ -435,6 +435,8 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
                 {
                     "POS": new_pos_value,
                     "POS Description": "",
+                    "Examples": "",
+                    "Examples JSON": "",
                 }
             )
         print(f"Updated {len(notes_to_update)} notes")
