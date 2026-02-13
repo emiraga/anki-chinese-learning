@@ -21,17 +21,19 @@ const POSITION_PREFIXES: Record<PropPosition, string> = {
 };
 
 // Extract position info from character tags
-// Returns a map of prop name (e.g., "sun") to its position
+// Returns a map of prop name (e.g., "sun") to its positions (array for duplicated props)
 export function extractPropPositions(
   tags: string[],
-): Map<string, PropPosition> {
-  const positions = new Map<string, PropPosition>();
+): Map<string, PropPosition[]> {
+  const positions = new Map<string, PropPosition[]>();
 
   for (const tag of tags) {
     for (const [position, prefix] of Object.entries(POSITION_PREFIXES)) {
       if (tag.startsWith(prefix)) {
         const propName = tag.substring(prefix.length);
-        positions.set(propName, position as PropPosition);
+        const existing = positions.get(propName) || [];
+        existing.push(position as PropPosition);
+        positions.set(propName, existing);
       }
     }
   }
@@ -42,14 +44,16 @@ export function extractPropPositions(
 // Determine the current axis based on existing positions
 // horizontal = left/right used, vertical = top/bottom used
 export function getPositionAxis(
-  positions: Map<string, PropPosition>,
+  positions: Map<string, PropPosition[]>,
 ): PropPositionAxis {
-  for (const position of positions.values()) {
-    if (position === "left" || position === "right") {
-      return "horizontal";
-    }
-    if (position === "top" || position === "bottom") {
-      return "vertical";
+  for (const positionList of positions.values()) {
+    for (const position of positionList) {
+      if (position === "left" || position === "right") {
+        return "horizontal";
+      }
+      if (position === "top" || position === "bottom") {
+        return "vertical";
+      }
     }
   }
   return null;
@@ -61,28 +65,45 @@ export function getPositionTag(propName: string, position: PropPosition): string
 }
 
 // Get available positions for a prop given current state
+// isDuplicated: if true, allows prop to have two positions on the same axis (top+bottom or left+right)
 export function getAvailablePositions(
   propName: string,
-  positions: Map<string, PropPosition>,
+  positions: Map<string, PropPosition[]>,
+  isDuplicated: boolean = false,
 ): PropPosition[] {
   const currentAxis = getPositionAxis(positions);
-  const currentPosition = positions.get(propName);
-  const takenPositions = new Set(positions.values());
+  const currentPositions = positions.get(propName) || [];
+  const currentPositionSet = new Set(currentPositions);
+
+  // Get all taken positions from all props
+  const takenPositions = new Set<PropPosition>();
+  for (const positionList of positions.values()) {
+    for (const pos of positionList) {
+      takenPositions.add(pos);
+    }
+  }
 
   const allPositions: PropPosition[] = ["left", "right", "top", "bottom"];
 
   return allPositions.filter((pos) => {
     // If this prop already has this position, it's not "available" (it's current)
-    if (currentPosition === pos) return false;
+    if (currentPositionSet.has(pos)) return false;
 
     // If position is taken by another prop, not available
-    if (takenPositions.has(pos) && currentPosition !== pos) return false;
+    if (takenPositions.has(pos) && !currentPositionSet.has(pos)) return false;
 
     // Check axis compatibility
     if (currentAxis === "horizontal" && (pos === "top" || pos === "bottom")) {
       return false;
     }
     if (currentAxis === "vertical" && (pos === "left" || pos === "right")) {
+      return false;
+    }
+
+    // For duplicated props, allow up to 2 positions (both spots on same axis)
+    // For non-duplicated props, only allow one position total
+    const maxPositions = isDuplicated ? 2 : 1;
+    if (currentPositions.length >= maxPositions) {
       return false;
     }
 

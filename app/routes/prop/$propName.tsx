@@ -43,8 +43,11 @@ const PropRender: React.FC<{
   const chars = Object.values(characters)
     .filter((c) => c.tags.includes(propName))
     .sort((a, b) => {
-      const posA = extractPropPositions(a.tags).get(propNameWithoutPrefix);
-      const posB = extractPropPositions(b.tags).get(propNameWithoutPrefix);
+      const positionsA = extractPropPositions(a.tags).get(propNameWithoutPrefix) || [];
+      const positionsB = extractPropPositions(b.tags).get(propNameWithoutPrefix) || [];
+      // Use the first position for sorting, or "none" if no position
+      const posA = positionsA[0];
+      const posB = positionsB[0];
       const orderA = positionOrder[posA ?? "none"];
       const orderB = positionOrder[posB ?? "none"];
 

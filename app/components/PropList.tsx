@@ -81,41 +81,49 @@ const PropPositionPill: React.FC<{
   );
 };
 
+const DUPLICATED_PROP_TAG = "chinese::repeated-duplicated-prop";
+
 const PropWithPosition: React.FC<{
   prop: PropType;
-  currentPosition: PropPosition | undefined;
+  currentPositions: PropPosition[];
   availablePositions: PropPosition[];
   ankiId: number | null;
   characterCount?: number;
   onPositionChange: () => void;
+  showPositionButtons: boolean;
 }> = ({
   prop,
-  currentPosition,
+  currentPositions,
   availablePositions,
   ankiId,
   characterCount,
   onPositionChange,
+  showPositionButtons,
 }) => {
   const [loadingPosition, setLoadingPosition] = useState<PropPosition | null>(
     null,
   );
 
   const propName = prop.mainTagname.substring(6); // Remove "prop::" prefix
+  const isDuplicated = prop.tagnames.includes(DUPLICATED_PROP_TAG);
+  const currentPositionSet = new Set(currentPositions);
 
   const handlePositionClick = async (position: PropPosition) => {
     if (!ankiId) return;
 
     setLoadingPosition(position);
     try {
-      if (currentPosition === position) {
-        // Remove position
+      if (currentPositionSet.has(position)) {
+        // Remove this position
         const tag = getPositionTag(propName, position);
         await anki.note.removeTags({ notes: [ankiId], tags: tag });
       } else {
-        // Remove old position if exists
-        if (currentPosition) {
-          const oldTag = getPositionTag(propName, currentPosition);
-          await anki.note.removeTags({ notes: [ankiId], tags: oldTag });
+        // For non-duplicated props, remove old position(s) first
+        if (!isDuplicated) {
+          for (const oldPos of currentPositions) {
+            const oldTag = getPositionTag(propName, oldPos);
+            await anki.note.removeTags({ notes: [ankiId], tags: oldTag });
+          }
         }
         // Add new position
         const newTag = getPositionTag(propName, position);
@@ -131,6 +139,11 @@ const PropWithPosition: React.FC<{
 
   const availableSet = new Set(availablePositions);
 
+  // If no position buttons needed, just render the prop card
+  if (!showPositionButtons) {
+    return <PropCard prop={prop} characterCount={characterCount} />;
+  }
+
   return (
     <div className="flex items-start gap-2">
       {/* Position controls arranged around the prop card */}
@@ -138,7 +151,7 @@ const PropWithPosition: React.FC<{
         {/* Top position */}
         <PropPositionPill
           position="top"
-          isActive={currentPosition === "top"}
+          isActive={currentPositionSet.has("top")}
           isAvailable={availableSet.has("top")}
           isLoading={loadingPosition === "top"}
           onClick={() => handlePositionClick("top")}
@@ -148,7 +161,7 @@ const PropWithPosition: React.FC<{
           {/* Left position */}
           <PropPositionPill
             position="left"
-            isActive={currentPosition === "left"}
+            isActive={currentPositionSet.has("left")}
             isAvailable={availableSet.has("left")}
             isLoading={loadingPosition === "left"}
             onClick={() => handlePositionClick("left")}
@@ -162,7 +175,7 @@ const PropWithPosition: React.FC<{
           {/* Right position */}
           <PropPositionPill
             position="right"
-            isActive={currentPosition === "right"}
+            isActive={currentPositionSet.has("right")}
             isAvailable={availableSet.has("right")}
             isLoading={loadingPosition === "right"}
             onClick={() => handlePositionClick("right")}
@@ -172,7 +185,7 @@ const PropWithPosition: React.FC<{
         {/* Bottom position */}
         <PropPositionPill
           position="bottom"
-          isActive={currentPosition === "bottom"}
+          isActive={currentPositionSet.has("bottom")}
           isAvailable={availableSet.has("bottom")}
           isLoading={loadingPosition === "bottom"}
           onClick={() => handlePositionClick("bottom")}
@@ -212,18 +225,24 @@ export const PropList: React.FC<PropListProps> = ({
     <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 mx-2">
       {props.map((prop, i) => {
         const propName = prop.mainTagname.substring(6);
-        const currentPosition = positions.get(propName);
-        const availablePositions = getAvailablePositions(propName, positions);
+        const currentPositions = positions.get(propName) || [];
+        const isDuplicated = miscTags.includes(DUPLICATED_PROP_TAG);
+        const availablePositions = getAvailablePositions(
+          propName,
+          positions,
+          isDuplicated,
+        );
 
         return (
           <PropWithPosition
             key={i}
             prop={prop}
-            currentPosition={currentPosition}
+            currentPositions={currentPositions}
             availablePositions={ankiId ? availablePositions : []}
             ankiId={ankiId ?? null}
             characterCount={characterCounts?.[prop.mainTagname]}
             onPositionChange={() => onTagRemoved?.()}
+            showPositionButtons={props.length > 1 || isDuplicated}
           />
         );
       })}

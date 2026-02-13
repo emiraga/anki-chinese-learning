@@ -56,9 +56,11 @@ function checkMessyProps(tags: string[]): MessyPropsIssue[] {
   const baseProps = new Set(
     tags.filter((t) => t.startsWith("prop::")).map((t) => t.substring(6)),
   );
-  for (const [propName, position] of positions) {
+  for (const [propName, propPositions] of positions) {
     if (!baseProps.has(propName)) {
-      issues.push({ type: "missing_base_prop", propName, position });
+      for (const position of propPositions) {
+        issues.push({ type: "missing_base_prop", propName, position });
+      }
     }
   }
 
@@ -89,11 +91,13 @@ function checkMessyProps(tags: string[]): MessyPropsIssue[] {
 
   // Check for duplicate positions
   const positionToProps = new Map<PropPosition, string[]>();
-  for (const [propName, position] of positions) {
-    if (!positionToProps.has(position)) {
-      positionToProps.set(position, []);
+  for (const [propName, propPositions] of positions) {
+    for (const position of propPositions) {
+      if (!positionToProps.has(position)) {
+        positionToProps.set(position, []);
+      }
+      positionToProps.get(position)!.push(propName);
     }
-    positionToProps.get(position)!.push(propName);
   }
 
   for (const [position, props] of positionToProps) {
@@ -106,11 +110,13 @@ function checkMessyProps(tags: string[]): MessyPropsIssue[] {
   const horizontalProps: string[] = [];
   const verticalProps: string[] = [];
 
-  for (const [propName, position] of positions) {
-    if (position === "left" || position === "right") {
-      horizontalProps.push(`${propName} (${position})`);
-    } else {
-      verticalProps.push(`${propName} (${position})`);
+  for (const [propName, propPositions] of positions) {
+    for (const position of propPositions) {
+      if (position === "left" || position === "right") {
+        horizontalProps.push(`${propName} (${position})`);
+      } else {
+        verticalProps.push(`${propName} (${position})`);
+      }
     }
   }
 
