@@ -257,6 +257,7 @@ export default function CharDetail() {
               props={propsName.map((name) => knownProps[name])}
               miscTags={miscTags}
               ankiId={char.ankiId}
+              characterTags={char.tags}
               onTagRemoved={() => reload()}
             />
             <hr className="my-4" />
