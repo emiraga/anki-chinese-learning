@@ -16,6 +16,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 type GroupedConflicts = {
+  messyProps: CharacterConflict[];
   missingProps: CharacterConflict[];
   noPinyinFromPhrases: CharacterConflict[];
   pinyinMismatch: CharacterConflict[];
@@ -33,6 +34,7 @@ export default function Conflicts() {
 
   // Group conflicts by reason
   const groupedConflicts: GroupedConflicts = {
+    messyProps: [],
     missingProps: [],
     noPinyinFromPhrases: [],
     pinyinMismatch: [],
@@ -40,7 +42,9 @@ export default function Conflicts() {
 
   for (const conflict of conflicting) {
     const reasonType = conflict.reason.type;
-    if (reasonType === "missing_props") {
+    if (reasonType === "messy_props") {
+      groupedConflicts.messyProps.push(conflict);
+    } else if (reasonType === "missing_props") {
       groupedConflicts.missingProps.push(conflict);
     } else if (reasonType === "no_pinyin_from_phrases") {
       groupedConflicts.noPinyinFromPhrases.push(conflict);
@@ -55,6 +59,12 @@ export default function Conflicts() {
         <h2 className="font-serif text-4xl m-4">
           Character Conflicts ({conflicting.length})
         </h2>
+        <CharListConflicts
+          title="Messy Props (Position Conflicts)"
+          conflicts={groupedConflicts.messyProps}
+          charPhrasesPinyin={charPhrasesPinyin}
+        />
+
         <CharListConflicts
           title="Pinyin Mismatch"
           conflicts={groupedConflicts.pinyinMismatch}

@@ -233,13 +233,6 @@ export default function CharDetail() {
                 reload();
               }}
             />
-            {charsUsingSoundComponent.length > 0 && (
-              <>
-                <hr className="my-4" />
-                <h2 className="text-2xl">Sound component in:</h2>
-                <CharList characters={charsUsingSoundComponent} />
-              </>
-            )}
             <hr className="my-4" />
             <div>
               <span className="tw-kai text-8xl">{char.traditional}</span>
@@ -260,6 +253,13 @@ export default function CharDetail() {
               characterTags={char.tags}
               onTagRemoved={() => reload()}
             />
+            {charsUsingSoundComponent.length > 0 && (
+              <>
+                <hr className="my-4" />
+                <h2 className="text-2xl">Sound component in:</h2>
+                <CharList characters={charsUsingSoundComponent} />
+              </>
+            )}
             <hr className="my-4" />
             {charPhrasesPinyin[charHanzi] &&
             Object.keys(charPhrasesPinyin[charHanzi]).length > 1 ? (

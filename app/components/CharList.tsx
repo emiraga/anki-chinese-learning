@@ -5,6 +5,7 @@ import { TagList } from "./TagList";
 import { type CharsToPhrasesPinyin } from "~/data/phrases";
 import { getAllPinyinUnreliable, comparePinyin } from "~/utils/pinyin";
 import pinyin from "pinyin";
+import type { MessyPropsIssue } from "~/data/char_conflicts";
 
 export const CharList: React.FC<{
   characters: CharacterType[];
@@ -28,7 +29,8 @@ export const CharListConflicts: React.FC<{
     reason:
       | { type: "missing_props"; props: string[] }
       | { type: "no_pinyin_from_phrases" }
-      | { type: "pinyin_mismatch"; missingPinyin: string[] };
+      | { type: "pinyin_mismatch"; missingPinyin: string[] }
+      | { type: "messy_props"; issues: MessyPropsIssue[] };
   }>;
   charPhrasesPinyin: CharsToPhrasesPinyin;
 }> = ({ title, conflicts, charPhrasesPinyin }) => {
@@ -81,6 +83,48 @@ export const CharListConflicts: React.FC<{
                         className="ml-2 text-red-500"
                         dangerouslySetInnerHTML={{ __html: p }}
                       ></span>
+                    ))}
+                  </div>
+                )}
+
+                {reason.type === "messy_props" && (
+                  <div className="mb-2">
+                    {reason.issues.map((issue, idx) => (
+                      <div key={idx} className="text-red-600 mb-1">
+                        {issue.type === "missing_base_prop" && (
+                          <>
+                            <span className="font-bold">
+                              Missing base prop:
+                            </span>{" "}
+                            prop-{issue.position}::{issue.propName} exists but
+                            prop::{issue.propName} is missing
+                          </>
+                        )}
+                        {issue.type === "duplicate_position" && (
+                          <>
+                            <span className="font-bold">
+                              Duplicate {issue.position} position:
+                            </span>{" "}
+                            {issue.props.join(", ")}
+                          </>
+                        )}
+                        {issue.type === "axis_conflict" && (
+                          <>
+                            <span className="font-bold">Axis conflict:</span>{" "}
+                            horizontal ({issue.horizontalProps.join(", ")}) vs
+                            vertical ({issue.verticalProps.join(", ")})
+                          </>
+                        )}
+                        {issue.type === "prop_multiple_positions" && (
+                          <>
+                            <span className="font-bold">
+                              Prop in multiple positions:
+                            </span>{" "}
+                            {issue.propName} is in {issue.positions.join(", ")}
+                            {" "}(missing chinese::repeated-duplicated-prop?)
+                          </>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}

@@ -1,5 +1,6 @@
 import { type CharactersType, type CharacterType } from "~/data/characters";
 import type { KnownPropsType } from "~/data/props";
+import { extractPropPositions, type PropPosition } from "~/data/props";
 import {
   IGNORE_PHRASE_CHARS,
   type CharsToPhrasesPinyin,
@@ -7,15 +8,118 @@ import {
 } from "~/data/phrases";
 import { removeDuplicateChars } from "~/utils/array";
 
+export type MessyPropsIssue =
+  | { type: "duplicate_position"; position: PropPosition; props: string[] }
+  | { type: "axis_conflict"; horizontalProps: string[]; verticalProps: string[] }
+  | { type: "missing_base_prop"; propName: string; position: PropPosition }
+  | { type: "prop_multiple_positions"; propName: string; positions: PropPosition[] };
+
 export type ConflictReason =
   | { type: "missing_props"; props: string[] }
   | { type: "no_pinyin_from_phrases" }
-  | { type: "pinyin_mismatch"; missingPinyin: string[] };
+  | { type: "pinyin_mismatch"; missingPinyin: string[] }
+  | { type: "messy_props"; issues: MessyPropsIssue[] };
 
 export type CharacterConflict = {
   character: CharacterType;
   reason: ConflictReason;
 };
+
+const POSITION_PREFIXES: { position: PropPosition; prefix: string }[] = [
+  { position: "left", prefix: "prop-left::" },
+  { position: "right", prefix: "prop-right::" },
+  { position: "top", prefix: "prop-top::" },
+  { position: "bottom", prefix: "prop-bottom::" },
+];
+
+/**
+ * Check for messy prop positions in a character's tags.
+ * Returns issues if:
+ * 1. A position tag exists without its base prop (e.g., prop-left::sun without prop::sun)
+ * 2. Same prop has multiple positions without chinese::repeated-duplicated-prop tag
+ * 3. Multiple props have the same position (e.g., two props both marked as "left")
+ * 4. Props have conflicting axis positions (e.g., one is "left" and another is "top")
+ */
+function checkMessyProps(tags: string[]): MessyPropsIssue[] {
+  const issues: MessyPropsIssue[] = [];
+  const positions = extractPropPositions(tags);
+
+  if (positions.size === 0) {
+    return issues;
+  }
+
+  const hasRepeatedDuplicatedProp = tags.includes(
+    "chinese::repeated-duplicated-prop",
+  );
+
+  // Check for missing base prop (e.g., prop-left::sun exists but prop::sun is missing)
+  const baseProps = new Set(
+    tags.filter((t) => t.startsWith("prop::")).map((t) => t.substring(6)),
+  );
+  for (const [propName, position] of positions) {
+    if (!baseProps.has(propName)) {
+      issues.push({ type: "missing_base_prop", propName, position });
+    }
+  }
+
+  // Check for same prop with multiple positions (only if not a repeated-duplicated-prop character)
+  if (!hasRepeatedDuplicatedProp) {
+    const propToPositions = new Map<string, PropPosition[]>();
+    for (const tag of tags) {
+      for (const { position, prefix } of POSITION_PREFIXES) {
+        if (tag.startsWith(prefix)) {
+          const propName = tag.substring(prefix.length);
+          if (!propToPositions.has(propName)) {
+            propToPositions.set(propName, []);
+          }
+          propToPositions.get(propName)!.push(position);
+        }
+      }
+    }
+    for (const [propName, propPositions] of propToPositions) {
+      if (propPositions.length > 1) {
+        issues.push({
+          type: "prop_multiple_positions",
+          propName,
+          positions: propPositions,
+        });
+      }
+    }
+  }
+
+  // Check for duplicate positions
+  const positionToProps = new Map<PropPosition, string[]>();
+  for (const [propName, position] of positions) {
+    if (!positionToProps.has(position)) {
+      positionToProps.set(position, []);
+    }
+    positionToProps.get(position)!.push(propName);
+  }
+
+  for (const [position, props] of positionToProps) {
+    if (props.length > 1) {
+      issues.push({ type: "duplicate_position", position, props });
+    }
+  }
+
+  // Check for axis conflicts (horizontal vs vertical)
+  const horizontalProps: string[] = [];
+  const verticalProps: string[] = [];
+
+  for (const [propName, position] of positions) {
+    if (position === "left" || position === "right") {
+      horizontalProps.push(`${propName} (${position})`);
+    } else {
+      verticalProps.push(`${propName} (${position})`);
+    }
+  }
+
+  if (horizontalProps.length > 0 && verticalProps.length > 0) {
+    issues.push({ type: "axis_conflict", horizontalProps, verticalProps });
+  }
+
+  return issues;
+}
 
 export function getConflictingChars(
   knownProps: KnownPropsType,
@@ -25,6 +129,16 @@ export function getConflictingChars(
   const conflicts: CharacterConflict[] = [];
 
   for (const v of Object.values(characters)) {
+    // Check for messy props (position conflicts)
+    const messyPropsIssues = checkMessyProps(v.tags);
+    if (messyPropsIssues.length > 0) {
+      conflicts.push({
+        character: v,
+        reason: { type: "messy_props", issues: messyPropsIssues },
+      });
+      continue;
+    }
+
     // Check for missing props
     const missingProps = v.tags.filter(
       (tag) => tag.startsWith("prop::") && knownProps[tag] === undefined

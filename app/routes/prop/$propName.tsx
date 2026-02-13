@@ -6,6 +6,7 @@ import { PropCard } from "~/components/PropCard";
 import { CharList } from "~/components/CharList";
 import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
+import { extractPropPositions, type PropPosition } from "~/data/props";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -28,9 +29,30 @@ const PropRender: React.FC<{
   const nextProp =
     currentIndex < props.length - 1 ? props[currentIndex + 1].prop : null;
 
+  // Position order: left, top, right, bottom, then no position
+  const positionOrder: Record<PropPosition | "none", number> = {
+    left: 0,
+    top: 1,
+    right: 2,
+    bottom: 3,
+    none: 4,
+  };
+
+  const propNameWithoutPrefix = propName.substring(6); // Remove "prop::" prefix
+
   const chars = Object.values(characters)
     .filter((c) => c.tags.includes(propName))
-    .sort((a, b) => a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable));
+    .sort((a, b) => {
+      const posA = extractPropPositions(a.tags).get(propNameWithoutPrefix);
+      const posB = extractPropPositions(b.tags).get(propNameWithoutPrefix);
+      const orderA = positionOrder[posA ?? "none"];
+      const orderB = positionOrder[posB ?? "none"];
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.pinyin[0].sylable.localeCompare(b.pinyin[0].sylable);
+    });
 
   const subprops = prop.tagnames
     .filter((name) => name !== prop.mainTagname && name.startsWith("prop::"))
