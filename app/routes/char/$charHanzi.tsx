@@ -41,8 +41,14 @@ export default function CharDetail() {
   const { charHanzi } = useParams();
   const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<string>("general");
-  const { characters, knownProps, characterList, phrases, charPhrasesPinyin } =
-    useOutletContext<OutletContext>();
+  const {
+    characters,
+    knownProps,
+    characterList,
+    phrases,
+    charPhrasesPinyin,
+    reload,
+  } = useOutletContext<OutletContext>();
   const chars = Object.values(characters).filter(
     (c) => c.traditional === charHanzi,
   );
@@ -223,8 +229,8 @@ export default function CharDetail() {
               ankiId={char.ankiId}
               characters={characters}
               onUpdate={() => {
-                // Reload the page to show updated data
-                window.location.reload();
+                // Reload the data
+                reload();
               }}
             />
             {charsUsingSoundComponent.length > 0 && (
@@ -251,7 +257,7 @@ export default function CharDetail() {
               props={propsName.map((name) => knownProps[name])}
               miscTags={miscTags}
               ankiId={char.ankiId}
-              onTagRemoved={() => window.location.reload()}
+              onTagRemoved={() => reload()}
             />
             <hr className="my-4" />
             {charPhrasesPinyin[charHanzi] &&
