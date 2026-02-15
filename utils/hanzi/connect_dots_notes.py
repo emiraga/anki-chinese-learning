@@ -25,8 +25,6 @@ Tests: See test_connect_dots_notes.py (run with: uv run test_connect_dots_notes.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-import dragonmapper.transcriptions
-import re
 import argparse
 import sys
 from pathlib import Path
@@ -51,7 +49,7 @@ from shared.pinyin_utils import (
 
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
-SYLLABLE_MIN_COUNT = 8  # Minimum characters sharing a syllable
+SYLLABLE_MIN_COUNT = 5  # Minimum characters sharing a syllable
 TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 

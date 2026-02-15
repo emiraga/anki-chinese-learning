@@ -203,15 +203,19 @@ Generate example sentences for the word/phrase "{traditional}".
 The phrase has these parts of speech:
 {pos_list}
 
-Available POS codes (you may suggest additional ones if relevant):
+Available POS codes (you MUST use ONLY these exact codes as JSON keys):
 {all_pos_list}
+
+IMPORTANT: This system uses Taiwan TOCFL grammar categories. There is NO "A", "Adj", or "Adjective" code.
+What English calls "adjectives" are classified as "Vs" (intransitive state verbs) in this system.
 
 Requirements:
 1. Generate at least ONE example sentence for each POS listed above
 2. If a POS has importantly different usages, generate multiple examples
-3. You MAY add examples for additional POS codes if the phrase is commonly used that way
+3. You MAY add examples for additional POS codes from the list above if the phrase is commonly used that way
 4. Sentences should reflect casual Taiwan Mandarin conversation
 5. Use Traditional Chinese characters
+6. CRITICAL: Use ONLY the exact codes shown above as JSON keys (e.g., "N", "V", "Vs", "Adv"). Never use "A", "Adj", "Noun", "Verb", or any other abbreviations not in the list.
 
 CRITICAL - Sentence length:
 - Sentences MUST be very short and simple
@@ -414,6 +418,10 @@ def extract_anki_tags(tags):
     special_prefixes = (
         "auto-generated",
         "prop::",
+        "prop-top::",
+        "prop-bottom::",
+        "prop-left::",
+        "prop-right::",
         "actor::",
         "place::",
         "tone::",
