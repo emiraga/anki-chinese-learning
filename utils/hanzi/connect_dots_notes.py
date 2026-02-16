@@ -1362,6 +1362,52 @@ def get_two_char_phrase_characters_above_threshold(
     return above_threshold
 
 
+def _is_prop_tag(tag: str) -> bool:
+    """Check if a tag is a prop tag (starts with 'prop::' or 'prop-')."""
+    return tag.startswith("prop::") or tag.startswith("prop-")
+
+
+def analyze_uncovered_character_tags(
+    uncovered_characters: set[str]
+) -> list[tuple[str, int, int]]:
+    """
+    Analyze the prop tags of uncovered characters to find the most common ones.
+
+    Args:
+        uncovered_characters: Set of characters that are not covered by any generator
+
+    Returns:
+        List of (tag, uncovered_count, total_count) tuples sorted by uncovered_count descending
+        Only includes tags starting with 'prop::' or 'prop-'
+    """
+    data_store = get_data_store()
+    uncovered_tag_counts: dict[str, int] = {}
+    total_tag_counts: dict[str, int] = {}
+
+    # Count prop tags among uncovered characters
+    for char in uncovered_characters:
+        note = data_store.get_by_traditional(char)
+        if note:
+            for tag in note.tags:
+                if _is_prop_tag(tag):
+                    uncovered_tag_counts[tag] = uncovered_tag_counts.get(tag, 0) + 1
+
+    # Count prop tags among all Hanzi characters
+    for note in data_store.hanzi_notes:
+        for tag in note.tags:
+            if _is_prop_tag(tag):
+                total_tag_counts[tag] = total_tag_counts.get(tag, 0) + 1
+
+    # Combine counts: (tag, uncovered_count, total_count)
+    result = [
+        (tag, uncovered_count, total_tag_counts.get(tag, 0))
+        for tag, uncovered_count in uncovered_tag_counts.items()
+    ]
+
+    # Sort by uncovered count descending
+    return sorted(result, key=lambda x: x[1], reverse=True)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Create and update ConnectDots notes in Anki"
@@ -1517,6 +1563,14 @@ def main():
         print(f"\n=== Uncovered Characters ({len(coverage.uncovered_characters)}) ===")
         uncovered_sorted = sorted(coverage.uncovered_characters)
         print("".join(uncovered_sorted))
+
+        # Analyze prop tags of uncovered characters
+        print(f"\n=== Top 30 Prop Tags Among Uncovered Characters ===")
+        tag_counts = analyze_uncovered_character_tags(coverage.uncovered_characters)
+        print(f"{'Rank':<6}{'Uncov':<8}{'Total':<8}Tag")
+        print("-" * 70)
+        for rank, (tag, uncovered_count, total_count) in enumerate(tag_counts[:30], 1):
+            print(f"{rank:<6}{uncovered_count:<8}{total_count:<8}{tag}")
 
     data_store = get_data_store()
     data_store_stats = data_store.stats()
