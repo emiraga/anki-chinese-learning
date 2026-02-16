@@ -93,11 +93,13 @@ CUSTOM_HANZI_SETS = {
 }
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
+# Note: Do NOT include 'tag:' prefix - it's added automatically in the query
 TAG_NAMES = [
     'chinese::category::food',
     'chinese::category::time-of-the-day',
-    'tag:chinese::category::touch',
-    'tag:chinese::category::frequency-of-doing',
+    'chinese::category::touch',
+    'chinese::category::frequency-of-doing',
+    'chinese::category::protect-care',
 ]
 
 # Whitelist for two-character phrase generators (by common character)
