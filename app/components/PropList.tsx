@@ -145,9 +145,11 @@ const PropWithPosition: React.FC<{
   }
 
   return (
-    <div className="flex items-start gap-2">
+    <div
+      className={`flex items-start gap-2 rounded-2xl ${currentPositionSet.size ? "dark:bg-gray-800 bg-gray-200 p-2" : ""}`}
+    >
       {/* Position controls arranged around the prop card */}
-      <div className="flex flex-col items-center gap-1">
+      <div className={`flex flex-col items-center gap-1`}>
         {/* Top position */}
         <PropPositionPill
           position="top"
