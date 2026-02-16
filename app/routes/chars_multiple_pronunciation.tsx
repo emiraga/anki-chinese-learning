@@ -85,34 +85,34 @@ export default function TodoCharsMultiplePronunciation() {
       return {
         ...char,
         countSylables: new Set(
-          Object.entries(phrasesPinyin).map((kv) => kv[1].sylable)
+          Object.entries(phrasesPinyin).map((kv) => kv[1].sylable),
         ).size,
         phrasesPinyin: Object.fromEntries(
-          Object.entries(phrasesPinyin).filter((kv) => !kv[1].ignoredFifthTone)
+          Object.entries(phrasesPinyin).filter((kv) => !kv[1].ignoredFifthTone),
         ),
         phrasesIgnoredPinyin: Object.fromEntries(
-          Object.entries(phrasesPinyin).filter((kv) => kv[1].ignoredFifthTone)
+          Object.entries(phrasesPinyin).filter((kv) => kv[1].ignoredFifthTone),
         ),
       };
-    }
+    },
   );
   const multiple = characters2.filter(
     (char) =>
       Object.keys(char.phrasesPinyin).length !== 1 &&
       char.withSound &&
-      char.countSylables > 1
+      char.countSylables > 1,
   );
   const sameSylable = characters2.filter(
     (char) =>
-      Object.keys(char.phrasesPinyin).length !== 1 &&
+      Object.keys(char.phrasesPinyin).length > 1 &&
       char.withSound &&
-      char.countSylables <= 1
+      char.countSylables <= 1,
   );
   const ignored = characters2.filter(
     (char) =>
       Object.keys(char.phrasesPinyin).length === 1 &&
       char.withSound &&
-      Object.keys(char.phrasesIgnoredPinyin).length > 0
+      Object.keys(char.phrasesIgnoredPinyin).length > 0,
   );
 
   return (
