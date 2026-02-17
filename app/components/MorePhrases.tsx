@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
-import anki, { type NoteInfo } from "~/apis/anki";
+import anki, { ankiOpenBrowse, type NoteInfo } from "~/apis/anki";
 import { useEffect, useState } from "react";
 import { TagList } from "./TagList";
 import { HanziCardDetails } from "./HanziText";
@@ -162,6 +162,16 @@ export function SearchMorePhrases({
         return (
           <div key={i}>
             New word:
+            <button
+              className="rounded-2xl bg-blue-100 dark:bg-blue-800 dark:text-blue-100 p-1 mx-2 inline text-xs text-blue-500"
+              onClick={async () => {
+                await ankiOpenBrowse(
+                  `note:${note.modelName} Traditional:${note.fields["Traditional"]?.value}`,
+                );
+              }}
+            >
+              {note.modelName}
+            </button>
             <PhraseLink value={note.fields["Traditional"]?.value} />(
             {note.fields["Pinyin"]?.value}
             <AnkiAudioPlayer audioField={note.fields["Audio"]?.value} />
