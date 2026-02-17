@@ -100,6 +100,7 @@ TAG_NAMES = [
     'chinese::category::touch',
     'chinese::category::frequency-of-doing',
     'chinese::category::protect-care',
+    'chinese::category::strength',
 ]
 
 # Whitelist for two-character phrase generators (by common character)

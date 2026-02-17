@@ -53,6 +53,35 @@ function TodoPhrases() {
   );
 }
 
+export function PhraseSearchSections({
+  noteTypes,
+  search,
+}: {
+  noteTypes: string[];
+  search: string;
+}) {
+  return (
+    <>
+      <hr className="my-4" />
+      <h2 className="text-2xl">Known character phrases:</h2>
+      <SearchMorePhrases
+        noteTypes={noteTypes}
+        search={search}
+        filterKnownChars={true}
+      />
+      <hr className="my-4" />
+      <h2 className="text-2xl">Phrases with unknown characters:</h2>
+      <SearchMorePhrases
+        noteTypes={noteTypes}
+        search={search}
+        filterUnknownChars={true}
+      />
+      <h2 className="text-2xl">TBCL:</h2>
+      <SearchMorePhrases noteTypes={["TBCL"]} search={search} />
+    </>
+  );
+}
+
 export function SearchMorePhrases({
   noteTypes: noteTypes,
   withTags,

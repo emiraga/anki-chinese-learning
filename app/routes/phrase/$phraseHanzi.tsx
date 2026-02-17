@@ -3,7 +3,7 @@ import type { Route } from "./+types/$phraseHanzi";
 import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { PhraseCard, PhraseList } from "~/components/Phrase";
-import { SearchMorePhrases } from "~/components/MorePhrases";
+import { PhraseSearchSections } from "~/components/MorePhrases";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
 import { removeDuplicateChars } from "~/utils/array";
 import { HanziCardDetails, HanziText } from "~/components/HanziText";
@@ -54,20 +54,7 @@ export default function PhraseHanzi() {
         <PhraseList phrases={filteredPhrases} />
       </section>
 
-      <hr className="my-4" />
-      <h2 className="text-2xl">Known character phrases:</h2>
-      <SearchMorePhrases
-        noteTypes={noteTypes}
-        search={phraseHanzi}
-        filterKnownChars={true}
-      />
-      <hr className="my-4" />
-      <h2 className="text-2xl">Phrases with unknown characters:</h2>
-      <SearchMorePhrases
-        noteTypes={noteTypes}
-        search={phraseHanzi}
-        filterUnknownChars={true}
-      />
+      <PhraseSearchSections noteTypes={noteTypes} search={phraseHanzi} />
     </MainFrame>
   );
 }

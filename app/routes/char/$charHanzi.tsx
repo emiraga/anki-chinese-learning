@@ -9,7 +9,7 @@ import { PROP_MISC_TAGS } from "~/data/props";
 import { PhraseList } from "~/components/Phrase";
 import { LearnLink, PromptsLink } from "~/components/Learn";
 import { getNewCharacter } from "~/data/characters";
-import { SearchMorePhrases } from "~/components/MorePhrases";
+import { PhraseSearchSections } from "~/components/MorePhrases";
 import { PinyinText } from "~/components/PinyinText";
 import { useSettings } from "~/settings/SettingsContext";
 import { comparePinyin } from "~/utils/pinyin";
@@ -364,19 +364,9 @@ export default function CharDetail() {
             <CharCardDetails char={char} />
             <hr className="my-4" />
             <PhraseList phrases={filteredPhrases} />
-            <hr className="my-4" />
-            <h2 className="text-2xl">Known character phrases:</h2>
-            <SearchMorePhrases
+            <PhraseSearchSections
               noteTypes={noteTypes}
               search={char.traditional}
-              filterKnownChars={true}
-            />
-            <hr className="my-4" />
-            <h2 className="text-2xl">Phrases with unknown characters:</h2>
-            <SearchMorePhrases
-              noteTypes={noteTypes}
-              search={char.traditional}
-              filterUnknownChars={true}
             />
 
             {char.exampleSentences ? (
