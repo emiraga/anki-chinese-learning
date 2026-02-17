@@ -1,6 +1,6 @@
 import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/$charHanzi";
-import { Link, useOutletContext, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
@@ -27,7 +27,6 @@ import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
 import { usePlecoOutlierDictionary } from "~/hooks/usePlecoOutlierDictionary";
 import { PlecoOutlierDisplay } from "~/components/PlecoOutlierDisplay";
 import { Tabs } from "~/components/Tabs";
-import { useState } from "react";
 import { SoundComponentCandidates } from "~/components/SoundComponentCandidates";
 
 export function meta({ params }: Route.MetaArgs) {
@@ -40,7 +39,13 @@ export function meta({ params }: Route.MetaArgs) {
 export default function CharDetail() {
   const { charHanzi } = useParams();
   const { settings } = useSettings();
-  const [activeTab, setActiveTab] = useState<string>("general");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const hashTab = location.hash.replace("#", "");
+
+  const setActiveTab = (tab: string) => {
+    navigate({ hash: tab }, { replace: true });
+  };
   const {
     characters,
     knownProps,
@@ -177,6 +182,9 @@ export default function CharDetail() {
   if (hasPlecoOutlierData) {
     tabs.push({ id: "plecooutlier", label: "Pleco Outlier" });
   }
+
+  // Derive activeTab from URL hash, defaulting to "general"
+  const activeTab = tabs.some((t) => t.id === hashTab) ? hashTab : "general";
 
   const samePronounciation = Object.values(characters)
     .filter(
