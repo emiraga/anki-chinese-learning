@@ -84,6 +84,9 @@ type Pages = {
   "/settings": {
     params: {};
   };
+  "/sibling_cards": {
+    params: {};
+  };
   "/similar_props": {
     params: {};
   };
@@ -170,7 +173,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -251,6 +254,10 @@ type RouteFiles = {
   "routes/settings.tsx": {
     id: "routes/settings";
     page: "/settings";
+  };
+  "routes/sibling_cards.tsx": {
+    id: "routes/sibling_cards";
+    page: "/sibling_cards";
   };
   "routes/similar_props.tsx": {
     id: "routes/similar_props";
@@ -380,6 +387,7 @@ type RouteModules = {
   "routes/prop/$propName": typeof import("./app/routes/prop/$propName.tsx");
   "routes/props": typeof import("./app/routes/props.tsx");
   "routes/settings": typeof import("./app/routes/settings.tsx");
+  "routes/sibling_cards": typeof import("./app/routes/sibling_cards.tsx");
   "routes/similar_props": typeof import("./app/routes/similar_props.tsx");
   "routes/sound_components": typeof import("./app/routes/sound_components.tsx");
   "routes/stats": typeof import("./app/routes/stats.tsx");

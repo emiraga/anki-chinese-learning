@@ -21,6 +21,7 @@ export default [
   route("prop/:propName", "routes/prop/$propName.tsx"),
   route("props", "routes/props.tsx"),
   route("settings", "routes/settings.tsx"),
+  route("sibling_cards", "routes/sibling_cards.tsx"),
   route("similar_props", "routes/similar_props.tsx"),
   route("sound_components", "routes/sound_components.tsx"),
   route("stats", "routes/stats.tsx"),

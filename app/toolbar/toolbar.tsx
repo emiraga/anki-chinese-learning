@@ -188,6 +188,11 @@ export const MainToolbarNoOutlet: React.FC<{
           name: "Advance Cards",
           show: true,
         },
+        {
+          pathname: "/sibling_cards",
+          name: "Sibling Cards",
+          show: true,
+        },
       ],
     },
     {
