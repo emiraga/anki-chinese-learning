@@ -62,6 +62,8 @@ PROP_NAMES = [
     'arrow',
     'monkey',
     'cloth-filter',
+    'shrine',
+    'shrine-gate',
 ]
 
 # Props with "prop-top" prefix (using PropHanziToPinyin generator with tag_prefix)
