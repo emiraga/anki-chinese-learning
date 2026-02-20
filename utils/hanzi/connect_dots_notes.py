@@ -53,38 +53,27 @@ SYLLABLE_MIN_COUNT = 5  # Minimum characters sharing a syllable
 TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 
-# Props to generate ConnectDots notes for (using PropHanziToPinyin generator)
-PROP_NAMES = [
-    'square',
-    'pendant',
-    'water-around-the-house',
-    'buddhist-temple',
-    'arrow',
-    'monkey',
-    'cloth-filter',
-    'shrine',
-    'shrine-gate',
+# Tags to generate Hanzi-to-Pinyin ConnectDots notes for (using TagHanziToPinyin generator)
+# Full tag names in format "prefix::name"
+HANZI_TO_PINYIN_TAGS = [
+    'prop::square',
+    'prop::pendant',
+    'prop::water-around-the-house',
+    'prop::buddhist-temple',
+    'prop::arrow',
+    'prop::monkey',
+    'prop::cloth-filter',
+    'prop::shrine',
+    'prop::shrine-gate',
+    'prop-top::sheep',
+    'prop-bottom::child',
+    'prop-right::hook',
 ]
 
-# Props with "prop-top" prefix (using PropHanziToPinyin generator with tag_prefix)
-PROP_TOP_NAMES = [
-    'sheep',
-]
-
-# Props with "prop-bottom" prefix (using PropHanziToPinyin generator with tag_prefix)
-PROP_BOTTOM_NAMES = [
-    'child',
-]
-
-# Props with "prop-right" prefix (using PropHanziToPinyin generator with tag_prefix)
-PROP_RIGHT_NAMES = [
-    'hook',
-]
-
-# Prop intersections - notes must have ALL listed props (using IntersectionGenerator)
-# Format: (key_name, [prop1, prop2, ...], tag_prefix)
-PROP_INTERSECTIONS: list[tuple[str, list[str], str]] = [
-    ('small-table+insect', ['small-table', 'insect'], 'prop'),
+# Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
+# Format: (key_name, [full_tag1, full_tag2, ...])
+HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
+    ('small-table+insect', ['prop::small-table', 'prop::insect']),
 ]
 
 # Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)
@@ -96,7 +85,7 @@ CUSTOM_HANZI_SETS = {
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
 # Note: Do NOT include 'tag:' prefix - it's added automatically in the query
-TAG_NAMES = [
+TAG_TRADITIONAL_MEANING = [
     'chinese::category::food',
     'chinese::category::time-of-the-day',
     'chinese::category::touch',
@@ -614,28 +603,33 @@ class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
         return fake_right
 
 
-class PropHanziToPinyin(BaseHanziToPinyinGenerator):
+class TagHanziToPinyin(BaseHanziToPinyinGenerator):
     """
-    Generate notes mapping Hanzi with a specific prop tag to their pinyin.
+    Generate notes mapping Hanzi with a specific tag to their pinyin.
 
     Uses pre-fetched data from HanziDataStore.
     Left = Traditional characters, Right = Pinyin pronunciations
     """
 
-    def __init__(self, prop_name: str, tag_prefix: str = "prop"):
-        self.prop_name = prop_name
-        self.tag_prefix = tag_prefix
+    def __init__(self, tag: str):
+        """
+        Args:
+            tag: Full tag name in format "prefix::name" (e.g., "prop::square", "prop-top::sheep")
+        """
+        if "::" not in tag:
+            raise ValueError(f"Tag must be in format 'prefix::name', got: {tag}")
+        self.tag = tag
+        self.tag_prefix, self.tag_name = tag.split("::", 1)
 
     @property
     def generator_type(self) -> str:
         return self.tag_prefix
 
     def get_key_suffix(self) -> str:
-        return self.prop_name
+        return self.tag_name
 
     def get_notes(self) -> list[HanziNote]:
-        tag = f"{self.tag_prefix}::{self.prop_name}"
-        return get_data_store().get_by_tag(tag)
+        return get_data_store().get_by_tag(self.tag)
 
 
 class TagTraditionalToMeaning(ConnectDotsGenerator):
@@ -1485,35 +1479,23 @@ def main():
         generators.append(SyllableHanziToPinyin(syllable))
 
     # Tag-based generators
-    for tag_name in TAG_NAMES:
+    for tag_name in TAG_TRADITIONAL_MEANING:
         generators.append(TagTraditionalToMeaning(tag_name))
 
-    # Prop-based generators
-    for prop_name in PROP_NAMES:
-        generators.append(PropHanziToPinyin(prop_name))
+    # Tag-based Hanzi-to-Pinyin generators
+    for tag in HANZI_TO_PINYIN_TAGS:
+        generators.append(TagHanziToPinyin(tag))
 
-    # Prop-top-based generators
-    for prop_name in PROP_TOP_NAMES:
-        generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-top"))
-
-    # Prop-bottom-based generators
-    for prop_name in PROP_BOTTOM_NAMES:
-        generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-bottom"))
-
-    # Prop-right-based generators
-    for prop_name in PROP_RIGHT_NAMES:
-        generators.append(PropHanziToPinyin(prop_name, tag_prefix="prop-right"))
-
-    # Prop intersection generators
-    for key_name, prop_names, tag_prefix in PROP_INTERSECTIONS:
-        if len(prop_names) >= 2:
-            # Start with the first two props
-            gen1 = PropHanziToPinyin(prop_names[0], tag_prefix=tag_prefix)
-            gen2 = PropHanziToPinyin(prop_names[1], tag_prefix=tag_prefix)
+    # Tag intersection generators
+    for key_name, tags in HANZI_TO_PINYIN_INTERSECTIONS:
+        if len(tags) >= 2:
+            # Start with the first two tags
+            gen1 = TagHanziToPinyin(tags[0])
+            gen2 = TagHanziToPinyin(tags[1])
             result_gen = IntersectionGenerator(key_name, gen1, gen2)
-            # Chain additional props if more than 2
-            for additional_prop in prop_names[2:]:
-                additional_gen = PropHanziToPinyin(additional_prop, tag_prefix=tag_prefix)
+            # Chain additional tags if more than 2
+            for additional_tag in tags[2:]:
+                additional_gen = TagHanziToPinyin(additional_tag)
                 result_gen = IntersectionGenerator(key_name, result_gen, additional_gen)
             generators.append(result_gen)
 
