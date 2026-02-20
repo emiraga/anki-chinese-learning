@@ -151,13 +151,27 @@ export const useAnkiCards = (filter: string) => {
 };
 
 export const ankiOpenBrowse = async (query: string) => {
-  for (var i = 0; i < 1; i++) {
+  for (let i = 0; i < 1; i++) {
     if (!document.hasFocus()) {
       break;
     }
     await anki.graphical.guiBrowse({ query });
     await sleep(10);
   }
+};
+
+export const ankiSetDueDate = async (
+  cardIds: number[],
+  days: string,
+): Promise<boolean> => {
+  const response = await anki.invoke("setDueDate", {
+    cards: cardIds,
+    days,
+  });
+  if (response.error) {
+    throw new Error(response.error);
+  }
+  return response.result;
 };
 
 export function getAnkiNoteFilter() {
