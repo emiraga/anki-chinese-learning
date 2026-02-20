@@ -75,6 +75,7 @@ HANZI_TO_PINYIN_TAGS = [
 # Format: (key_name, [full_tag1, full_tag2, ...])
 HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
     ('small-table+insect', ['prop::small-table', 'prop::insect']),
+    ('square+walking-legs', ['prop-right::walking-legs', 'prop::square']),
 ]
 
 # Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)

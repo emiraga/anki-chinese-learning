@@ -369,7 +369,7 @@ export default function SiblingCards() {
   const { progressPercentage, stage, loading, error, notesByCards } =
     useAnkiCards("-is:suspended");
 
-  const minDaysInFuture = 7;
+  const minDaysInFuture = 5;
 
   return (
     <MainFrame>
