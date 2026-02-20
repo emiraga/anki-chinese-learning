@@ -67,6 +67,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop::shrine-gate',
     'prop-top::sheep',
     'prop-bottom::child',
+    'prop-left::slice-of-a-tree',
     'prop-right::hook',
 ]
 
