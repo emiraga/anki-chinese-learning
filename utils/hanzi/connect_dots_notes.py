@@ -49,7 +49,7 @@ from shared.pinyin_utils import (
 
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
-SYLLABLE_MIN_COUNT = 5  # Minimum characters sharing a syllable
+SYLLABLE_MIN_COUNT = 4  # Minimum characters sharing a syllable
 TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 
@@ -69,6 +69,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop-bottom::child',
     'prop-left::slice-of-a-tree',
     'prop-right::hook',
+    'prop::helmet',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
@@ -83,6 +84,12 @@ HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
 CUSTOM_HANZI_SETS = {
     'continuedrama': '繼續戲劇',
     'left-moon-meat': '腿服朋月膀脖腸肚肥股肌腳臉腦胖脾脫胸',
+}
+
+# Combined sound components - for sound components that don't have enough chars individually
+# Format: 'key_name': ['component1', 'component2', ...]
+COMBINED_SOUND_COMPONENTS: dict[str, list[str]] = {
+    '朝+苗': ['朝', '苗'],
 }
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
@@ -562,6 +569,50 @@ class SoundComponentHanziToPinyin(BaseHanziToPinyinGenerator):
         sound_component_note = data_store.get_by_traditional(self.sound_component)
         if sound_component_note and sound_component_note not in notes:
             notes = [sound_component_note] + notes
+
+        return notes
+
+
+class CombinedSoundComponentHanziToPinyin(BaseHanziToPinyinGenerator):
+    """
+    Generate notes mapping Hanzi from multiple sound components to their pinyin.
+
+    Used when individual sound components don't have enough characters to meet
+    the threshold for their own note.
+
+    Uses pre-fetched data from HanziDataStore.
+    Left = Traditional characters, Right = Pinyin pronunciations
+    """
+
+    def __init__(self, key_name: str, sound_components: list[str]):
+        self.key_name = key_name
+        self.sound_components = sound_components
+
+    @property
+    def generator_type(self) -> str:
+        return "sound_component"
+
+    def get_key_suffix(self) -> str:
+        return self.key_name
+
+    def get_notes(self) -> list[HanziNote]:
+        data_store = get_data_store()
+        notes: list[HanziNote] = []
+        seen_ids: set[int] = set()
+
+        for component in self.sound_components:
+            # Get notes with this sound component
+            component_notes = data_store.get_by_sound_component(component)
+            for note in component_notes:
+                if note.note_id not in seen_ids:
+                    notes.append(note)
+                    seen_ids.add(note.note_id)
+
+            # Also include the sound component character itself if it exists
+            sound_component_note = data_store.get_by_traditional(component)
+            if sound_component_note and sound_component_note.note_id not in seen_ids:
+                notes.append(sound_component_note)
+                seen_ids.add(sound_component_note.note_id)
 
         return notes
 
@@ -1515,6 +1566,11 @@ def main():
     print(f"Adding {len(CUSTOM_HANZI_SETS)} custom hanzi set(s)...")
     for name, characters in CUSTOM_HANZI_SETS.items():
         generators.append(CustomHanziToPinyin(name, characters))
+
+    # Combined sound component generators
+    print(f"Adding {len(COMBINED_SOUND_COMPONENTS)} combined sound component(s)...")
+    for key_name, components in COMBINED_SOUND_COMPONENTS.items():
+        generators.append(CombinedSoundComponentHanziToPinyin(key_name, components))
 
     if not generators:
         print("No generators to run")
