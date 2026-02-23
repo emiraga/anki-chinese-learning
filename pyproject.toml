@@ -1,0 +1,14 @@
+[tool.pyright]
+include = ["utils"]
+extraPaths = ["utils"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+
+# Ignore third-party libraries without stubs
+reportMissingTypeStubs = false
+reportMissingImports = "warning"
+
+# Allow use of "requests" and "dragonmapper" without type annotations
+reportUnknownMemberType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownVariableType = "warning"

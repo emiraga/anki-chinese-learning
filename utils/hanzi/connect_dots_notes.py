@@ -25,6 +25,7 @@ Tests: See test_connect_dots_notes.py (run with: uv run test_connect_dots_notes.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import TypedDict
 import argparse
 import sys
 from pathlib import Path
@@ -148,15 +149,15 @@ class HanziDataStore:
 
     This avoids making many individual API calls by fetching all data upfront.
     """
-    hanzi_notes: list[HanziNote] = field(default_factory=list)
-    tocfl_notes: list[TOCFLNote] = field(default_factory=list)
+    hanzi_notes: list[HanziNote] = field(default_factory=lambda: list[HanziNote]())
+    tocfl_notes: list[TOCFLNote] = field(default_factory=lambda: list[TOCFLNote]())
 
     # Indexes for fast lookup
-    _hanzi_by_traditional: dict[str, HanziNote] = field(default_factory=dict)
-    _hanzi_by_sound_component: dict[str, list[HanziNote]] = field(default_factory=dict)
-    _hanzi_by_syllable: dict[str, list[HanziNote]] = field(default_factory=dict)
-    _hanzi_by_tag: dict[str, list[HanziNote]] = field(default_factory=dict)
-    _tocfl_two_char: list[TOCFLNote] = field(default_factory=list)
+    _hanzi_by_traditional: dict[str, HanziNote] = field(default_factory=lambda: dict[str, HanziNote]())
+    _hanzi_by_sound_component: dict[str, list[HanziNote]] = field(default_factory=lambda: dict[str, list[HanziNote]]())
+    _hanzi_by_syllable: dict[str, list[HanziNote]] = field(default_factory=lambda: dict[str, list[HanziNote]]())
+    _hanzi_by_tag: dict[str, list[HanziNote]] = field(default_factory=lambda: dict[str, list[HanziNote]]())
+    _tocfl_two_char: list[TOCFLNote] = field(default_factory=lambda: list[TOCFLNote]())
 
     def build_indexes(self) -> None:
         """Build lookup indexes after loading notes"""
@@ -358,8 +359,8 @@ class ConnectDotsNote:
     key: str
     left: list[str]
     right: list[str]
-    explanation: list[str] = field(default_factory=list)
-    fake_right: list[str] = field(default_factory=list)
+    explanation: list[str] = field(default_factory=lambda: list[str]())
+    fake_right: list[str] = field(default_factory=lambda: list[str]())
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
@@ -458,7 +459,7 @@ class ConnectDotsNote:
         # (e.g., syllable generators add fake_right for missing tones)
         all_right_values = set(right for _, right, _ in sorted_tuples) | set(self.fake_right)
 
-        notes = []
+        notes: list[ConnectDotsNote] = []
         for key, left_slice, right_slice, explanation_slice in notes_data:
             # fake_right = all right values minus this note's right values
             this_note_right = set(right_slice)
@@ -525,9 +526,9 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
     def generate_notes(self) -> list[ConnectDotsNote]:
         notes = self.get_notes()
 
-        left = []
-        right = []
-        explanation = []
+        left: list[str] = []
+        right: list[str] = []
+        explanation: list[str] = []
 
         for note in notes:
             if note.traditional and note.pinyin:
@@ -648,7 +649,7 @@ class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
         # Generate fake_right for missing tones (all 5 tones should be represented)
         all_tones = {1, 2, 3, 4, 5}
         missing_tones = all_tones - present_tones
-        fake_right = []
+        fake_right: list[str] = []
         for tone in sorted(missing_tones):
             pinyin_with_tone = syllable_with_tone(self.syllable, tone)
             fake_right.append(pinyin_with_zhuyin(pinyin_with_tone))
@@ -710,8 +711,8 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
 
         notes_info = get_notes_info(note_ids)
 
-        left = []
-        right = []
+        left: list[str] = []
+        right: list[str] = []
 
         for note in notes_info:
             # Try different field names for traditional
@@ -758,8 +759,8 @@ class TwoCharPhraseByCharacter(ConnectDotsGenerator):
         # Get two-character TOCFL notes containing this character
         notes = data_store.get_two_char_tocfl_by_character(self.character)
 
-        left = []
-        right = []
+        left: list[str] = []
+        right: list[str] = []
 
         for note in notes:
             if note.traditional and note.meaning:
@@ -849,12 +850,31 @@ class CustomHanziToPinyin(BaseHanziToPinyinGenerator):
 
     def get_notes(self) -> list[HanziNote]:
         data_store = get_data_store()
-        notes = []
+        notes: list[HanziNote] = []
         for char in self.characters:
             note = data_store.get_by_traditional(char)
             if note:
                 notes.append(note)
         return notes
+
+
+class ExistingNoteInfo(TypedDict):
+    """Type for existing note info dictionary"""
+    noteId: int
+    left: str
+    right: str
+    explanation: str
+    fake_right: str
+
+
+class ProcessStats(TypedDict):
+    """Type for process_generators statistics"""
+    created: int
+    updated: int
+    unchanged: int
+    skipped_single_right: int
+    errors: int
+    untracked: int
 
 
 class ConnectDotsManager:
@@ -882,7 +902,7 @@ class ConnectDotsManager:
         })
         return response.get("result", [])
 
-    def get_existing_notes(self) -> dict[str, dict]:
+    def get_existing_notes(self) -> dict[str, ExistingNoteInfo]:
         """
         Get all existing ConnectDots notes indexed by Key
 
@@ -896,7 +916,7 @@ class ConnectDotsManager:
             return {}
 
         notes_info = get_notes_info(note_ids)
-        existing = {}
+        existing: dict[str, ExistingNoteInfo] = {}
 
         for note in notes_info:
             key = note['fields'].get('Key', {}).get('value', '').strip()
@@ -957,7 +977,7 @@ class ConnectDotsManager:
         self,
         note_id: int,
         note: ConnectDotsNote,
-        existing: dict | None = None
+        existing: ExistingNoteInfo | None = None
     ) -> None:
         """
         Update an existing ConnectDots note
@@ -1028,7 +1048,7 @@ class ConnectDotsManager:
 
         print(f"  Updated note {note_id} for key '{note.key}'")
 
-    def process_generators(self, generators: list[ConnectDotsGenerator]) -> tuple[dict, dict[str, list[ConnectDotsNote]]]:
+    def process_generators(self, generators: list[ConnectDotsGenerator]) -> tuple[ProcessStats, dict[str, list[ConnectDotsNote]]]:
         """
         Process all generators and create/update notes as needed
 
@@ -1038,7 +1058,7 @@ class ConnectDotsManager:
         Returns:
             Tuple of (statistics dictionary, notes_by_type dictionary)
         """
-        stats = {
+        stats: ProcessStats = {
             'created': 0,
             'updated': 0,
             'unchanged': 0,
@@ -1297,7 +1317,7 @@ class CoverageStats:
     total_hanzi: int
     covered_characters: set[str]
     coverage_by_type: dict[str, set[str]]  # generator_type -> set of characters
-    all_characters: set[str] = field(default_factory=set)  # all Hanzi characters
+    all_characters: set[str] = field(default_factory=lambda: set[str]())  # all Hanzi characters
 
     @property
     def covered_hanzi(self) -> int:
