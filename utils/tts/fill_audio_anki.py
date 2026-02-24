@@ -8,13 +8,28 @@
 # ]
 # ///
 
+from __future__ import annotations
+
 import os
 import requests
 import base64
 import argparse
 import re
-from google.cloud import texttospeech
-import dragonmapper.transcriptions
+from typing import Any, TypedDict
+from google.cloud import texttospeech  # type: ignore[attr-defined]
+import dragonmapper.transcriptions  # type: ignore[import-untyped]
+
+
+class FieldValue(TypedDict):
+    value: str
+    order: int
+
+
+class NoteInfo(TypedDict):
+    noteId: int
+    modelName: str
+    tags: list[str]
+    fields: dict[str, FieldValue]
 
 
 # Define maximum lengths for filename components to keep them reasonable
@@ -23,7 +38,7 @@ _MAX_PINYIN_FILENAME_LEN = 50
 
 # Generate API key via https://console.cloud.google.com/apis/credentials
 
-def convert_pinyin_to_numbered(pinyin_text):
+def convert_pinyin_to_numbered(pinyin_text: str) -> str:
     """
     Convert pinyin with tone marks to space-separated numbered format.
     Handles both accented and numbered pinyin as input.
@@ -36,7 +51,7 @@ def convert_pinyin_to_numbered(pinyin_text):
     """
     # If there are no numbers, assume it's accented and convert.
     if not any(char.isdigit() for char in pinyin_text):
-        numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin_text)
+        numbered: str = dragonmapper.transcriptions.accented_to_numbered(pinyin_text)
     else:
         # It's already numbered, just use it as is.
         numbered = pinyin_text
@@ -45,7 +60,7 @@ def convert_pinyin_to_numbered(pinyin_text):
     # This regex finds a number followed by a letter and inserts a space.
     return re.sub(r'(\d)([a-zA-Z])', r'\1 \2', numbered)
 
-def setup_credentials():
+def setup_credentials() -> None:
     """
     Set up Google Cloud credentials by locating gcloud_account.json
     relative to the script's path.
@@ -62,7 +77,7 @@ def setup_credentials():
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
 
 
-def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A", pinyin_hint=None, speaking_rate=1.0):
+def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = "cmn-TW-Standard-A", pinyin_hint: str | None = None, speaking_rate: float = 1.0) -> bytes:
     """
     Convert text to speech using Taiwanese Mandarin voice
 
@@ -93,7 +108,7 @@ def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"
         if len(syllables) == len(chinese_chars):
             ssml_parts = ['<speak>']
             char_idx = 0
-            for i, char in enumerate(text):
+            for char in text:
                 if '\u4e00' <= char <= '\u9fff':
                     # This is a Chinese character, wrap with phoneme tag
                     ssml_parts.append(f'<phoneme alphabet="pinyin" ph="{syllables[char_idx]}">{char}</phoneme>')
@@ -145,7 +160,7 @@ def taiwanese_tts(text, output_file="output.mp3", voice_name="cmn-TW-Standard-A"
     return response.audio_content
 
 
-def anki_connect_request(action, params=None):
+def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Send a request to anki-connect
 
@@ -174,7 +189,7 @@ def anki_connect_request(action, params=None):
         raise
 
 
-def find_note_by_traditional(note_type, traditional_text):
+def find_note_by_traditional(note_type: str, traditional_text: str) -> int | None:
     """
     Find note with specific Traditional field value
 
@@ -199,7 +214,7 @@ def find_note_by_traditional(note_type, traditional_text):
     return None
 
 
-def get_note_info(note_id):
+def get_note_info(note_id: int) -> NoteInfo:
     """
     Get detailed information about a note
 
@@ -212,12 +227,12 @@ def get_note_info(note_id):
     response = anki_connect_request("notesInfo", {"notes": [note_id]})
 
     if response and response.get("result"):
-        return response["result"][0]
+        return response["result"][0]  # type: ignore[return-value]
 
     raise Exception("No note found")
 
 
-def store_media_file(filename, audio_data):
+def store_media_file(filename: str, audio_data: bytes) -> bool:
     """
     Store audio file in Anki media collection
 
@@ -243,7 +258,7 @@ def store_media_file(filename, audio_data):
         raise Exception(f"Failed to store audio file '{filename}'")
 
 
-def update_note_audio(note_id, audio_filename):
+def update_note_audio(note_id: int, audio_filename: str) -> bool:
     """
     Update the Audio field of a note
 
@@ -277,7 +292,7 @@ def update_note_audio(note_id, audio_filename):
         return False
 
 
-def update_audio_on_a_note(note_type, target_text, pinyin_hint=None):
+def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:
     """
     Main function to find note and update audio (legacy interface)
     """
@@ -295,7 +310,7 @@ def update_audio_on_a_note(note_type, target_text, pinyin_hint=None):
     update_audio_for_note(note_id, note_info, target_text, pinyin_hint)
 
 
-def update_audio_for_note(note_id, note_info, target_text, pinyin_hint=None, voice_name="cmn-TW-Standard-C", speaking_rate=1.0):
+def update_audio_for_note(note_id: int, note_info: NoteInfo, target_text: str, pinyin_hint: str | None = None, voice_name: str = "cmn-TW-Standard-C", speaking_rate: float = 1.0) -> None:
     """
     Update audio for a specific note using existing note info
 
@@ -345,7 +360,7 @@ def update_audio_for_note(note_id, note_info, target_text, pinyin_hint=None, voi
         raise Exception("Failed to store audio file")
 
 
-def find_note_by_empty_audio(note_type):
+def find_note_by_empty_audio(note_type: str) -> list[int]:
     # Search for notes with the specific Traditional field value
     search_query = f'note:{note_type} Traditional:_* Audio: -is:suspended'
 
@@ -361,7 +376,7 @@ def find_note_by_empty_audio(note_type):
     return []
 
 
-def find_notes_by_tag(note_type, tag):
+def find_notes_by_tag(note_type: str, tag: str) -> list[int]:
     """Find notes with a specific tag."""
     search_query = f'note:{note_type} tag:"{tag}" -is:suspended'
 
@@ -377,7 +392,7 @@ def find_notes_by_tag(note_type, tag):
     return []
 
 
-def remove_tag_from_note(note_id, tag):
+def remove_tag_from_note(note_id: int, tag: str) -> bool:
     """Remove a tag from a note."""
     response = anki_connect_request("removeTags", {
         "notes": [note_id],
@@ -391,13 +406,13 @@ def remove_tag_from_note(note_id, tag):
         raise Exception(f"Failed to remove tag '{tag}' from note {note_id}")
 
 
-def get_clean_field_value(note_info, field_name):
+def get_clean_field_value(note_info: NoteInfo, field_name: str) -> str:
     """Extract and clean a field value from note info, stripping HTML tags."""
-    return (note_info['fields'].get(field_name, {}).get('value', '')
+    return (note_info['fields'].get(field_name, {'value': '', 'order': 0}).get('value', '')
             .replace('<div>', '').replace('</div>', '').strip())
 
 
-def build_multi_pronunciation_audio(note_info, traditional):
+def build_multi_pronunciation_audio(note_info: NoteInfo, traditional: str) -> tuple[str | None, str | None]:
     """
     Build text and pinyin for notes with multiple pronunciations.
 
@@ -428,7 +443,7 @@ _REBUILD_AUDIO_TAG = "chinese::rebuild-audio-field"
 _MULTI_PRONUNCIATION_TAG = "chinese::multiple-pronounciation-character"
 
 
-def process_note_audio(note_id, note_info, note_type, use_pinyin_hint, voice_name="cmn-TW-Standard-C", speaking_rate=1.0):
+def process_note_audio(note_id: int, note_info: NoteInfo, note_type: str, use_pinyin_hint: bool, voice_name: str = "cmn-TW-Standard-C", speaking_rate: float = 1.0) -> bool:
     """
     Process audio for a single note.
 
@@ -472,7 +487,7 @@ def process_note_audio(note_id, note_info, note_type, use_pinyin_hint, voice_nam
     return True
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description='Generate TTS audio for Anki notes')
     parser.add_argument('--use-pinyin-hint', action='store_true',
                        help='Use Pinyin field from notes as pronunciation hints')

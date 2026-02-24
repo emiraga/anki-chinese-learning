@@ -10,7 +10,7 @@
     "test": "jest",
     "test:python": "uv run --script utils/hanzi/test_connect_dots_notes.py",
     "typecheck": "react-router typegen && tsc && npm run typecheck --prefix public/tone_trainer",
-    "typecheck:python": "uvx pyright utils/hanzi/connect_dots_notes.py utils/hanzi/test_connect_dots_notes.py",
+    "typecheck:python": "uvx pyright utils/hanzi/connect_dots_notes.py utils/hanzi/test_connect_dots_notes.py utils/tts/fill_audio_anki.py",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
