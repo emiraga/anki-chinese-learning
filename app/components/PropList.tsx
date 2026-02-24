@@ -1,11 +1,12 @@
 import { useState } from "react";
-import type { PropType, PropPosition } from "~/data/props";
+import type { PropType, PropPosition, KnownPropsType } from "~/data/props";
 import {
   extractPropPositions,
   getAvailablePositions,
   getPositionTag,
 } from "~/data/props";
 import { PropCard } from "./PropCard";
+import { PropAutocomplete } from "./PropAutocomplete";
 import anki from "~/apis/anki";
 
 type PropListProps = {
@@ -15,6 +16,8 @@ type PropListProps = {
   characterTags?: string[];
   onTagRemoved?: () => void;
   characterCounts?: Record<string, number>;
+  knownProps?: KnownPropsType;
+  soundComponentCandidates?: string[]; // Hanzi characters from sound component candidates
 };
 
 const PositionLabel: React.FC<{ position: PropPosition }> = ({ position }) => {
@@ -204,10 +207,30 @@ export const PropList: React.FC<PropListProps> = ({
   characterTags = [],
   onTagRemoved,
   characterCounts,
+  knownProps,
+  soundComponentCandidates = [],
 }) => {
   const [removingTag, setRemovingTag] = useState<string | null>(null);
+  const [addingPropTag, setAddingPropTag] = useState<string | null>(null);
 
   const positions = extractPropPositions(characterTags);
+  const hasMissingProps = miscTags.includes("chinese::some-props-missing");
+  const existingPropTags = props.map((p) => p.mainTagname);
+  const existingPropTagsSet = new Set(existingPropTags);
+
+  // Find props that match sound component candidates but aren't already on the character
+  const propCandidates: PropType[] = [];
+  if (knownProps && soundComponentCandidates.length > 0) {
+    const candidateHanziSet = new Set(soundComponentCandidates);
+    for (const prop of Object.values(knownProps)) {
+      if (
+        candidateHanziSet.has(prop.hanzi) &&
+        !existingPropTagsSet.has(prop.mainTagname)
+      ) {
+        propCandidates.push(prop);
+      }
+    }
+  }
 
   const handleRemoveTag = async (tag: string) => {
     if (!ankiId) return;
@@ -220,6 +243,20 @@ export const PropList: React.FC<PropListProps> = ({
       throw new Error(`Failed to remove tag: ${error}`);
     } finally {
       setRemovingTag(null);
+    }
+  };
+
+  const handleAddPropCandidate = async (prop: PropType) => {
+    if (!ankiId) return;
+
+    setAddingPropTag(prop.mainTagname);
+    try {
+      await anki.note.addTags({ notes: [ankiId], tags: prop.mainTagname });
+      onTagRemoved?.();
+    } catch (error) {
+      throw new Error(`Failed to add prop tag: ${error}`);
+    } finally {
+      setAddingPropTag(null);
     }
   };
 
@@ -265,6 +302,49 @@ export const PropList: React.FC<PropListProps> = ({
             )}
         </div>
       ))}
+      {hasMissingProps && ankiId && knownProps && (
+        <div className="col-span-full mt-2">
+          <PropAutocomplete
+            knownProps={knownProps}
+            existingPropTags={existingPropTags}
+            ankiId={ankiId}
+            onPropAdded={() => onTagRemoved?.()}
+          />
+        </div>
+      )}
+      {hasMissingProps && propCandidates.length > 0 && ankiId && (
+        <div className="col-span-full mt-4">
+          <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+            Prop candidates from sound components:
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {propCandidates.map((prop) => (
+              <div
+                key={prop.mainTagname}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg
+                           border-2 border-dashed border-amber-400 dark:border-amber-600
+                           bg-amber-50 dark:bg-amber-950/30"
+              >
+                <span className="text-xl">{prop.hanzi}</span>
+                <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  {prop.prop}
+                </span>
+                <button
+                  onClick={() => handleAddPropCandidate(prop)}
+                  disabled={addingPropTag === prop.mainTagname}
+                  className="ml-1 px-2 py-0.5 text-xs font-bold rounded
+                             bg-amber-500 hover:bg-amber-600 text-white
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-colors"
+                  title={`Add ${prop.prop} prop`}
+                >
+                  {addingPropTag === prop.mainTagname ? "..." : "+ Add"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

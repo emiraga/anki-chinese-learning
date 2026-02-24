@@ -28,6 +28,7 @@ import { usePlecoOutlierDictionary } from "~/hooks/usePlecoOutlierDictionary";
 import { PlecoOutlierDisplay } from "~/components/PlecoOutlierDisplay";
 import { Tabs } from "~/components/Tabs";
 import { SoundComponentCandidates } from "~/components/SoundComponentCandidates";
+import { useSoundComponentCandidates } from "~/hooks/useSoundComponentCandidates";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -117,6 +118,23 @@ export default function CharDetail() {
     loading: plecoOutlierDictionaryLoading,
     error: plecoOutlierDictionaryError,
   } = usePlecoOutlierDictionary(char.traditional);
+
+  // Get sound component candidates for prop suggestions
+  const mainCharPinyin =
+    char.pinyin.length > 0
+      ? typeof char.pinyin[0] === "string"
+        ? char.pinyin[0]
+        : char.pinyin[0].pinyinAccented
+      : "";
+  const { candidates: soundComponentCandidates } = useSoundComponentCandidates({
+    mainCharacter: char.traditional,
+    mainCharPinyin,
+    dongCharacter,
+    yellowBridgeCharacter,
+  });
+  const soundComponentCandidateChars = soundComponentCandidates.map(
+    (c) => c.character,
+  );
 
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional),
@@ -260,6 +278,8 @@ export default function CharDetail() {
               ankiId={char.ankiId}
               characterTags={char.tags}
               onTagRemoved={() => reload()}
+              knownProps={knownProps}
+              soundComponentCandidates={soundComponentCandidateChars}
             />
             {charsUsingSoundComponent.length > 0 && (
               <>
