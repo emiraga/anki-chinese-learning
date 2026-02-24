@@ -15,9 +15,9 @@ import requests
 import base64
 import argparse
 import re
-from typing import Any, TypedDict
-from google.cloud import texttospeech  # type: ignore[attr-defined]
-import dragonmapper.transcriptions  # type: ignore[import-untyped]
+from typing import Any, TypedDict, cast
+from google.cloud import texttospeech
+import dragonmapper.transcriptions
 
 
 class FieldValue(TypedDict):
@@ -50,8 +50,9 @@ def convert_pinyin_to_numbered(pinyin_text: str) -> str:
         str: Pinyin with numbers and spaces (e.g., "dei3 yao4", "xiao3 xue2")
     """
     # If there are no numbers, assume it's accented and convert.
+    numbered: str
     if not any(char.isdigit() for char in pinyin_text):
-        numbered: str = dragonmapper.transcriptions.accented_to_numbered(pinyin_text)
+        numbered = cast(str, dragonmapper.transcriptions.accented_to_numbered(pinyin_text))  # pyright: ignore[reportUnknownMemberType]
     else:
         # It's already numbered, just use it as is.
         numbered = pinyin_text
@@ -93,9 +94,10 @@ def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = 
     output_file = os.path.join(script_dir, os.path.basename(output_file))
 
     # Initialize the client
-    client = texttospeech.TextToSpeechClient()
+    client: Any = texttospeech.TextToSpeechClient()
 
     # Set the text input - use SSML if pinyin hint provided
+    synthesis_input: Any
     if pinyin_hint:
         # Convert pinyin to numbered format
         numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
@@ -131,14 +133,14 @@ def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = 
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
     # Build the voice request
-    voice = texttospeech.VoiceSelectionParams(
+    voice: Any = texttospeech.VoiceSelectionParams(
         language_code="cmn-TW",  # Taiwanese Mandarin
         name=voice_name,
-        ssml_gender=texttospeech.SsmlVoiceGender.FEMALE  # or MALE
+        ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
     )
 
     # Select the type of audio file
-    audio_config = texttospeech.AudioConfig(
+    audio_config: Any = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
         speaking_rate=speaking_rate,  # Speed (0.25 to 4.0)
         pitch=0.0,          # Pitch (-20.0 to 20.0)
@@ -146,7 +148,7 @@ def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = 
     )
 
     # Perform the text-to-speech request
-    response = client.synthesize_speech(
+    response: Any = client.synthesize_speech(
         input=synthesis_input,
         voice=voice,
         audio_config=audio_config
@@ -157,7 +159,8 @@ def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = 
         out.write(response.audio_content)
         print(f'Audio generated: "{output_file}"')
 
-    return response.audio_content
+    audio_content: bytes = response.audio_content
+    return audio_content
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -227,7 +230,7 @@ def get_note_info(note_id: int) -> NoteInfo:
     response = anki_connect_request("notesInfo", {"notes": [note_id]})
 
     if response and response.get("result"):
-        return response["result"][0]  # type: ignore[return-value]
+        return response["result"][0]
 
     raise Exception("No note found")
 
