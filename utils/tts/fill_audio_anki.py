@@ -78,14 +78,14 @@ def setup_credentials() -> None:
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
 
 
-def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = "cmn-TW-Standard-A", pinyin_hint: str | None = None, speaking_rate: float = 1.0) -> bytes:
+def chinese_tts(text: str, output_file: str = "output.mp3", voice_name: str = "cmn-TW-Standard-A", pinyin_hint: str | None = None, speaking_rate: float = 1.0) -> bytes:
     """
-    Convert text to speech using Taiwanese Mandarin voice
+    Convert text to speech using Chinese Mandarin voice (Taiwanese or Mainland)
 
     Args:
-        text (str): Text to convert (Traditional Chinese characters)
+        text (str): Text to convert (Chinese characters)
         output_file (str): Output audio file path (will be saved in script directory)
-        voice_name (str): Voice to use (see available voices below)
+        voice_name (str): Voice to use - supports both cmn-TW-* (Taiwanese) and cmn-CN-* (Mainland) voices
         pinyin_hint (str): Optional pinyin pronunciation hint
         speaking_rate (float): Speed of speech (0.25 to 4.0, default 1.0). Slower rates may improve clarity.
     """
@@ -132,9 +132,15 @@ def taiwanese_tts(text: str, output_file: str = "output.mp3", voice_name: str = 
     else:
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
+    # Determine language code from voice name (cmn-TW-* or cmn-CN-*)
+    if voice_name.startswith("cmn-CN"):
+        language_code = "cmn-CN"  # Mainland Mandarin
+    else:
+        language_code = "cmn-TW"  # Taiwanese Mandarin
+
     # Build the voice request
     voice: Any = texttospeech.VoiceSelectionParams(
-        language_code="cmn-TW",  # Taiwanese Mandarin
+        language_code=language_code,
         name=voice_name,
         ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
     )
@@ -350,7 +356,7 @@ def update_audio_for_note(note_id: int, note_info: NoteInfo, target_text: str, p
         print(f"Generating TTS audio for: {target_text} with pinyin hint: {pinyin_hint}")
     else:
         print(f"Generating TTS audio for: {target_text}")
-    audio_data = taiwanese_tts(target_text, output_file=audio_filename, voice_name=voice_name, pinyin_hint=pinyin_hint, speaking_rate=speaking_rate)
+    audio_data = chinese_tts(target_text, output_file=audio_filename, voice_name=voice_name, pinyin_hint=pinyin_hint, speaking_rate=speaking_rate)
 
     # Store audio file in Anki media collection
     if store_media_file(audio_filename, audio_data):
@@ -496,10 +502,14 @@ def main() -> None:
                        help='Use Pinyin field from notes as pronunciation hints')
     parser.add_argument('--voice', type=str, default='cmn-TW-Standard-C',
                        choices=[
+                           # Taiwanese Mandarin voices
                            'cmn-TW-Standard-A', 'cmn-TW-Standard-B', 'cmn-TW-Standard-C',
                            'cmn-TW-Wavenet-A', 'cmn-TW-Wavenet-B', 'cmn-TW-Wavenet-C',
+                           # Mainland Mandarin voices
+                           'cmn-CN-Standard-A', 'cmn-CN-Standard-B', 'cmn-CN-Standard-C', 'cmn-CN-Standard-D',
+                           'cmn-CN-Wavenet-A', 'cmn-CN-Wavenet-B', 'cmn-CN-Wavenet-C', 'cmn-CN-Wavenet-D',
                        ],
-                       help='Voice to use for TTS (Wavenet voices are higher quality)')
+                       help='Voice to use for TTS. TW=Taiwanese, CN=Mainland. Wavenet voices are higher quality.')
     parser.add_argument('--speaking-rate', type=float, default=1.0,
                        help='Speaking rate (0.25 to 4.0). Slower rates (e.g., 0.85) may improve consonant clarity')
     args = parser.parse_args()
