@@ -550,7 +550,7 @@ def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examp
             conditions.append('(-is:suspended "POS:")')
         if include_empty_examples:
             # Include unsuspended TOCFL notes with empty Examples JSON/Examples field, due today or tomorrow
-            conditions.append('(-is:suspended prop:due<=2 ("Examples JSON:" OR "Examples:"))')
+            conditions.append('(-is:suspended prop:due<=5 ("Examples JSON:" OR "Examples:"))')
         search_query = f'note:{note_type} ({" OR ".join(conditions)})'
     else:
         search_query = f'note:{note_type} {base_conditions}'

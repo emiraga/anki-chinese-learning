@@ -79,18 +79,19 @@ HANZI_TO_PINYIN_TAGS = [
 HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
     ('small-table+insect', ['prop::small-table', 'prop::insect']),
     ('square+walking-legs', ['prop-right::walking-legs', 'prop::square']),
+    ('left-moon-mean', ['prop-left::narrow-meat', 'prop-left::moon']),
 ]
 
 # Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)
 # Format: 'key_name': 'characters_as_string'
-CUSTOM_HANZI_SETS = {
+CUSTOM_HANZI_TO_PINYIN_SETS = {
     'continuedrama': '繼續戲劇',
-    'left-moon-meat': '腿服朋月膀脖腸肚肥股肌腳臉腦胖脾脫胸',
+    'zhe-zhi': '這者折稚址質'
 }
 
 # Combined sound components - for sound components that don't have enough chars individually
 # Format: 'key_name': ['component1', 'component2', ...]
-COMBINED_SOUND_COMPONENTS: dict[str, list[str]] = {
+COMBINED_SOUND_COMPONENTS_TO_PINYIN: dict[str, list[str]] = {
     '朝+苗': ['朝', '苗'],
 }
 
@@ -1584,13 +1585,13 @@ def main():
         generators.append(TwoCharPhraseByCharacter(character))
 
     # Custom hanzi set generators
-    print(f"Adding {len(CUSTOM_HANZI_SETS)} custom hanzi set(s)...")
-    for name, characters in CUSTOM_HANZI_SETS.items():
+    print(f"Adding {len(CUSTOM_HANZI_TO_PINYIN_SETS)} custom hanzi set(s)...")
+    for name, characters in CUSTOM_HANZI_TO_PINYIN_SETS.items():
         generators.append(CustomHanziToPinyin(name, characters))
 
     # Combined sound component generators
-    print(f"Adding {len(COMBINED_SOUND_COMPONENTS)} combined sound component(s)...")
-    for key_name, components in COMBINED_SOUND_COMPONENTS.items():
+    print(f"Adding {len(COMBINED_SOUND_COMPONENTS_TO_PINYIN)} combined sound component(s)...")
+    for key_name, components in COMBINED_SOUND_COMPONENTS_TO_PINYIN.items():
         generators.append(CombinedSoundComponentHanziToPinyin(key_name, components))
 
     if not generators:
