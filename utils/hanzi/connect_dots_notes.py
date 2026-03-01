@@ -72,6 +72,9 @@ HANZI_TO_PINYIN_TAGS = [
     'prop-right::hook',
     'prop::helmet',
     'prop-left::boat',
+    'prop::the-one-who-makes',
+    'prop::fountain',
+    'prop-left::foot',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
