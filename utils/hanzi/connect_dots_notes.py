@@ -75,6 +75,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop::the-one-who-makes',
     'prop::fountain',
     'prop-left::foot',
+    'prop-bottom::narrow-meat',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
@@ -89,7 +90,8 @@ HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
 # Format: 'key_name': 'characters_as_string'
 CUSTOM_HANZI_TO_PINYIN_SETS = {
     'continuedrama': '繼續戲劇',
-    'zhe-zhi': '這者折稚址質'
+    'zhe-zhi': '這者折稚址質',
+    'filler-sounds': '啦呵哦嗯阿呀喔哈耶',
 }
 
 # Combined sound components - for sound components that don't have enough chars individually

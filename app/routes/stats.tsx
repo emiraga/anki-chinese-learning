@@ -18,6 +18,9 @@ export default function Stats() {
   let charsWithSoundComponent = Object.values(characters).filter(
     (c) => c.soundComponentCharacter && c.soundComponentCharacter.length > 0,
   );
+  let charsWithoutSound = Object.values(characters).filter(
+    (c) => !c.withSound,
+  );
 
   return (
     <MainFrame>
@@ -48,6 +51,15 @@ export default function Stats() {
           <span key={i} className="mx-1">
             {p.traditional} ({p.soundComponentCharacter})
           </span>
+        ))}
+      </Section>
+
+      <Section className="block" display={charsWithoutSound.length > 0}>
+        <h3 className="font-serif text-4xl my-2">
+          List of characters without sound: ({charsWithoutSound.length})
+        </h3>
+        {charsWithoutSound.map((p, i) => (
+          <span key={i}>{p.traditional}</span>
         ))}
       </Section>
     </MainFrame>
