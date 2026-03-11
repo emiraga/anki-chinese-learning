@@ -76,6 +76,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop::fountain',
     'prop-left::foot',
     'prop-bottom::narrow-meat',
+    'prop::long-roots',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
