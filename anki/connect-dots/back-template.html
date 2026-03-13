@@ -111,7 +111,8 @@
       const leftSpan = document.createElement("span");
       leftSpan.className = "result-left";
       const leftLink = document.createElement("a");
-      leftLink.href = "plecoapi://x-callback-url/df?hw=" + encodeURIComponent(leftItem);
+      leftLink.href =
+        "plecoapi://x-callback-url/df?hw=" + encodeURIComponent(leftItem);
       leftLink.innerHTML = leftItem;
       leftSpan.appendChild(leftLink);
       row.appendChild(leftSpan);

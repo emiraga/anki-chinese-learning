@@ -71,14 +71,14 @@
 #right-items {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 2px solid #444;
   background: #252540;
@@ -88,7 +88,8 @@
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   touch-action: manipulation;
-  min-height: 44px; /* Touch target size */
+  height: 44px;
+  box-sizing: border-box;
 }
 
 .item:hover {
@@ -101,7 +102,8 @@
 
 .item-text {
   flex: 1;
-  word-break: break-word;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 /* Left item states */
@@ -321,7 +323,8 @@
   }
 
   .item {
-    padding: 10px 12px;
+    padding: 6px 10px;
+    height: 40px;
   }
 
   .column-header {
