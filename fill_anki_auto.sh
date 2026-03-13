@@ -6,6 +6,7 @@ set -e
 ./utils/hanzi/fill_hanzi_chars.py
 ./utils/hanzi/clean_notes.py
 ./utils/hanzi/connect_dots_notes.py
+./anki/connect-dots/deploy.py
 
 ./utils/tocfl/get_from_csv.py
 
