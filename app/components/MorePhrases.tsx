@@ -76,8 +76,6 @@ export function PhraseSearchSections({
         search={search}
         filterUnknownChars={true}
       />
-      <h2 className="text-2xl">TBCL:</h2>
-      <SearchMorePhrases noteTypes={["TBCL"]} search={search} />
     </>
   );
 }
@@ -109,6 +107,7 @@ export function SearchMorePhrases({
       if (withTags) {
         query += ` (${withTags.map((t) => `tag:${t}`).join(" OR ")})`;
       }
+      console.log(query);
       const notesId = await anki.note.findNotes({ query });
       var notes = await anki.note.notesInfo({ notes: notesId });
 

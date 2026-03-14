@@ -175,7 +175,7 @@ def main():
         print(f"\n=== Processing {note_type} ===")
         note_ids = find_notes_with_empty_zhuyin(note_type)
 
-        for note_id in note_ids[:500]:
+        for note_id in note_ids:
             update_zhuyin_for_note(note_type, note_id)
 
         print(f"Completed processing {note_type}")

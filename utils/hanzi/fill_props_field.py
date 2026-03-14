@@ -538,7 +538,7 @@ def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examp
         list: List of note IDs
     """
     # Build the base conditions for all note types
-    base_conditions = '(tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
+    base_conditions = '-is:suspended (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
 
     # For Hanzi notes, also include notes that need Same Pinyin/Syllable Traditional fields filled
     if note_type == "Hanzi":
@@ -550,11 +550,12 @@ def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examp
             conditions.append('(-is:suspended "POS:")')
         if include_empty_examples:
             # Include unsuspended TOCFL notes with empty Examples JSON/Examples field, due today or tomorrow
-            conditions.append('(-is:suspended prop:due<=9 ("Examples JSON:" OR "Examples:"))')
+            conditions.append('(-is:suspended prop:due<=8 ("Examples JSON:" OR "Examples:"))')
         search_query = f'note:{note_type} ({" OR ".join(conditions)})'
     else:
         search_query = f'note:{note_type} {base_conditions}'
 
+    print(search_query)
     response = anki_connect_request("findNotes", {"query": search_query})
 
     if response and response.get("result"):

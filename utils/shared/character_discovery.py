@@ -68,7 +68,6 @@ def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter]:
     note_types = [
         ("TOCFL", ""),
         ("Hanzi", ""),
-        ("TBCL", ""),
     ]
 
     anki_chars = set()
