@@ -116,6 +116,45 @@ export const PROP_MISC_TAGS = [
   "chinese::some-props-missing",
 ];
 
+// Position order for sorting: left, top, right, bottom, then no position
+export const POSITION_ORDER: Record<PropPosition | "none", number> = {
+  left: 0,
+  top: 1,
+  right: 2,
+  bottom: 3,
+  none: 4,
+};
+
+// Get the sort order for a prop based on its position in a character's tags
+export function getPropPositionOrder(
+  propName: string,
+  tags: string[],
+): number {
+  const propNameWithoutPrefix = propName.startsWith("prop::")
+    ? propName.substring(6)
+    : propName;
+  const positions = extractPropPositions(tags);
+  const propPositions = positions.get(propNameWithoutPrefix) || [];
+  const firstPosition = propPositions[0];
+  return POSITION_ORDER[firstPosition ?? "none"];
+}
+
+// Sort prop names by their position in a character's tags
+export function sortPropsByPosition(
+  propNames: string[],
+  tags: string[],
+): string[] {
+  return [...propNames].sort((a, b) => {
+    const orderA = getPropPositionOrder(a, tags);
+    const orderB = getPropPositionOrder(b, tags);
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    // Secondary sort by prop name
+    return a.localeCompare(b);
+  });
+}
+
 // Create a custom hook to load and manage Anki data with reload capability
 export function useAnkiProps() {
   const [props, setProps] = useState<PropType[]>([]);

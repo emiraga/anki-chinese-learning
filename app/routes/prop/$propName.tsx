@@ -6,7 +6,7 @@ import { PropCard } from "~/components/PropCard";
 import { CharList } from "~/components/CharList";
 import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
-import { extractPropPositions, type PropPosition } from "~/data/props";
+import { extractPropPositions, POSITION_ORDER } from "~/data/props";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -29,15 +29,6 @@ const PropRender: React.FC<{
   const nextProp =
     currentIndex < props.length - 1 ? props[currentIndex + 1].prop : null;
 
-  // Position order: left, top, right, bottom, then no position
-  const positionOrder: Record<PropPosition | "none", number> = {
-    left: 0,
-    top: 1,
-    right: 2,
-    bottom: 3,
-    none: 4,
-  };
-
   const propNameWithoutPrefix = propName.substring(6); // Remove "prop::" prefix
 
   const chars = Object.values(characters)
@@ -48,8 +39,8 @@ const PropRender: React.FC<{
       // Use the first position for sorting, or "none" if no position
       const posA = positionsA[0];
       const posB = positionsB[0];
-      const orderA = positionOrder[posA ?? "none"];
-      const orderB = positionOrder[posB ?? "none"];
+      const orderA = POSITION_ORDER[posA ?? "none"];
+      const orderB = POSITION_ORDER[posB ?? "none"];
 
       if (orderA !== orderB) {
         return orderA - orderB;

@@ -5,7 +5,7 @@ import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
 import { CharList } from "~/components/CharList";
-import { PROP_MISC_TAGS } from "~/data/props";
+import { PROP_MISC_TAGS, sortPropsByPosition } from "~/data/props";
 import { PhraseList } from "~/components/Phrase";
 import { LearnLink, PromptsLink } from "~/components/Learn";
 import { getNewCharacter } from "~/data/characters";
@@ -139,7 +139,10 @@ export default function CharDetail() {
   const filteredPhrases = phrases.filter((p) =>
     p.traditional.includes(char.traditional),
   );
-  const propsName = char.tags.filter((t) => t.startsWith("prop::"));
+  const propsName = sortPropsByPosition(
+    char.tags.filter((t) => t.startsWith("prop::")),
+    char.tags,
+  );
   const miscTags = char.tags.filter((t) => PROP_MISC_TAGS.includes(t));
   const currentIndex = characterList.findIndex((c) => c === char.traditional);
   const nextCharacter =
