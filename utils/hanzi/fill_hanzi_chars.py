@@ -13,12 +13,17 @@
 import requests
 import dragonmapper.transcriptions
 import hanziconv
-from chinese_english_lookup import Dictionary
 from pypinyin import pinyin as get_pinyin, Style
 from collections import Counter
 import re
 import json
 import argparse
+import sys
+from pathlib import Path
+
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.dictionary_utils import get_dictionary, lookup_character_meaning
 
 
 def anki_connect_request(action, params=None):
@@ -337,36 +342,6 @@ def infer_most_common_pinyin(char_occurrences):
     return most_common_pinyin
 
 
-def extract_meaning_for_char(char, char_occurrences, dictionary):
-    """
-    Extract a meaning for a character from phrases containing it or from dictionary
-
-    Args:
-        char (str): The character
-        char_occurrences (list): List of (pinyin_syllable, phrase, meaning) tuples
-        dictionary (Dictionary): Chinese-English dictionary instance
-
-    Returns:
-        str: Extracted meaning or empty string
-    """
-    # Look for single-character phrases first
-    for pinyin, phrase, meaning in char_occurrences:
-        if phrase == char and meaning:
-            return meaning
-
-    # If no single-char phrase found, try to get from dictionary
-    try:
-        entry = dictionary.lookup(char)
-        if entry and entry.definition_entries:
-            # Get the first few definitions (limit to 3 for brevity)
-            definitions = entry.definition_entries[0].definitions[:3]
-            return '; '.join(definitions)
-    except Exception as e:
-        print(f"Warning: Could not lookup '{char}' in dictionary: {e}")
-
-    return ""
-
-
 def create_hanzi_note(char, pinyin, simplified, meaning=""):
     """
     Create a new Hanzi note and suspend it
@@ -422,13 +397,12 @@ def create_hanzi_note(char, pinyin, simplified, meaning=""):
         return False
 
 
-def process_single_character(char, dictionary, char_data=None):
+def process_single_character(char, char_data=None):
     """
     Process and create a note for a single character
 
     Args:
         char (str): The character to process
-        dictionary (Dictionary): Chinese-English dictionary instance
         char_data (dict): Optional pre-computed character data from phrases
 
     Returns:
@@ -459,7 +433,7 @@ def process_single_character(char, dictionary, char_data=None):
         pinyin = infer_most_common_pinyin(char_occurrences)
 
     # Extract meaning
-    meaning = extract_meaning_for_char(char, char_occurrences, dictionary)
+    meaning = lookup_character_meaning(char, char_occurrences)
 
     # Get simplified form
     simplified = traditional_to_simplified(char)
@@ -490,10 +464,6 @@ def main():
 
     print("=== Starting Hanzi note generation ===")
 
-    # Initialize dictionary
-    print("Loading Chinese-English dictionary...")
-    dictionary = Dictionary()
-
     # If a specific character is requested
     if args.char:
         if len(args.char) != 1:
@@ -513,7 +483,7 @@ def main():
                 return
 
         # Process the character
-        if process_single_character(char, dictionary):
+        if process_single_character(char):
             print(f"\n=== Successfully created note for '{char}' ===")
         else:
             print(f"\n=== Failed to create note for '{char}' ===")
@@ -537,7 +507,7 @@ def main():
     failed_count = 0
 
     for char in sorted(missing_chars):
-        if process_single_character(char, dictionary, char_data):
+        if process_single_character(char, char_data):
             created_count += 1
         else:
             failed_count += 1

@@ -5,6 +5,7 @@
 #   "requests",
 #   "dragonmapper",
 #   "google-genai",
+#   "chinese-english-lookup",
 # ]
 # ///
 
@@ -18,6 +19,7 @@ from pathlib import Path
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.gemini_utils import create_gemini_client, translate_with_gemini
+from shared.dictionary_utils import lookup_meaning
 
 
 def anki_connect_request(action, params=None):
@@ -258,14 +260,18 @@ def main():
             meaning = args.meaning
             print(f"✓ Using provided meaning: {meaning}")
         else:
-            # Initialize Gemini client
-            print("⋯ Initializing Google Gemini client...")
-            client = create_gemini_client()
+            # Try dictionary lookup first
+            print("⋯ Looking up in dictionary...")
+            meaning = lookup_meaning(args.traditional)
 
-            # Translate
-            print("⋯ Translating with Google Gemini...")
-            meaning = translate_with_gemini(args.traditional, client)
-            print(f"✓ Translated: {meaning}")
+            if meaning:
+                print(f"✓ Found in dictionary: {meaning}")
+            else:
+                # Fall back to AI translation
+                print("⋯ Not found in dictionary, using Google Gemini...")
+                client = create_gemini_client()
+                meaning = translate_with_gemini(args.traditional, client)
+                print(f"✓ Translated with AI: {meaning}")
 
         # Step 3: Create the note
         print(f"\n⋯ Creating note in deck '{args.deck}'...")
