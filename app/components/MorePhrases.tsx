@@ -7,7 +7,11 @@ import { HanziCardDetails } from "./HanziText";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "./index.module.css";
 import { PhraseLink } from "./Phrase";
-import { DANGDAI_NEXT_LEVEL, TOCFL_NEXT_LEVEL } from "~/data/status";
+import {
+  DANGDAI_NEXT_LEVEL,
+  TBCL_NEXT_LEVEL,
+  TOCFL_NEXT_LEVEL,
+} from "~/data/status";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import { POSList } from "./POSDisplay";
 
@@ -279,7 +283,7 @@ export const MorePhrases: React.FC<{}> = ({}) => {
         <Collapsible.Root className={styles.Collapsible}>
           <Collapsible.Trigger className={styles.Trigger}>
             <h3 className="font-serif text-3xl">
-              Next level phrases TOCFL {TOCFL_NEXT_LEVEL} ... (expandable)
+              Next level phrases TOCFL::{TOCFL_NEXT_LEVEL} ... (expandable)
             </h3>
           </Collapsible.Trigger>
           <Collapsible.Panel className={styles.Panel}>
@@ -302,6 +306,22 @@ export const MorePhrases: React.FC<{}> = ({}) => {
             <SearchMorePhrases
               noteTypes={["TOCFL"]}
               withTags={["Dangdai::Lesson::" + DANGDAI_NEXT_LEVEL]}
+              filterKnownChars={false}
+            />
+          </Collapsible.Panel>
+        </Collapsible.Root>
+      </section>
+      <section className="block m-4">
+        <Collapsible.Root className={styles.Collapsible}>
+          <Collapsible.Trigger className={styles.Trigger}>
+            <h3 className="font-serif text-3xl">
+              Next level phrases TBCL::{TBCL_NEXT_LEVEL} ... (expandable)
+            </h3>
+          </Collapsible.Trigger>
+          <Collapsible.Panel className={styles.Panel}>
+            <SearchMorePhrases
+              noteTypes={["TOCFL"]}
+              withTags={["TBCL::" + TBCL_NEXT_LEVEL]}
               filterKnownChars={false}
             />
           </Collapsible.Panel>
