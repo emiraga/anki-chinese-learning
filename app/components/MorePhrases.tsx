@@ -63,19 +63,8 @@ export function PhraseSearchSections({
   return (
     <>
       <hr className="my-4" />
-      <h2 className="text-2xl">Known character phrases:</h2>
-      <SearchMorePhrases
-        noteTypes={noteTypes}
-        search={search}
-        filterKnownChars={true}
-      />
-      <hr className="my-4" />
-      <h2 className="text-2xl">Phrases with unknown characters:</h2>
-      <SearchMorePhrases
-        noteTypes={noteTypes}
-        search={search}
-        filterUnknownChars={true}
-      />
+      <h2 className="text-2xl">More phrases:</h2>
+      <SearchMorePhrases noteTypes={noteTypes} search={search} />
     </>
   );
 }
@@ -139,6 +128,33 @@ export function SearchMorePhrases({
           return false;
         });
       }
+
+      // Sort by tag categories: no prefix, TOCFL::, Dangdai::, TBCL::
+      const tagPrefixOrder = ["", "TOCFL::", "Dangdai::", "TBCL::"];
+      notes.sort((a, b) => {
+        const getTagSortKey = (tags: string[]) => {
+          for (let i = 1; i < tagPrefixOrder.length; i++) {
+            const prefix = tagPrefixOrder[i];
+            const matchingTag = tags.find((t) => t.startsWith(prefix));
+            if (matchingTag) {
+              return {
+                prefixIndex: i,
+                suffix: matchingTag.slice(prefix.length),
+              };
+            }
+          }
+          return { prefixIndex: 0, suffix: "" };
+        };
+
+        const keyA = getTagSortKey(a.tags);
+        const keyB = getTagSortKey(b.tags);
+
+        if (keyA.prefixIndex !== keyB.prefixIndex) {
+          return keyA.prefixIndex - keyB.prefixIndex;
+        }
+        return keyA.suffix.localeCompare(keyB.suffix);
+      });
+
       setPhrases(notes);
     };
     load();
@@ -169,7 +185,7 @@ export function SearchMorePhrases({
                 );
               }}
             >
-              {note.modelName}
+              anki
             </button>
             <PhraseLink value={note.fields["Traditional"]?.value} />(
             {note.fields["Pinyin"]?.value}
