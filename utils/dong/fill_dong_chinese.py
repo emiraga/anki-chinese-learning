@@ -319,7 +319,7 @@ def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, 
         if character:
             search_query += f' Traditional:{character}'
         else:
-            search_query += f' Traditional:_'
+            search_query += f' Traditional:_*'
 
         if not overwrite:
             # Exclude notes that already have content in the Dongchinese Etymology field
