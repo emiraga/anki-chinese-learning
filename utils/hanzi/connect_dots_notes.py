@@ -892,7 +892,7 @@ class ProcessStats(TypedDict):
 class ConnectDotsManager:
     """Manager for creating and updating ConnectDots notes in Anki"""
 
-    DECK_NAME = "Chinese::CharsProps"
+    DECK_NAME = "Chinese::Connect"
     NOTE_TYPE = "ConnectDots"
 
     def __init__(self, dry_run: bool = False, skip_reschedule: bool = False):
