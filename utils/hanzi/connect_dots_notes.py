@@ -80,6 +80,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop::salt-shake',
     'prop-right::boa-constrictor-snake',
     'prop::folded-hands',
+    'prop::grape-vines',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
@@ -97,6 +98,7 @@ CUSTOM_HANZI_TO_PINYIN_SETS = {
     'zhe-zhi': '這者折稚址質',
     'filler-sounds': '啦呵哦嗯阿呀喔哈耶',
     'top-hat-simple': '宜牢穴它宅',
+    'scarecrow-like': '辛幸辜',
 }
 
 # Combined sound components - for sound components that don't have enough chars individually

@@ -303,7 +303,7 @@
         statusText.textContent = selected + " selected - tap right to connect";
       } else if (connected === total) {
         statusText.textContent = "All connected! Tap anywhere to flip";
-        autoFlipTimeout = setTimeout(flipToBack, 500);
+        autoFlipTimeout = setTimeout(flipToBack, 50);
       } else {
         if (autoFlipTimeout) {
           clearTimeout(autoFlipTimeout);
