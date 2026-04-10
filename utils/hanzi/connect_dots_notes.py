@@ -81,6 +81,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop-right::boa-constrictor-snake',
     'prop::folded-hands',
     'prop::grape-vines',
+    'prop-left::sea-shell',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
