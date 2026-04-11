@@ -12,11 +12,15 @@ export const PhraseCard: React.FC<{ phraseHanzi: string }> = ({
 }) => {
   const sources = [
     {
-      name: "MoE",
+      name: "RevisedMoE",
       link:
         "https://dict.revised.moe.edu.tw/search.jsp?md=1&word=" +
         encodeURIComponent(phraseHanzi) +
         "&qMd=0&qCol=1",
+    },
+    {
+      name: "MoEDict",
+      link: "https://www.moedict.tw/~" + encodeURIComponent(phraseHanzi),
     },
     {
       name: "dong",
@@ -72,10 +76,7 @@ export const PhraseMeaning: React.FC<{
   className?: string;
 }> = ({ meaning, className = "" }) => {
   return (
-    <span
-      className={className}
-      dangerouslySetInnerHTML={{ __html: meaning }}
-    />
+    <span className={className} dangerouslySetInnerHTML={{ __html: meaning }} />
   );
 };
 
@@ -90,7 +91,7 @@ export const PhraseLink: React.FC<{ value: string }> = ({ value }) => {
           </span>
         ) : (
           c
-        )
+        ),
       )}
     </Link>
   );
@@ -134,7 +135,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                     className="rounded-2xl bg-blue-100 dark:bg-blue-800 dark:text-blue-100 p-1 ml-2 inline text-xs text-blue-500"
                     onClick={async () => {
                       await ankiOpenBrowse(
-                        `note:${phrase.source} Traditional:${phrase.traditional}`
+                        `note:${phrase.source} Traditional:${phrase.traditional}`,
                       );
                     }}
                   >

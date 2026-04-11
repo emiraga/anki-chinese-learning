@@ -179,7 +179,7 @@ def extract_single_char_phrase_notes(note_types):
                     pinyin = clean_pinyin(pinyin_raw)
                     single_char_phrases.append((note_info, traditional_raw, pinyin))
 
-    print(f"Found {len(single_char_phrases)} single-character phrase notes")
+    print(f"Found {len(single_char_phrases)} single-character phrase notes", note_types)
     return single_char_phrases
 
 
@@ -263,15 +263,15 @@ def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_typ
     # Only update Meaning 2 for TOCFL notes
     should_update_meaning = note_type == "TOCFL"
 
+    # Skip the Meaning 2 update if it already matches, but still tag the phrase note
+    meaning_already_matches = False
     if should_update_meaning:
-        # Check if Hanzi note's Meaning 2 already matches the target
         hanzi_meaning2 = hanzi_note_info['fields'].get('Meaning 2', {}).get('value', '').strip()
-        if hanzi_meaning2 == phrase_meaning:
-            return True, "already_matches"
+        meaning_already_matches = hanzi_meaning2 == phrase_meaning
 
     try:
-        # Update Hanzi note's Meaning 2 field (only for TOCFL)
-        if should_update_meaning:
+        # Update Hanzi note's Meaning 2 field (only for TOCFL, and only if it differs)
+        if should_update_meaning and not meaning_already_matches:
             update_hanzi_meaning2(hanzi_note_id, phrase_meaning)
             print(f"  ✓ Updated Hanzi note {hanzi_note_id} Meaning 2 with: {phrase_meaning[:50]}...")
 
@@ -316,11 +316,6 @@ def main():
         note_type = phrase_note_info.get('modelName', 'unknown')
 
         success, skip_reason = process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_type)
-
-        # Skip printing anything if values already match
-        if skip_reason == "already_matches":
-            success_count += 1
-            continue
 
         print(f"\nProcessing {note_type} note {phrase_note_id} - '{character}' ({pinyin})")
 
