@@ -13,12 +13,13 @@ import requests
 import dragonmapper.transcriptions
 import dragonmapper.hanzi
 import argparse
+import random
 import sys
 from pathlib import Path
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.gemini_utils import create_gemini_client, translate_with_gemini
+from shared.gemini_utils import create_gemini_client, gemini_generate, translate_with_gemini
 from shared.dictionary_utils import lookup_meaning
 
 
@@ -197,6 +198,32 @@ def create_tocfl_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::
         raise Exception(f"Failed to create note for '{traditional}': {error}")
 
 
+def generate_price_phrase(price: int, client=None) -> str:
+    """
+    Use Gemini to generate how a Taiwanese shopkeeper would casually say a price.
+
+    Args:
+        price: The price in TWD (塊)
+        client: Optional genai.Client instance
+
+    Returns:
+        The price phrase in Traditional Chinese as a shopkeeper would say it
+    """
+    if client is None:
+        client = create_gemini_client()
+
+    prompt = f"""You are a casual Taiwanese shopkeeper (in Taiwan, speaking Mandarin Chinese).
+A customer asks how much something costs. The price is {price} 塊 (TWD).
+
+Write ONLY the price phrase in Traditional Chinese, exactly as a shopkeeper in a store or restaurant in Taiwan would casually say it out loud. Use natural spoken Taiwanese Mandarin — not formal or written style.
+
+For example, for 250 塊 a shopkeeper might say "兩百五" instead of "兩百五十塊".
+
+Output ONLY the Traditional Chinese phrase, nothing else."""
+
+    return gemini_generate(prompt=prompt, client=client)
+
+
 def main():
     """
     Main function to add a word to Anki TOCFL note type
@@ -206,7 +233,17 @@ def main():
     )
     parser.add_argument(
         "traditional",
+        nargs="?",
+        default=None,
         help="Traditional Chinese text to add"
+    )
+    parser.add_argument(
+        "--price",
+        nargs="?",
+        const="1-999",
+        default=None,
+        metavar="[MAX or MIN-MAX]",
+        help="Generate a random price phrase (default: 1-999). Use --price 9999 or --price 100-999"
     )
     parser.add_argument(
         "--note",
@@ -233,6 +270,33 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.price is not None:
+        # Parse price range
+        if "-" in args.price:
+            parts = args.price.split("-", 1)
+            price_min, price_max = int(parts[0]), int(parts[1])
+        else:
+            price_min, price_max = 1, int(args.price)
+
+        if price_min > price_max:
+            raise ValueError(f"Invalid price range: {price_min}-{price_max}")
+
+        price = random.randint(price_min, price_max)
+        print(f"=== Generating price phrase ===")
+        print(f"Price: {price} 塊 (range: {price_min}-{price_max})")
+
+        client = create_gemini_client()
+        print("⋯ Generating shopkeeper phrase...")
+        args.traditional = generate_price_phrase(price, client)
+        print(f"✓ Generated: {args.traditional}")
+
+        # Set meaning to the price
+        if not args.meaning:
+            args.meaning = f"{price} TWD"
+
+    if not args.traditional:
+        parser.error("traditional is required (unless using --price)")
 
     if args.note != "TOCFL":
         print("⚠ Warning: This script is designed for TOCFL note type. Other note types may not work correctly.")
