@@ -14,6 +14,7 @@ import dragonmapper.transcriptions
 import dragonmapper.hanzi
 import argparse
 import random
+import subprocess
 import sys
 from pathlib import Path
 
@@ -356,6 +357,12 @@ def main():
         print(f"Meaning: {meaning}")
         print(f"Deck: {args.deck}")
         print(f"Due today: {not args.no_due_today}")
+
+        # Step 4: Fill audio for the new note
+        fill_audio_script = Path(__file__).resolve().parent.parent / "tts" / "fill_audio_anki.py"
+        print(f"\n⋯ Running fill_audio_anki.py...")
+        subprocess.run([str(fill_audio_script), "--use-pinyin-hint"], check=True)
+        print(f"✓ Audio filled")
 
     except Exception as e:
         print(f"\n✗ Error: {e}", file=sys.stderr)
