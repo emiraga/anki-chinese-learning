@@ -82,6 +82,7 @@ HANZI_TO_PINYIN_TAGS = [
     'prop::folded-hands',
     'prop::grape-vines',
     'prop-left::sea-shell',
+    'prop::pump',
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
@@ -125,6 +126,7 @@ TWO_CHAR_PHRASE_WHITELIST = [
     '如',
     '例',
     '列',
+    '隨',
 ]
 
 

@@ -127,6 +127,11 @@ def gemini_generate(
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(model=model_name, contents=prompt)
+            if response.text is None:
+                raise ValueError(
+                    f"Gemini returned empty response (possibly blocked by safety filters). "
+                    f"Candidates: {response.candidates}"
+                )
             return response.text.strip()
         except Exception as e:
             if attempt < max_retries - 1:
