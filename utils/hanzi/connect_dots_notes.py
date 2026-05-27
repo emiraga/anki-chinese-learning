@@ -101,6 +101,8 @@ CUSTOM_HANZI_TO_PINYIN_SETS = {
     'filler-sounds': '啦呵哦嗯阿呀喔哈耶',
     'top-hat-simple': '宜牢穴它宅',
     'scarecrow-like': '辛幸辜',
+    'people-standing': '來夾',
+    'tree-like': '夫未末美失朱犬尖天'
 }
 
 # Combined sound components - for sound components that don't have enough chars individually

@@ -3,7 +3,7 @@ export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   TOCFL: [
     // { name: "traditional", deck: "Chinese::Phrases" },
     { name: "meaning", deck: "Chinese::Phrases" },
-    { name: "listening", deck: "Chinese::Listening" },
+    { name: "listening", deck: "Chinese::zListening" },
   ],
   Hanzi: [
     { name: "Recognize Hanzi", deck: "Chinese::CharsProps" },

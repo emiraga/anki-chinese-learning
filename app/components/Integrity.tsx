@@ -492,7 +492,7 @@ function ListeningDuplicatePinyin({
   for (const note of notesByCards) {
     for (const card of note.cardDetails) {
       if (
-        card.deckName !== "Listening" ||
+        card.deckName !== "zListening" ||
         card.queue === -1 ||
         card.due === 0
       ) {

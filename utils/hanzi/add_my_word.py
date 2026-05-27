@@ -364,6 +364,10 @@ def main():
         subprocess.run([str(fill_audio_script), "--use-pinyin-hint"], check=True)
         print(f"✓ Audio filled")
 
+        fill_props = Path(__file__).resolve().parent.parent / "hanzi" / "fill_props_field.py"
+        subprocess.run([str(fill_audio_script)], check=True)
+        print(f"✓ Props filled")
+
     except Exception as e:
         print(f"\n✗ Error: {e}", file=sys.stderr)
         sys.exit(1)
