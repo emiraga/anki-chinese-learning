@@ -54,6 +54,17 @@ export const DarkModeProvider = ({ children }: { children: ReactNode }) => {
   const isDarkMode = darkModeOverride !== null ? darkModeOverride : systemPrefersDark;
   const isSystemMode = darkModeOverride === null;
 
+  // Imperatively sync the `dark` class on <html>. JSX-rendered className on
+  // <html> doesn't update reliably after hydration of pre-rendered SPA HTML.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
     setDarkModeOverride(newMode);

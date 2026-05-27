@@ -27,6 +27,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
         <script
+          // Apply dark class synchronously before React hydrates to avoid a
+          // flash of light mode on refresh. SPA pre-rendered HTML has no
+          // access to localStorage, so the class must be set here.
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('darkModeOverride');var d=s===null||s==='null'?window.matchMedia('(prefers-color-scheme: dark)').matches:JSON.parse(s);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`,
+          }}
+        />
+        <script
           src="/tone_trainer/fftjs.min.js"
           integrity="sha384-YGUhgQuvCUKMptNIzlqRNH0P/JeHxBCxhApvJV3rR8PLJ6dNueD0tZv9UDochYMV"
           crossOrigin="anonymous"
