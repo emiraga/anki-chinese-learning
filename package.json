@@ -14,8 +14,8 @@
     "typecheck:pyrefly": "uv run pyrefly check --min-severity warn",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "lint:python": "uv run ruff check utils anki",
-    "lint:python:fix": "uv run ruff check --fix utils anki"
+    "lint:python": "uv run ruff check",
+    "lint:python:fix": "uv run ruff check --fix"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-alpha.7",
