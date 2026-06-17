@@ -130,8 +130,7 @@ def to_simplified(char: str, use_hanziconv: bool = True) -> str:
     # OpenCC t2s is authoritative when available.
     opencc_results = _opencc_simplified_all(char)
     if opencc_results is not None:
-        chosen = opencc_results[_OPENCC_PRIMARY_CONFIG]
-        return chosen
+        return opencc_results[_OPENCC_PRIMARY_CONFIG]
 
     # OpenCC unavailable: fall back to hanziconv, then to the original char.
     if hanziconv_result is not None:

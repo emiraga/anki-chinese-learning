@@ -31,8 +31,7 @@ def extract_text_from_html(element: Tag) -> str:
     # get_text(' ') adds a space when transitioning from one element to another
     text = element.get_text(" ", strip=True)
     # Clean up multiple spaces
-    text = re.sub(r"\s+", " ", text)
-    return text
+    return re.sub(r"\s+", " ", text)
 
 
 def extract_html_content(element: Tag) -> str:
@@ -421,8 +420,8 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
         # Extract referenced characters from mnemonic
         referenced_chars = extract_referenced_characters(mnemonic_html)
 
-        # Build character data
-        char_data = {
+        # Build and return character data
+        return {
             "id": row_id,
             "character": main_char,
             "traditional": traditional_char,
@@ -435,8 +434,6 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
             "related_characters": related_chars,
             "additional_related_characters": additional_related_chars if additional_related_chars else None,
         }
-
-        return char_data
 
     except Exception as e:
         print(f"Error parsing row {row.get('id', 'unknown')}: {e}")

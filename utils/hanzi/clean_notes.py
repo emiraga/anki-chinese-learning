@@ -104,8 +104,7 @@ def clean_pinyin(pinyin_text: str) -> str:
     # Convert to lowercase
     pinyin = pinyin.lower()
     # Remove extra whitespace
-    pinyin = pinyin.strip()
-    return pinyin
+    return pinyin.strip()
 
 
 def extract_hanzi_notes() -> dict[tuple[str, str], dict[str, Any]]:

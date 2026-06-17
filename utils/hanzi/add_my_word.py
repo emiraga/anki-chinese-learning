@@ -61,8 +61,7 @@ def pinyin_to_zhuyin(pinyin_text: str) -> str:
         str: Zhuyin representation
     """
     try:
-        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
-        return zhuyin
+        return dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
     except Exception as e:
         raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}") from e
 

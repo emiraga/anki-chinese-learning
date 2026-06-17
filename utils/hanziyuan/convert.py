@@ -199,9 +199,11 @@ def convert_etymology_characters(etymology_html: str, image_map: dict[str, str])
     # Validate: Check if any etymology IDs are missing images
     missing_images: list[tuple[str, str]] = []
     for section_name, section_data in result.items():
-        for item in section_data.get("items", []):
-            if item["id"] and not item["image"]:
-                missing_images.append((section_name, item["id"]))
+        missing_images.extend(
+            (section_name, item["id"])
+            for item in section_data.get("items", [])
+            if item["id"] and not item["image"]
+        )
 
     if missing_images:
         missing_list = ", ".join(f"{section}:{id}" for section, id in missing_images)
@@ -608,7 +610,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
             continue
 
         # Check for cross-references (See X or see X)
-        if line.startswith("See ") or line.startswith("see "):
+        if line.startswith(("See ", "see ")):
             # Extract the referenced characters
             ref_chars = line[4:].strip()
             cross_references.append(ref_chars)
@@ -663,7 +665,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
             else:
                 line_content = line[4:].strip()  # Remove "from" prefix (no space)
 
-            should_continue = line.endswith(" and") or line.endswith(" from") or not line_content
+            should_continue = line.endswith((" and", " from")) or not line_content
 
             # If continuation is needed, collect following lines
             while should_continue and i < len(lines):

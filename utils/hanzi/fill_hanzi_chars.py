@@ -257,8 +257,7 @@ def infer_most_common_pinyin(char_occurrences: list[tuple[str, str, str]]) -> st
         str: Most common pinyin syllable
     """
     pinyin_counter = Counter([occ[0] for occ in char_occurrences])
-    most_common_pinyin = pinyin_counter.most_common(1)[0][0]
-    return most_common_pinyin
+    return pinyin_counter.most_common(1)[0][0]
 
 
 def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = "") -> bool:

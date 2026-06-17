@@ -102,7 +102,7 @@ def suggest_pos_with_gemini(traditional: str, meaning: str, pos_mapping: dict[st
     """
     # Build list of POS options with English names and examples
     pos_options = []
-    for _code, entry in pos_mapping.items():
+    for entry in pos_mapping.values():
         name = entry[0]  # English name
         examples = entry[2]  # Chinese examples
         if examples:
@@ -261,10 +261,11 @@ Example response format:
             if not isinstance(examples, list):
                 continue
 
-            validated_examples: list[dict[str, str]] = []
-            for example in examples:
-                if isinstance(example, dict) and "Traditional" in example and "English" in example:
-                    validated_examples.append({"Traditional": example["Traditional"], "English": example["English"]})
+            validated_examples: list[dict[str, str]] = [
+                {"Traditional": example["Traditional"], "English": example["English"]}
+                for example in examples
+                if isinstance(example, dict) and "Traditional" in example and "English" in example
+            ]
 
             if validated_examples:
                 validated_dict[pos_code] = validated_examples

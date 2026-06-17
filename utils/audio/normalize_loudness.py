@@ -123,8 +123,7 @@ def get_matching_files(media_path: Path) -> list[tuple[str, str]]:
     files = []
     for pattern, name in patterns:
         matching = glob.glob(str(media_path / pattern))
-        for f in matching:
-            files.append((f, name))
+        files.extend((f, name) for f in matching)
 
     return files
 

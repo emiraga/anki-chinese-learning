@@ -40,16 +40,18 @@ select = [
     "C4",     # flake8-comprehensions (better comprehensions)
     "SIM",    # flake8-simplify (code simplifications)
     "RUF",    # ruff-specific rules
-    # "T20",    # flake8-print (leftover print statements)
-    "PTH",    # flake8-use-pathlib (use pathlib instead of os.path)
+    "T20",    # flake8-print (leftover print statements)
     "ARG",    # flake8-unused-arguments
     "RET",    # flake8-return (simplifiable return logic)
     "PERF",   # perflint (performance anti-patterns)
-    "TRY",    # tryceratops (exception handling improvements)
     "FLY",    # flynt (str.format() → f-strings)
     "PIE",    # flake8-pie (miscellaneous bug-prevention lints)
 ]
 extend-safe-fixes = ["F401", "F841", "I", "UP", "C4", "SIM", "FLY", "PTH"]
+ignore=[
+    "T201", # print statement
+    "ARG001", # Unused function argument
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["utils"]

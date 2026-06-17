@@ -229,9 +229,7 @@ def format_html_readable(html_str: str) -> str | None:
         soup = BeautifulSoup(html_str, "html.parser")
         return soup.prettify()
     # Basic formatting without BeautifulSoup
-    formatted = html_str
-    formatted = formatted.replace("><", ">\n<")
-    return formatted
+    return html_str.replace("><", ">\n<")
 
 
 def validate_pinyin(pinyin: str) -> bool:
@@ -296,9 +294,7 @@ def extract_pinyin_from_text(text: str) -> list[str]:
     candidates = [m for m in matches if m and (len(m) > 1 or ord(m[0]) > 127)]
 
     # Filter to valid pinyin (permissive - just skip invalid ones)
-    valid_pinyin = [c for c in candidates if validate_pinyin(c)]
-
-    return valid_pinyin
+    return [c for c in candidates if validate_pinyin(c)]
 
 
 def validate_character_pinyin(char: Character, char_hanzi: str):
@@ -313,10 +309,7 @@ def validate_character_pinyin(char: Character, char_hanzi: str):
     if not pinyin_list:
         return  # Empty list is okay
 
-    invalid: list[str] = []
-    for pinyin in pinyin_list:
-        if not validate_pinyin(pinyin):
-            invalid.append(pinyin)
+    invalid: list[str] = [pinyin for pinyin in pinyin_list if not validate_pinyin(pinyin)]
 
     if invalid:
         raise ValueError(f"Invalid pinyin in character '{char_hanzi}': {invalid}. Full character data: {char}")
@@ -466,7 +459,7 @@ def save_image_to_disk(image_id: str, image_bytes: bytes, images_dir: Path) -> b
 
         # Determine file extension from image data
         # SVG images start with <?xml or <svg
-        if image_bytes.startswith(b"<?xml") or image_bytes.startswith(b"<svg"):
+        if image_bytes.startswith((b"<?xml", b"<svg")):
             ext = "svg"
         elif image_bytes.startswith(b"\x89PNG"):
             ext = "png"

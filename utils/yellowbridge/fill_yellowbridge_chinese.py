@@ -199,16 +199,14 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
         if has_phonetic:
             html_parts.append('<li><strong style="color: #2563eb;">Phonetic (Sound):</strong>')
             html_parts.append("<ul>")
-            for comp in functional_comps["phonetic"]:
-                html_parts.append(f"<li>{format_component_info(comp)}</li>")
+            html_parts.extend(f"<li>{format_component_info(comp)}</li>" for comp in functional_comps["phonetic"])
             html_parts.append("</ul>")
             html_parts.append("</li>")
 
         if has_semantic:
             html_parts.append('<li><strong style="color: #16a34a;">Semantic (Meaning):</strong>')
             html_parts.append("<ul>")
-            for comp in functional_comps["semantic"]:
-                html_parts.append(f"<li>{format_component_info(comp)}</li>")
+            html_parts.extend(f"<li>{format_component_info(comp)}</li>" for comp in functional_comps["semantic"])
             html_parts.append("</ul>")
             html_parts.append("</li>")
 
@@ -220,8 +218,7 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
     if has_primitive:
         # html_parts.append('<p><strong>Primitive Components:</strong></p>')
         html_parts.append("<ul>")
-        for comp in functional_comps["primitive"]:
-            html_parts.append(f"<li>{format_component_info(comp)}</li>")
+        html_parts.extend(f"<li>{format_component_info(comp)}</li>" for comp in functional_comps["primitive"])
         html_parts.append("</ul>")
 
     if not html_parts:

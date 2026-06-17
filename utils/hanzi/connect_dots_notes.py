@@ -612,7 +612,7 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
     def get_notes(self) -> list[HanziNote]:
         """Get the notes to process"""
 
-    def get_fake_right(self, notes: list[HanziNote]) -> list[str]:
+    def get_fake_right(self, notes: list[HanziNote]) -> list[str]:  # noqa: ARG002
         """Get fake_right values. Override in subclasses if needed."""
         return []
 
@@ -1592,7 +1592,7 @@ def get_two_char_phrase_characters_above_threshold(
 
 def _is_prop_tag(tag: str) -> bool:
     """Check if a tag is a prop tag (starts with 'prop::' or 'prop-')."""
-    return tag.startswith("prop::") or tag.startswith("prop-")
+    return tag.startswith(("prop::", "prop-"))
 
 
 def analyze_uncovered_character_tags(uncovered_characters: set[str]) -> list[tuple[str, int, int]]:
@@ -1669,15 +1669,13 @@ def main():
     print(f"Finding sound components with {SOUND_COMPONENT_MIN_COUNT}+ characters...")
     sound_components = get_sound_components_above_threshold(min_count=SOUND_COMPONENT_MIN_COUNT)
     print(f"Found {len(sound_components)} sound components\n")
-    for component in sound_components:
-        generators.append(SoundComponentHanziToPinyin(component))
+    generators.extend(SoundComponentHanziToPinyin(component) for component in sound_components)
 
     # Auto-add syllables above threshold
     print(f"Finding syllables with {SYLLABLE_MIN_COUNT}+ characters...")
     syllables = get_syllables_above_threshold(min_count=SYLLABLE_MIN_COUNT)
     print(f"Found {len(syllables)} syllables\n")
-    for syllable in syllables:
-        generators.append(SyllableHanziToPinyin(syllable))
+    generators.extend(SyllableHanziToPinyin(syllable) for syllable in syllables)
 
     # Auto-add leftover syllables (below threshold) grouped by zhuyin initial.
     # These cover the single-/double-character syllables that don't qualify for
@@ -1690,12 +1688,10 @@ def main():
         generators.append(SyllableInitialHanziToPinyin(initial, notes))
 
     # Tag-based generators
-    for tag_name in TAG_TRADITIONAL_MEANING:
-        generators.append(TagTraditionalToMeaning(tag_name))
+    generators.extend(TagTraditionalToMeaning(tag_name) for tag_name in TAG_TRADITIONAL_MEANING)
 
     # Tag-based Hanzi-to-Pinyin generators
-    for tag in HANZI_TO_PINYIN_TAGS:
-        generators.append(TagHanziToPinyin(tag))
+    generators.extend(TagHanziToPinyin(tag) for tag in HANZI_TO_PINYIN_TAGS)
 
     # Tag intersection generators
     for key_name, tags in HANZI_TO_PINYIN_INTERSECTIONS:
@@ -1716,8 +1712,7 @@ def main():
         min_count=TWO_CHAR_PHRASE_MIN_COUNT, whitelist=TWO_CHAR_PHRASE_WHITELIST
     )
     print(f"Found {len(two_char_characters)} characters: {', '.join(two_char_characters)}\n")
-    for character in two_char_characters:
-        generators.append(TwoCharPhraseByCharacter(character))
+    generators.extend(TwoCharPhraseByCharacter(character) for character in two_char_characters)
 
     # Custom hanzi set generators
     print(f"Adding {len(CUSTOM_HANZI_TO_PINYIN_SETS)} custom hanzi set(s)...")
