@@ -86,9 +86,8 @@ def download_image(url: str, local_path: Path) -> bool:
         # Download with user agent to avoid blocking
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
 
-        with urllib.request.urlopen(req, timeout=30) as response:
-            with open(local_path, "wb") as f:
-                f.write(response.read())
+        with urllib.request.urlopen(req, timeout=30) as response, open(local_path, "wb") as f:
+            f.write(response.read())
 
         print(f"  ✓ Downloaded: {local_path.name}")
         return True
