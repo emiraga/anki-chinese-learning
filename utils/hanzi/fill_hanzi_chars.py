@@ -1,5 +1,4 @@
 #!/usr/bin/env -S uv run
-import requests
 import dragonmapper.transcriptions
 from pypinyin import pinyin as get_pinyin, Style
 from collections import Counter
@@ -8,41 +7,17 @@ import json
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.dictionary_utils import lookup_character_meaning
 from shared.character_conversion import to_simplified, to_traditional
-
-
-def anki_connect_request(action: str, params: Optional[dict[str, Any]] = None) -> dict[str, Any]:
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
+from shared.anki_utils import (
+    anki_connect_request,
+    find_notes_by_query,
+    get_notes_info,
+)
 
 
 def find_notes_by_type(note_type: str) -> list[int]:
@@ -55,46 +30,12 @@ def find_notes_by_type(note_type: str) -> list[int]:
     Returns:
         list: List of note IDs
     """
-    response = anki_connect_request("findNotes", {"query": f"note:{note_type}"})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
+    note_ids = find_notes_by_query(f"note:{note_type}")
+    if note_ids:
         print(f"Found {len(note_ids)} notes of type {note_type}")
-        return note_ids
-
-    print(f"No notes found of type {note_type}")
-    return []
-
-
-def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
-    """
-    Get detailed information about multiple notes
-
-    Args:
-        note_ids (list): List of note IDs
-
-    Returns:
-        list: List of note information dictionaries
-    """
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise Exception(f"No notes found for IDs {note_ids}")
-
-
-def traditional_to_simplified(traditional_char: str) -> str:
-    """
-    Convert traditional Chinese character to simplified
-
-    Args:
-        traditional_char (str): Traditional Chinese character
-
-    Returns:
-        str: Simplified Chinese character
-    """
-    return to_simplified(traditional_char)
+    else:
+        print(f"No notes found of type {note_type}")
+    return note_ids
 
 
 def extract_existing_hanzi_characters() -> set[str]:
@@ -420,7 +361,7 @@ def process_single_character(char: str, char_data: Optional[dict[str, list[tuple
     meaning = lookup_character_meaning(char, char_occurrences)
 
     # Get simplified form
-    simplified = traditional_to_simplified(char)
+    simplified = to_simplified(char)
 
     print(f"\nProcessing character '{char}':")
     print(f"  Pinyin: {pinyin}" + (f" (from {len(char_occurrences)} occurrences)" if char_occurrences else " (from dictionary)"))
