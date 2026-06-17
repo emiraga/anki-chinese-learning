@@ -62,6 +62,21 @@ class TocflEntry:
     levels: list[str]
 
 
+class PosDifference(TypedDict):
+    note_id: int
+    traditional: str
+    anki_pos: list[str]
+    csv_pos: list[str]
+    anki_only: list[str]
+    csv_only: list[str]
+
+
+class ContextUpdate(TypedDict):
+    note_id: int
+    traditional: str
+    csv_context: list[str]
+
+
 # Zhuyin characters for detecting pronunciation annotations
 ZHUYIN_CHARS = set("ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄧㄨㄩㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦ˙ˊˇˋ")
 
