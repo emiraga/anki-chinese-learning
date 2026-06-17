@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "pytest",
     "pyright",
+    "pyrefly",
     "ruff",
 ]
 
@@ -37,3 +38,26 @@ reportMissingImports = "warning"
 reportUnknownMemberType = "warning"
 reportUnknownArgumentType = "warning"
 reportUnknownVariableType = "warning"
+
+# Pyrefly is used by the Zed editor for in-editor type checking. Keep its scope
+# in sync with the files checked by the `typecheck:python` npm script (and the
+# `typecheck:pyrefly` script) so the editor and CI report the same diagnostics.
+[tool.pyrefly]
+project-includes = [
+    "utils/hanzi/fill_hanzi_chars.py",
+    "utils/hanzi/connect_dots_notes.py",
+    "utils/hanzi/test_connect_dots_notes.py",
+    "utils/tts/fill_audio_anki.py",
+]
+# `utils/hanzi` and `utils/tts` are on the search path because the scripts are
+# run via `uv run --script <file>`, which puts each script's own directory on
+# `sys.path` (so e.g. the test imports `connect_dots_notes` as a top-level
+# module). Mirror that here so sibling imports resolve.
+search-path = ["utils", "utils/hanzi", "utils/tts"]
+python-version = "3.11"
+
+[tool.pyrefly.errors]
+# Mirror the pyright settings above: third-party libs without stubs are fine.
+missing-import = "warn"
+implicit-any = "warn"
+untyped-import = "ignore"

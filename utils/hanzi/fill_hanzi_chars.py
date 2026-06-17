@@ -1,7 +1,6 @@
 #!/usr/bin/env -S uv run
 import requests
 import dragonmapper.transcriptions
-import hanziconv
 from pypinyin import pinyin as get_pinyin, Style
 from collections import Counter
 import re
@@ -14,6 +13,7 @@ from typing import Any, Optional
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.dictionary_utils import lookup_character_meaning
+from shared.character_conversion import to_simplified, to_traditional
 
 
 def anki_connect_request(action: str, params: Optional[dict[str, Any]] = None) -> dict[str, Any]:
@@ -86,7 +86,7 @@ def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
 
 def traditional_to_simplified(traditional_char: str) -> str:
     """
-    Convert traditional Chinese character to simplified using hanziconv
+    Convert traditional Chinese character to simplified
 
     Args:
         traditional_char (str): Traditional Chinese character
@@ -94,12 +94,7 @@ def traditional_to_simplified(traditional_char: str) -> str:
     Returns:
         str: Simplified Chinese character
     """
-    try:
-        simplified = hanziconv.HanziConv.toSimplified(traditional_char)
-        return simplified
-    except Exception as e:
-        print(f"Warning: Could not convert '{traditional_char}' to simplified: {e}")
-        raise
+    return to_simplified(traditional_char)
 
 
 def extract_existing_hanzi_characters() -> set[str]:
@@ -137,13 +132,13 @@ def extract_existing_hanzi_characters() -> set[str]:
                     # Validate consistency: if Traditional and Hanzi differ,
                     # verify that Traditional simplifies to Hanzi
                     if traditional != hanzi_field:
-                        simplified_of_traditional = hanziconv.HanziConv.toSimplified(traditional)
+                        simplified_of_traditional = to_simplified(traditional)
 
                         if simplified_of_traditional != hanzi_field:
                             # Traditional doesn't simplify to Hanzi field value
                             # This could mean Traditional field contains the simplified form
                             # Check if Hanzi field is already in simplified form
-                            traditional_of_hanzi = hanziconv.HanziConv.toTraditional(hanzi_field)
+                            traditional_of_hanzi = to_traditional(hanzi_field)
 
                             if traditional_of_hanzi != traditional and traditional == hanzi_field:
                                 # Traditional field equals Hanzi field, but there's a different traditional form
@@ -191,17 +186,16 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
 
                 # Check if Variants field exists and has content
                 variants_raw = note_info['fields'].get('Variants', {}).get('value', '').strip()
-                variants_list = []
+                variants_list: list[dict[str, str]] = []
 
                 if variants_raw:
                     # Parse Variants JSON array
                     try:
-                        variants_list = json.loads(variants_raw)
-                        if not isinstance(variants_list, list):
-                            variants_list = []
+                        parsed_variants = json.loads(variants_raw)
+                        if isinstance(parsed_variants, list):
+                            variants_list = parsed_variants
                     except json.JSONDecodeError as e:
                         print(f"Warning: Failed to parse Variants JSON: {e}")
-                        variants_list = []
 
                 # If no variants, use the Traditional and Pinyin fields as a single variant
                 if not variants_list:

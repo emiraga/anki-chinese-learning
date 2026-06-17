@@ -63,7 +63,7 @@ def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> L
     return []
 
 
-def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter]:
+def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter[str]]:
     """Collect all characters from Anki notes."""
     note_types = [
         ("TOCFL", ""),
@@ -96,7 +96,7 @@ def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter]:
     return anki_chars, char_frequency
 
 
-def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter]:
+def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter[str]]:
     """Scan the three standard data directories for existing character files."""
     data_dirs = [
         project_root / "public" / "data" / "dong",
@@ -134,7 +134,7 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple
     return all_chars, char_frequency
 
 
-def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter]:
+def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter[str]]:
     """Scan outlier series JSON files for characters in specific fields.
 
     Extracts characters from:
@@ -217,7 +217,7 @@ def discover_all_characters(
     include_anki: bool = True,
     include_folders: bool = True,
     normalize: bool = False
-) -> Tuple[Set[str], Counter]:
+) -> Tuple[Set[str], Counter[str]]:
     """
     Discover all characters from Anki and the standard data directories.
 
