@@ -52,7 +52,7 @@ def query_traditional_field(note_type, level=None):
     Query Traditional field values from Anki notes
 
     Args:
-        note_type (str): The note type to query (e.g., "TOCFL", "Dangdai", "Hanzi")
+        note_type (str): The note type to query (e.g., "TOCFL", "Hanzi")
         level (str): Optional Level field value to filter by (e.g., "1", "1*")
 
     Returns:
@@ -98,7 +98,7 @@ def main():
     )
     parser.add_argument(
         "note_type",
-        help="Note type to query (e.g., TOCFL, Dangdai, Hanzi, MyWords)"
+        help="Note type to query (e.g., TOCFL, Hanzi)"
     )
     parser.add_argument(
         "-l", "--level",

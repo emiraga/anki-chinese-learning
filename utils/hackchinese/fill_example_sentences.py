@@ -167,7 +167,7 @@ ANKI_SENTENCE_NOTE_TYPES = ["TOCFL"]
 
 def load_anki_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, str]]]:
     """
-    Load sentences/words from Anki note types (TOCFL, Dangdai, MyWords).
+    Load sentences/words from Anki note types (TOCFL).
     These have higher priority than HackChinese data.
 
     Args:
@@ -375,7 +375,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         return
 
     # Load Anki sentences (highest priority)
-    print("\nLoading sentences from Anki notes (TOCFL, Dangdai, MyWords)...")
+    print("\nLoading sentences from Anki notes (TOCFL)...")
     anki_sentences = load_anki_sentences(learned_chars)
 
     # Load all sentences and compounds from HackChinese

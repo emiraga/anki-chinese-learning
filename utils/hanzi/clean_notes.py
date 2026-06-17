@@ -9,7 +9,7 @@
 """
 Clean up single-character phrase notes by consolidating them into Hanzi notes.
 
-This script finds phrase notes (TOCFL, Dangdai, MyWords) that contain only a single
+This script finds phrase notes (TOCFL) that contain only a single
 character in their Traditional field, matches them with existing Hanzi notes by
 character and pinyin, and then:
 1. Copies the phrase note's "Meaning" field into the Hanzi note's "Meaning 2" field
@@ -150,7 +150,7 @@ def extract_single_char_phrase_notes(note_types):
     Extract phrase notes that have a single character in Traditional field
 
     Args:
-        note_types (list): List of note types to process (e.g., ["TOCFL", "Dangdai", "MyWords"])
+        note_types (list): List of note types to process (e.g., ["TOCFL"])
 
     Returns:
         list: List of (note_info, character, pinyin) tuples
@@ -298,8 +298,8 @@ def main():
         print("No Hanzi notes found. Exiting.")
         return
 
-    # Step 2: Extract single-character phrase notes (TOCFL and Dangdai)
-    note_types = ["TOCFL", "Dangdai"]
+    # Step 2: Extract single-character phrase notes (TOCFL)
+    note_types = ["TOCFL"]
     single_char_phrases = extract_single_char_phrase_notes(note_types)
 
     if not single_char_phrases:

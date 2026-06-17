@@ -59,6 +59,65 @@ def find_notes_by_query(query: str) -> list[int]:
     return response.get("result", [])
 
 
+def find_cards_by_query(query: str) -> list[int]:
+    """
+    Find cards matching a query.
+
+    Args:
+        query: Anki search query
+
+    Returns:
+        List of card IDs
+    """
+    response = anki_connect_request("findCards", {"query": query})
+    return response.get("result", [])
+
+
+def get_cards_info(card_ids: list[int]) -> list[dict[str, Any]]:
+    """
+    Get detailed information about multiple cards.
+
+    Args:
+        card_ids: List of card IDs
+
+    Returns:
+        List of card information dictionaries (includes 'note', 'queue', 'type', 'ord', ...)
+    """
+    if not card_ids:
+        return []
+
+    response = anki_connect_request("cardsInfo", {"cards": card_ids})
+    return response.get("result", [])
+
+
+def unsuspend_cards(card_ids: list[int]) -> None:
+    """Unsuspend the given cards."""
+    if not card_ids:
+        return
+    anki_connect_request("unsuspend", {"cards": card_ids})
+
+
+def forget_cards(card_ids: list[int]) -> None:
+    """Reset the given cards to the 'new' state, discarding scheduling history."""
+    if not card_ids:
+        return
+    anki_connect_request("forgetCards", {"cards": card_ids})
+
+
+def add_tags(note_ids: list[int], tags: str) -> None:
+    """Add the given space-separated tags to the notes."""
+    if not note_ids:
+        return
+    anki_connect_request("addTags", {"notes": note_ids, "tags": tags})
+
+
+def remove_tags(note_ids: list[int], tags: str) -> None:
+    """Remove the given space-separated tags from the notes."""
+    if not note_ids:
+        return
+    anki_connect_request("removeTags", {"notes": note_ids, "tags": tags})
+
+
 def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
     """
     Get detailed information about multiple notes.

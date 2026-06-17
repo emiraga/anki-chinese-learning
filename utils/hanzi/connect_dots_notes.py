@@ -837,7 +837,7 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
     """
     Generate notes mapping Traditional to Meaning for notes with a specific tag.
 
-    Works with multiple note types (Hanzi, TOCFL, Dangdai, etc.)
+    Works with multiple note types (Hanzi, TOCFL, etc.)
     Left = Traditional characters/phrases, Right = Meanings
     """
 

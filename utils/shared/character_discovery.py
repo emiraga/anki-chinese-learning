@@ -222,7 +222,7 @@ def discover_all_characters(
     Discover all characters from Anki and the standard data directories.
 
     This is the main entry point that loads characters from:
-    1. Anki notes (TOCFL, MyWords, Hanzi, Dangdai)
+    1. Anki notes (TOCFL, Hanzi)
     2. public/data/dong
     3. public/data/yellowbridge/raw
     4. public/data/hanziyuan/converted

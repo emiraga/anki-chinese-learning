@@ -7,7 +7,7 @@
 # ///
 
 """
-Find most frequent characters that appear in phrase notes (TOCFL, Dangdai, MyWords)
+Find most frequent characters that appear in phrase notes (TOCFL)
 but are suspended in the Hanzi table.
 
 This helps prioritize which characters to learn next based on how frequently
@@ -234,7 +234,7 @@ def main():
         "--note-types",
         nargs="+",
         default=["TOCFL"],
-        help="Note types to search in (default: TOCFL Dangdai MyWords)"
+        help="Note types to search in (default: TOCFL)"
     )
     source_group = parser.add_mutually_exclusive_group()
     source_group.add_argument(

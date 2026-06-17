@@ -99,10 +99,10 @@ def extract_existing_hanzi_characters() -> set[str]:
 
 def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tuple[str, str, str]]]:
     """
-    Extract all unique characters from TOCFL and Dangdai notes with their pinyin and meanings
+    Extract all unique characters from TOCFL notes with their pinyin and meanings
 
     Args:
-        note_types (list): List of note types to process (e.g., ["TOCFL", "Dangdai"])
+        note_types (list): List of note types to process (e.g., ["TOCFL"])
 
     Returns:
         dict: Dictionary mapping characters to their occurrences with pinyin and meanings
@@ -418,7 +418,7 @@ def main() -> None:
     # Step 1: Get existing Hanzi characters
     existing_chars = extract_existing_hanzi_characters()
 
-    # Step 2: Extract characters from TOCFL and Dangdai
+    # Step 2: Extract characters from TOCFL
     note_types = ["TOCFL"]
     char_data = extract_characters_from_phrases(note_types)
 
