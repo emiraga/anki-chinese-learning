@@ -11,10 +11,10 @@ import requests
 import argparse
 import unicodedata
 from pathlib import Path
-from typing import Set, List, Dict, Tuple
+from typing import Any, Set, List, Dict, Tuple
 
 
-def anki_connect_request(action: str, params: dict[str, object] | None = None):
+def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     """
     Send a request to anki-connect
 

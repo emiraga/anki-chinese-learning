@@ -18,7 +18,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.anki_utils import get_notes_info
 
 
-def anki_connect_request(action: str, params: dict[str, object] | None = None):
+from typing import Any
+
+
+def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     """
     Send a request to anki-connect
 

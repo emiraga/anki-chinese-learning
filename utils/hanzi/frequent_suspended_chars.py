@@ -56,7 +56,10 @@ def load_frequency_data(csv_path):
     return frequency_data
 
 
-def anki_connect_request(action: str, params: dict[str, object] | None = None):
+from typing import Any
+
+
+def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     """
     Send a request to anki-connect
 
