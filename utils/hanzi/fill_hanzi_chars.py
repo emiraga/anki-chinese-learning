@@ -1,15 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "requests",
-#   "dragonmapper",
-#   "hanziconv",
-#   "chinese-english-lookup",
-#   "pypinyin",
-# ]
-# ///
-
+#!/usr/bin/env -S uv run
 import requests
 import dragonmapper.transcriptions
 import hanziconv
@@ -20,13 +9,14 @@ import json
 import argparse
 import sys
 from pathlib import Path
+from typing import Any, Optional
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.dictionary_utils import get_dictionary, lookup_character_meaning
+from shared.dictionary_utils import lookup_character_meaning
 
 
-def anki_connect_request(action, params=None):
+def anki_connect_request(action: str, params: Optional[dict[str, Any]] = None) -> dict[str, Any]:
     """
     Send a request to anki-connect
 
@@ -55,7 +45,7 @@ def anki_connect_request(action, params=None):
         raise
 
 
-def find_notes_by_type(note_type):
+def find_notes_by_type(note_type: str) -> list[int]:
     """
     Find all notes of a specific type
 
@@ -76,7 +66,7 @@ def find_notes_by_type(note_type):
     return []
 
 
-def get_notes_info(note_ids):
+def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
     """
     Get detailed information about multiple notes
 
@@ -94,7 +84,7 @@ def get_notes_info(note_ids):
     raise Exception(f"No notes found for IDs {note_ids}")
 
 
-def traditional_to_simplified(traditional_char):
+def traditional_to_simplified(traditional_char: str) -> str:
     """
     Convert traditional Chinese character to simplified using hanziconv
 
@@ -112,7 +102,7 @@ def traditional_to_simplified(traditional_char):
         raise
 
 
-def extract_existing_hanzi_characters():
+def extract_existing_hanzi_characters() -> set[str]:
     """
     Extract all single characters from existing Hanzi notes
     Validates that Traditional field doesn't contain simplified-only characters
@@ -171,7 +161,7 @@ def extract_existing_hanzi_characters():
     return existing_chars
 
 
-def extract_characters_from_phrases(note_types):
+def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tuple[str, str, str]]]:
     """
     Extract all unique characters from TOCFL and Dangdai notes with their pinyin and meanings
 
@@ -182,7 +172,7 @@ def extract_characters_from_phrases(note_types):
         dict: Dictionary mapping characters to their occurrences with pinyin and meanings
     """
     print("\n=== Extracting characters from phrases ===")
-    char_data = {}  # {char: [(pinyin_syllable, phrase, meaning), ...]}
+    char_data: dict[str, list[tuple[str, str, str]]] = {}  # {char: [(pinyin_syllable, phrase, meaning), ...]}
 
     for note_type in note_types:
         print(f"\nProcessing {note_type} notes...")
@@ -290,7 +280,7 @@ def extract_characters_from_phrases(note_types):
     return char_data
 
 
-def extract_pinyin_syllables(pinyin_text, expected_count):
+def extract_pinyin_syllables(pinyin_text: str, expected_count: int) -> list[str]:
     """
     Extract individual pinyin syllables from a pinyin string using zhuyin conversion
 
@@ -327,7 +317,7 @@ def extract_pinyin_syllables(pinyin_text, expected_count):
         raise ValueError(f"Cannot segment pinyin '{pinyin_text}' into {expected_count} syllables: {e}")
 
 
-def infer_most_common_pinyin(char_occurrences):
+def infer_most_common_pinyin(char_occurrences: list[tuple[str, str, str]]) -> str:
     """
     Find the most common pinyin for a character based on its occurrences
 
@@ -342,7 +332,7 @@ def infer_most_common_pinyin(char_occurrences):
     return most_common_pinyin
 
 
-def create_hanzi_note(char, pinyin, simplified, meaning=""):
+def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = "") -> bool:
     """
     Create a new Hanzi note and suspend it
 
@@ -397,7 +387,7 @@ def create_hanzi_note(char, pinyin, simplified, meaning=""):
         return False
 
 
-def process_single_character(char, char_data=None):
+def process_single_character(char: str, char_data: Optional[dict[str, list[tuple[str, str, str]]]] = None) -> bool:
     """
     Process and create a note for a single character
 
@@ -447,7 +437,7 @@ def process_single_character(char, char_data=None):
     return create_hanzi_note(char, pinyin, simplified, meaning)
 
 
-def main():
+def main() -> None:
     """
     Main function to discover missing characters and create Hanzi notes
     """
@@ -512,7 +502,7 @@ def main():
         else:
             failed_count += 1
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"Total missing characters: {len(missing_chars)}")
     print(f"Successfully created: {created_count}")
     print(f"Failed: {failed_count}")

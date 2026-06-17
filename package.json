@@ -10,9 +10,11 @@
     "test": "jest",
     "test:python": "uv run --script utils/hanzi/test_connect_dots_notes.py",
     "typecheck": "react-router typegen && tsc && npm run typecheck --prefix public/tone_trainer && yarn typecheck:python",
-    "typecheck:python": "uvx --with google-cloud-texttospeech --with dragonmapper --with requests pyright utils/hanzi/connect_dots_notes.py utils/hanzi/test_connect_dots_notes.py utils/tts/fill_audio_anki.py",
+    "typecheck:python": "uv run pyright utils/hanzi/fill_hanzi_chars.py utils/hanzi/connect_dots_notes.py utils/hanzi/test_connect_dots_notes.py utils/tts/fill_audio_anki.py",
     "lint": "eslint . --ext .ts,.tsx",
-    "lint:fix": "eslint . --ext .ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:python": "uv run ruff check utils/hanzi/fill_hanzi_chars.py",
+    "lint:python:fix": "uv run ruff check --fix utils/hanzi/fill_hanzi_chars.py"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-alpha.7",

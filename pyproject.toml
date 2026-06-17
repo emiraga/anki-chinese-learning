@@ -1,3 +1,28 @@
+[project]
+name = "anki-chinese-learning-utils"
+version = "0.1.0"
+description = "Python utilities for the Anki Chinese learning companion app"
+requires-python = ">=3.11"
+dependencies = [
+    "requests",
+    "dragonmapper",
+    "hanziconv",
+    "chinese-english-lookup",
+    "pypinyin",
+    "google-cloud-texttospeech",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pyright",
+    "ruff",
+]
+
+[tool.ruff]
+target-version = "py311"
+src = ["utils"]
+
 [tool.pyright]
 include = ["utils"]
 extraPaths = ["utils"]

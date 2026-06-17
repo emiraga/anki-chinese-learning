@@ -144,6 +144,7 @@ vite.config.ts.timestamp-*
 
 # python
 __pycache__
+.venv/
 
 # Python script caches
 utils/rtega/.cache/
