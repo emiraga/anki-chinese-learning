@@ -6,13 +6,12 @@
 # ]
 # ///
 
-import json
-import requests
 import argparse
+import json
 from pathlib import Path
-
-
 from typing import Any
+
+import requests
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):
@@ -107,7 +106,7 @@ def load_yellowbridge_character(character: str) -> dict[str, Any] | None:
         return None
 
     try:
-        with open(json_file, 'r', encoding='utf-8') as f:
+        with open(json_file, encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading YellowBridge data for {character}: {e}")

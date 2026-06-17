@@ -6,17 +6,17 @@
 # ]
 # ///
 
-import os
-import webbrowser
-import time
-import json
-from pathlib import Path
-import urllib.parse
-from collections import Counter
 import argparse
+import glob
+import json
+import os
 import subprocess
 import sys
-import glob
+import time
+import urllib.parse
+import webbrowser
+from collections import Counter
+from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -52,7 +52,7 @@ def get_component_chars_from_dong_files(
 
     for json_file in json_files:
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 data = json.load(f)
 
                 # Extract components array

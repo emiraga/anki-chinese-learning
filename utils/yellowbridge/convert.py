@@ -18,9 +18,9 @@ This script processes JSON files from public/data/yellowbridge/raw/ and extracts
 import json
 import re
 import sys
-from pathlib import Path
-from typing import Any, Dict, Optional
 from html.parser import HTMLParser
+from pathlib import Path
+from typing import Any
 
 
 class YellowBridgeHTMLParser(HTMLParser):
@@ -224,7 +224,7 @@ def extract_formation_methods(formation_html: str) -> list[dict[str, Any]]:
     return methods
 
 
-def extract_definition(formation_html: str) -> Optional[str]:
+def extract_definition(formation_html: str) -> str | None:
     """Extract the English definition from formation HTML."""
     # Look for definition row
     pattern = r'<td>Definition</td>\s*<td>([^<]*(?:<a[^>]*>[^<]*</a>[^<]*)*)</td>'
@@ -328,7 +328,7 @@ def extract_radical(decomp_html: str) -> dict[str, Any] | None:
     return None
 
 
-def extract_simplification(formation_html: str) -> Optional[Dict[str, str]]:
+def extract_simplification(formation_html: str) -> dict[str, str] | None:
     """Extract simplification information if present."""
     # Look for simplification row
     # Need to handle the <span> tag with onclick that appears after "Method"
@@ -375,7 +375,7 @@ def process_file(file_path: Path) -> dict[str, Any]:
     filename_char = file_path.stem  # Character from filename
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in {file_path}: {e}")
@@ -478,8 +478,8 @@ def build_sounds_component_index(results: dict[str, dict[str, Any]]) -> dict[str
 
 def process_directory(
     input_dir: Path,
-    output_file: Optional[Path] = None,
-    individual_files_dir: Optional[Path] = None
+    output_file: Path | None = None,
+    individual_files_dir: Path | None = None
 ) -> dict[str, dict[str, Any]]:
     """
     Process all JSON files in the input directory.
@@ -518,7 +518,7 @@ def process_directory(
 
                         # Still need to load the existing data for the combined output
                         if output_file:
-                            with open(target_file, 'r', encoding='utf-8') as f:
+                            with open(target_file, encoding='utf-8') as f:
                                 result = json.load(f)
                                 results[filename_char] = result
                         continue
@@ -585,7 +585,7 @@ def process_directory(
             # Check if file exists and compare content
             should_write = True
             if individual_file.exists():
-                with open(individual_file, 'r', encoding='utf-8') as f:
+                with open(individual_file, encoding='utf-8') as f:
                     existing_content = f.read()
                 if existing_content == new_content:
                     should_write = False

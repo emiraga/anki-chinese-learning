@@ -6,8 +6,6 @@ This module provides conversion functions that handle edge cases not covered by 
 particularly for radicals and rare characters.
 """
 
-from typing import Dict, Optional, Tuple
-
 
 # Traditional -> simplified is performed by OpenCC (Open Chinese Convert), which
 # is more accurate than hanziconv for our goal (learning Mainland simplified):
@@ -27,11 +25,11 @@ _OPENCC_PRIMARY_CONFIG = "t2s"
 _OPENCC_CONFIGS = ("t2s", "tw2s", "tw2sp", "hk2s")
 # Mutable module-level state (lowercase so the type checker does not treat these
 # as immutable constants).
-_opencc_converters: Optional[Dict[str, object]] = None
+_opencc_converters: dict[str, object] | None = None
 _opencc_disabled = False
 
 
-def _opencc_simplified_all(char: str) -> Optional[Dict[str, str]]:
+def _opencc_simplified_all(char: str) -> dict[str, str] | None:
     """
     Return each common OpenCC config's simplified form for `char`, keyed by
     config name. Returns None if OpenCC is not installed.
@@ -52,7 +50,7 @@ def _opencc_simplified_all(char: str) -> Optional[Dict[str, str]]:
 
 # Special cases where HanziConv doesn't recognize the simplified/traditional relationship
 # Format: (simplified, traditional)
-SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS: list[Tuple[str, str]] = [
+SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS: list[tuple[str, str]] = [
     # Metal radical
     ('钅', '釒'),
     # Food radical
@@ -64,8 +62,8 @@ SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS: list[Tuple[str, str]] = [
 ]
 
 # Build lookup dictionaries for fast access
-_SIMPLIFIED_TO_TRADITIONAL: Dict[str, str] = {simp: trad for simp, trad in SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS}
-_TRADITIONAL_TO_SIMPLIFIED: Dict[str, str] = {trad: simp for simp, trad in SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS}
+_SIMPLIFIED_TO_TRADITIONAL: dict[str, str] = {simp: trad for simp, trad in SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS}
+_TRADITIONAL_TO_SIMPLIFIED: dict[str, str] = {trad: simp for simp, trad in SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS}
 
 
 def to_traditional(char: str, use_hanziconv: bool = True) -> str:
@@ -124,7 +122,7 @@ def to_simplified(char: str, use_hanziconv: bool = True) -> str:
     # up front (tolerating its absence).
     try:
         from hanziconv import HanziConv
-        hanziconv_result: Optional[str] = HanziConv.toSimplified(char)
+        hanziconv_result: str | None = HanziConv.toSimplified(char)
     except ImportError:
         hanziconv_result = None
 
@@ -188,7 +186,7 @@ def add_special_pair(simplified: str, traditional: str) -> None:
     _TRADITIONAL_TO_SIMPLIFIED[traditional] = simplified
 
 
-def get_all_special_pairs() -> list[Tuple[str, str]]:
+def get_all_special_pairs() -> list[tuple[str, str]]:
     """
     Get all registered special simplified/traditional pairs.
 

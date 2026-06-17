@@ -16,13 +16,13 @@ and element mapping logic.
 Tests: See test_connect_dots_notes.py (run with: uv run test_connect_dots_notes.py)
 """
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import TypedDict
 import argparse
 import hashlib
 import sys
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TypedDict
 
 # Add parent directory to path for shared imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -30,18 +30,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.anki_utils import (
     anki_connect_request,
     find_notes_by_query,
-    get_notes_info,
     get_meaning_field,
+    get_notes_info,
 )
 from shared.character_discovery import normalize_cjk_char
 from shared.pinyin_utils import (
-    remove_tone_marks,
     get_tone_number,
-    syllable_with_tone,
-    pinyin_with_zhuyin,
     pinyin_to_zhuyin_toneless,
+    pinyin_with_zhuyin,
+    remove_tone_marks,
+    syllable_with_tone,
 )
-
 
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component

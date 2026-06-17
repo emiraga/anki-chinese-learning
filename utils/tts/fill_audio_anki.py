@@ -10,14 +10,15 @@
 
 from __future__ import annotations
 
-import os
-import requests
-import base64
 import argparse
+import base64
+import os
 import re
 from typing import Any, TypedDict, cast
-from google.cloud import texttospeech
+
 import dragonmapper.transcriptions
+import requests
+from google.cloud import texttospeech
 
 
 class FieldValue(TypedDict):
@@ -52,7 +53,7 @@ def convert_pinyin_to_numbered(pinyin_text: str) -> str:
     # If there are no numbers, assume it's accented and convert.
     numbered: str
     if not any(char.isdigit() for char in pinyin_text):
-        numbered = cast(str, dragonmapper.transcriptions.accented_to_numbered(pinyin_text))  # pyright: ignore[reportUnknownMemberType]
+        numbered = cast(str, dragonmapper.transcriptions.accented_to_numbered(pinyin_text))
     else:
         # It's already numbered, just use it as is.
         numbered = pinyin_text

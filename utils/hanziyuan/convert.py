@@ -29,7 +29,8 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
 from bs4 import BeautifulSoup
 
 # Add parent directories to path for importing shared utilities
@@ -114,7 +115,7 @@ def extract_label_and_content(html_string: str) -> tuple[str, str] | None:
     return (label, content)
 
 
-def parse_etymology_section(soup: BeautifulSoup, header_text: str, image_map: Dict[str, str]) -> Dict[str, Any]:
+def parse_etymology_section(soup: BeautifulSoup, header_text: str, image_map: dict[str, str]) -> dict[str, Any]:
     """
     Parse a single etymology section (oracle, bronze, seal, or liushutong).
 
@@ -170,7 +171,7 @@ def parse_etymology_section(soup: BeautifulSoup, header_text: str, image_map: Di
     }
 
 
-def convert_etymology_characters(etymology_html: str, image_map: Dict[str, str]) -> Dict[str, Dict[str, Any]]:
+def convert_etymology_characters(etymology_html: str, image_map: dict[str, str]) -> dict[str, dict[str, Any]]:
     """
     Convert etymologyCharacters HTML into a structured dictionary.
 
@@ -230,7 +231,7 @@ def convert_etymology_characters(etymology_html: str, image_map: Dict[str, str])
     return result
 
 
-def extract_etymology_images(etymology_styles: str, character: str, images_dir: Path) -> Dict[str, str]:
+def extract_etymology_images(etymology_styles: str, character: str, images_dir: Path) -> dict[str, str]:
     """
     Extract base64-encoded images from etymologyStyles CSS and save them to files.
 
@@ -359,7 +360,7 @@ def extract_best_character(char_string: str) -> str:
     return candidates[0][0]
 
 
-def extract_character_variants(char_field: str) -> Dict[str, Any]:
+def extract_character_variants(char_field: str) -> dict[str, Any]:
     """
     Extract variant information from the character field.
 
@@ -374,7 +375,7 @@ def extract_character_variants(char_field: str) -> Dict[str, Any]:
     Returns:
         Dictionary with character, olderForms, and mutants
     """
-    result: Dict[str, Any] = {"character": ""}
+    result: dict[str, Any] = {"character": ""}
     parts = char_field.split()
 
     if not parts:
@@ -424,7 +425,7 @@ def extract_character_variants(char_field: str) -> Dict[str, Any]:
     return result
 
 
-def extract_simplification_rules(line: str) -> Dict[str, Any]:
+def extract_simplification_rules(line: str) -> dict[str, Any]:
     """
     Extract simplification rule information from a line.
 
@@ -439,7 +440,7 @@ def extract_simplification_rules(line: str) -> Dict[str, Any]:
     Returns:
         Dictionary with rule information
     """
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
 
     # Pattern: Letter followed by digits (A037, B012, F003, etc.)
     rule_match = re.match(r'^([A-Z]\d+)\s+(.+)', line)
@@ -460,7 +461,7 @@ def extract_simplification_rules(line: str) -> Dict[str, Any]:
     return result
 
 
-def parse_decomposition_notes(notes_text: str) -> Dict[str, Any]:
+def parse_decomposition_notes(notes_text: str) -> dict[str, Any]:
     """
     Parse the "Decomposition notes" field into structured data.
 
@@ -482,7 +483,7 @@ def parse_decomposition_notes(notes_text: str) -> Dict[str, Any]:
         return {}
 
     lines = notes_text.strip().split('\n')
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
     explanatory_notes: list[str] = []
     rule_references: list[dict[str, str]] = []
     cross_references: list[str] = []
@@ -553,7 +554,7 @@ def parse_decomposition_notes(notes_text: str) -> Dict[str, Any]:
     return result
 
 
-def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
+def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
     """
     Parse the "Character decomposition 字形分解" field into a structured format.
 
@@ -598,7 +599,7 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
     # Extract character and variants from char_field
     variant_info = extract_character_variants(char_field) if char_field else {"character": ""}
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "type": decomp_type,
         "character": variant_info.get("character", ""),
         "components": [],
@@ -728,7 +729,7 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                     comp_text = comp_text[:-1].strip()
 
                 # Check for markers in parentheses (rem-, rem+, not-)
-                markers: Dict[str, Any] = {}
+                markers: dict[str, Any] = {}
 
                 # Extract (rem- X) pattern - this extracts the character info from the marker
                 rem_minus_match = re.search(r'\(rem-\s+([^)]+)\)', comp_text)
@@ -797,7 +798,7 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
 
                 if (not comp_text or is_quantity_only) and markers:
                     # Create a marker-only entry
-                    component_entry: Dict[str, Any] = {
+                    component_entry: dict[str, Any] = {
                         "description": "",
                         "characters": "",
                         "component": "",
@@ -847,7 +848,7 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                     # Everything before is description
                     description = " ".join(parts[:char_start_idx]) if char_start_idx > 0 else parts[0] if parts else ""
 
-                    component_entry: Dict[str, Any] = {
+                    component_entry: dict[str, Any] = {
                         "description": description,
                         "characters": characters,
                         "component": extract_best_character(characters) if characters else "",
@@ -885,7 +886,7 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
     return result
 
 
-def convert_character_info(character_info: list[str]) -> Dict[str, str]:
+def convert_character_info(character_info: list[str]) -> dict[str, str]:
     """
     Convert characterInfo array into a dictionary with plain text values.
 
@@ -898,8 +899,8 @@ def convert_character_info(character_info: list[str]) -> Dict[str, str]:
     Raises:
         ValueError: If duplicate labels are found (indicates multiple characters in one file)
     """
-    result: Dict[str, Any] = {}
-    seen_labels: Dict[str, int] = {}  # Track labels and their first occurrence index
+    result: dict[str, Any] = {}
+    seen_labels: dict[str, int] = {}  # Track labels and their first occurrence index
 
     for i, item in enumerate(character_info):
         extracted = extract_label_and_content(item)
@@ -961,7 +962,7 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
     """
     try:
         # Read the file
-        with open(input_path, 'r', encoding='utf-8') as f:
+        with open(input_path, encoding='utf-8') as f:
             data = json.load(f)
 
         # Extract and convert characterInfo

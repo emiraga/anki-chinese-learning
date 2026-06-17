@@ -7,11 +7,11 @@
 # ]
 # ///
 
-import requests
+from typing import Any
+
 import dragonmapper
 import dragonmapper.transcriptions
-
-from typing import Any
+import requests
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):

@@ -10,7 +10,6 @@
     "test": "jest",
     "test:python": "uv run --script utils/hanzi/test_connect_dots_notes.py",
     "typecheck": "react-router typegen && tsc && npm run typecheck --prefix public/tone_trainer && yarn typecheck:python && yarn typecheck:pyrefly",
-    "typecheck:python": "uv run pyright",
     "typecheck:pyrefly": "uv run pyrefly check --min-severity warn",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",

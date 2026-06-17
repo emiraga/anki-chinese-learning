@@ -13,7 +13,6 @@ import re
 
 import dragonmapper.transcriptions
 
-
 # Zhuyin tone-mark characters (tone 1 is unmarked). Stripped when computing a
 # stable, tone-independent zhuyin prefix for grouping.
 ZHUYIN_TONE_MARKS = "ˊˇˋ˙"

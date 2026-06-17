@@ -22,20 +22,20 @@ from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import (
-    find_notes_by_query,
-    get_notes_info,
-    find_cards_by_query,
-    get_cards_info,
-    unsuspend_cards,
-    forget_cards,
-    add_tags,
-    remove_tags,
-)
-from shared.character_conversion import to_simplified
-
 # Reuse the phrase-scanning logic that already knows how to read TOCFL notes.
 from fill_hanzi_chars import extract_characters_from_phrases
+
+from shared.anki_utils import (
+    add_tags,
+    find_cards_by_query,
+    find_notes_by_query,
+    forget_cards,
+    get_cards_info,
+    get_notes_info,
+    remove_tags,
+    unsuspend_cards,
+)
+from shared.character_conversion import to_simplified
 
 DIFFERENT_SIMPLIFIED_TAG = "chinese::different-simplified-form"
 MIN_NEW_CARDS = 5

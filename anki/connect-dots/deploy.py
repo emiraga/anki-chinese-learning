@@ -17,7 +17,6 @@ from typing import Any
 
 import requests
 
-
 # ANSI colors
 RED = "\033[91m"
 GREEN = "\033[92m"

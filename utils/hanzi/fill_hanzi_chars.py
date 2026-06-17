@@ -1,23 +1,24 @@
 #!/usr/bin/env -S uv run
-import dragonmapper.transcriptions
-from pypinyin import pinyin as get_pinyin, Style
-from collections import Counter
-import re
-import json
 import argparse
+import json
+import re
 import sys
+from collections import Counter
 from pathlib import Path
-from typing import Optional
+
+import dragonmapper.transcriptions
+from pypinyin import Style
+from pypinyin import pinyin as get_pinyin
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.dictionary_utils import lookup_character_meaning
-from shared.character_conversion import to_simplified, to_traditional
 from shared.anki_utils import (
     anki_connect_request,
     find_notes_by_query,
     get_notes_info,
 )
+from shared.character_conversion import to_simplified, to_traditional
+from shared.dictionary_utils import lookup_character_meaning
 
 
 def find_notes_by_type(note_type: str) -> list[int]:
@@ -322,7 +323,7 @@ def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = ""
         return False
 
 
-def process_single_character(char: str, char_data: Optional[dict[str, list[tuple[str, str, str]]]] = None) -> bool:
+def process_single_character(char: str, char_data: dict[str, list[tuple[str, str, str]]] | None = None) -> bool:
     """
     Process and create a note for a single character
 

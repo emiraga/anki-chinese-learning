@@ -7,15 +7,16 @@
 # ]
 # ///
 
+import argparse
 import json
 import os
 import sys
-from pathlib import Path
 import time
-import argparse
+from pathlib import Path
 from typing import Any
+
 from google.cloud import translate_v2 as translate  # type: ignore[attr-defined]
-from pypinyin import pinyin, Style
+from pypinyin import Style, pinyin
 
 # In-memory cache for translations
 _translation_cache: dict[str, str] = {}
@@ -136,7 +137,7 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
     # First pass: collect all data from files
     for file_path in dong_dir.glob('*.json'):
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
 
             # Get the character and its pinyinFrequencies from root level
@@ -190,7 +191,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
         True if file was modified, False otherwise
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             data = json.load(f)
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
@@ -202,7 +203,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
     if 'chars' in data and isinstance(data['chars'], list):
         for char_obj in data['chars']:
             # Translate shuowen field
-            if 'shuowen' in char_obj and char_obj['shuowen']:
+            if char_obj.get('shuowen'):
                 if 'shuowen_en_translation' not in char_obj or not char_obj['shuowen_en_translation']:
                     print(f"Translating shuowen for {char_obj.get('char', 'unknown')}...")
                     try:
@@ -221,7 +222,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
             # Translate comments.text field
             if 'comments' in char_obj and isinstance(char_obj['comments'], list):
                 for comment in char_obj['comments']:
-                    if 'text' in comment and comment['text']:
+                    if comment.get('text'):
                         if 'text_en_translation' not in comment or not comment['text_en_translation']:
                             print(f"Translating comment for {char_obj.get('char', 'unknown')}...")
                             try:

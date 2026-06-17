@@ -6,12 +6,11 @@ This module provides a common interface for looking up Chinese words/phrases
 in the chinese-english-lookup dictionary.
 """
 
-from chinese_english_lookup import Dictionary
-from typing import Optional
 
+from chinese_english_lookup import Dictionary
 
 # Module-level dictionary instance (lazy initialized)
-_dictionary: Optional[Dictionary] = None
+_dictionary: Dictionary | None = None
 
 
 def get_dictionary() -> Dictionary:
@@ -29,7 +28,7 @@ def get_dictionary() -> Dictionary:
     return _dictionary
 
 
-def lookup_meaning(text: str, max_definitions: int = 3) -> Optional[str]:
+def lookup_meaning(text: str, max_definitions: int = 3) -> str | None:
     """
     Look up the meaning of a Chinese word or phrase in the dictionary.
 
@@ -66,7 +65,7 @@ def lookup_meaning(text: str, max_definitions: int = 3) -> Optional[str]:
 
 def lookup_character_meaning(
     char: str,
-    occurrences: Optional[list[tuple[str, str, str]]] = None,
+    occurrences: list[tuple[str, str, str]] | None = None,
     max_definitions: int = 3,
 ) -> str:
     """

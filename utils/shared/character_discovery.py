@@ -9,9 +9,8 @@ This module provides a simple interface to discover all characters from:
 
 import json
 import unicodedata
-from pathlib import Path
 from collections import Counter
-from typing import Set, Tuple, List
+from pathlib import Path
 
 from .anki_utils import anki_connect_request, get_notes_info
 
@@ -26,7 +25,7 @@ def normalize_cjk_char(char: str) -> str:
     return unicodedata.normalize('NFC', normalized)
 
 
-def extract_all_characters(text: str, normalize: bool = False) -> Set[str]:
+def extract_all_characters(text: str, normalize: bool = False) -> set[str]:
     """
     Extract all Chinese characters from a text string.
     """
@@ -48,7 +47,7 @@ def extract_all_characters(text: str, normalize: bool = False) -> Set[str]:
 
 
 
-def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> List[int]:
+def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> list[int]:
     """Find all notes with Traditional field."""
     search_query = f'note:{note_type} Traditional:_* {extra_filter}'
     response = anki_connect_request("findNotes", {"query": search_query})
@@ -63,7 +62,7 @@ def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> L
     return []
 
 
-def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter[str]]:
+def _get_anki_characters(normalize: bool = False) -> tuple[set[str], Counter[str]]:
     """Collect all characters from Anki notes."""
     note_types = [
         ("TOCFL", ""),
@@ -96,7 +95,7 @@ def _get_anki_characters(normalize: bool = False) -> Tuple[Set[str], Counter[str
     return anki_chars, char_frequency
 
 
-def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter[str]]:
+def _scan_data_directories(project_root: Path, normalize: bool = False) -> tuple[set[str], Counter[str]]:
     """Scan the three standard data directories for existing character files."""
     data_dirs = [
         project_root / "public" / "data" / "dong",
@@ -134,7 +133,7 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> Tuple
     return all_chars, char_frequency
 
 
-def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> Tuple[Set[str], Counter[str]]:
+def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tuple[set[str], Counter[str]]:
     """Scan outlier series JSON files for characters in specific fields.
 
     Extracts characters from:
@@ -158,7 +157,7 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> Tu
 
     for file_path in json_files:
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
 
             # Extract from references[].char
@@ -205,7 +204,7 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> Tu
                     all_chars.update(chars)
                     char_frequency.update(chars)
 
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             print(f"  Error reading {file_path}: {e}")
 
     print(f"Found {len(all_chars)} unique characters from outlier series JSON files")
@@ -217,7 +216,7 @@ def discover_all_characters(
     include_anki: bool = True,
     include_folders: bool = True,
     normalize: bool = False
-) -> Tuple[Set[str], Counter[str]]:
+) -> tuple[set[str], Counter[str]]:
     """
     Discover all characters from Anki and the standard data directories.
 

@@ -17,16 +17,17 @@ Usage:
     ./utils/pleco/outlier_copy_paste.py --preload-list     # Generate top 50 sound components to explore
 """
 
+import argparse
+import base64
+import hashlib
+import json
+import re
 import subprocess
 import sys
-import re
-import json
-import argparse
 import time
-import hashlib
-import base64
 from pathlib import Path
-from typing import TypedDict, List, Optional, Tuple, Any
+from typing import Any, TypedDict
+
 try:
     from bs4 import BeautifulSoup
     BS4_AVAILABLE = True
@@ -44,8 +45,8 @@ class Reference(TypedDict, total=False):
 class Character(TypedDict, total=False):
     """A character entry in a series"""
     traditional: str
-    simplified: Optional[str]
-    pinyin: List[str]
+    simplified: str | None
+    pinyin: list[str]
     meaning: str
     explanation: str
 
@@ -53,33 +54,33 @@ class Character(TypedDict, total=False):
 class Series(TypedDict, total=False):
     """A sound or semantic series"""
     explanation: str
-    characters: List[Character]
+    characters: list[Character]
 
 
 class EmptyComponentData(TypedDict, total=False):
     """Empty component data"""
     explanation: str
-    characters: List[Character]
+    characters: list[Character]
 
 
 class RadicalData(TypedDict, total=False):
     """Radical data"""
     explanation: str
-    characters: List[Character]
+    characters: list[Character]
 
 
 class OutlierData(TypedDict, total=False):
     """Complete Outlier dictionary entry structure"""
     traditional: str
-    simplified: Optional[str]
-    pinyin: Optional[List[str]]
-    note: Optional[str]
-    references: List[Reference]
+    simplified: str | None
+    pinyin: list[str] | None
+    note: str | None
+    references: list[Reference]
     sound_series: Series
     semantic_series: Series
     empty_component: EmptyComponentData
     radical: RadicalData
-    raw_html: Optional[str]
+    raw_html: str | None
 
 
 def auto_copy_from_window(window_name: str = "iPhone Mirroring", clear_clipboard: bool = True):
@@ -323,7 +324,7 @@ def validate_pinyin(pinyin: str) -> bool:
     return has_tone_mark
 
 
-def extract_pinyin_from_text(text: str) -> List[str]:
+def extract_pinyin_from_text(text: str) -> list[str]:
     """Extract pinyin syllables from text"""
     # Match pinyin with tone marks (including single-character pinyin like ā, ē)
     pinyin_pattern = r'\b[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ]+\b'
@@ -363,7 +364,7 @@ def validate_character_pinyin(char: Character, char_hanzi: str):
         )
 
 
-def parse_character_from_li(li_element: Any) -> Optional[Character]:
+def parse_character_from_li(li_element: Any) -> Character | None:
     """Parse a character entry from a list item"""
     if not li_element:
         return None
@@ -465,7 +466,7 @@ def parse_character_from_li(li_element: Any) -> Optional[Character]:
     return char if char.get('traditional') else None
 
 
-def extract_image_id_from_img_tag(img_tag: Any) -> Tuple[Optional[str], Optional[bytes]]:
+def extract_image_id_from_img_tag(img_tag: Any) -> tuple[str | None, bytes | None]:
     """
     Extract image data from an img tag and generate an ID for it.
     Returns (image_id, image_bytes) or (None, None) if no image data found.
@@ -568,7 +569,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     if h1:
         first_h2 = soup.find('h2')
         note_parts = []
-        references: List[Reference] = []
+        references: list[Reference] = []
 
         for sibling in h1.find_next_siblings():
             if sibling == first_h2:
@@ -636,7 +637,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     pending_text: list[str] = []
     pending_elements: list[Any] = []
 
-    def save_section(h2_name: str, text_list: list[str], element_list: list[Any], chars_list: Optional[list[Character]] = None) -> None:
+    def save_section(h2_name: str, text_list: list[str], element_list: list[Any], chars_list: list[Character] | None = None) -> None:
         """Helper to save section data"""
         if not h2_name:
             return
@@ -644,7 +645,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
         explanation = ' '.join(text_list).strip() if text_list else None
 
         # Extract references from links in this section's elements
-        section_refs: List[Reference] = []
+        section_refs: list[Reference] = []
         for elem in element_list:
             for link in elem.find_all('a'):
                 href = link.get('href', '')
@@ -781,7 +782,7 @@ def generate_preload_list():
 
     for json_file in dong_files:
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 data = json.load(f)
 
             char = data.get('char')
@@ -875,7 +876,7 @@ def rebuild_from_html_files(html_dir: Path) -> None:
         print(f"\nProcessing: {html_file.name}")
 
         try:
-            with open(html_file, 'r', encoding='utf-8') as f:
+            with open(html_file, encoding='utf-8') as f:
                 html_content = f.read()
 
             outlier_data = parse_outlier_html(html_content)

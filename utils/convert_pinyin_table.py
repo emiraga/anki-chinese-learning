@@ -3,6 +3,7 @@
 import csv
 import json
 
+
 def csv_to_2d_array(
     csv_filepath: str, output_filepath: str | None = None
 ) -> list[list[str]]:
@@ -18,7 +19,7 @@ def csv_to_2d_array(
         list: 2D array of the CSV data (excluding header row and index column)
     """
     # Read the CSV file
-    with open(csv_filepath, 'r', newline='', encoding='utf-8') as csvfile:
+    with open(csv_filepath, newline='', encoding='utf-8') as csvfile:
         csv_reader = csv.reader(csvfile)
 
         # Read all rows

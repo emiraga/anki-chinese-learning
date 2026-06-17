@@ -12,15 +12,15 @@ import json
 import time
 import webbrowser
 from pathlib import Path
-from typing import List, Set, Dict, Any, Optional
 from queue import PriorityQueue
+from typing import Any
 
 WORDS_DIR = Path("/Users/emirb/src/Learning_Languages/chinese/anki-chinese-learning/data/hackchinese/words")
 LISTS_DIR = Path("/Users/emirb/src/Learning_Languages/chinese/anki-chinese-learning/data/hackchinese/lists")
 BASE_URL = "https://www.hackchinese.com/words"
 
 
-def load_word_files(directory: Path) -> List[Dict[str, Any]]:
+def load_word_files(directory: Path) -> list[dict[str, Any]]:
     """
     Load all JSON word files from the specified directory.
 
@@ -38,7 +38,7 @@ def load_word_files(directory: Path) -> List[Dict[str, Any]]:
 
     for file_path in directory.glob("*.json"):
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 word_data = json.load(f)
                 words.append(word_data)
         except json.JSONDecodeError as e:
@@ -49,7 +49,7 @@ def load_word_files(directory: Path) -> List[Dict[str, Any]]:
     return words
 
 
-def extract_component_ids(word: Dict[str, Any]) -> List[tuple[str, str]]:
+def extract_component_ids(word: dict[str, Any]) -> list[tuple[str, str]]:
     """
     Extract all component IDs and traditional characters from a word dictionary.
 
@@ -74,7 +74,7 @@ def extract_component_ids(word: Dict[str, Any]) -> List[tuple[str, str]]:
     return component_info
 
 
-def get_existing_word_ids(directory: Path) -> Set[str]:
+def get_existing_word_ids(directory: Path) -> set[str]:
     """
     Get a set of all existing word IDs from filenames in the directory.
 
@@ -133,7 +133,7 @@ def open_in_browser_and_wait(word_id: str, traditional: str = "", base_url: str 
     raise Exception(f"File {file_path} did not appear after 20 seconds")
 
 
-def load_list_files(directory: Path, file_paths: Optional[List[Path]] = None) -> List[Dict[str, Any]]:
+def load_list_files(directory: Path, file_paths: list[Path] | None = None) -> list[dict[str, Any]]:
     """
     Load JSON list files from the specified directory or specific file paths.
 
@@ -161,7 +161,7 @@ def load_list_files(directory: Path, file_paths: Optional[List[Path]] = None) ->
             continue
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 list_data = json.load(f)
                 lists.append(list_data)
                 list_name = list_data.get("name", file_path.stem)
@@ -174,7 +174,7 @@ def load_list_files(directory: Path, file_paths: Optional[List[Path]] = None) ->
     return lists
 
 
-def load_single_word_file(file_path: Path) -> Optional[Dict[str, Any]]:
+def load_single_word_file(file_path: Path) -> dict[str, Any] | None:
     """
     Load a single word JSON file.
 
@@ -185,7 +185,7 @@ def load_single_word_file(file_path: Path) -> Optional[Dict[str, Any]]:
         Parsed word dictionary or None if error
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             return json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error parsing {file_path}: {e}")
@@ -195,7 +195,7 @@ def load_single_word_file(file_path: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
-def get_list_words_info(lists: List[Dict[str, Any]]) -> Dict[str, str]:
+def get_list_words_info(lists: list[dict[str, Any]]) -> dict[str, str]:
     """
     Extract word ID to traditional mapping from all lists.
 
@@ -258,10 +258,7 @@ def main():
         for f in args.files:
             path = Path(f)
             # If absolute, use as-is
-            if path.is_absolute():
-                list_file_paths.append(path)
-            # If already exists, use as-is (handles relative paths from cwd)
-            elif path.exists():
+            if path.is_absolute() or path.exists():
                 list_file_paths.append(path)
             # Otherwise, assume it's relative to LISTS_DIR
             else:

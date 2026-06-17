@@ -14,13 +14,14 @@ This helps prioritize which characters to learn next based on how frequently
 they appear in the phrases you're studying.
 """
 
-import requests
-from collections import Counter
 import argparse
-import re
 import csv
+import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
+
+import requests
 
 
 def load_frequency_data(csv_path: str | Path):
@@ -34,7 +35,7 @@ def load_frequency_data(csv_path: str | Path):
         dict: Mapping of character to frequency data (written_frequency, spoken_frequency)
     """
     frequency_data = {}
-    with open(csv_path, 'r', encoding='utf-8') as f:
+    with open(csv_path, encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             traditional = row['traditional']

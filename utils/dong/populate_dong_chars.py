@@ -13,10 +13,10 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
-def is_valid_char_data(data: Dict[str, Any]) -> bool:
+def is_valid_char_data(data: dict[str, Any]) -> bool:
     """Check if character data is valid and should be processed."""
     # Check if data has error property
     if "error" in data or "details" in data:
@@ -48,7 +48,7 @@ def populate_dong_chars(input_file_path: str) -> None:
     print(f"Reading input file: {input_file_path}")
 
     # Read the input JSON file
-    with open(input_file_path, "r", encoding="utf-8") as f:
+    with open(input_file_path, encoding="utf-8") as f:
         entries = json.load(f)
 
     print(f"Found {len(entries)} total entries")

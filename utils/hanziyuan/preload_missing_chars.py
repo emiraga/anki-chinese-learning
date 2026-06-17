@@ -10,13 +10,12 @@ Preload missing character data from HanziYuan.
 """
 
 import json
+import subprocess
+import sys
 import time
 import webbrowser
 from pathlib import Path
-from typing import Set
 from urllib.parse import quote
-import subprocess
-import sys
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -47,12 +46,12 @@ def open_hanziyuan_url(char: str, delay: float = 2.0):
     time.sleep(delay)
 
 
-def extract_components_from_json(json_file: Path) -> Set[str]:
+def extract_components_from_json(json_file: Path) -> set[str]:
     """Extract all component characters from a converted JSON file."""
     components = set()
 
     try:
-        with open(json_file, 'r', encoding='utf-8') as f:
+        with open(json_file, encoding='utf-8') as f:
             data = json.load(f)
 
         # Extract components from characterDecomposition
@@ -74,7 +73,7 @@ def extract_components_from_json(json_file: Path) -> Set[str]:
     return components
 
 
-def get_all_components_from_converted(converted_dir: Path) -> Set[str]:
+def get_all_components_from_converted(converted_dir: Path) -> set[str]:
     """Get all component characters from all converted JSON files."""
     all_components = set()
 

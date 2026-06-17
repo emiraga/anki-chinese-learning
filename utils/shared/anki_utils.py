@@ -6,6 +6,7 @@ This module provides a common interface for communicating with the AnkiConnect a
 """
 
 from typing import Any
+
 import requests
 
 

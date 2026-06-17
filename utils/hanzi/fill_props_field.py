@@ -14,10 +14,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
-from anki_utils import anki_connect_request
-from pinyin_utils import remove_tone_marks
-from gemini_utils import create_gemini_client, gemini_generate
 from typing import Any
+
+from anki_utils import anki_connect_request
+from gemini_utils import create_gemini_client, gemini_generate
+from pinyin_utils import remove_tone_marks
 
 
 def load_pos_mapping():
@@ -31,7 +32,7 @@ def load_pos_mapping():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     pos_json_path = os.path.join(script_dir, '..', '..', 'app', 'data', 'pos.json')
 
-    with open(pos_json_path, 'r', encoding='utf-8') as f:
+    with open(pos_json_path, encoding='utf-8') as f:
         return json.load(f)
 
 

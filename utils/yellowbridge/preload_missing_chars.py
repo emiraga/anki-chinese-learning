@@ -15,14 +15,14 @@ to trigger data collection.
 """
 
 import json
-import time
-import webbrowser
-from pathlib import Path
-from typing import Any, Set, Tuple
-from urllib.parse import quote
-from collections import Counter
 import subprocess
 import sys
+import time
+import webbrowser
+from collections import Counter
+from pathlib import Path
+from typing import Any
+from urllib.parse import quote
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -54,7 +54,7 @@ BLACKLISTED_CHARS = {
 }
 
 
-def extract_referenced_chars(json_data: dict[str, Any]) -> Set[str]:
+def extract_referenced_chars(json_data: dict[str, Any]) -> set[str]:
     """Extract all characters referenced in a JSON data structure."""
     chars = set()
 
@@ -67,7 +67,7 @@ def extract_referenced_chars(json_data: dict[str, Any]) -> Set[str]:
                         chars.add(comp['character'])
 
     # Extract from radical
-    if 'radical' in json_data and json_data['radical']:
+    if json_data.get('radical'):
         if 'character' in json_data['radical']:
             chars.add(json_data['radical']['character'])
 
@@ -85,14 +85,14 @@ def extract_referenced_chars(json_data: dict[str, Any]) -> Set[str]:
                     chars.add(char)
 
     # Extract from simplification
-    if 'simplification' in json_data and json_data['simplification']:
+    if json_data.get('simplification'):
         if 'simplifiedForm' in json_data['simplification']:
             chars.add(json_data['simplification']['simplifiedForm'])
 
     return chars
 
 
-def get_all_referenced_chars(info_dir: Path) -> Tuple[Set[str], "Counter[str]"]:
+def get_all_referenced_chars(info_dir: Path) -> tuple[set[str], "Counter[str]"]:
     """Get all characters referenced across all info files."""
     all_chars = set()
     char_frequency = Counter()
@@ -107,7 +107,7 @@ def get_all_referenced_chars(info_dir: Path) -> Tuple[Set[str], "Counter[str]"]:
 
     for file_path in json_files:
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
 
             # Extract all referenced characters

@@ -6,12 +6,13 @@
 # ]
 # ///
 
-import json
-import requests
 import argparse
+import json
 import unicodedata
 from pathlib import Path
-from typing import Any, Set, List, Dict, Tuple
+from typing import Any
+
+import requests
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):
@@ -70,7 +71,7 @@ def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
-def get_learned_characters() -> Set[str]:
+def get_learned_characters() -> set[str]:
     """
     Get all characters from Hanzi notes that are not new and not suspended
 
@@ -128,7 +129,7 @@ def is_punctuation(char: str) -> bool:
     return category.startswith('P')
 
 
-def can_use_sentence(sentence_text: str, learned_chars: Set[str]) -> bool:
+def can_use_sentence(sentence_text: str, learned_chars: set[str]) -> bool:
     """
     Check if all characters in sentence are either punctuation or learned
 
@@ -165,7 +166,7 @@ def can_use_sentence(sentence_text: str, learned_chars: Set[str]) -> bool:
 ANKI_SENTENCE_NOTE_TYPES = ["TOCFL"]
 
 
-def load_anki_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, str]]]:
+def load_anki_sentences(learned_chars: set[str]) -> dict[str, list[tuple[str, str]]]:
     """
     Load sentences/words from Anki note types (TOCFL).
     These have higher priority than HackChinese data.
@@ -176,7 +177,7 @@ def load_anki_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, st
     Returns:
         Dict mapping character to list of (traditional, meaning) tuples
     """
-    char_sentences: Dict[str, List[Tuple[str, str]]] = {}
+    char_sentences: dict[str, list[tuple[str, str]]] = {}
     total_sentences = 0
 
     for note_type in ANKI_SENTENCE_NOTE_TYPES:
@@ -221,7 +222,7 @@ def load_anki_sentences(learned_chars: Set[str]) -> Dict[str, List[Tuple[str, st
     return char_sentences
 
 
-def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tuple[str, str]]]]:
+def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tuple[str, str]]]]:
     """
     Load all sentences and compounds from HackChinese word JSON files, grouped by character
 
@@ -237,7 +238,7 @@ def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tupl
     if not words_dir.exists():
         raise Exception(f"Words directory not found: {words_dir}")
 
-    char_data: Dict[str, Dict[str, List[Tuple[str, str]]]] = {}
+    char_data: dict[str, dict[str, list[tuple[str, str]]]] = {}
     processed_files = 0
     single_char_words = 0
     total_sentences_found = 0
@@ -245,7 +246,7 @@ def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tupl
 
     for json_file in sorted(words_dir.glob("*.json")):
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 data = json.load(f)
 
             processed_files += 1
@@ -304,9 +305,9 @@ def load_all_word_data(learned_chars: Set[str]) -> Dict[str, Dict[str, List[Tupl
 
 
 def generate_example_sentences_html(
-    anki_sentences: List[Tuple[str, str]],
-    sentences: List[Tuple[str, str]],
-    compounds: List[Tuple[str, str]]
+    anki_sentences: list[tuple[str, str]],
+    sentences: list[tuple[str, str]],
+    compounds: list[tuple[str, str]]
 ) -> str:
     """
     Generate HTML for Example sentences field (includes anki sentences, HackChinese sentences and compounds)
@@ -323,7 +324,7 @@ def generate_example_sentences_html(
         return ""
 
     html_parts = []
-    seen_traditional: Set[str] = set()
+    seen_traditional: set[str] = set()
 
     # Add Anki sentences first (highest priority)
     if anki_sentences:

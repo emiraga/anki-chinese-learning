@@ -12,12 +12,11 @@ Query Traditional field values from Anki notes.
 Allows filtering by note type and Level field value.
 """
 
-import requests
 import argparse
 import re
-
-
 from typing import Any
+
+import requests
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):

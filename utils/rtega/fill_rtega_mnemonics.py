@@ -6,19 +6,19 @@
 # ]
 # ///
 
-import json
-import requests
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
+import requests
+
 # Add parent directory to path for shared imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared.anki_utils import get_notes_info
-
-
 from typing import Any
+
+from shared.anki_utils import get_notes_info
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):
@@ -127,7 +127,7 @@ def load_rtega_mnemonic(character: str) -> str | None:
         return None
 
     try:
-        with open(json_file, 'r', encoding='utf-8') as f:
+        with open(json_file, encoding='utf-8') as f:
             data = json.load(f)
             html = data.get("mnemonic", {}).get("html")
             if html:

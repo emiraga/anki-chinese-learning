@@ -9,22 +9,21 @@
 # ]
 # ///
 
-import requests
-import dragonmapper.transcriptions
-import dragonmapper.hanzi
 import argparse
-from typing import Any
 import random
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
+
+import dragonmapper.hanzi
+import dragonmapper.transcriptions
+import requests
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.gemini_utils import create_gemini_client, gemini_generate, translate_with_gemini
 from shared.dictionary_utils import lookup_meaning
-
-
+from shared.gemini_utils import create_gemini_client, gemini_generate, translate_with_gemini
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):

@@ -12,13 +12,14 @@ Parse RTEGA HTML files containing Chinese character mnemonics.
 Extracts character data and generates JSON files for each character.
 """
 
+import hashlib
 import json
 import re
-import requests
-import hashlib
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+import requests
 from bs4 import BeautifulSoup, Tag
 
 
@@ -43,7 +44,7 @@ def extract_html_content(element: Tag) -> str:
 
 
 # Global cache for SVG content (in-memory)
-_svg_cache: Dict[str, str] = {}
+_svg_cache: dict[str, str] = {}
 
 # Cache configuration
 CACHE_VERSION = "1"
@@ -63,26 +64,26 @@ def get_cache_metadata_file() -> Path:
     return get_cache_dir() / 'metadata.json'
 
 
-def load_cache_metadata() -> Dict[str, Any]:
+def load_cache_metadata() -> dict[str, Any]:
     """Load cache metadata from disk."""
     metadata_file = get_cache_metadata_file()
     if metadata_file.exists():
         try:
-            with open(metadata_file, 'r', encoding='utf-8') as f:
+            with open(metadata_file, encoding='utf-8') as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             print(f"  Warning: Failed to load cache metadata: {e}")
             return {'version': CACHE_VERSION, 'entries': {}}
     return {'version': CACHE_VERSION, 'entries': {}}
 
 
-def save_cache_metadata(metadata: Dict[str, Any]):
+def save_cache_metadata(metadata: dict[str, Any]):
     """Save cache metadata to disk."""
     metadata_file = get_cache_metadata_file()
     try:
         with open(metadata_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
-    except IOError as e:
+    except OSError as e:
         print(f"  Warning: Failed to save cache metadata: {e}")
 
 
@@ -93,7 +94,7 @@ def get_cache_file_path(svg_name: str) -> Path:
     return get_cache_dir() / f"{name_hash}.svg"
 
 
-def is_cache_valid(svg_name: str, metadata: Dict[str, Any]) -> bool:
+def is_cache_valid(svg_name: str, metadata: dict[str, Any]) -> bool:
     """Check if cached SVG is still valid."""
     if svg_name not in metadata.get('entries', {}):
         return False
@@ -117,21 +118,21 @@ def is_cache_valid(svg_name: str, metadata: Dict[str, Any]) -> bool:
     return cache_file.exists()
 
 
-def load_from_cache(svg_name: str, metadata: Dict[str, Any]) -> Optional[str]:
+def load_from_cache(svg_name: str, metadata: dict[str, Any]) -> str | None:
     """Load SVG content from disk cache."""
     if not is_cache_valid(svg_name, metadata):
         return None
 
     cache_file = get_cache_file_path(svg_name)
     try:
-        with open(cache_file, 'r', encoding='utf-8') as f:
+        with open(cache_file, encoding='utf-8') as f:
             return f.read()
-    except IOError as e:
+    except OSError as e:
         print(f"  Warning: Failed to read cached SVG {svg_name}: {e}")
         return None
 
 
-def save_to_cache(svg_name: str, svg_content: str, metadata: Dict[str, Any]):
+def save_to_cache(svg_name: str, svg_content: str, metadata: dict[str, Any]):
     """Save SVG content to disk cache."""
     cache_file = get_cache_file_path(svg_name)
 
@@ -152,11 +153,11 @@ def save_to_cache(svg_name: str, svg_content: str, metadata: Dict[str, Any]):
         }
 
         save_cache_metadata(metadata)
-    except IOError as e:
+    except OSError as e:
         print(f"  Warning: Failed to cache SVG {svg_name}: {e}")
 
 
-def fetch_svg_content(svg_name: str, cache_metadata: Optional[Dict[str, Any]] = None) -> Optional[str]:
+def fetch_svg_content(svg_name: str, cache_metadata: dict[str, Any] | None = None) -> str | None:
     """Fetch SVG content from rtega.be server and cache it."""
     # Check in-memory cache first
     if svg_name in _svg_cache:
@@ -315,7 +316,7 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
     return str(soup)
 
 
-def extract_referenced_characters(html_content: str) -> List[str]:
+def extract_referenced_characters(html_content: str) -> list[str]:
     """Extract all referenced Chinese characters from mnemonic HTML."""
     # Find all links with character references
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -332,7 +333,7 @@ def extract_referenced_characters(html_content: str) -> List[str]:
     return chars
 
 
-def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> Optional[Dict[str, Any]]:
+def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> dict[str, Any] | None:
     """Parse a single table row containing character data."""
     try:
         # Get row ID
@@ -449,12 +450,12 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> O
         return None
 
 
-def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Dict[str, Any]]:
+def parse_html_file(file_path: Path, file_num: int, total_files: int) -> list[dict[str, Any]]:
     """Parse an HTML file and extract all character data."""
     progress_pct = (file_num / total_files) * 100
     print(f"[{progress_pct:5.1f}%] Parsing {file_path.name}...")
 
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, encoding='utf-8') as f:
         html_content = f.read()
 
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -507,7 +508,7 @@ def update_marker_file(html_file: Path, output_dir: Path):
     marker_file.touch()
 
 
-def save_character_json(char_data: Dict[str, Any], output_dir: Path):
+def save_character_json(char_data: dict[str, Any], output_dir: Path):
     """Save character data to a JSON file."""
     char = char_data['character']
 

@@ -17,11 +17,11 @@ This script processes all JSON files in public/data/dong/ directory:
 """
 
 import json
-import urllib.request
-import urllib.parse
-from pathlib import Path
-from typing import Dict, Any
 import time
+import urllib.parse
+import urllib.request
+from pathlib import Path
+from typing import Any
 
 # Base directories
 SCRIPT_DIR = Path(__file__).parent
@@ -101,7 +101,7 @@ def download_image(url: str, local_path: Path) -> bool:
         return False
 
 
-def process_json_file(json_path: Path) -> Dict[str, Any]:
+def process_json_file(json_path: Path) -> dict[str, Any]:
     """
     Process a single JSON file: download images and update URLs.
 
@@ -120,7 +120,7 @@ def process_json_file(json_path: Path) -> Dict[str, Any]:
 
     try:
         # Read JSON
-        with open(json_path, 'r', encoding='utf-8') as f:
+        with open(json_path, encoding='utf-8') as f:
             data = json.load(f)
 
         # Check if images array exists

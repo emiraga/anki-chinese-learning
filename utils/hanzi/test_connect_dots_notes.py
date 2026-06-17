@@ -12,14 +12,15 @@
 Unit tests for ConnectDotsNote splitting functionality.
 """
 
-import pytest  # pyright: ignore[reportMissingImports]
+import pytest
 from connect_dots_notes import (
     ConnectDotsNote,
-    stable_bin,
     get_tone_number,
-    syllable_with_tone,
     pinyin_with_zhuyin,
+    stable_bin,
+    syllable_with_tone,
 )
+
 from shared.pinyin_utils import pinyin_to_zhuyin_toneless
 
 
@@ -226,7 +227,7 @@ class TestConnectDotsNoteValidation:
 
     def test_mismatched_left_right_raises_error(self):
         """Creating a note with mismatched left/right lengths should raise ValueError"""
-        with pytest.raises(ValueError, match="Left and Right must have equal lengths"):  # pyright: ignore[reportUnknownMemberType]
+        with pytest.raises(ValueError, match="Left and Right must have equal lengths"):
             ConnectDotsNote(key="test:key", left=["A", "B"], right=["1"])
 
     def test_matched_lengths_succeeds(self):
@@ -601,4 +602,4 @@ class TestSplitStably:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"])  # pyright: ignore[reportUnknownMemberType]
+    pytest.main([__file__, "-v"])

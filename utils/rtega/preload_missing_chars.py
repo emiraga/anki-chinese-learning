@@ -6,18 +6,22 @@
 # ]
 # ///
 
-import subprocess
-import time
+import argparse
 import json
-from pathlib import Path
+import subprocess
+import sys
+import time
 import urllib.parse
 from collections import Counter
-import argparse
-import sys
+from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared.character_discovery import discover_all_characters, extract_all_characters, normalize_cjk_char
+from shared.character_discovery import (
+    discover_all_characters,
+    extract_all_characters,
+    normalize_cjk_char,
+)
 
 
 def get_component_chars_from_rtega_files(rtega_data_dir: Path):
@@ -46,7 +50,7 @@ def get_component_chars_from_rtega_files(rtega_data_dir: Path):
 
     for json_file in json_files:
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 data = json.load(f)
 
                 # Extract referenced_characters array

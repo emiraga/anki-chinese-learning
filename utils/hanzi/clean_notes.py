@@ -19,12 +19,11 @@ This helps consolidate learning materials and identify phrase notes that can be
 safely deleted since their content is preserved in the Hanzi notes.
 """
 
-import requests
 import re
 from collections import defaultdict
-
-
 from typing import Any
+
+import requests
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):

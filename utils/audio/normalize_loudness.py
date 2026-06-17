@@ -29,11 +29,10 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pydub import AudioSegment  # pyrefly: ignore[missing-import]
 from tqdm import tqdm  # pyrefly: ignore[missing-import]
-
 
 # Cache file location (same directory as script)
 CACHE_FILE = Path(__file__).resolve().parent / ".loudness_cache.json"
@@ -44,7 +43,7 @@ def load_cache() -> dict[str, dict[str, Any]]:
     if not CACHE_FILE.exists():
         return {}
     try:
-        with open(CACHE_FILE, "r") as f:
+        with open(CACHE_FILE) as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return {}
@@ -65,7 +64,7 @@ def get_file_key(filepath: str) -> tuple[str, float, int]:
     return (os.path.basename(filepath), stat.st_mtime, stat.st_size)
 
 
-def get_cached_dbfs(cache: dict[str, dict[str, Any]], filepath: str) -> Optional[float]:
+def get_cached_dbfs(cache: dict[str, dict[str, Any]], filepath: str) -> float | None:
     """Get cached dBFS value if cache is valid for this file."""
     filename, mtime, size = get_file_key(filepath)
     if filename in cache:
@@ -132,8 +131,8 @@ def get_matching_files(media_path: Path) -> list[tuple[str, str]]:
 
 def analyze_file(
     filepath: str,
-    cache: Optional[dict[str, dict[str, Any]]] = None
-) -> Optional[float]:
+    cache: dict[str, dict[str, Any]] | None = None
+) -> float | None:
     """Analyze a single file and return its dBFS value.
 
     If cache is provided, checks cache first and updates it with new values.
@@ -279,7 +278,7 @@ def normalize_file(
     filepath: str,
     target_dbfs: float,
     dry_run: bool = True,
-    cache: Optional[dict[str, dict[str, Any]]] = None
+    cache: dict[str, dict[str, Any]] | None = None
 ) -> tuple[bool, str]:
     """Normalize a single file to the target loudness.
 
@@ -313,7 +312,7 @@ def normalize_loud_files(
     files: list[AudioFile],
     config: NormalizationConfig,
     dry_run: bool = True,
-    patterns: Optional[list[str]] = None
+    patterns: list[str] | None = None
 ) -> None:
     """Normalize files that are louder than the threshold."""
     # Filter to loud files

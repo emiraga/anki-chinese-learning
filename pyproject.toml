@@ -18,35 +18,38 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest",
-    "pyright",
     "pyrefly",
     "ruff",
+    "types-requests",
 ]
 
 [tool.ruff]
 target-version = "py311"
 src = ["utils"]
+line-length = 100
 
-[tool.pyright]
-include = ["utils", "anki"]
-extraPaths = ["utils"]
-pythonVersion = "3.11"
-typeCheckingMode = "strict"
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes (unused imports, undefined names, etc.)
+    "I",      # isort (import ordering)
+    "N",      # pep8-naming (naming conventions)
+    "UP",     # pyupgrade (modern Python syntax)
+    "B",      # flake8-bugbear (common bug patterns)
+    "C4",     # flake8-comprehensions (better comprehensions)
+    "SIM",    # flake8-simplify (code simplifications)
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "RUF001", # allow ambiguous unicode chars in strings (needed for Chinese text)
+]
 
-# Ignore third-party libraries without stubs
-reportMissingTypeStubs = false
-reportMissingImports = "warning"
-
-# Allow use of "requests" and "dragonmapper" without type annotations
-reportUnknownMemberType = "warning"
-reportUnknownArgumentType = "warning"
-reportUnknownVariableType = "warning"
-# A parameter annotated with a type from an untyped third-party library (e.g.
-# bs4's BeautifulSoup) resolves to an unknown type. Treat that as a warning,
-# consistent with the rules above. A *missing* annotation is still an error
-# (reportMissingParameterType), so this does not hide un-annotated parameters.
-reportUnknownParameterType = "warning"
-reportUnknownLambdaType = "warning"
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 # Pyrefly is used by the Zed editor for in-editor type checking. Keep its scope
 # in sync with the files checked by the `typecheck:python` npm script (and the
@@ -63,7 +66,6 @@ search-path = ["utils", "utils/hanzi", "utils/tts", "utils/shared"]
 python-version = "3.11"
 
 [tool.pyrefly.errors]
-# Mirror the pyright settings above: third-party libs without stubs are fine.
-missing-import = "warn"
-implicit-any = "warn"
-untyped-import = "ignore"
+missing-import = "error"
+implicit-any = "error"
+untyped-import = "warn"
