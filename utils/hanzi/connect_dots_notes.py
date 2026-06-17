@@ -1,11 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "dragonmapper",
-#   "requests",
-# ]
-# ///
+#!/usr/bin/env -S uv run
 
 """
 Script to create and update ConnectDots notes in Anki.
