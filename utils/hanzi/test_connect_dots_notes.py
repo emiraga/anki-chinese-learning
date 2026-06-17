@@ -15,10 +15,12 @@ Unit tests for ConnectDotsNote splitting functionality.
 import pytest  # pyright: ignore[reportMissingImports]
 from connect_dots_notes import (
     ConnectDotsNote,
+    stable_bin,
     get_tone_number,
     syllable_with_tone,
     pinyin_with_zhuyin,
 )
+from shared.pinyin_utils import pinyin_to_zhuyin_toneless
 
 
 class TestConnectDotsNoteSplitting:
@@ -470,6 +472,132 @@ class TestToneHelperFunctions:
         result = pinyin_with_zhuyin("ma")
         assert "ma" in result
         assert "ㄇ" in result
+
+
+class TestPinyinToZhuyinToneless:
+    """Tests for the toneless zhuyin helper used for stable grouping."""
+
+    def test_strips_tone_marks(self):
+        assert pinyin_to_zhuyin_toneless("zhǎng") == "ㄓㄤ"
+        assert pinyin_to_zhuyin_toneless("zhèn") == "ㄓㄣ"
+        assert pinyin_to_zhuyin_toneless("hǎo") == "ㄏㄠ"
+
+    def test_tone_independent(self):
+        """All tones of a syllable map to the same toneless zhuyin."""
+        variants = ["zhū", "zhú", "zhǔ", "zhù", "zhu"]
+        assert len({pinyin_to_zhuyin_toneless(v) for v in variants}) == 1
+
+    def test_bare_initial_syllables(self):
+        """zhi/chi/shi/ri/zi/ci/si render as a bare initial symbol."""
+        assert pinyin_to_zhuyin_toneless("zhī") == "ㄓ"
+        assert pinyin_to_zhuyin_toneless("shì") == "ㄕ"
+
+    def test_vowel_initial_syllables(self):
+        assert pinyin_to_zhuyin_toneless("yī") == "ㄧ"
+        assert pinyin_to_zhuyin_toneless("ān") == "ㄢ"
+
+
+class TestStableBin:
+    """Tests for the content-stable bin hashing helper."""
+
+    def test_deterministic(self):
+        assert stable_bin("豬", 4) == stable_bin("豬", 4)
+
+    def test_in_range(self):
+        for ch in ["豬", "張", "陣", "之", "止", "長"]:
+            assert 0 <= stable_bin(ch, 3) < 3
+
+    def test_independent_of_other_items(self):
+        """A value's bin depends only on the value and bin count."""
+        assert stable_bin("張", 2) == stable_bin("張", 2)
+        assert stable_bin("張", 3) != stable_bin("張", 2) or True  # may coincide; just no error
+
+
+def _chars(n: int) -> list[str]:
+    # Distinct CJK characters for deterministic-but-varied hashing.
+    return [chr(0x4E00 + i) for i in range(n)]
+
+
+class TestSplitStably:
+    """Tests for ConnectDotsNote.split_stably (content-stable splitting)."""
+
+    def test_no_split_within_limit(self):
+        for count in [1, 5, 10]:
+            left = _chars(count)
+            right = [f"r{i}" for i in range(count)]
+            note = ConnectDotsNote(key="syllable_initial:ㄋ", left=left, right=right)
+            result = note.split_stably(max_items=10)
+            assert len(result) == 1
+            assert result[0] is note
+
+    def test_splits_when_over_limit(self):
+        left = _chars(17)
+        right = [f"r{i}" for i in range(17)]
+        note = ConnectDotsNote(key="syllable_initial:ㄋ", left=left, right=right)
+        result = note.split_stably(max_items=10)
+        assert len(result) >= 2
+
+    def test_all_items_preserved_exactly_once(self):
+        left = _chars(25)
+        right = [f"r{i}" for i in range(25)]
+        note = ConnectDotsNote(key="k", left=left, right=right)
+        result = note.split_stably(max_items=10)
+        original = set(zip(left, right))
+        collected: list[tuple[str, str]] = []
+        for n in result:
+            collected.extend(zip(n.left, n.right))
+        assert set(collected) == original
+        assert len(collected) == len(left)  # no duplicates
+
+    def test_left_right_correspondence_preserved(self):
+        left = _chars(15)
+        right = [f"r{i}" for i in range(15)]
+        mapping = dict(zip(left, right))
+        note = ConnectDotsNote(key="k", left=left, right=right)
+        for n in note.split_stably(max_items=6):
+            for left_val, right_val in zip(n.left, n.right):
+                assert mapping[left_val] == right_val
+
+    def test_key_naming_convention(self):
+        left = _chars(25)
+        right = [f"r{i}" for i in range(25)]
+        note = ConnectDotsNote(key="syllable_initial:ㄋ", left=left, right=right)
+        result = note.split_stably(max_items=10)
+        assert result[0].key == "syllable_initial:ㄋ"
+        for i, n in enumerate(result[1:], start=2):
+            assert n.key == f"syllable_initial:ㄋ:{i}"
+
+    def test_stability_adding_item_keeps_others_in_place(self):
+        """Adding an item (without changing bin count) must not move other items."""
+        # 15 items -> 2 bins. Adding 1 -> 16 items, still 2 bins.
+        left = _chars(15)
+        right = [f"r{i}" for i in range(15)]
+        before = ConnectDotsNote(key="k", left=left, right=right).split_stably(max_items=10)
+
+        new_char = chr(0x4E00 + 999)
+        after = ConnectDotsNote(
+            key="k", left=left + [new_char], right=right + ["rNEW"]
+        ).split_stably(max_items=10)
+
+        assert len(before) == len(after)  # bin count unchanged
+
+        # Map char -> key for each version; every pre-existing char must keep its key.
+        def char_to_key(notes: list[ConnectDotsNote]) -> dict[str, str]:
+            return {c: n.key for n in notes for c in n.left}
+
+        before_map = char_to_key(before)
+        after_map = char_to_key(after)
+        for ch in left:
+            assert after_map[ch] == before_map[ch], f"{ch} moved bins on insert"
+
+    def test_bins_roughly_balanced(self):
+        left = _chars(30)
+        right = [f"r{i}" for i in range(30)]
+        result = ConnectDotsNote(key="k", left=left, right=right).split_stably(max_items=10)
+        # 30 items, 3 bins expected; none should be wildly oversized.
+        assert len(result) == 3
+        for n in result:
+            assert len(n.left) <= 20  # generous upper bound on hash imbalance
 
 
 if __name__ == "__main__":

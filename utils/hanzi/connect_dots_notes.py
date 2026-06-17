@@ -27,6 +27,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TypedDict
 import argparse
+import hashlib
 import sys
 from pathlib import Path
 
@@ -45,6 +46,7 @@ from shared.pinyin_utils import (
     get_tone_number,
     syllable_with_tone,
     pinyin_with_zhuyin,
+    pinyin_to_zhuyin_toneless,
 )
 
 
@@ -372,6 +374,26 @@ def escape_comma(text: str) -> str:
     return text.replace(',', '，︀')
 
 
+def stable_bin(value: str, num_bins: int) -> int:
+    """
+    Deterministically map a string to one of num_bins bins via a content hash.
+
+    The assignment depends only on `value` and `num_bins`, never on insertion
+    order or surrounding items. This is the basis for ConnectDotsNote.split_stably:
+    adding new items leaves every existing item's bin unchanged as long as
+    num_bins is unchanged.
+
+    Args:
+        value: The string to hash (e.g. a traditional character).
+        num_bins: Number of bins (must be >= 1).
+
+    Returns:
+        A bin index in [0, num_bins).
+    """
+    digest = hashlib.md5(value.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big") % num_bins
+
+
 @dataclass
 class ConnectDotsNote:
     """Represents a ConnectDots note to be created or updated"""
@@ -495,6 +517,71 @@ class ConnectDotsNote:
                 right=right_slice,
                 explanation=explanation_slice if self.explanation else [],
                 fake_right=fake_right
+            ))
+
+        return notes
+
+    def split_stably(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list['ConnectDotsNote']:
+        """
+        Split into notes of at most ~max_items using a content-stable assignment.
+
+        Unlike split_if_needed (which round-robins by sorted index and therefore
+        reshuffles whenever an item is inserted), each item here is assigned to a
+        bin by stable_bin(left, num_notes). An item's bin depends only on its own
+        left value and the bin count, so adding new items leaves existing items in
+        place; bins only reshuffle when num_notes changes (i.e. the total crosses
+        a multiple of max_items). This trades exact balance for stability and is
+        intended for groups (e.g. by zhuyin initial) that grow over time.
+
+        Bin sizes are approximately balanced but, because hashing is not perfectly
+        even, an individual note may slightly exceed max_items. Empty bins are
+        dropped. Keys follow the same convention as split_if_needed: the first
+        non-empty bin keeps the original key, the rest get ":2", ":3", etc.
+
+        Each split note also gets a 'fake_right' field with right values drawn from
+        sibling notes, matching split_if_needed.
+        """
+        if len(self.left) <= max_items:
+            return [self]
+
+        explanations = self.explanation if self.explanation else [''] * len(self.left)
+
+        # Number of bins needed (ceiling division).
+        num_notes = -(-len(self.left) // max_items)
+
+        bins: list[tuple[list[str], list[str], list[str]]] = [
+            ([], [], []) for _ in range(num_notes)
+        ]
+        for left, right, expl in zip(self.left, self.right, explanations):
+            idx = stable_bin(left, num_notes)
+            bins[idx][0].append(left)
+            bins[idx][1].append(right)
+            bins[idx][2].append(expl)
+
+        all_right_values = set(self.right) | set(self.fake_right)
+
+        notes: list[ConnectDotsNote] = []
+        key_index = 0
+        for left_slice, right_slice, explanation_slice in bins:
+            if not left_slice:
+                continue  # drop empty bins
+
+            key = self.key if key_index == 0 else f"{self.key}:{key_index + 1}"
+            key_index += 1
+
+            # fake_right = all right values minus this note's right values,
+            # limited so options don't outnumber items (matches split_if_needed).
+            this_note_right = set(right_slice)
+            fake_right_candidates = sorted(all_right_values - this_note_right)
+            max_fake_right = len(left_slice) - len(this_note_right)
+            fake_right = fake_right_candidates[:max(0, max_fake_right)]
+
+            notes.append(ConnectDotsNote(
+                key=key,
+                left=left_slice,
+                right=right_slice,
+                explanation=explanation_slice if self.explanation else [],
+                fake_right=fake_right,
             ))
 
         return notes
@@ -674,6 +761,54 @@ class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
             fake_right.append(pinyin_with_zhuyin(pinyin_with_tone))
 
         return fake_right
+
+
+class SyllableInitialHanziToPinyin(ConnectDotsGenerator):
+    """
+    Group "leftover" single-character Hanzi (those whose syllable has fewer than
+    SYLLABLE_MIN_COUNT characters, so they get no dedicated SyllableHanziToPinyin
+    note) by their zhuyin initial, mapping Hanzi to pinyin.
+
+    An initial with <= MAX_ITEMS_PER_NOTE characters becomes a single note keyed
+    "syllable_initial:ㄋ". Larger initials are split by ConnectDotsNote.split_stably
+    into "syllable_initial:ㄋ", "syllable_initial:ㄋ:2", ... Each character's bin is
+    chosen by a stable hash, so adding new characters only affects the bin they
+    land in; bins reshuffle only when the initial's size crosses a multiple of
+    MAX_ITEMS_PER_NOTE, and never across initials.
+
+    Left = Traditional characters, Right = Pinyin pronunciations.
+    """
+
+    def __init__(self, initial: str, notes: list[HanziNote], max_items: int = MAX_ITEMS_PER_NOTE):
+        self.initial = initial
+        self.notes = notes
+        self.max_items = max_items
+
+    @property
+    def generator_type(self) -> str:
+        return "syllable_initial"
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        left: list[str] = []
+        right: list[str] = []
+        explanation: list[str] = []
+        for note in self.notes:
+            if not (note.traditional and note.pinyin):
+                continue
+            left.append(note.traditional)
+            right.append(pinyin_with_zhuyin(note.pinyin))
+            explanation.append(note.meaning)
+
+        if not left:
+            return []
+
+        note = ConnectDotsNote(
+            key=f"{self.generator_type}:{self.initial}",
+            left=left,
+            right=right,
+            explanation=explanation,
+        )
+        return note.split_stably(max_items=self.max_items)
 
 
 class TagHanziToPinyin(BaseHanziToPinyinGenerator):
@@ -1432,6 +1567,39 @@ def get_syllables_above_threshold(min_count: int = SYLLABLE_MIN_COUNT) -> list[s
     return get_items_above_threshold(data, min_count)
 
 
+def get_leftover_chars_by_initial(
+    min_count: int = SYLLABLE_MIN_COUNT,
+) -> dict[str, list[HanziNote]]:
+    """
+    Group single-character Hanzi whose syllable has fewer than min_count characters
+    (i.e. those not covered by SyllableHanziToPinyin) by their zhuyin initial.
+
+    Args:
+        min_count: Syllable-count threshold below which a character is a "leftover".
+            Must match the threshold used for SyllableHanziToPinyin so the two
+            generators stay disjoint.
+
+    Returns:
+        Mapping of zhuyin initial (e.g. "ㄓ") -> list of leftover HanziNotes.
+    """
+    data_store = get_data_store()
+    syllable_counts = data_store.get_syllable_counts()
+
+    by_initial: dict[str, list[HanziNote]] = {}
+    for note in data_store.get_single_char_hanzi():
+        if not (note.pinyin and note.syllable):
+            continue
+        # Skip characters already covered by a dedicated per-syllable note.
+        if syllable_counts.get(note.syllable, 0) >= min_count:
+            continue
+        zhuyin = pinyin_to_zhuyin_toneless(note.pinyin)
+        if not zhuyin:
+            continue
+        by_initial.setdefault(zhuyin[0], []).append(note)
+
+    return by_initial
+
+
 def get_two_char_phrase_characters_above_threshold(
     min_count: int = TWO_CHAR_PHRASE_MIN_COUNT,
     whitelist: list[str] | None = None
@@ -1572,6 +1740,16 @@ def main():
     print(f"Found {len(syllables)} syllables\n")
     for syllable in syllables:
         generators.append(SyllableHanziToPinyin(syllable))
+
+    # Auto-add leftover syllables (below threshold) grouped by zhuyin initial.
+    # These cover the single-/double-character syllables that don't qualify for
+    # their own SyllableHanziToPinyin note, split stably by zhuyin prefix.
+    print(f"Grouping leftover syllables (<{SYLLABLE_MIN_COUNT} chars) by zhuyin initial...")
+    leftover_by_initial = get_leftover_chars_by_initial(min_count=SYLLABLE_MIN_COUNT)
+    leftover_count = sum(len(notes) for notes in leftover_by_initial.values())
+    print(f"Found {leftover_count} leftover characters across {len(leftover_by_initial)} zhuyin initials\n")
+    for initial, notes in sorted(leftover_by_initial.items()):
+        generators.append(SyllableInitialHanziToPinyin(initial, notes))
 
     # Tag-based generators
     for tag_name in TAG_TRADITIONAL_MEANING:

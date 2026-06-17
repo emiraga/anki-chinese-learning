@@ -14,6 +14,11 @@ import re
 import dragonmapper.transcriptions
 
 
+# Zhuyin tone-mark characters (tone 1 is unmarked). Stripped when computing a
+# stable, tone-independent zhuyin prefix for grouping.
+ZHUYIN_TONE_MARKS = "ˊˇˋ˙"
+
+
 def remove_tone_marks(pinyin: str) -> str:
     """
     Remove tone marks from pinyin to get the syllable.
@@ -104,3 +109,24 @@ def pinyin_with_zhuyin(pinyin: str) -> str:
         return f"{pinyin} ({zhuyin})"
     except Exception:
         return pinyin
+
+
+def pinyin_to_zhuyin_toneless(pinyin: str) -> str:
+    """
+    Convert pinyin to its zhuyin spelling with tone marks removed.
+
+    Useful for stable grouping by zhuyin prefix (initial, initial+medial, etc.),
+    where the tone should not affect which group a character falls into.
+
+    Args:
+        pinyin: Pinyin with tone marks (e.g., "zhǎng")
+
+    Returns:
+        Zhuyin without tone marks (e.g., "ㄓㄤ"), or empty string if conversion fails.
+        The first symbol is the bopomofo "initial".
+    """
+    try:
+        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin)
+        return "".join(c for c in zhuyin if c not in ZHUYIN_TONE_MARKS)
+    except Exception:
+        return ""
