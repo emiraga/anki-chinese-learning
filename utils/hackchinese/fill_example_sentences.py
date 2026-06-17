@@ -391,7 +391,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         if character:
             search_query += f' Traditional:{character}'
         else:
-            search_query += f' Traditional:_'
+            search_query += ' Traditional:_'
 
         # Only get non-suspended notes
         search_query += ' -is:suspended'
@@ -417,7 +417,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
         print(f"Processing limited to {limit} notes")
 
     # Batch fetch all note info at once for speed
-    print(f"Fetching note data...")
+    print("Fetching note data...")
     notes_response = anki_connect_request("notesInfo", {"notes": all_note_ids})
     if not notes_response or not notes_response.get("result"):
         print("Failed to fetch note information")
@@ -489,7 +489,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
             raise
 
     print("\n" + "="*60)
-    print(f"Summary:")
+    print("Summary:")
     print(f"  Total notes: {len(all_notes_info)}")
     print(f"  Updated: {updated_count}")
     print(f"  Unchanged: {unchanged_count}")

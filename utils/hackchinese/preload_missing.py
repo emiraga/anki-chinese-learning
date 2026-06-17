@@ -348,7 +348,7 @@ def main():
                 component_count += 1
         print(f"  Added {component_count} component words (priority 2)")
     else:
-        print(f"  Skipped components from existing words (--no-existing-components flag)")
+        print("  Skipped components from existing words (--no-existing-components flag)")
 
     # Priority 3: Multi-character words from lists
     multi_char_count = 0
@@ -369,7 +369,7 @@ def main():
         return
 
     # Process queue
-    print(f"\nStarting download process...")
+    print("\nStarting download process...")
     downloaded = 0
     failed = []
 

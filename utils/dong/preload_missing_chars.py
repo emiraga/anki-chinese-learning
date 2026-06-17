@@ -193,7 +193,7 @@ def main():
             return
 
     # Open browser tabs for missing characters
-    print(f"\nOpening browser tabs for missing characters...")
+    print("\nOpening browser tabs for missing characters...")
     for i, char in enumerate(missing_sorted, 1):
         encoded_char = urllib.parse.quote(char)
         url = f"https://www.dong-chinese.com/dictionary/search/{encoded_char}"
@@ -218,7 +218,7 @@ def main():
     print("4. Find and expand the database (likely named 'keyvaluepairs' or similar)")
     print("5. Right-click on the database and select 'Export' or 'Save'")
     print("6. Save the file to your ~/Downloads/ folder")
-    print(f"\nThe populate script will look for: ~/Downloads/keyvaluepairs-*")
+    print("\nThe populate script will look for: ~/Downloads/keyvaluepairs-*")
     print(f"Data will be saved to: {dong_data_dir}/")
 
     print(f"\n{'='*60}")
@@ -226,7 +226,7 @@ def main():
 
     if response.lower() != 'y':
         print("\nNo problem! When you're ready, you can manually run:")
-        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+        print("  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
         return
 
     # Run the populate script
@@ -244,7 +244,7 @@ def main():
         print(f"ERROR: No files found matching pattern: {downloads_pattern}")
         print("Please ensure the database file is downloaded to ~/Downloads/")
         print("Then run manually:")
-        print(f"  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
+        print("  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
         return
 
     if len(matching_files) > 1:

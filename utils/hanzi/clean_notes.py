@@ -21,7 +21,6 @@ safely deleted since their content is preserved in the Hanzi notes.
 
 import requests
 import re
-import json
 from collections import defaultdict
 
 
@@ -333,7 +332,7 @@ def main():
             print(f"  ⊘ Skipped: {reason_msg}")
 
     # Step 4: Print summary
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"Total single-character phrase notes: {len(single_char_phrases)}")
     print(f"Successfully processed: {success_count}")
     print(f"Skipped: {len(single_char_phrases) - success_count}")

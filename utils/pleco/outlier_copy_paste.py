@@ -28,7 +28,7 @@ import base64
 from pathlib import Path
 from typing import TypedDict, List, Optional, Tuple
 try:
-    from bs4 import BeautifulSoup, NavigableString, Tag
+    from bs4 import BeautifulSoup
     BS4_AVAILABLE = True
 except ImportError:
     BS4_AVAILABLE = False
@@ -414,7 +414,7 @@ def parse_character_from_li(li_element) -> Optional[Character]:
         # Split on semicolon to separate explanation from meaning
         if ';' in after_colon:
             parts = after_colon.split(';', 1)
-            explanation_part = parts[0].strip()
+            # explanation_part = parts[0].strip()
             meaning_part = parts[1].strip()
 
             # Check if explanation part matches red text
@@ -889,7 +889,7 @@ def rebuild_from_html_files(html_dir):
 
                 print(f"  ✓ Saved: {json_file}")
             else:
-                print(f"  ✗ No character found in HTML", file=sys.stderr)
+                print("  ✗ No character found in HTML", file=sys.stderr)
 
         except Exception as e:
             print(f"  ✗ Error processing {html_file.name}: {e}", file=sys.stderr)
@@ -943,7 +943,7 @@ def main():
             if html_data and html_data != 'missing value':
                 parsed_html = parse_hex_data(html_data, "HTML")
                 if parsed_html and len(parsed_html.strip()) > 0:
-                    print(f"✓ Successfully verified clipboard content")
+                    print("✓ Successfully verified clipboard content")
                     break
 
             retry_count += 1

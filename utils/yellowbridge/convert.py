@@ -19,7 +19,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 from html.parser import HTMLParser
 
 
@@ -501,7 +501,6 @@ def process_directory(
     for file_path in json_files:
         try:
             # Check if we should skip processing based on mtime comparison
-            should_skip = False
             if individual_files_dir:
                 # Try to determine the character from filename to check target file
                 filename_char = file_path.stem
@@ -513,7 +512,6 @@ def process_directory(
 
                     if source_mtime <= target_mtime:
                         # Source hasn't been modified since target was created, skip processing
-                        should_skip = True
                         skipped.append(filename_char)
 
                         # Still need to load the existing data for the combined output
@@ -553,7 +551,7 @@ def process_directory(
             print(f"  {error}")
 
     # Build aggregated indexes
-    print(f"\nBuilding aggregated indexes...")
+    print("\nBuilding aggregated indexes...")
     sounds_component_in = build_sounds_component_index(results)
     print(f"  → soundsComponentIn: {len(sounds_component_in)} phonetic components")
 

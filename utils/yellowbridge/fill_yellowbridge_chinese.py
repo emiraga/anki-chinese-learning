@@ -6,7 +6,6 @@
 # ]
 # ///
 
-import os
 import json
 import requests
 import argparse
@@ -278,7 +277,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
         if character:
             search_query += f' Traditional:{character}'
         else:
-            search_query += f' Traditional:_'
+            search_query += ' Traditional:_'
 
         if not overwrite:
             # Exclude notes that already have content in the Yellowbridge Etymology field
@@ -360,7 +359,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
             raise
 
     print("\n" + "="*60)
-    print(f"Summary:")
+    print("Summary:")
     print(f"  Total notes: {len(all_note_ids)}")
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")

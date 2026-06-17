@@ -225,7 +225,7 @@ def print_statistics(files: list[AudioFile], config: NormalizationConfig) -> Non
     print(f"Loudest file:         {max_dbfs:.2f} dBFS")
     print(f"Range:                {max_dbfs - min_dbfs:.2f} dB")
     print()
-    print(f"Configuration:")
+    print("Configuration:")
     print(f"  Target loudness:    {config.target_dbfs:.1f} dBFS")
     print(f"  Loud threshold:     {config.loud_threshold:.1f} dBFS")
     print(f"  Quiet threshold:    {config.quiet_threshold:.1f} dBFS")

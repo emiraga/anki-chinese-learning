@@ -134,8 +134,8 @@ class TestConnectDotsNoteSplitting:
 
         # Verify each pair in split notes matches original mapping
         for split_note in result:
-            for l, r in zip(split_note.left, split_note.right):
-                assert original_pairs[l] == r
+            for left, right in zip(split_note.left, split_note.right):
+                assert original_pairs[left] == right
 
     def test_interleaved_distribution_maximizes_diversity(self):
         """Items should be distributed to maximize right value diversity in each note"""

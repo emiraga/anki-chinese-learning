@@ -302,7 +302,7 @@ def main():
                 char_counts[char] = frequency_data[char][source_mode]
 
         if not char_counts:
-            print(f"\nNo suspended characters found in frequency data.")
+            print("\nNo suspended characters found in frequency data.")
             return
         sorted_chars = char_counts.most_common(args.top)
 

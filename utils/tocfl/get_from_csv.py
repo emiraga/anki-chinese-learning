@@ -403,13 +403,13 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
             })
 
     # Print results
-    print(f"\n=== Results ===")
+    print("\n=== Results ===")
     print(f"Total notes compared: {len(notes)}")
     print(f"POS differences found: {len(differences)}")
     print(f"Notes with empty Context to update: {len(context_updates)}")
 
     if differences:
-        print(f"\n=== POS Differences ===")
+        print("\n=== POS Differences ===")
         for diff in differences:
             print(f"\n{diff['traditional']}:")
             print(f"  Anki: {diff['anki_pos']}")

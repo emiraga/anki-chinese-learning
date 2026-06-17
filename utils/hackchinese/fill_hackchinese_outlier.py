@@ -183,7 +183,7 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
         if character:
             search_query += f' Traditional:{character}'
         else:
-            search_query += f' Traditional:_'
+            search_query += ' Traditional:_'
 
         if not overwrite:
             # Exclude notes that already have content in the HackChineseOutlier Etymology field
@@ -258,7 +258,7 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
             raise
 
     print("\n" + "="*60)
-    print(f"Summary:")
+    print("Summary:")
     print(f"  Total notes: {len(all_note_ids)}")
     print(f"  Updated: {updated_count}")
     print(f"  Skipped: {skipped_count}")

@@ -287,7 +287,7 @@ def main():
             raise ValueError(f"Invalid price range: {price_min}-{price_max}")
 
         price = random.randint(price_min, price_max)
-        print(f"=== Generating price phrase ===")
+        print("=== Generating price phrase ===")
         print(f"Price: {price} 塊 (range: {price_min}-{price_max})")
 
         client = create_gemini_client()
@@ -352,7 +352,7 @@ def main():
             set_due_today=not args.no_due_today
         )
 
-        print(f"\n=== Success! ===")
+        print("\n=== Success! ===")
         print(f"Note ID: {note_id}")
         print(f"Traditional: {args.traditional}")
         print(f"Pinyin: {pinyin}")
@@ -363,13 +363,13 @@ def main():
 
         # Step 4: Fill audio for the new note
         fill_audio_script = Path(__file__).resolve().parent.parent / "tts" / "fill_audio_anki.py"
-        print(f"\n⋯ Running fill_audio_anki.py...")
+        print("\n⋯ Running fill_audio_anki.py...")
         subprocess.run([str(fill_audio_script), "--use-pinyin-hint"], check=True)
-        print(f"✓ Audio filled")
+        print("✓ Audio filled")
 
         fill_props = Path(__file__).resolve().parent.parent / "hanzi" / "fill_props_field.py"
         subprocess.run([str(fill_audio_script)], check=True)
-        print(f"✓ Props filled")
+        print("✓ Props filled")
 
     except Exception as e:
         print(f"\n✗ Error: {e}", file=sys.stderr)

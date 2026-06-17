@@ -129,7 +129,7 @@ def download_rtega_data(char: str, rtega_data_dir: Path):
                 print(f"  stderr: {result.stderr}")
             return False
     except subprocess.TimeoutExpired:
-        print(f"  Error: wget timed out after 30 seconds")
+        print("  Error: wget timed out after 30 seconds")
         return False
     except FileNotFoundError:
         raise Exception("wget command not found. Please install wget: brew install wget")
@@ -273,7 +273,7 @@ def main():
             return
 
     # Download data for missing characters
-    print(f"\nDownloading RTEGA data for missing characters...")
+    print("\nDownloading RTEGA data for missing characters...")
     success_count = 0
     failure_count = 0
 

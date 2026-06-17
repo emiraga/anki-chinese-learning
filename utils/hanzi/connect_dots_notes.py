@@ -1143,19 +1143,19 @@ class ConnectDotsManager:
 
             if existing:
                 if existing['left'] != new_left:
-                    print(f"    Left:")
+                    print("    Left:")
                     print(f"      - {existing['left']}")
                     print(f"      + {new_left}")
                 if existing['right'] != new_right:
-                    print(f"    Right:")
+                    print("    Right:")
                     print(f"      - {existing['right']}")
                     print(f"      + {new_right}")
                 if existing['explanation'] != new_explanation:
-                    print(f"    Explanation:")
+                    print("    Explanation:")
                     print(f"      - {existing['explanation']}")
                     print(f"      + {new_explanation}")
                 if existing['fake_right'] != new_fake_right:
-                    print(f"    Fake Right:")
+                    print("    Fake Right:")
                     print(f"      - {existing['fake_right']}")
                     print(f"      + {new_fake_right}")
             else:
@@ -1418,13 +1418,13 @@ def print_frequency_table(
         examples_str = ", ".join(data.examples.get(item, []))
         print(f"{rank:<6}{item:<12}{count:<8}{examples_str}")
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"Total unique {item_label.lower()}s: {len(sorted_items)}")
     print(f"Total items analyzed: {data.total_items}")
 
     data_store = get_data_store()
     data_store_stats = data_store.stats()
-    print(f"\n=== Data Store Stats ===")
+    print("\n=== Data Store Stats ===")
     print(f"Hanzi notes: {data_store_stats['hanzi_notes']}")
     print(f"TOCFL notes: {data_store_stats['tocfl_notes']}")
 
@@ -1806,11 +1806,11 @@ def main():
     print(f"Untracked: {stats['untracked']}")
     print(f"Errors: {stats['errors']}")
 
-    print(f"\n=== Hanzi Coverage ===")
+    print("\n=== Hanzi Coverage ===")
     print(f"Total Hanzi: {coverage.total_hanzi}")
     print(f"Covered: {coverage.covered_hanzi} ({coverage.coverage_percentage:.1f}%)")
     print(f"Uncovered: {len(coverage.uncovered_characters)}")
-    print(f"\nBy generator type:")
+    print("\nBy generator type:")
     for gen_type, chars in sorted(coverage.coverage_by_type.items()):
         print(f"  {gen_type}: {len(chars)} characters")
 
@@ -1821,7 +1821,7 @@ def main():
         print("".join(uncovered_sorted))
 
         # Analyze prop tags of uncovered characters
-        print(f"\n=== Top 30 Prop Tags Among Uncovered Characters ===")
+        print("\n=== Top 30 Prop Tags Among Uncovered Characters ===")
         tag_counts = analyze_uncovered_character_tags(coverage.uncovered_characters)
         print(f"{'Rank':<6}{'Uncov':<8}{'Total':<8}Tag")
         print("-" * 70)
@@ -1830,7 +1830,7 @@ def main():
 
     data_store = get_data_store()
     data_store_stats = data_store.stats()
-    print(f"\n=== Data Store Stats ===")
+    print("\n=== Data Store Stats ===")
     print(f"Hanzi notes: {data_store_stats['hanzi_notes']}")
     print(f"TOCFL notes: {data_store_stats['tocfl_notes']}")
 
