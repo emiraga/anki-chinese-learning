@@ -13,9 +13,8 @@ import json
 import time
 import webbrowser
 from pathlib import Path
-from typing import Set, Tuple
+from typing import Set
 from urllib.parse import quote
-from collections import Counter
 import subprocess
 import sys
 

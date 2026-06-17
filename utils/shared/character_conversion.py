@@ -25,8 +25,10 @@ from typing import Dict, Optional, Tuple
 #   hk2s  : Traditional (Hong Kong)  -> Simplified
 _OPENCC_PRIMARY_CONFIG = "t2s"
 _OPENCC_CONFIGS = ("t2s", "tw2s", "tw2sp", "hk2s")
-_OPENCC_CONVERTERS: Optional[Dict[str, object]] = None
-_OPENCC_DISABLED = False
+# Mutable module-level state (lowercase so the type checker does not treat these
+# as immutable constants).
+_opencc_converters: Optional[Dict[str, object]] = None
+_opencc_disabled = False
 
 
 def _opencc_simplified_all(char: str) -> Optional[Dict[str, str]]:
@@ -34,17 +36,17 @@ def _opencc_simplified_all(char: str) -> Optional[Dict[str, str]]:
     Return each common OpenCC config's simplified form for `char`, keyed by
     config name. Returns None if OpenCC is not installed.
     """
-    global _OPENCC_CONVERTERS, _OPENCC_DISABLED
-    if _OPENCC_DISABLED:
+    global _opencc_converters, _opencc_disabled
+    if _opencc_disabled:
         return None
-    if _OPENCC_CONVERTERS is None:
+    if _opencc_converters is None:
         try:
             from opencc import OpenCC
-            _OPENCC_CONVERTERS = {cfg: OpenCC(cfg) for cfg in _OPENCC_CONFIGS}
+            _opencc_converters = {cfg: OpenCC(cfg) for cfg in _OPENCC_CONFIGS}
         except ImportError:
-            _OPENCC_DISABLED = True
+            _opencc_disabled = True
             return None
-    return {cfg: conv.convert(char) for cfg, conv in _OPENCC_CONVERTERS.items()}  # type: ignore[attr-defined]
+    return {cfg: conv.convert(char) for cfg, conv in _opencc_converters.items()}  # type: ignore[attr-defined]
 
 
 

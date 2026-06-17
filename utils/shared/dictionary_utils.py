@@ -64,7 +64,11 @@ def lookup_meaning(text: str, max_definitions: int = 3) -> Optional[str]:
     return None
 
 
-def lookup_character_meaning(char: str, occurrences: Optional[list] = None, max_definitions: int = 3) -> str:
+def lookup_character_meaning(
+    char: str,
+    occurrences: Optional[list[tuple[str, str, str]]] = None,
+    max_definitions: int = 3,
+) -> str:
     """
     Extract a meaning for a character from phrases containing it or from dictionary.
 
@@ -84,7 +88,7 @@ def lookup_character_meaning(char: str, occurrences: Optional[list] = None, max_
 
     # Look for single-character phrases first if occurrences provided
     if occurrences:
-        for pinyin, phrase, meaning in occurrences:
+        for _pinyin, phrase, meaning in occurrences:
             if phrase == char and meaning:
                 return meaning
 

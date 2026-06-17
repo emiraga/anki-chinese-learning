@@ -34,7 +34,7 @@ from bs4 import BeautifulSoup
 
 # Add parent directories to path for importing shared utilities
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
-from character_conversion import to_traditional, is_simplified
+from character_conversion import is_simplified
 
 
 def html_to_text(html_string: str) -> str:

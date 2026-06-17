@@ -23,7 +23,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.character_discovery import discover_all_characters, extract_all_characters
 
 
-def get_component_chars_from_dong_files(dong_data_dir, top_words_share_threshold=0.02):
+def get_component_chars_from_dong_files(
+    dong_data_dir: Path, top_words_share_threshold: float = 0.02
+) -> tuple[set[str], "Counter[str]"]:
     """
     Extract all component characters referenced in existing dong JSON files
 

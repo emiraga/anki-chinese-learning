@@ -3,7 +3,9 @@
 import csv
 import json
 
-def csv_to_2d_array(csv_filepath, output_filepath=None):
+def csv_to_2d_array(
+    csv_filepath: str, output_filepath: str | None = None
+) -> list[list[str]]:
     """
     Reads a CSV file with header row and index column and converts it to a 2D array.
     Optionally outputs a JSON file that can be imported in TypeScript.

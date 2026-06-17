@@ -17,11 +17,10 @@ This script processes all JSON files in public/data/dong/ directory:
 """
 
 import json
-import os
 import urllib.request
 import urllib.parse
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 import time
 
 # Base directories

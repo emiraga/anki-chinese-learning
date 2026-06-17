@@ -86,7 +86,7 @@ def create_gemini_client(api_key: str | None = None) -> Any:
     Raises:
         Exception: If API key is not found or client creation fails
     """
-    from google import genai
+    from google import genai  # type: ignore[attr-defined]
 
     if api_key is None:
         api_key = get_gemini_api_key()
@@ -121,12 +121,11 @@ def gemini_generate(
     if not prompt or not prompt.strip():
         raise ValueError("Prompt cannot be empty")
 
-    if client is None:
-        client = create_gemini_client()
+    active_client: Any = client if client is not None else create_gemini_client()
 
     for attempt in range(max_retries):
         try:
-            response = client.models.generate_content(model=model_name, contents=prompt)
+            response = active_client.models.generate_content(model=model_name, contents=prompt)
             if response.text is None:
                 raise ValueError(
                     f"Gemini returned empty response (possibly blocked by safety filters). "

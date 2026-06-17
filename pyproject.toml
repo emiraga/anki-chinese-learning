@@ -39,6 +39,12 @@ reportMissingImports = "warning"
 reportUnknownMemberType = "warning"
 reportUnknownArgumentType = "warning"
 reportUnknownVariableType = "warning"
+# A parameter annotated with a type from an untyped third-party library (e.g.
+# bs4's BeautifulSoup) resolves to an unknown type. Treat that as a warning,
+# consistent with the rules above. A *missing* annotation is still an error
+# (reportMissingParameterType), so this does not hide un-annotated parameters.
+reportUnknownParameterType = "warning"
+reportUnknownLambdaType = "warning"
 
 # Pyrefly is used by the Zed editor for in-editor type checking. Keep its scope
 # in sync with the files checked by the `typecheck:python` npm script (and the

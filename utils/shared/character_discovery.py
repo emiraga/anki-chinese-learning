@@ -11,7 +11,7 @@ import json
 import unicodedata
 from pathlib import Path
 from collections import Counter
-from typing import Set, Tuple, List, Dict
+from typing import Set, Tuple, List
 
 from .anki_utils import anki_connect_request, get_notes_info
 
