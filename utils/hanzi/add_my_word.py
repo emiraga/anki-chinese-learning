@@ -368,7 +368,7 @@ def main():
         print("✓ Audio filled")
 
         fill_props = Path(__file__).resolve().parent.parent / "hanzi" / "fill_props_field.py"
-        subprocess.run([str(fill_audio_script)], check=True)
+        subprocess.run([str(fill_props)], check=True)
         print("✓ Props filled")
 
     except Exception as e:

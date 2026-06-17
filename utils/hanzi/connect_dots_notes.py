@@ -415,7 +415,7 @@ class ConnectDotsNote:
 
     def left_str(self) -> str:
         """Get comma-separated left elements, sorted"""
-        return ", ".join([escape_comma(l) for l, _, _ in self.get_sorted_tuples()])
+        return ", ".join([escape_comma(left) for left, _, _ in self.get_sorted_tuples()])
 
     def right_str(self) -> str:
         """Get comma-separated right elements, sorted by corresponding left"""
@@ -950,7 +950,7 @@ class IntersectionGenerator(ConnectDotsGenerator):
         # Collect all left values from generator 2 (normalized for comparison)
         left_set2: set[str] = set()
         for note in notes2:
-            left_set2.update(normalize_cjk_char(l) for l in note.left)
+            left_set2.update(normalize_cjk_char(left_el) for left_el in note.left)
 
         # Build result from generator 1, keeping only elements also in generator 2
         left: list[str] = []
@@ -958,9 +958,9 @@ class IntersectionGenerator(ConnectDotsGenerator):
         explanation: list[str] = []
 
         for note in notes1:
-            for i, l in enumerate(note.left):
-                if normalize_cjk_char(l) in left_set2:
-                    left.append(l)
+            for i, left_el in enumerate(note.left):
+                if normalize_cjk_char(left_el) in left_set2:
+                    left.append(left_el)
                     right.append(note.right[i])
                     if note.explanation:
                         explanation.append(note.explanation[i])

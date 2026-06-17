@@ -20,6 +20,7 @@ import argparse
 import re
 import csv
 from pathlib import Path
+from typing import Any
 
 
 def load_frequency_data(csv_path: str | Path):
@@ -54,9 +55,6 @@ def load_frequency_data(csv_path: str | Path):
                     'level': row['level'],
                 }
     return frequency_data
-
-
-from typing import Any
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):
