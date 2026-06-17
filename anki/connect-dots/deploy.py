@@ -151,7 +151,7 @@ def main() -> None:
     current_front = card_template.get("Front", "")
     current_back = card_template.get("Back", "")
 
-    updates_made = []
+    updates_made: list[str] = []
 
     # Compare and update templates
     front_changed = normalize_whitespace(local_front) != normalize_whitespace(current_front)

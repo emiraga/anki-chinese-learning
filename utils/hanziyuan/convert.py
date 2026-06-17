@@ -142,13 +142,14 @@ def parse_etymology_section(soup: BeautifulSoup, header_text: str, image_map: Di
             items = []
             # Get the next sibling elements until we hit <hr>
             current = h3.next_sibling
-            while current and current.name != 'hr':
+            while current and getattr(current, 'name', None) != 'hr':
                 if hasattr(current, 'find_all'):
                     # Look for div elements with id starting with "etymology"
                     for div in current.find_all('div', id=True):
-                        if div['id'].startswith('etymology'):
+                        div_id = str(div['id'])
+                        if div_id.startswith('etymology'):
                             # Extract the ID (everything after "etymology")
-                            etymology_id = div['id'].replace('etymology', '')
+                            etymology_id = div_id.replace('etymology', '')
                             items.append({
                                 "id": etymology_id,
                                 "image": image_map.get(etymology_id, "")
@@ -212,7 +213,7 @@ def convert_etymology_characters(etymology_html: str, image_map: Dict[str, str])
     }
 
     # Validate: Check if any etymology IDs are missing images
-    missing_images = []
+    missing_images: list[tuple[str, str]] = []
     for section_name, section_data in result.items():
         for item in section_data.get("items", []):
             if item["id"] and not item["image"]:
@@ -253,7 +254,7 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
     # Pattern to match: #etymologyID { background-image: url('data:image/svg+xml;base64,DATA') }
     pattern = r'#etymology(\w+)\s*\{\s*background-image:\s*url\([\'"]data:image/svg\+xml;base64,([^\'"]+)[\'"]\)\s*\}'
 
-    result = {}
+    result: dict[str, str] = {}
     for match in re.finditer(pattern, etymology_styles):
         etymology_id = match.group(1)  # e.g., "J29285"
         base64_data = match.group(2)   # The base64-encoded SVG
@@ -316,7 +317,7 @@ def extract_best_character(char_string: str) -> str:
                 outside_parens += char
 
         # Collect all candidates outside parentheses in the main CJK block
-        candidates_outside = []
+        candidates_outside: list[str] = []
         for char in outside_parens:
             code_point = ord(char)
             # Main CJK block is preferred
@@ -332,7 +333,7 @@ def extract_best_character(char_string: str) -> str:
     # Main block: U+4E00-U+9FFF
     # Extension A: U+3400-U+4DBF
     # Extension B and beyond: U+20000-U+2EBEF (but these are rare/archaic)
-    candidates = []
+    candidates: list[tuple[str, int]] = []
     for char in char_string:
         if char in ('(', ')'):
             continue
@@ -387,7 +388,8 @@ def extract_character_variants(char_field: str) -> Dict[str, Any]:
     while i < len(parts):
         if parts[i] == "older" and i + 1 < len(parts):
             if "olderForms" not in result:
-                result["olderForms"] = []
+                older_forms: list[str] = []
+                result["olderForms"] = older_forms
             # Collect all characters after "older" until we hit another keyword
             i += 1
             while i < len(parts) and parts[i] not in ["mutant", "mutants", "older"]:
@@ -398,7 +400,8 @@ def extract_character_variants(char_field: str) -> Dict[str, Any]:
                 i += 1
         elif parts[i] == "mutant" and i + 1 < len(parts):
             if "mutants" not in result:
-                result["mutants"] = []
+                mutants: list[str] = []
+                result["mutants"] = mutants
             i += 1
             for char in parts[i]:
                 if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
@@ -406,7 +409,8 @@ def extract_character_variants(char_field: str) -> Dict[str, Any]:
             i += 1
         elif parts[i] == "mutants" and i + 1 < len(parts):
             if "mutants" not in result:
-                result["mutants"] = []
+                mutants: list[str] = []
+                result["mutants"] = mutants
             i += 1
             # "mutants" can have multiple characters in one string
             while i < len(parts) and parts[i] not in ["older", "mutant", "mutants"]:
@@ -479,12 +483,12 @@ def parse_decomposition_notes(notes_text: str) -> Dict[str, Any]:
 
     lines = notes_text.strip().split('\n')
     result: Dict[str, Any] = {}
-    explanatory_notes = []
-    rule_references = []
-    cross_references = []
-    related_characters = []
-    special_markers = []
-    plain_text = []
+    explanatory_notes: list[str] = []
+    rule_references: list[dict[str, str]] = []
+    cross_references: list[str] = []
+    related_characters: list[str] = []
+    special_markers: list[str] = []
+    plain_text: list[str] = []
 
     for line in lines:
         line = line.strip()
@@ -607,9 +611,9 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
     if "mutants" in variant_info:
         result["mutants"] = variant_info["mutants"]
 
-    notes_lines = []
-    simplification_rules = []
-    cross_references = []
+    notes_lines: list[str] = []
+    simplification_rules: list[dict[str, Any]] = []
+    cross_references: list[str] = []
 
     # Parse remaining lines - combine multi-line component descriptions
     i = 1
@@ -748,7 +752,7 @@ def parse_character_decomposition(decomposition_text: str) -> Dict[str, Any]:
                     if '+' in marker_content:
                         # Split by '+' and parse each component
                         component_parts = [part.strip() for part in marker_content.split('+')]
-                        added_list = []
+                        added_list: list[dict[str, str] | str] = []
                         for part in component_parts:
                             part_tokens = part.split()
                             if len(part_tokens) >= 2:

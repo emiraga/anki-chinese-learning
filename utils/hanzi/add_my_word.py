@@ -25,7 +25,6 @@ from shared.gemini_utils import create_gemini_client, gemini_generate, translate
 from shared.dictionary_utils import lookup_meaning
 
 
-from typing import Any
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None):

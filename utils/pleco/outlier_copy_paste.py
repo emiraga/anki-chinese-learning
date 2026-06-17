@@ -26,7 +26,7 @@ import time
 import hashlib
 import base64
 from pathlib import Path
-from typing import TypedDict, List, Optional, Tuple
+from typing import TypedDict, List, Optional, Tuple, Any
 try:
     from bs4 import BeautifulSoup
     BS4_AVAILABLE = True
@@ -218,7 +218,7 @@ def get_clipboard_plain_text():
         return None
 
 
-def parse_hex_data(data_str, data_type="DATA"):
+def parse_hex_data(data_str: str, data_type: str = "DATA") -> str | None:
     """Parse hex data from AppleScript format"""
     if not data_str or data_str == 'missing value':
         return None
@@ -257,7 +257,7 @@ def parse_hex_data(data_str, data_type="DATA"):
     return data_str
 
 
-def format_html_readable(html_str):
+def format_html_readable(html_str: str) -> str | None:
     """Format HTML for readable display"""
     if not html_str:
         return None
@@ -347,11 +347,11 @@ def validate_character_pinyin(char: Character, char_hanzi: str):
     if 'pinyin' not in char:
         return  # No pinyin to validate
 
-    pinyin_list = char.get('pinyin', [])
+    pinyin_list: list[str] = char.get('pinyin', [])
     if not pinyin_list:
         return  # Empty list is okay
 
-    invalid = []
+    invalid: list[str] = []
     for pinyin in pinyin_list:
         if not validate_pinyin(pinyin):
             invalid.append(pinyin)
@@ -363,7 +363,7 @@ def validate_character_pinyin(char: Character, char_hanzi: str):
         )
 
 
-def parse_character_from_li(li_element) -> Optional[Character]:
+def parse_character_from_li(li_element: Any) -> Optional[Character]:
     """Parse a character entry from a list item"""
     if not li_element:
         return None
@@ -465,7 +465,7 @@ def parse_character_from_li(li_element) -> Optional[Character]:
     return char if char.get('traditional') else None
 
 
-def extract_image_id_from_img_tag(img_tag) -> Tuple[Optional[str], Optional[bytes]]:
+def extract_image_id_from_img_tag(img_tag: Any) -> Tuple[Optional[str], Optional[bytes]]:
     """
     Extract image data from an img tag and generate an ID for it.
     Returns (image_id, image_bytes) or (None, None) if no image data found.
@@ -581,7 +581,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
 
                 # Extract references from links in this paragraph
                 for link in sibling.find_all('a'):
-                    href = link.get('href', '')
+                    href = str(link.get('href', ''))
                     # Get text from link, or from img alt if it's an image link
                     link_text = link.get_text(strip=True)
                     if not link_text:
@@ -633,10 +633,10 @@ def parse_outlier_html(html_str: str) -> OutlierData:
 
     # Process each h2 section
     current_h2 = None
-    pending_text = []
-    pending_elements = []
+    pending_text: list[str] = []
+    pending_elements: list[Any] = []
 
-    def save_section(h2_name, text_list, element_list, chars_list=None):
+    def save_section(h2_name: str, text_list: list[str], element_list: list[Any], chars_list: Optional[list[Character]] = None) -> None:
         """Helper to save section data"""
         if not h2_name:
             return
@@ -717,8 +717,8 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                 save_section(current_h2, pending_text, pending_elements)
 
             current_h2 = element.get_text(strip=True).lower()
-            pending_text = []
-            pending_elements = []
+            pending_text: list[str] = []
+            pending_elements: list[Any] = []
 
         elif element.name in ['p', 'span'] and current_h2:
             p_text = element.get_text(strip=True)
@@ -736,8 +736,8 @@ def parse_outlier_html(html_str: str) -> OutlierData:
 
             # Save section with both characters and explanation
             save_section(current_h2, pending_text, pending_elements, characters)
-            pending_text = []
-            pending_elements = []
+            pending_text: list[str] = []
+            pending_elements: list[Any] = []
 
     # Save final section if it had only text, no list
     if current_h2 and pending_text:
@@ -773,7 +773,7 @@ def generate_preload_list():
 
     # Count sound component usage for each character and track sample characters
     sound_component_counts = {}
-    sound_component_samples = {}  # Map from component to a sample character that uses it
+    sound_component_samples: dict[str, str] = {}  # Map from component to a sample character that uses it
 
     dong_files = list(dong_dir.glob('*.json'))
     print(f"Scanning {len(dong_files)} Dong Chinese files...")
@@ -850,7 +850,7 @@ def generate_preload_list():
     print()
 
 
-def rebuild_from_html_files(html_dir):
+def rebuild_from_html_files(html_dir: Path) -> None:
     """Rebuild JSON files from saved HTML files"""
     script_dir = Path(__file__).parent.parent.parent
     json_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'

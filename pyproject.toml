@@ -11,6 +11,8 @@ dependencies = [
     "chinese-english-lookup",
     "pypinyin",
     "google-cloud-texttospeech",
+    "beautifulsoup4",
+    "lxml",
 ]
 
 [dependency-groups]

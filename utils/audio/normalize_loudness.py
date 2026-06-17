@@ -31,8 +31,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from pydub import AudioSegment
-from tqdm import tqdm
+from pydub import AudioSegment  # pyrefly: ignore[missing-import]
+from tqdm import tqdm  # pyrefly: ignore[missing-import]
 
 
 # Cache file location (same directory as script)

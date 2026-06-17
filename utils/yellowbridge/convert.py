@@ -19,7 +19,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from html.parser import HTMLParser
 
 
@@ -408,9 +408,11 @@ def process_file(file_path: Path) -> dict[str, Any]:
     # Extract functional components
     functional_components = extract_functional_components(decomp_html)
 
+    pinyin: list[str] = char_info['pinyin'] if char_info else []
+
     result = {
         'character': char_info['character'] if char_info else filename_char,
-        'pinyin': char_info['pinyin'] if char_info else [],
+        'pinyin': pinyin,
         'definition': definition,
         'functionalComponents': functional_components,
         'radical': extract_radical(decomp_html),

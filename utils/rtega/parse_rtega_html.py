@@ -142,7 +142,8 @@ def save_to_cache(svg_name: str, svg_content: str, metadata: Dict[str, Any]):
 
         # Update metadata
         if 'entries' not in metadata:
-            metadata['entries'] = {}
+            entries: dict[str, dict[str, Any]] = {}
+            metadata['entries'] = entries
 
         metadata['entries'][svg_name] = {
             'version': CACHE_VERSION,
@@ -265,7 +266,8 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
     img_tags = soup.find_all('img', attrs={'svg': True})
 
     for img_tag in img_tags:
-        svg_name = img_tag.get('svg')
+        svg_name_raw = img_tag.get('svg')
+        svg_name = str(svg_name_raw) if svg_name_raw else ''
         if svg_name:
             # Fetch the SVG content
             svg_content = fetch_svg_content(svg_name)
@@ -276,10 +278,8 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
 
                 if svg_element:
                     # Add a class to identify these as inlined SVGs
-                    if svg_element.get('class'):
-                        svg_element['class'].append('inlined-svg')
-                    else:
-                        svg_element['class'] = ['inlined-svg']
+                    existing_class = str(svg_element.get('class', ''))
+                    svg_element['class'] = f"{existing_class} inlined-svg".strip() if existing_class else 'inlined-svg'
 
                     # Add data attribute to track original svg name
                     svg_element['data-svg-name'] = svg_name
@@ -295,13 +295,14 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
                     if not svg_element.get('viewBox'):
                         # Try to extract from original dimensions in the fetched content
                         original_svg = BeautifulSoup(svg_content, 'xml').find('svg')
-                        width = original_svg.get('width', '100')
-                        height = original_svg.get('height', '100')
-                        # Remove any units from width/height
-                        width_val = re.sub(r'[^0-9.]', '', str(width))
-                        height_val = re.sub(r'[^0-9.]', '', str(height))
-                        if width_val and height_val:
-                            svg_element['viewBox'] = f"0 0 {width_val} {height_val}"
+                        if original_svg is not None:
+                            width = original_svg.get('width', '100')
+                            height = original_svg.get('height', '100')
+                            # Remove any units from width/height
+                            width_val = re.sub(r'[^0-9.]', '', str(width))
+                            height_val = re.sub(r'[^0-9.]', '', str(height))
+                            if width_val and height_val:
+                                svg_element['viewBox'] = f"0 0 {width_val} {height_val}"
 
                     # Replace img tag with SVG element
                     img_tag.replace_with(svg_element)
@@ -322,7 +323,7 @@ def extract_referenced_characters(html_content: str) -> List[str]:
 
     for link in soup.find_all('a'):
         # Check for href with ?c= parameter
-        href = link.get('href', '')
+        href = str(link.get('href', ''))
         match = re.search(r'\?c=([^&]+)', href)
         if match:
             char = match.group(1)
@@ -392,7 +393,7 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> O
         mnemonic_text = extract_text_from_html(mnemonic_cell) if mnemonic_cell else ""
 
         # Extract related characters from second cell (cells[1])
-        related_chars = []
+        related_chars: list[str] = []
         related_cell = cells[1]
         # Look for font tags with uid attributes
         related_fonts = related_cell.find_all('font', {'id': 'chanzilarge'})
@@ -404,18 +405,18 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> O
         # Also check for links (backup method)
         if not related_chars:
             for link in related_cell.find_all('a'):
-                href = link.get('href', '')
+                href = str(link.get('href', ''))
                 match = re.search(r'\?c=([^&]+)', href)
                 if match:
                     related_chars.append(match.group(1))
 
         # Extract additional related characters from last cell (if present)
-        additional_related_chars = []
+        additional_related_chars: list[str] = []
         if len(cells) >= 5:
             additional_cell = cells[4]
             additional_links = additional_cell.find_all('a')
             for link in additional_links:
-                href = link.get('href', '')
+                href = str(link.get('href', ''))
                 match = re.search(r'\?c=([^&]+)', href)
                 if match:
                     additional_related_chars.append(match.group(1))
@@ -556,7 +557,7 @@ def main():
     print()
 
     # Process all files
-    all_characters = []
+    all_characters: list[dict[str, Any]] = []
     skipped_count = 0
 
     for i, html_file in enumerate(html_files, 1):
