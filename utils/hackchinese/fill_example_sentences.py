@@ -58,8 +58,7 @@ def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
 
     if response and response.get("error") is None:
         return True
-    else:
-        raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
+    raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
 def get_learned_characters() -> set[str]:

@@ -109,9 +109,8 @@ def check_traditional_exists(traditional: str) -> bool:
     if response and response.get("result") is not None:
         note_ids = response["result"]
         return len(note_ids) > 0
-    else:
-        error = response.get("error", "Unknown error") if response else "No response"
-        raise Exception(f"Failed to check if Traditional field exists: {error}")
+    error = response.get("error", "Unknown error") if response else "No response"
+    raise Exception(f"Failed to check if Traditional field exists: {error}")
 
 
 def create_tocfl_note(
@@ -187,9 +186,8 @@ def create_tocfl_note(
                     print(f"⚠ Warning: Failed to suspend cards for note {note_id}")
 
         return note_id
-    else:
-        error = response.get("error", "Unknown error") if response else "No response"
-        raise Exception(f"Failed to create note for '{traditional}': {error}")
+    error = response.get("error", "Unknown error") if response else "No response"
+    raise Exception(f"Failed to create note for '{traditional}': {error}")
 
 
 def generate_price_phrase(price: int, client: Any | None = None) -> str:

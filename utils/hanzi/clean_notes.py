@@ -195,8 +195,7 @@ def update_hanzi_meaning2(note_id: int, meaning: str) -> bool:
 
     if response and response.get("error") is None:
         return True
-    else:
-        raise RuntimeError(f"Failed to update note {note_id}: {response}")
+    raise RuntimeError(f"Failed to update note {note_id}: {response}")
 
 
 def add_tag_to_note(note_id: int, tag: str) -> bool:
@@ -214,8 +213,7 @@ def add_tag_to_note(note_id: int, tag: str) -> bool:
 
     if response and response.get("error") is None:
         return True
-    else:
-        raise RuntimeError(f"Failed to add tag to note {note_id}: {response}")
+    raise RuntimeError(f"Failed to add tag to note {note_id}: {response}")
 
 
 def process_phrase_note(

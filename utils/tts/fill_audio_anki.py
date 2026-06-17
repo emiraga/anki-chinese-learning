@@ -259,8 +259,7 @@ def store_media_file(filename: str, audio_data: bytes) -> bool:
     if response and response.get("result"):
         print(f"Audio file '{filename}' stored in Anki media collection")
         return True
-    else:
-        raise Exception(f"Failed to store audio file '{filename}'")
+    raise Exception(f"Failed to store audio file '{filename}'")
 
 
 def update_note_audio(note_id: int, audio_filename: str) -> bool:
@@ -287,8 +286,7 @@ def update_note_audio(note_id: int, audio_filename: str) -> bool:
     if response and response.get("error") is None:  # anki-connect returns None on success
         print(f"Updated Audio field for note {note_id}")
         return True
-    else:
-        raise Exception(f"Failed to update Audio field for note {note_id}")
+    raise Exception(f"Failed to update Audio field for note {note_id}")
 
 
 def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:
@@ -407,8 +405,7 @@ def remove_tag_from_note(note_id: int, tag: str) -> bool:
     if response and response.get("error") is None:
         print(f"Removed tag '{tag}' from note {note_id}")
         return True
-    else:
-        raise Exception(f"Failed to remove tag '{tag}' from note {note_id}")
+    raise Exception(f"Failed to remove tag '{tag}' from note {note_id}")
 
 
 def get_clean_field_value(note_info: NoteInfo, field_name: str) -> str:

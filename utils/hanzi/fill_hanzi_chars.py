@@ -309,12 +309,10 @@ def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = ""
         if suspend_response and suspend_response.get("error") is None:
             print(f"Suspended note {note_id}")
             return True
-        else:
-            print(f"Failed to suspend note {note_id}")
-            return False
-    else:
-        print(f"Failed to create note for character '{char}': {response}")
+        print(f"Failed to suspend note {note_id}")
         return False
+    print(f"Failed to create note for character '{char}': {response}")
+    return False
 
 
 def process_single_character(char: str, char_data: dict[str, list[tuple[str, str, str]]] | None = None) -> bool:

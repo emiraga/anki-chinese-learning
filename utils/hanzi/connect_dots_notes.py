@@ -585,12 +585,10 @@ class ConnectDotsGenerator(ABC):
     @abstractmethod
     def generator_type(self) -> str:
         """Return the type identifier for this generator"""
-        pass
 
     @abstractmethod
     def generate_notes(self) -> list[ConnectDotsNote]:
         """Generate all ConnectDots notes for this generator"""
-        pass
 
 
 class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
@@ -609,12 +607,10 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
     @abstractmethod
     def get_key_suffix(self) -> str:
         """Get the suffix for the note key"""
-        pass
 
     @abstractmethod
     def get_notes(self) -> list[HanziNote]:
         """Get the notes to process"""
-        pass
 
     def get_fake_right(self, notes: list[HanziNote]) -> list[str]:
         """Get fake_right values. Override in subclasses if needed."""

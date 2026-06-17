@@ -108,9 +108,8 @@ def update_note_zhuyin(note_id: int, zhuyin_text: str) -> bool:
     if response and response.get("error") is None:  # anki-connect returns None on success
         print(f"Updated Zhuyin field for note {note_id} with: {zhuyin_text}")
         return True
-    else:
-        print(f"Failed to update Zhuyin field for note {note_id}: {response}")
-        return False
+    print(f"Failed to update Zhuyin field for note {note_id}: {response}")
+    return False
 
 
 def update_zhuyin_for_note(note_type: str, note_id: int) -> None:

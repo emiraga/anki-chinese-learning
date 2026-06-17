@@ -126,11 +126,10 @@ def download_rtega_data(char: str, rtega_data_dir: Path):
                     f"This likely indicates an error page or missing data."
                 )
             return True
-        else:
-            print(f"  Error: wget failed with return code {result.returncode}")
-            if result.stderr:
-                print(f"  stderr: {result.stderr}")
-            return False
+        print(f"  Error: wget failed with return code {result.returncode}")
+        if result.stderr:
+            print(f"  stderr: {result.stderr}")
+        return False
     except subprocess.TimeoutExpired:
         print("  Error: wget timed out after 30 seconds")
         return False

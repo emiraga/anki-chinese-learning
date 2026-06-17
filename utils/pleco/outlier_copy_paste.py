@@ -228,11 +228,10 @@ def format_html_readable(html_str: str) -> str | None:
     if BS4_AVAILABLE:
         soup = BeautifulSoup(html_str, "html.parser")
         return soup.prettify()
-    else:
-        # Basic formatting without BeautifulSoup
-        formatted = html_str
-        formatted = formatted.replace("><", ">\n<")
-        return formatted
+    # Basic formatting without BeautifulSoup
+    formatted = html_str
+    formatted = formatted.replace("><", ">\n<")
+    return formatted
 
 
 def validate_pinyin(pinyin: str) -> bool:

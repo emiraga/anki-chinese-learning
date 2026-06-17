@@ -40,7 +40,23 @@ select = [
     "C4",     # flake8-comprehensions (better comprehensions)
     "SIM",    # flake8-simplify (code simplifications)
     "RUF",    # ruff-specific rules
+    # "T20",    # flake8-print (leftover print statements)
+    "PTH",    # flake8-use-pathlib (use pathlib instead of os.path)
+    "ARG",    # flake8-unused-arguments
+    "RET",    # flake8-return (simplifiable return logic)
+    "PERF",   # perflint (performance anti-patterns)
+    "TRY",    # tryceratops (exception handling improvements)
+    "FLY",    # flynt (str.format() → f-strings)
+    "PIE",    # flake8-pie (miscellaneous bug-prevention lints)
 ]
+extend-safe-fixes = ["F401", "F841", "I", "UP", "C4", "SIM", "FLY", "PTH"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["utils"]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["ARG001"]
+"*_test.py" = ["ARG001"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -66,3 +82,7 @@ python-version = "3.11"
 missing-import = "error"
 implicit-any = "error"
 untyped-import = "error"
+
+[tool.pytest.ini_options]
+testpaths = ["utils"]
+python_files = ["test_*.py", "*_test.py"]
