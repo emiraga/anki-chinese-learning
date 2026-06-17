@@ -12,7 +12,7 @@ import argparse
 from pathlib import Path
 
 
-def anki_connect_request(action, params=None):
+def anki_connect_request(action: str, params: dict[str, object] | None = None):
     """
     Send a request to anki-connect
 

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Set, List, Dict, Tuple
 
 
-def anki_connect_request(action, params=None):
+def anki_connect_request(action: str, params: dict[str, object] | None = None):
     """
     Send a request to anki-connect
 
