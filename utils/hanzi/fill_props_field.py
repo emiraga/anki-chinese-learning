@@ -230,6 +230,7 @@ Reply in this EXACT JSON format (no markdown, no code blocks):
 Example response format:
 {{"V": [{{"Traditional": "我要吃飯。", "English": "I want to eat."}}], "N": [{{"Traditional": "這是我的飯。", "English": "This is my rice."}}]}}"""
 
+    response = ""
     try:
         response = gemini_generate(prompt, client=gemini_client, max_retries=2)
 

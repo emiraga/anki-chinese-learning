@@ -227,6 +227,7 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
 
     # Process the fetched notes
     for i, note_info in enumerate(all_notes_info, 1):
+        note_id = None
         try:
             note_id = note_info.get('noteId')
             note_type = note_info.get('modelName', 'Unknown')

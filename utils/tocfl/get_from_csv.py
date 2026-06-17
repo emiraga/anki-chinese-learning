@@ -12,6 +12,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypedDict
 
 # Add shared utils to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
@@ -366,8 +367,8 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
     print("Fetching note details...")
     notes = get_notes_info(note_ids)
 
-    differences: list[dict[str, object]] = []
-    context_updates: list[dict[str, object]] = []
+    differences: list[PosDifference] = []
+    context_updates: list[ContextUpdate] = []
 
     for note in notes:
         traditional = note["fields"].get("Traditional", {}).get("value", "").strip()

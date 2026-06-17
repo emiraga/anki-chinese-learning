@@ -74,11 +74,11 @@ class OutlierData(TypedDict, total=False):
     simplified: Optional[str]
     pinyin: Optional[List[str]]
     note: Optional[str]
-    references: Optional[List[Reference]]
-    sound_series: Optional[Series]
-    semantic_series: Optional[Series]
-    empty_component: Optional[EmptyComponentData]
-    radical: Optional[RadicalData]
+    references: List[Reference]
+    sound_series: Series
+    semantic_series: Series
+    empty_component: EmptyComponentData
+    radical: RadicalData
     raw_html: Optional[str]
 
 
@@ -546,7 +546,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
         img_tag = h1.find('img')
         if img_tag:
             image_id, image_bytes = extract_image_id_from_img_tag(img_tag)
-            if image_id:
+            if image_id and image_bytes is not None:
                 # Save the image
                 script_dir = Path(__file__).parent.parent.parent
                 images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'

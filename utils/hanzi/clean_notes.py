@@ -324,6 +324,7 @@ def main():
         if success:
             success_count += 1
         else:
+            assert skip_reason is not None
             skip_reasons[skip_reason] += 1
             reason_msg = {
                 "no_matching_hanzi": "No matching Hanzi note found",

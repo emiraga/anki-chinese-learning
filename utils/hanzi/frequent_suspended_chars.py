@@ -297,7 +297,7 @@ def main():
         char_counts = Counter()
         for char in suspended_chars:
             if char in frequency_data:
-                char_counts[char] = frequency_data[char][source_mode]
+                char_counts[char] = int(frequency_data[char][source_mode])
 
         if not char_counts:
             print("\nNo suspended characters found in frequency data.")
