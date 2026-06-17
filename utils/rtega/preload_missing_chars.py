@@ -6,7 +6,6 @@
 # ]
 # ///
 
-import os
 import subprocess
 import time
 import json
@@ -21,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.character_discovery import discover_all_characters, extract_all_characters, normalize_cjk_char
 
 
-def get_component_chars_from_rtega_files(rtega_data_dir):
+def get_component_chars_from_rtega_files(rtega_data_dir: Path):
     """
     Extract all referenced and related characters from existing rtega JSON files
 
@@ -90,7 +89,7 @@ def get_component_chars_from_rtega_files(rtega_data_dir):
     return component_chars, component_frequency
 
 
-def download_rtega_data(char, rtega_data_dir):
+def download_rtega_data(char: str, rtega_data_dir: Path):
     """
     Download RTEGA HTML data for a character using wget
 
@@ -139,7 +138,7 @@ def download_rtega_data(char, rtega_data_dir):
         return False
 
 
-def download_char_with_progress(char, rtega_data_dir, index=None, total=None):
+def download_char_with_progress(char: str, rtega_data_dir: Path, index: int | None = None, total: int | None = None):
     """
     Download a single character with progress reporting
 

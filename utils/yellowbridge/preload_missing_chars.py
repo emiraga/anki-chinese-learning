@@ -18,7 +18,7 @@ import json
 import time
 import webbrowser
 from pathlib import Path
-from typing import Set, Tuple
+from typing import Any, Set, Tuple
 from urllib.parse import quote
 from collections import Counter
 import subprocess
@@ -26,7 +26,7 @@ import sys
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from shared.character_discovery import discover_all_characters, extract_all_characters
+from shared.character_discovery import discover_all_characters
 
 # Characters that cannot be loaded from YellowBridge
 BLACKLISTED_CHARS = {
@@ -54,7 +54,7 @@ BLACKLISTED_CHARS = {
 }
 
 
-def extract_referenced_chars(json_data: dict) -> Set[str]:
+def extract_referenced_chars(json_data: dict[str, Any]) -> Set[str]:
     """Extract all characters referenced in a JSON data structure."""
     chars = set()
 
@@ -92,7 +92,7 @@ def extract_referenced_chars(json_data: dict) -> Set[str]:
     return chars
 
 
-def get_all_referenced_chars(info_dir: Path) -> Tuple[Set[str], Counter]:
+def get_all_referenced_chars(info_dir: Path) -> Tuple[Set[str], "Counter[str]"]:
     """Get all characters referenced across all info files."""
     all_chars = set()
     char_frequency = Counter()

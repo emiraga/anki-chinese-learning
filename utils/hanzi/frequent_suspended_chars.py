@@ -22,7 +22,7 @@ import csv
 from pathlib import Path
 
 
-def load_frequency_data(csv_path):
+def load_frequency_data(csv_path: str | Path):
     """
     Load frequency data from CSV file
 
@@ -167,7 +167,7 @@ def get_active_hanzi_characters():
     return active_chars
 
 
-def count_characters_in_phrases(note_types, target_chars):
+def count_characters_in_phrases(note_types: list[str], target_chars: set[str]):
     """
     Count frequency of target characters in phrase notes
 

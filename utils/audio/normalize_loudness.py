@@ -29,7 +29,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -39,7 +39,7 @@ from tqdm import tqdm
 CACHE_FILE = Path(__file__).resolve().parent / ".loudness_cache.json"
 
 
-def load_cache() -> dict[str, dict]:
+def load_cache() -> dict[str, dict[str, Any]]:
     """Load the cache from disk."""
     if not CACHE_FILE.exists():
         return {}
@@ -50,7 +50,7 @@ def load_cache() -> dict[str, dict]:
         return {}
 
 
-def save_cache(cache: dict[str, dict]) -> None:
+def save_cache(cache: dict[str, dict[str, Any]]) -> None:
     """Save the cache to disk."""
     try:
         with open(CACHE_FILE, "w") as f:
@@ -65,7 +65,7 @@ def get_file_key(filepath: str) -> tuple[str, float, int]:
     return (os.path.basename(filepath), stat.st_mtime, stat.st_size)
 
 
-def get_cached_dbfs(cache: dict[str, dict], filepath: str) -> Optional[float]:
+def get_cached_dbfs(cache: dict[str, dict[str, Any]], filepath: str) -> Optional[float]:
     """Get cached dBFS value if cache is valid for this file."""
     filename, mtime, size = get_file_key(filepath)
     if filename in cache:
@@ -75,7 +75,7 @@ def get_cached_dbfs(cache: dict[str, dict], filepath: str) -> Optional[float]:
     return None
 
 
-def update_cache(cache: dict[str, dict], filepath: str, dbfs: float) -> None:
+def update_cache(cache: dict[str, dict[str, Any]], filepath: str, dbfs: float) -> None:
     """Update cache with new dBFS value for a file."""
     filename, mtime, size = get_file_key(filepath)
     cache[filename] = {"mtime": mtime, "size": size, "dbfs": dbfs}
@@ -132,7 +132,7 @@ def get_matching_files(media_path: Path) -> list[tuple[str, str]]:
 
 def analyze_file(
     filepath: str,
-    cache: Optional[dict[str, dict]] = None
+    cache: Optional[dict[str, dict[str, Any]]] = None
 ) -> Optional[float]:
     """Analyze a single file and return its dBFS value.
 
@@ -279,7 +279,7 @@ def normalize_file(
     filepath: str,
     target_dbfs: float,
     dry_run: bool = True,
-    cache: Optional[dict[str, dict]] = None
+    cache: Optional[dict[str, dict[str, Any]]] = None
 ) -> tuple[bool, str]:
     """Normalize a single file to the target loudness.
 

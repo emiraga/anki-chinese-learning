@@ -18,7 +18,7 @@ import requests
 import hashlib
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from bs4 import BeautifulSoup, Tag
 
 
@@ -63,7 +63,7 @@ def get_cache_metadata_file() -> Path:
     return get_cache_dir() / 'metadata.json'
 
 
-def load_cache_metadata() -> Dict:
+def load_cache_metadata() -> Dict[str, Any]:
     """Load cache metadata from disk."""
     metadata_file = get_cache_metadata_file()
     if metadata_file.exists():
@@ -76,7 +76,7 @@ def load_cache_metadata() -> Dict:
     return {'version': CACHE_VERSION, 'entries': {}}
 
 
-def save_cache_metadata(metadata: Dict):
+def save_cache_metadata(metadata: Dict[str, Any]):
     """Save cache metadata to disk."""
     metadata_file = get_cache_metadata_file()
     try:
@@ -93,7 +93,7 @@ def get_cache_file_path(svg_name: str) -> Path:
     return get_cache_dir() / f"{name_hash}.svg"
 
 
-def is_cache_valid(svg_name: str, metadata: Dict) -> bool:
+def is_cache_valid(svg_name: str, metadata: Dict[str, Any]) -> bool:
     """Check if cached SVG is still valid."""
     if svg_name not in metadata.get('entries', {}):
         return False
@@ -117,7 +117,7 @@ def is_cache_valid(svg_name: str, metadata: Dict) -> bool:
     return cache_file.exists()
 
 
-def load_from_cache(svg_name: str, metadata: Dict) -> Optional[str]:
+def load_from_cache(svg_name: str, metadata: Dict[str, Any]) -> Optional[str]:
     """Load SVG content from disk cache."""
     if not is_cache_valid(svg_name, metadata):
         return None
@@ -131,7 +131,7 @@ def load_from_cache(svg_name: str, metadata: Dict) -> Optional[str]:
         return None
 
 
-def save_to_cache(svg_name: str, svg_content: str, metadata: Dict):
+def save_to_cache(svg_name: str, svg_content: str, metadata: Dict[str, Any]):
     """Save SVG content to disk cache."""
     cache_file = get_cache_file_path(svg_name)
 
@@ -155,7 +155,7 @@ def save_to_cache(svg_name: str, svg_content: str, metadata: Dict):
         print(f"  Warning: Failed to cache SVG {svg_name}: {e}")
 
 
-def fetch_svg_content(svg_name: str, cache_metadata: Optional[Dict] = None) -> Optional[str]:
+def fetch_svg_content(svg_name: str, cache_metadata: Optional[Dict[str, Any]] = None) -> Optional[str]:
     """Fetch SVG content from rtega.be server and cache it."""
     # Check in-memory cache first
     if svg_name in _svg_cache:
@@ -331,7 +331,7 @@ def extract_referenced_characters(html_content: str) -> List[str]:
     return chars
 
 
-def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> Optional[Dict]:
+def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> Optional[Dict[str, Any]]:
     """Parse a single table row containing character data."""
     try:
         # Get row ID
@@ -448,7 +448,7 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> O
         return None
 
 
-def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Dict]:
+def parse_html_file(file_path: Path, file_num: int, total_files: int) -> List[Dict[str, Any]]:
     """Parse an HTML file and extract all character data."""
     progress_pct = (file_num / total_files) * 100
     print(f"[{progress_pct:5.1f}%] Parsing {file_path.name}...")
@@ -506,7 +506,7 @@ def update_marker_file(html_file: Path, output_dir: Path):
     marker_file.touch()
 
 
-def save_character_json(char_data: Dict, output_dir: Path):
+def save_character_json(char_data: Dict[str, Any], output_dir: Path):
     """Save character data to a JSON file."""
     char = char_data['character']
 
@@ -516,7 +516,7 @@ def save_character_json(char_data: Dict, output_dir: Path):
         filepath = output_dir / f"{char}.json"
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(char_data, f, ensure_ascii=False, indent=2)
-    except (OSError, ValueError) as e:
+    except (OSError, ValueError):
         # Fallback for problematic filename characters
         filepath = output_dir / f"char_{char_data['id']}.json"
         with open(filepath, 'w', encoding='utf-8') as f:

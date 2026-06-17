@@ -13,7 +13,8 @@ import sys
 from pathlib import Path
 import time
 import argparse
-from google.cloud import translate_v2 as translate
+from typing import Any
+from google.cloud import translate_v2 as translate  # type: ignore[attr-defined]
 from pypinyin import pinyin, Style
 
 # In-memory cache for translations
@@ -22,7 +23,7 @@ _translation_cache: dict[str, str] = {}
 _translation_client = None
 
 
-def get_pinyin_from_library(char: str) -> list:
+def get_pinyin_from_library(char: str) -> list[Any]:
     """
     Get pinyin for a character using pypinyin library as fallback.
     Returns all possible pronunciations (heteronyms) if available.
@@ -113,8 +114,11 @@ def translate_text_with_google(text: str, max_retries: int = 3) -> str:
             else:
                 raise Exception(f"Translation failed after {max_retries} attempts: {e}")
 
+    # Unreachable when max_retries >= 1; satisfies the type checker.
+    raise Exception("Translation failed: no attempts were made")
 
-def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True) -> dict[str, list]:
+
+def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True) -> dict[str, list[Any]]:
     """
     Build a mapping from character to pinyinFrequencies by reading all JSON files.
     Also includes characters from the 'chars' array and pypinyin library as fallbacks.
@@ -126,7 +130,7 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
     Returns:
         Dictionary mapping character (str) to pinyinFrequencies (list)
     """
-    char_to_pinyin: dict[str, list] = {}
+    char_to_pinyin: dict[str, list[Any]] = {}
     all_componentIn_chars: set[str] = set()
 
     # First pass: collect all data from files
@@ -173,7 +177,7 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
     return char_to_pinyin
 
 
-def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list], dry_run: bool = False) -> bool:
+def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry_run: bool = False) -> bool:
     """
     Process a single dong JSON file and add English translations and pinyinFrequencies.
 
