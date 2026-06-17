@@ -368,7 +368,7 @@ def load_all_data() -> HanziDataStore:
 
 def escape_comma(text: str) -> str:
     """Replace ASCII comma with fullwidth comma + variation selector to avoid field delimiter conflicts"""
-    return text.replace(",", "，︀")
+    return text.replace(",", "，︀")  # noqa: RUF001
 
 
 def stable_bin(value: str, num_bins: int) -> int:

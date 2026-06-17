@@ -179,11 +179,11 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
                     # Remove punctuation from traditional (e.g., "哪裡,哪裡" -> "哪裡哪裡")
                     # Include middle dot . which is used in foreign names
                     # Also remove question marks and other sentence-ending punctuation
-                    traditional = re.sub(r"[，、。！？；：．·?!]", "", traditional).strip()
+                    traditional = re.sub(r"[，、。！？；：．·?!]", "", traditional).strip()  # noqa: RUF001
 
                     # Remove punctuation and clean pinyin
                     # Include middle dot, apostrophes, and question marks used in sentences
-                    pinyin = re.sub(r"[,，、。！？；：．·'?!]", " ", pinyin).strip()
+                    pinyin = re.sub(r"[,，、。！？；：．·'?!]", " ", pinyin).strip()  # noqa: RUF001
                     # Remove hyphens (e.g., "chāo-shāng" -> "chāo shāng")
                     pinyin = pinyin.replace("-", " ")
                     # Convert to lowercase to handle capitalized syllables (e.g., "Ōu" -> "ōu")

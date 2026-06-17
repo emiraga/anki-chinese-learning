@@ -253,10 +253,10 @@ class TestConnectDotsNoteStringOutput:
 
     def test_comma_escaping(self):
         """Commas in values should be escaped"""
-        note = ConnectDotsNote(key="test:key", left=["hello, world"], right=["你好，世界"])
+        note = ConnectDotsNote(key="test:key", left=["hello, world"], right=["你好，世界"])  # noqa: RUF001
 
         # ASCII comma should be escaped to fullwidth comma + variation selector
-        assert "，︀" in note.left_str()
+        assert "，︀" in note.left_str()  # noqa: RUF001
 
     def test_fake_right_str_sorted(self):
         """fake_right_str should return comma-separated sorted elements"""

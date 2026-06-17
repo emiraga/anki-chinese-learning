@@ -439,7 +439,7 @@ def build_multi_pronunciation_audio(note_info: NoteInfo, traditional: str) -> tu
             all_pinyins.append(p)
 
     # Create text with repeated character separated by Chinese commas for natural pauses
-    repeated_text = "，".join([traditional] * len(all_pinyins))
+    repeated_text = "，".join([traditional] * len(all_pinyins))  # noqa: RUF001
     combined_pinyin = " ".join(all_pinyins)
 
     return repeated_text, combined_pinyin

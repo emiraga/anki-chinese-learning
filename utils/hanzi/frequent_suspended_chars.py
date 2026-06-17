@@ -43,8 +43,8 @@ def load_frequency_data(csv_path: str | Path):
             # Take only the first character
             if "/" in traditional:
                 traditional = traditional.split("/")[0]
-            elif "／" in traditional:
-                traditional = traditional.split("／")[0]
+            elif "／" in traditional:  # noqa: RUF001
+                traditional = traditional.split("／")[0]  # noqa: RUF001
 
             # Only consider single characters
             if len(traditional) == 1:

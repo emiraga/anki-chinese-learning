@@ -280,12 +280,12 @@ def main():
     # Build set of downloaded single characters
     # Include all alphanumeric and common punctuation
     downloaded_chars = {
-            "，",
+            "，",  # noqa: RUF001
             "。",
-            "！",
-            "？",
-            "；",
-            "：",
+            "！",  # noqa: RUF001
+            "？",  # noqa: RUF001
+            "；",  # noqa: RUF001
+            "：",  # noqa: RUF001
             "、",
             "…",
             "—",
@@ -294,8 +294,8 @@ def main():
             "」",
             "『",
             "』",
-            "（",
-            "）",
+            "（",  # noqa: RUF001
+            "）",  # noqa: RUF001
             "《",
             "》",
             "!",

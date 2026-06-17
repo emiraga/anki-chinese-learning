@@ -109,8 +109,8 @@ def is_punctuation(char: str) -> bool:
         bool: True if character is punctuation
     """
     # Common Chinese and Western punctuation
-    chinese_punctuation = '。，、；：？！""（）《》【】…—·'
-    western_punctuation = ".,;:?!'\"()[]{}<>-–—…·"
+    chinese_punctuation = '。，、；：？！""（）《》【】…—·'  # noqa: RUF001
+    western_punctuation = ".,;:?!'\"()[]{}<>-–—…·"  # noqa: RUF001
 
     if char in chinese_punctuation or char in western_punctuation:
         return True

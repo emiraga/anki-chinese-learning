@@ -41,9 +41,6 @@ select = [
     "SIM",    # flake8-simplify (code simplifications)
     "RUF",    # ruff-specific rules
 ]
-ignore = [
-    "RUF001", # allow ambiguous unicode chars in strings (needed for Chinese text)
-]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -68,4 +65,4 @@ python-version = "3.11"
 [tool.pyrefly.errors]
 missing-import = "error"
 implicit-any = "error"
-untyped-import = "warn"
+untyped-import = "error"
