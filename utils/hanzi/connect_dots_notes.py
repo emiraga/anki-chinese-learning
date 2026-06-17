@@ -410,7 +410,7 @@ class ConnectDotsNote:
     def get_sorted_tuples(self) -> list[tuple[str, str, str]]:
         """Get (left, right, explanation) tuples sorted by left element"""
         explanations = self.explanation if self.explanation else [""] * len(self.left)
-        return sorted(zip(self.left, self.right, explanations), key=lambda x: x[0])
+        return sorted(zip(self.left, self.right, explanations, strict=False), key=lambda x: x[0])
 
     def left_str(self) -> str:
         """Get comma-separated left elements, sorted"""
@@ -462,7 +462,7 @@ class ConnectDotsNote:
         # This maximizes diversity of right values in each split note
         explanations = self.explanation if self.explanation else [""] * len(self.left)
         sorted_tuples = sorted(
-            zip(self.left, self.right, explanations),
+            zip(self.left, self.right, explanations, strict=False),
             key=lambda x: (x[1], x[0]),  # Sort by (right, left)
         )
 
@@ -473,10 +473,7 @@ class ConnectDotsNote:
         notes_data: list[tuple[str, list[str], list[str], list[str]]] = []
         for i in range(num_notes):
             # Determine key: first note keeps original, others get :2, :3, etc.
-            if i == 0:
-                key = self.key
-            else:
-                key = f"{self.key}:{i + 1}"
+            key = self.key if i == 0 else f"{self.key}:{i + 1}"
             notes_data.append((key, [], [], []))
 
         # Interleaved distribution: item i goes to note (i % num_notes)
@@ -490,7 +487,7 @@ class ConnectDotsNote:
         # Calculate fake_right for each note
         # Collect all unique right values across all notes, including original fake_right
         # (e.g., syllable generators add fake_right for missing tones)
-        all_right_values = set(right for _, right, _ in sorted_tuples) | set(self.fake_right)
+        all_right_values = {right for _, right, _ in sorted_tuples} | set(self.fake_right)
 
         notes: list[ConnectDotsNote] = []
         for key, left_slice, right_slice, explanation_slice in notes_data:
@@ -544,7 +541,7 @@ class ConnectDotsNote:
         num_notes = -(-len(self.left) // max_items)
 
         bins: list[tuple[list[str], list[str], list[str]]] = [([], [], []) for _ in range(num_notes)]
-        for left, right, expl in zip(self.left, self.right, explanations):
+        for left, right, expl in zip(self.left, self.right, explanations, strict=False):
             idx = stable_bin(left, num_notes)
             bins[idx][0].append(left)
             bins[idx][1].append(right)
@@ -669,7 +666,7 @@ class SoundComponentHanziToPinyin(BaseHanziToPinyinGenerator):
         # Also include the sound component character itself if it exists
         sound_component_note = data_store.get_by_traditional(self.sound_component)
         if sound_component_note and sound_component_note not in notes:
-            notes = [sound_component_note] + notes
+            notes = [sound_component_note, *notes]
 
         return notes
 

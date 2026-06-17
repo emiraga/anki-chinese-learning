@@ -200,12 +200,12 @@ def update_mnemonics_for_note_types(
     error_count = 0
 
     # Fetch all notes in batches for better performance
-    BATCH_SIZE = 100
-    print(f"\nFetching note information in batches of {BATCH_SIZE}...")
+    batch_size = 100
+    print(f"\nFetching note information in batches of {batch_size}...")
 
     all_notes_info = []
-    for batch_start in range(0, len(all_note_ids), BATCH_SIZE):
-        batch_end = min(batch_start + BATCH_SIZE, len(all_note_ids))
+    for batch_start in range(0, len(all_note_ids), batch_size):
+        batch_end = min(batch_start + batch_size, len(all_note_ids))
         batch_ids = all_note_ids[batch_start:batch_end]
 
         try:

@@ -61,7 +61,7 @@ SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS: list[tuple[str, str]] = [
 ]
 
 # Build lookup dictionaries for fast access
-_SIMPLIFIED_TO_TRADITIONAL: dict[str, str] = {simp: trad for simp, trad in SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS}
+_SIMPLIFIED_TO_TRADITIONAL: dict[str, str] = dict(SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS)
 _TRADITIONAL_TO_SIMPLIFIED: dict[str, str] = {trad: simp for simp, trad in SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS}
 
 

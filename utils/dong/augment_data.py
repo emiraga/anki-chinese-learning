@@ -109,7 +109,7 @@ def translate_text_with_google(text: str, max_retries: int = 3) -> str:
                 print(f"Translation attempt {attempt + 1} failed: {e}. Retrying...")
                 time.sleep(2)
             else:
-                raise Exception(f"Translation failed after {max_retries} attempts: {e}")
+                raise Exception(f"Translation failed after {max_retries} attempts: {e}") from e
 
     # Unreachable when max_retries >= 1; satisfies the type checker.
     raise Exception("Translation failed: no attempts were made")
@@ -128,7 +128,7 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
         Dictionary mapping character (str) to pinyinFrequencies (list)
     """
     char_to_pinyin: dict[str, list[Any]] = {}
-    all_componentIn_chars: set[str] = set()
+    all_component_in_chars: set[str] = set()
 
     # First pass: collect all data from files
     for file_path in dong_dir.glob("*.json"):
@@ -156,14 +156,14 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
             if use_pypinyin_fallback and "componentIn" in data and isinstance(data["componentIn"], list):
                 for item in data["componentIn"]:
                     if "char" in item:
-                        all_componentIn_chars.add(item["char"])
+                        all_component_in_chars.add(item["char"])
         except Exception as e:
             print(f"Warning: Error reading {file_path.name} for mapping: {e}")
             continue
 
     # Second pass: use pypinyin for characters in componentIn that don't have pinyin yet
     if use_pypinyin_fallback:
-        missing_chars = all_componentIn_chars - set(char_to_pinyin.keys())
+        missing_chars = all_component_in_chars - set(char_to_pinyin.keys())
         if missing_chars:
             print(f"Using pypinyin fallback for {len(missing_chars)} characters...")
             for char in missing_chars:
@@ -287,10 +287,7 @@ def main():
 
     # Set up credentials
     credentials_path = args.credentials
-    if not credentials_path:
-        credentials_path = project_root / "utils" / "tts" / "gcloud_account.json"
-    else:
-        credentials_path = Path(credentials_path)
+    credentials_path = project_root / "utils" / "tts" / "gcloud_account.json" if not credentials_path else Path(credentials_path)
 
     if not credentials_path.exists():
         print(f"Error: Credentials file not found: {credentials_path}")

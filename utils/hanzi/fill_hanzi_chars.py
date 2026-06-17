@@ -70,10 +70,7 @@ def extract_existing_hanzi_characters() -> set[str]:
                 # Get the Hanzi (simplified) field for validation
                 hanzi_field = note_info["fields"].get("Hanzi", {}).get("value", "").strip()
 
-                if hanzi_field and len(hanzi_field) == 1:
-                    # Validate consistency: if Traditional and Hanzi differ,
-                    # verify that Traditional simplifies to Hanzi
-                    if traditional != hanzi_field:
+                if hanzi_field and len(hanzi_field) == 1 and traditional != hanzi_field:
                         simplified_of_traditional = to_simplified(traditional)
 
                         if simplified_of_traditional != hanzi_field:
@@ -179,8 +176,8 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
                     if re.search(r"[A-Za-z0-9]", traditional):
                         continue
 
-                    # Remove punctuation from traditional (e.g., "哪裡，哪裡" -> "哪裡哪裡")
-                    # Include middle dot ． which is used in foreign names
+                    # Remove punctuation from traditional (e.g., "哪裡,哪裡" -> "哪裡哪裡")
+                    # Include middle dot . which is used in foreign names
                     # Also remove question marks and other sentence-ending punctuation
                     traditional = re.sub(r"[，、。！？；：．·?!]", "", traditional).strip()
 
@@ -207,7 +204,7 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
 
                     # Map each character to its pinyin syllable
                     if len(pinyin_syllables) == len(traditional):
-                        for char, syllable in zip(traditional, pinyin_syllables):
+                        for char, syllable in zip(traditional, pinyin_syllables, strict=False):
                             if char not in char_data:
                                 char_data[char] = []
                             char_data[char].append((syllable, traditional, meaning))
@@ -246,7 +243,7 @@ def extract_pinyin_syllables(pinyin_text: str, expected_count: int) -> list[str]
         return pinyin_syllables
 
     except Exception as e:
-        raise ValueError(f"Cannot segment pinyin '{pinyin_text}' into {expected_count} syllables: {e}")
+        raise ValueError(f"Cannot segment pinyin '{pinyin_text}' into {expected_count} syllables: {e}") from e
 
 
 def infer_most_common_pinyin(char_occurrences: list[tuple[str, str, str]]) -> str:
@@ -350,7 +347,7 @@ def process_single_character(char: str, char_data: dict[str, list[tuple[str, str
             else:
                 raise ValueError(f"Could not find pinyin for '{char}'")
         except Exception as e:
-            raise ValueError(f"Cannot process character '{char}': {e}")
+            raise ValueError(f"Cannot process character '{char}': {e}") from e
     else:
         # Infer pinyin from occurrences
         pinyin = infer_most_common_pinyin(char_occurrences)

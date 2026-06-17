@@ -117,8 +117,8 @@ class TestConnectDotsNoteSplitting:
             all_right.extend(split_note.right)
 
         # Original note sorts pairs, so we need to compare sorted versions
-        original_pairs = set(zip(left, right))
-        result_pairs = set(zip(all_left, all_right))
+        original_pairs = set(zip(left, right, strict=False))
+        result_pairs = set(zip(all_left, all_right, strict=False))
 
         assert original_pairs == result_pairs
         assert len(all_left) == len(left)  # No duplicates
@@ -128,14 +128,14 @@ class TestConnectDotsNoteSplitting:
         # Use distinct mappings to verify correspondence
         left = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
         right = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-        original_pairs = dict(zip(left, right))
+        original_pairs = dict(zip(left, right, strict=False))
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
         result = note.split_if_needed(max_items=10)
 
         # Verify each pair in split notes matches original mapping
         for split_note in result:
-            for left, right in zip(split_note.left, split_note.right):
+            for left, right in zip(split_note.left, split_note.right, strict=False):
                 assert original_pairs[left] == right
 
     def test_interleaved_distribution_maximizes_diversity(self):
@@ -530,20 +530,20 @@ class TestSplitStably:
         right = [f"r{i}" for i in range(25)]
         note = ConnectDotsNote(key="k", left=left, right=right)
         result = note.split_stably(max_items=10)
-        original = set(zip(left, right))
+        original = set(zip(left, right, strict=False))
         collected: list[tuple[str, str]] = []
         for n in result:
-            collected.extend(zip(n.left, n.right))
+            collected.extend(zip(n.left, n.right, strict=False))
         assert set(collected) == original
         assert len(collected) == len(left)  # no duplicates
 
     def test_left_right_correspondence_preserved(self):
         left = _chars(15)
         right = [f"r{i}" for i in range(15)]
-        mapping = dict(zip(left, right))
+        mapping = dict(zip(left, right, strict=False))
         note = ConnectDotsNote(key="k", left=left, right=right)
         for n in note.split_stably(max_items=6):
-            for left_val, right_val in zip(n.left, n.right):
+            for left_val, right_val in zip(n.left, n.right, strict=False):
                 assert mapping[left_val] == right_val
 
     def test_key_naming_convention(self):
@@ -563,7 +563,7 @@ class TestSplitStably:
         before = ConnectDotsNote(key="k", left=left, right=right).split_stably(max_items=10)
 
         new_char = chr(0x4E00 + 999)
-        after = ConnectDotsNote(key="k", left=left + [new_char], right=right + ["rNEW"]).split_stably(max_items=10)
+        after = ConnectDotsNote(key="k", left=[*left, new_char], right=[*right, "rNEW"]).split_stably(max_items=10)
 
         assert len(before) == len(after)  # bin count unchanged
 

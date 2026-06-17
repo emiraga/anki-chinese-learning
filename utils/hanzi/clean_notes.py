@@ -47,7 +47,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error connecting to anki-connect: {e}")
+        raise RuntimeError(f"Error connecting to anki-connect: {e}") from e
 
 
 def find_notes_by_type(note_type: str) -> list[int]:
@@ -271,7 +271,7 @@ def process_phrase_note(
         return True, None
 
     except Exception as e:
-        raise RuntimeError(f"Error processing notes for character '{character}': {e}")
+        raise RuntimeError(f"Error processing notes for character '{character}': {e}") from e
 
 
 def main():

@@ -782,7 +782,7 @@ def generate_preload_list():
     if top_50:
         # Print as single line with sample characters
         result_parts = []
-        for char, count in top_50:
+        for char, _count in top_50:
             sample = sound_component_samples.get(char, "")
             result_parts.append(f"{char}{sample}")
 

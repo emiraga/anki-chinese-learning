@@ -39,7 +39,7 @@ def load_frequency_data(csv_path: str | Path):
         reader = csv.DictReader(f)
         for row in reader:
             traditional = row["traditional"]
-            # Handle alternative characters separated by / or ／
+            # Handle alternative characters separated by / or /
             # Take only the first character
             if "/" in traditional:
                 traditional = traditional.split("/")[0]

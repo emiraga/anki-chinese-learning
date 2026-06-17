@@ -107,10 +107,7 @@ def extract_label_and_content(html_string: str) -> tuple[str, str] | None:
     content_html = html_string[content_start:].strip()
 
     # Convert HTML content to plain text
-    if content_html:
-        content = html_to_text(content_html)
-    else:
-        content = ""
+    content = html_to_text(content_html) if content_html else ""
 
     return (label, content)
 

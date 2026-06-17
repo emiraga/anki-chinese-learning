@@ -120,7 +120,7 @@ def open_in_browser_and_wait(word_id: str, traditional: str = "", base_url: str 
         webbrowser.open_new_tab(url)
         print(f"Opened: {url} for word: {display}")
     except Exception as e:
-        raise Exception(f"Error opening {url}: {e}")
+        raise Exception(f"Error opening {url}: {e}") from e
 
     # Wait for file to appear
     for attempt in range(50):
@@ -235,7 +235,10 @@ def main():
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Download all words, even if all their characters are already downloaded. By default, skips words where all characters are known.",
+        help=(
+            "Download all words, even if all their characters are already downloaded. "
+            "By default, skips words where all characters are known."
+        ),
     )
     parser.add_argument(
         "--no-components",
@@ -245,7 +248,10 @@ def main():
     parser.add_argument(
         "--no-existing-components",
         action="store_true",
-        help="Skip adding components from already downloaded words (Priority 2). By default, components from existing words are added to the queue.",
+        help=(
+            "Skip adding components from already downloaded words (Priority 2). "
+            "By default, components from existing words are added to the queue."
+        ),
     )
     args = parser.parse_args()
 
@@ -273,8 +279,7 @@ def main():
 
     # Build set of downloaded single characters
     # Include all alphanumeric and common punctuation
-    downloaded_chars = set(
-        [
+    downloaded_chars = {
             "，",
             "。",
             "！",
@@ -326,8 +331,7 @@ def main():
             "=",
             "~",
             "`",
-        ]
-    )
+        }
     # Add all alphanumeric characters
     downloaded_chars.update(chr(i) for i in range(ord("a"), ord("z") + 1))  # a-z
     downloaded_chars.update(chr(i) for i in range(ord("A"), ord("Z") + 1))  # A-Z

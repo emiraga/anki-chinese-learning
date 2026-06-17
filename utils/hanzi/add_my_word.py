@@ -47,7 +47,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Error connecting to anki-connect: {e}")
+        raise Exception(f"Error connecting to anki-connect: {e}") from e
 
 
 def pinyin_to_zhuyin(pinyin_text: str) -> str:
@@ -64,7 +64,7 @@ def pinyin_to_zhuyin(pinyin_text: str) -> str:
         zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
         return zhuyin
     except Exception as e:
-        raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}")
+        raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}") from e
 
 
 def get_pinyin_and_zhuyin(traditional_text: str) -> tuple[str, str]:
@@ -86,7 +86,7 @@ def get_pinyin_and_zhuyin(traditional_text: str) -> tuple[str, str]:
 
         return pinyin, zhuyin
     except Exception as e:
-        raise ValueError(f"Failed to generate pinyin/zhuyin for '{traditional_text}': {e}")
+        raise ValueError(f"Failed to generate pinyin/zhuyin for '{traditional_text}': {e}") from e
 
 
 def check_traditional_exists(traditional: str) -> bool:
@@ -209,7 +209,9 @@ def generate_price_phrase(price: int, client: Any | None = None) -> str:
     prompt = f"""You are a casual Taiwanese shopkeeper (in Taiwan, speaking Mandarin Chinese).
 A customer asks how much something costs. The price is {price} 塊 (TWD).
 
-Write ONLY the price phrase in Traditional Chinese, exactly as a shopkeeper in a store or restaurant in Taiwan would casually say it out loud. Use natural spoken Taiwanese Mandarin — not formal or written style.
+Write ONLY the price phrase in Traditional Chinese, exactly as a shopkeeper in a store
+or restaurant in Taiwan would casually say it out loud. Use natural spoken Taiwanese
+Mandarin — not formal or written style.
 
 For example, for 250 塊 a shopkeeper might say "兩百五" instead of "兩百五十塊".
 

@@ -34,7 +34,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> d
         response.raise_for_status()
         result = response.json()
     except requests.exceptions.RequestException as e:
-        raise Exception(f"Error connecting to AnkiConnect: {e}")
+        raise Exception(f"Error connecting to AnkiConnect: {e}") from e
 
     if result.get("error"):
         raise Exception(f"AnkiConnect error: {result['error']}")

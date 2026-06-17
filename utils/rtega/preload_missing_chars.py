@@ -121,7 +121,9 @@ def download_rtega_data(char: str, rtega_data_dir: Path):
             if file_size < 9500:
                 output_file.unlink()  # Remove undersized file
                 raise Exception(
-                    f"Downloaded file for '{char}' is too small ({file_size} bytes, minimum 9500 bytes required). This likely indicates an error page or missing data."
+                    f"Downloaded file for '{char}' is too small "
+                    f"({file_size} bytes, minimum 9500 bytes required). "
+                    f"This likely indicates an error page or missing data."
                 )
             return True
         else:
@@ -133,7 +135,7 @@ def download_rtega_data(char: str, rtega_data_dir: Path):
         print("  Error: wget timed out after 30 seconds")
         return False
     except FileNotFoundError:
-        raise Exception("wget command not found. Please install wget: brew install wget")
+        raise Exception("wget command not found. Please install wget: brew install wget") from None
     except Exception as e:
         print(f"  Error: {e}")
         return False

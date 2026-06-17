@@ -376,10 +376,9 @@ Examples:
     args = parser.parse_args()
 
     # Clear cache if requested
-    if args.clear_cache:
-        if CACHE_FILE.exists():
-            CACHE_FILE.unlink()
-            print("Cache cleared.")
+    if args.clear_cache and CACHE_FILE.exists():
+        CACHE_FILE.unlink()
+        print("Cache cleared.")
 
     # Build configuration
     config = NormalizationConfig(

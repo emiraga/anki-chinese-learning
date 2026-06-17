@@ -67,9 +67,8 @@ def extract_referenced_chars(json_data: dict[str, Any]) -> set[str]:
                         chars.add(comp["character"])
 
     # Extract from radical
-    if json_data.get("radical"):
-        if "character" in json_data["radical"]:
-            chars.add(json_data["radical"]["character"])
+    if json_data.get("radical") and "character" in json_data["radical"]:
+        chars.add(json_data["radical"]["character"])
 
     # Extract from all components
     if "allComponents" in json_data:
@@ -85,9 +84,8 @@ def extract_referenced_chars(json_data: dict[str, Any]) -> set[str]:
                     chars.add(char)
 
     # Extract from simplification
-    if json_data.get("simplification"):
-        if "simplifiedForm" in json_data["simplification"]:
-            chars.add(json_data["simplification"]["simplifiedForm"])
+    if json_data.get("simplification") and "simplifiedForm" in json_data["simplification"]:
+        chars.add(json_data["simplification"]["simplifiedForm"])
 
     return chars
 

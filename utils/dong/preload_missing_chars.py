@@ -96,7 +96,7 @@ def get_component_chars_from_dong_files(dong_data_dir: Path, top_words_share_thr
 
 def main():
     # Blacklist of characters to skip (e.g., special radicals, punctuation)
-    BLACKLIST_CHARS = {"⺁", "⺀", "〢"}
+    blacklist_chars = {"⺁", "⺀", "〢"}
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Find and preload missing Chinese characters for dong-chinese data")
@@ -135,10 +135,10 @@ def main():
     missing_chars = all_chars - existing_chars
 
     # Filter out blacklisted characters
-    blacklisted_found = missing_chars & BLACKLIST_CHARS
+    blacklisted_found = missing_chars & blacklist_chars
     if blacklisted_found:
         print(f"\nFiltering out {len(blacklisted_found)} blacklisted characters: {''.join(sorted(blacklisted_found))}")
-        missing_chars -= BLACKLIST_CHARS
+        missing_chars -= blacklist_chars
 
     print(f"Total missing characters: {len(missing_chars)}")
 

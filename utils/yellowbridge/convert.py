@@ -67,11 +67,11 @@ def extract_functional_components(decomp_html: str) -> dict[str, list[dict[str, 
     # Map image markers to component types
     component_patterns = [
         (
-            r"<img src=['\"]//r\.yellowbridge\.com/images/char-phonetic\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"<]*)",
+            r"<img src=['\"]//r\.yellowbridge\.com/images/char-phonetic\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"<]*)",  # noqa: E501
             "phonetic",
         ),
         (
-            r"<img src=['\"]//r\.yellowbridge\.com/images/char-(?:key)?radical\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"<]*)",
+            r"<img src=['\"]//r\.yellowbridge\.com/images/char-(?:key)?radical\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"<]*)",  # noqa: E501
             "semantic",
         ),
     ]
@@ -95,7 +95,7 @@ def extract_functional_components(decomp_html: str) -> dict[str, list[dict[str, 
             # Check if this component is marked as altered (has delta.gif before it)
             is_altered = bool(
                 re.search(
-                    rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",
+                    rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",  # noqa: E501
                     decomp_html,
                 )
             )
@@ -118,7 +118,7 @@ def extract_functional_components(decomp_html: str) -> dict[str, list[dict[str, 
 
     # Extract primitive components (those without phonetic or semantic markers)
     # These are basic building blocks that don't have explicit functional markers
-    primitive_pattern = r'<img id=["\']idt\d+["\'] src=["\']//r\.yellowbridge\.com/images/char-primitive\.gif["\'][^>]*><a[^>]*><span class=["\']zh0["\']>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^<]*)</a>'
+    primitive_pattern = r'<img id=["\']idt\d+["\'] src=["\']//r\.yellowbridge\.com/images/char-primitive\.gif["\'][^>]*><a[^>]*><span class=["\']zh0["\']>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^<]*)</a>'  # noqa: E501
 
     primitive_matches = re.findall(primitive_pattern, decomp_html)
     seen_primitive = set()
@@ -138,7 +138,7 @@ def extract_functional_components(decomp_html: str) -> dict[str, list[dict[str, 
             # Check if this component is marked as altered
             is_altered = bool(
                 re.search(
-                    rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",
+                    rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",  # noqa: E501
                     decomp_html,
                 )
             )
@@ -264,7 +264,7 @@ def extract_components(decomp_html: str) -> list[dict[str, Any]]:
             # Check if this component is marked as altered
             is_altered = bool(
                 re.search(
-                    rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",
+                    rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin)}</em>\]",  # noqa: E501
                     decomp_html,
                 )
             )
@@ -282,7 +282,7 @@ def extract_components(decomp_html: str) -> list[dict[str, Any]]:
 def extract_radical(decomp_html: str) -> dict[str, Any] | None:
     """Extract the key radical component."""
     # Look for radical component with key radical marker
-    radical_pattern = r"<img src=['\"]//r\.yellowbridge\.com/images/char-keyradical\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"]*)"
+    radical_pattern = r"<img src=['\"]//r\.yellowbridge\.com/images/char-keyradical\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"]*)"  # noqa: E501
 
     match = re.search(radical_pattern, decomp_html)
     if match:
@@ -302,7 +302,7 @@ def extract_radical(decomp_html: str) -> dict[str, Any] | None:
         # Check if this component is marked as altered
         is_altered = bool(
             re.search(
-                rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin_str)}</em>\]",
+                rf"<img src=['\"]//r\.yellowbridge\.com/images/chars/delta\.gif['\"][^>]*>[^<]*<[^>]*>{re.escape(char)}</[^>]*>\s*\[<em>{re.escape(pinyin_str)}</em>\]",  # noqa: E501
                 decomp_html,
             )
         )
@@ -367,9 +367,9 @@ def process_file(file_path: Path) -> dict[str, Any]:
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in {file_path}: {e}")
+        raise ValueError(f"Invalid JSON in {file_path}: {e}") from e
     except Exception as e:
-        raise ValueError(f"Error reading {file_path}: {e}")
+        raise ValueError(f"Error reading {file_path}: {e}") from e
 
     decomp_html = data.get("decomp", "")
     formation_html = data.get("formation", "")

@@ -129,7 +129,7 @@ def format_component_type(component_types: list[str]) -> str:
     Returns:
         str: HTML formatted type labels
     """
-    TYPE_COLORS = {
+    type_colors = {
         "deleted": "#9ca3af",
         "sound": "#2563eb",
         "iconic": "#16a34a",
@@ -140,7 +140,7 @@ def format_component_type(component_types: list[str]) -> str:
         "unknown": "#4b5563",
     }
 
-    TYPE_LABELS = {
+    type_labels = {
         "deleted": "Deleted",
         "sound": "Sound",
         "iconic": "Iconic",
@@ -153,8 +153,8 @@ def format_component_type(component_types: list[str]) -> str:
 
     labels = []
     for comp_type in component_types:
-        label = TYPE_LABELS.get(comp_type, comp_type.title())
-        color = TYPE_COLORS.get(comp_type, "#4b5563")
+        label = type_labels.get(comp_type, comp_type.title())
+        color = type_colors.get(comp_type, "#4b5563")
         labels.append(f'<span style="color: {color}; font-weight: 600;">{label}</span>')
 
     return " ".join(labels) + (" component" if "deleted" not in component_types else "")

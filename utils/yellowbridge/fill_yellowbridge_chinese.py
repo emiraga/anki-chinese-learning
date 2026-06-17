@@ -140,7 +140,8 @@ def format_component_info(component: dict[str, Any]) -> str:
 
     if component.get("isAltered"):
         parts.append(
-            '<span style="font-size: 0.75em; background-color: #fef3c7; color: #92400e; padding: 0.125rem 0.375rem; border-radius: 0.25rem;">altered</span>'
+            '<span style="font-size: 0.75em; background-color: #fef3c7; color: #92400e;'
+            ' padding: 0.125rem 0.375rem; border-radius: 0.25rem;">altered</span>'
         )
 
     return " ".join(parts)

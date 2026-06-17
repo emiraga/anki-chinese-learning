@@ -29,7 +29,7 @@ def load_valid_pos() -> dict[str, str]:
     """
     with open(POS_FILE, encoding="utf-8") as f:
         pos_data = json.load(f)
-    return {key.lower(): key for key in pos_data.keys()}
+    return {key.lower(): key for key in pos_data}
 
 
 LEVEL_ORDER = [
@@ -265,7 +265,7 @@ def load_csv(path: Path, valid_pos: dict[str, str]) -> list[TocflWord]:
                 pos_list = parse_part_of_speech(pos_raw, valid_pos, traditional_raw)
 
                 # Create a word entry for each variant pair
-                for trad, pin in zip(traditional_variants, pinyin_variants):
+                for trad, pin in zip(traditional_variants, pinyin_variants, strict=False):
                     words.append(
                         TocflWord(
                             traditional=trad,

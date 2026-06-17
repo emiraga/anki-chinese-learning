@@ -27,10 +27,7 @@ def is_valid_char_data(data: dict[str, Any]) -> bool:
         return False
 
     # Check if char is not empty or just whitespace
-    if not data["char"].strip():
-        return False
-
-    return True
+    return bool(data["char"].strip())
 
 
 def sanitize_filename(char: str) -> str:

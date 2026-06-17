@@ -143,10 +143,7 @@ def chinese_tts(
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
     # Determine language code from voice name (cmn-TW-* or cmn-CN-*)
-    if voice_name.startswith("cmn-CN"):
-        language_code = "cmn-CN"  # Mainland Mandarin
-    else:
-        language_code = "cmn-TW"  # Taiwanese Mandarin
+    language_code = "cmn-CN" if voice_name.startswith("cmn-CN") else "cmn-TW"
 
     # Build the voice request
     voice: Any = texttospeech.VoiceSelectionParams(

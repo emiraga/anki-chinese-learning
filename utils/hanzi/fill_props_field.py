@@ -102,7 +102,7 @@ def suggest_pos_with_gemini(traditional: str, meaning: str, pos_mapping: dict[st
     """
     # Build list of POS options with English names and examples
     pos_options = []
-    for code, entry in pos_mapping.items():
+    for _code, entry in pos_mapping.items():
         name = entry[0]  # English name
         examples = entry[2]  # Chinese examples
         if examples:
@@ -154,7 +154,7 @@ Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g
         return ""
 
     except Exception as e:
-        raise Exception(f"  Error getting POS suggestion from Gemini: {e}")
+        raise Exception(f"  Error getting POS suggestion from Gemini: {e}") from e
 
 
 def generate_examples_json_with_gemini(traditional: str, pos_codes: str, pos_mapping: dict[str, Any], gemini_client: Any) -> dict[str, Any]:
@@ -217,7 +217,8 @@ Requirements:
 3. You MAY add examples for additional POS codes from the list above if the phrase is commonly used that way
 4. Sentences should reflect casual Taiwan Mandarin conversation
 5. Use Traditional Chinese characters
-6. CRITICAL: Use ONLY the exact codes shown above as JSON keys (e.g., "N", "V", "Vs", "Adv"). Never use "A", "Adj", "Noun", "Verb", or any other abbreviations not in the list.
+6. CRITICAL: Use ONLY the exact codes shown above as JSON keys (e.g., "N", "V", "Vs", "Adv").
+   Never use "A", "Adj", "Noun", "Verb", or any other abbreviations not in the list.
 
 CRITICAL - Sentence length:
 - Sentences MUST be very short and simple
@@ -230,7 +231,8 @@ Reply in this EXACT JSON format (no markdown, no code blocks):
 {{"POS_CODE": [{{"Traditional": "example sentence", "English": "translation"}}]}}
 
 Example response format:
-{{"V": [{{"Traditional": "我要吃飯。", "English": "I want to eat."}}], "N": [{{"Traditional": "這是我的飯。", "English": "This is my rice."}}]}}"""
+{{"V": [{{"Traditional": "我要吃飯。", "English": "I want to eat."}}],
+ "N": [{{"Traditional": "這是我的飯。", "English": "This is my rice."}}]}}"""
 
     response = ""
     try:
@@ -270,9 +272,9 @@ Example response format:
         return validated_dict
 
     except json.JSONDecodeError as e:
-        raise Exception(f"Failed to parse AI response as JSON: {e}\nResponse: {response}")
+        raise Exception(f"Failed to parse AI response as JSON: {e}\nResponse: {response}") from e
     except Exception as e:
-        raise Exception(f"Error generating examples from Gemini: {e}")
+        raise Exception(f"Error generating examples from Gemini: {e}") from e
 
 
 def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any]) -> str:
@@ -305,10 +307,7 @@ def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any])
             continue
 
         # Get POS English name
-        if pos_code in pos_mapping:
-            pos_name = pos_mapping[pos_code][0]  # English name
-        else:
-            pos_name = pos_code
+        pos_name = pos_mapping[pos_code][0] if pos_code in pos_mapping else pos_code
 
         # Build section for this POS
         section_parts = [f"<b>{pos_name}</b>"]
@@ -540,7 +539,10 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
         list: List of note IDs
     """
     # Build the base conditions for all note types
-    base_conditions = '-is:suspended (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
+    base_conditions = (
+        '-is:suspended (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* '
+        'OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
+    )
 
     # For Hanzi notes, also include notes that need Same Pinyin/Syllable Traditional fields filled
     if note_type == "Hanzi":
@@ -635,7 +637,8 @@ def update_fields_for_note(
     gemini_client: Any | None = None,
 ) -> bool:
     """
-    Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
+    Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON,
+    Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
 
     Args:
         note_info (dict): Note information dictionary
@@ -768,7 +771,8 @@ def update_fields_for_note(
 
 def main():
     """
-    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON, and Same Syllable Traditional fields
+    Main function to process all note types and update Props, Mnemonic pegs, Anki Tags,
+    POS, POS Description, Examples JSON, and Same Syllable Traditional fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")

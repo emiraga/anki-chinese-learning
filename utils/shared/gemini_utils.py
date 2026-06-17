@@ -45,10 +45,7 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
                 return api_key
 
     # Try credentials JSON file
-    if credentials_path is None:
-        credentials_path = project_root / "utils" / "tts" / "gcloud_account.json"
-    else:
-        credentials_path = Path(credentials_path)
+    credentials_path = project_root / "utils" / "tts" / "gcloud_account.json" if credentials_path is None else Path(credentials_path)
 
     if credentials_path.exists():
         import json
@@ -131,7 +128,7 @@ def gemini_generate(
                 print(f"Generation attempt {attempt + 1} failed: {e}. Retrying...")
                 time.sleep(retry_delay)
             else:
-                raise Exception(f"Generation failed after {max_retries} attempts: {e}")
+                raise Exception(f"Generation failed after {max_retries} attempts: {e}") from e
 
     # This should never be reached, but satisfies type checker
     raise Exception("Unexpected error in gemini_generate")
@@ -160,7 +157,8 @@ def translate_with_gemini(
     if not traditional_text or not traditional_text.strip():
         raise ValueError("Text cannot be empty")
 
-    prompt = f"""Translate this Traditional Chinese text to English. If it contains idioms or colloquial expressions, translate the meaning, not literally.
+    prompt = f"""Translate this Traditional Chinese text to English. If it contains
+idioms or colloquial expressions, translate the meaning, not literally.
 
 Traditional Chinese: {traditional_text}
 

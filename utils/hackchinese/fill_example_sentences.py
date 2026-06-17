@@ -260,13 +260,12 @@ def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tupl
                 sentence_trad = sentence.get("traditional", "")
                 sentence_eng = sentence.get("english", "")
 
-                if sentence_trad and sentence_eng:
-                    if can_use_sentence(sentence_trad, learned_chars):
-                        # Avoid duplicates
-                        sentence_tuple = (sentence_trad, sentence_eng)
-                        if sentence_tuple not in char_data[char]["sentences"]:
-                            char_data[char]["sentences"].append(sentence_tuple)
-                            total_sentences_found += 1
+                if sentence_trad and sentence_eng and can_use_sentence(sentence_trad, learned_chars):
+                    # Avoid duplicates
+                    sentence_tuple = (sentence_trad, sentence_eng)
+                    if sentence_tuple not in char_data[char]["sentences"]:
+                        char_data[char]["sentences"].append(sentence_tuple)
+                        total_sentences_found += 1
 
             # Get compounds for this character
             compounds = data.get("compounds", [])
@@ -274,13 +273,12 @@ def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tupl
                 compound_trad = compound.get("traditional", "")
                 compound_eng = compound.get("english", "")
 
-                if compound_trad and compound_eng:
-                    if can_use_sentence(compound_trad, learned_chars):
-                        # Avoid duplicates
-                        compound_tuple = (compound_trad, compound_eng)
-                        if compound_tuple not in char_data[char]["compounds"]:
-                            char_data[char]["compounds"].append(compound_tuple)
-                            total_compounds_found += 1
+                if compound_trad and compound_eng and can_use_sentence(compound_trad, learned_chars):
+                    # Avoid duplicates
+                    compound_tuple = (compound_trad, compound_eng)
+                    if compound_tuple not in char_data[char]["compounds"]:
+                        char_data[char]["compounds"].append(compound_tuple)
+                        total_compounds_found += 1
 
         except Exception as e:
             print(f"Error loading {json_file}: {e}")
@@ -471,7 +469,9 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
                 # Update the note
                 update_note_field(note_id, "Example sentences", new_html)
                 print(
-                    f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese, {len(compounds)} compounds"
+                    f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): "
+                    f"Updated with {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese, "
+                    f"{len(compounds)} compounds"
                 )
                 updated_count += 1
 
