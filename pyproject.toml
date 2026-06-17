@@ -26,7 +26,7 @@ target-version = "py311"
 src = ["utils"]
 
 [tool.pyright]
-include = ["utils"]
+include = ["utils", "anki"]
 extraPaths = ["utils"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
@@ -45,17 +45,13 @@ reportUnknownVariableType = "warning"
 # `typecheck:pyrefly` script) so the editor and CI report the same diagnostics.
 [tool.pyrefly]
 project-includes = [
-    "utils/hanzi/fill_hanzi_chars.py",
-    "utils/hanzi/process_simplified_cards.py",
-    "utils/hanzi/connect_dots_notes.py",
-    "utils/hanzi/test_connect_dots_notes.py",
-    "utils/tts/fill_audio_anki.py",
+    "utils/**/*.py",
+    "anki/**/*.py",
 ]
-# `utils/hanzi` and `utils/tts` are on the search path because the scripts are
-# run via `uv run --script <file>`, which puts each script's own directory on
-# `sys.path` (so e.g. the test imports `connect_dots_notes` as a top-level
-# module). Mirror that here so sibling imports resolve.
-search-path = ["utils", "utils/hanzi", "utils/tts"]
+# Each script is run via `uv run --script <file>`, which puts the script's own
+# directory on `sys.path` (so e.g. the test imports `connect_dots_notes` as a
+# top-level module). Mirror that here so sibling imports resolve.
+search-path = ["utils", "utils/hanzi", "utils/tts", "utils/shared"]
 python-version = "3.11"
 
 [tool.pyrefly.errors]
