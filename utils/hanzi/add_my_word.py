@@ -13,6 +13,7 @@ import requests
 import dragonmapper.transcriptions
 import dragonmapper.hanzi
 import argparse
+from typing import Any
 import random
 import subprocess
 import sys
@@ -55,7 +56,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise Exception(f"Error connecting to anki-connect: {e}")
 
 
-def pinyin_to_zhuyin(pinyin_text):
+def pinyin_to_zhuyin(pinyin_text: str) -> str:
     """
     Convert pinyin to zhuyin (bopomofo)
 
@@ -72,7 +73,7 @@ def pinyin_to_zhuyin(pinyin_text):
         raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}")
 
 
-def get_pinyin_and_zhuyin(traditional_text):
+def get_pinyin_and_zhuyin(traditional_text: str) -> tuple[str, str]:
     """
     Get pinyin and zhuyin for traditional Chinese text using dragonmapper
 
@@ -94,7 +95,7 @@ def get_pinyin_and_zhuyin(traditional_text):
         raise ValueError(f"Failed to generate pinyin/zhuyin for '{traditional_text}': {e}")
 
 
-def check_traditional_exists(traditional):
+def check_traditional_exists(traditional: str) -> bool:
     """
     Check if a note with the given Traditional field value already exists
 
@@ -121,7 +122,7 @@ def check_traditional_exists(traditional):
         raise Exception(f"Failed to check if Traditional field exists: {error}")
 
 
-def create_tocfl_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::Phrases", set_due_today=True):
+def create_tocfl_note(traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::Phrases", set_due_today: bool = True) -> int:
     """
     Create a new TOCFL note
 
@@ -202,7 +203,7 @@ def create_tocfl_note(traditional, pinyin, zhuyin, meaning, deck_name="Chinese::
         raise Exception(f"Failed to create note for '{traditional}': {error}")
 
 
-def generate_price_phrase(price: int, client=None) -> str:
+def generate_price_phrase(price: int, client: Any | None = None) -> str:
     """
     Use Gemini to generate how a Taiwanese shopkeeper would casually say a price.
 

@@ -50,7 +50,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     return result
 
 
-def query_traditional_field(note_type: str, level: str | None = None):
+def query_traditional_field(note_type: str, level: str | None = None) -> list[str]:
     """
     Query Traditional field values from Anki notes
 

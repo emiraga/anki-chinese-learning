@@ -55,7 +55,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise RuntimeError(f"Error connecting to anki-connect: {e}")
 
 
-def find_notes_by_type(note_type):
+def find_notes_by_type(note_type: str) -> list[int]:
     """
     Find all notes of a specific type
 
@@ -76,7 +76,7 @@ def find_notes_by_type(note_type):
     return []
 
 
-def get_notes_info(note_ids):
+def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
     """
     Get detailed information about multiple notes
 
@@ -94,7 +94,7 @@ def get_notes_info(note_ids):
     raise RuntimeError(f"No notes found for IDs {note_ids}")
 
 
-def clean_pinyin(pinyin_text):
+def clean_pinyin(pinyin_text: str) -> str:
     """
     Clean and normalize pinyin text for comparison
 
@@ -113,7 +113,7 @@ def clean_pinyin(pinyin_text):
     return pinyin
 
 
-def extract_hanzi_notes():
+def extract_hanzi_notes() -> dict[tuple[str, str], dict[str, Any]]:
     """
     Extract all single-character Hanzi notes with their pinyin
 
@@ -147,7 +147,7 @@ def extract_hanzi_notes():
     return hanzi_map
 
 
-def extract_single_char_phrase_notes(note_types):
+def extract_single_char_phrase_notes(note_types: list[str]) -> list[tuple[dict[str, Any], str, str]]:
     """
     Extract phrase notes that have a single character in Traditional field
 
@@ -185,7 +185,7 @@ def extract_single_char_phrase_notes(note_types):
     return single_char_phrases
 
 
-def update_hanzi_meaning2(note_id, meaning):
+def update_hanzi_meaning2(note_id: int, meaning: str) -> bool:
     """
     Update the Meaning 2 field of a Hanzi note
 
@@ -211,7 +211,7 @@ def update_hanzi_meaning2(note_id, meaning):
         raise RuntimeError(f"Failed to update note {note_id}: {response}")
 
 
-def add_tag_to_note(note_id, tag):
+def add_tag_to_note(note_id: int, tag: str) -> bool:
     """
     Add a tag to a note
 
@@ -233,7 +233,7 @@ def add_tag_to_note(note_id, tag):
         raise RuntimeError(f"Failed to add tag to note {note_id}: {response}")
 
 
-def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_type):
+def process_phrase_note(phrase_note_info: dict[str, Any], character: str, pinyin: str, hanzi_map: dict[tuple[str, str], dict[str, Any]], note_type: str) -> tuple[bool, str | None]:
     """
     Process a single-character phrase note and update corresponding Hanzi note
 
@@ -253,8 +253,8 @@ def process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_typ
         return False, "no_matching_hanzi"
 
     hanzi_note_info = hanzi_map[key]
-    phrase_note_id = phrase_note_info.get('noteId')
-    hanzi_note_id = hanzi_note_info.get('noteId')
+    phrase_note_id = phrase_note_info['noteId']
+    hanzi_note_id = hanzi_note_info['noteId']
 
     # Get the meaning from phrase note
     phrase_meaning = phrase_note_info['fields'].get('Meaning', {}).get('value', '').strip()

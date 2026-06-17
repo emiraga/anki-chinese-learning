@@ -49,7 +49,7 @@ def lookup_meaning(text: str, max_definitions: int = 3) -> Optional[str]:
         entry = dictionary.lookup(text.strip())
         if entry and entry.definition_entries:
             # Collect all definitions from all definition entries
-            all_definitions = []
+            all_definitions: list[str] = []
             for def_entry in entry.definition_entries:
                 all_definitions.extend(def_entry.definitions)
 

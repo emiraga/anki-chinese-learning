@@ -44,7 +44,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise
 
 
-def get_note_info(note_id):
+def get_note_info(note_id: int) -> dict[str, Any]:
     """
     Get detailed information about a note
 
@@ -62,7 +62,7 @@ def get_note_info(note_id):
     raise Exception(f"No note found for ID {note_id}")
 
 
-def update_note_field(note_id, field_name, field_value):
+def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     Update a specific field of a note
 
@@ -89,7 +89,7 @@ def update_note_field(note_id, field_name, field_value):
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
-def load_hackchinese_outlier_data(character):
+def load_hackchinese_outlier_data(character: str) -> dict[str, Any] | None:
     """
     Load the HackChinese Outlier data for a given character
 
@@ -113,7 +113,7 @@ def load_hackchinese_outlier_data(character):
         return None
 
 
-def process_explanation_text(text):
+def process_explanation_text(text: str) -> str | None:
     """
     Process explanation text: convert %% to paragraphs and remove excess newlines
 
@@ -139,7 +139,7 @@ def process_explanation_text(text):
     return "\n".join(paragraphs)
 
 
-def generate_hackchinese_outlier_html(outlier_data):
+def generate_hackchinese_outlier_html(outlier_data: dict[str, Any]) -> str | None:
     """
     Generate HTML for HackChineseOutlier Etymology field
 
@@ -163,7 +163,7 @@ def generate_hackchinese_outlier_html(outlier_data):
     return process_explanation_text(explanation)
 
 
-def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
+def update_hackchinese_outlier_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
     """
     Update notes with HackChineseOutlier Etymology for specified note types
 
@@ -174,7 +174,7 @@ def update_hackchinese_outlier_for_note_types(note_types, dry_run=False, limit=N
         overwrite (bool): If True, overwrite existing content in the field
         character (str): If specified, only process this specific character
     """
-    all_note_ids = []
+    all_note_ids: list[int] = []
 
     # Collect notes from all specified note types
     for note_type in note_types:

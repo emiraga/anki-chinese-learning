@@ -231,7 +231,7 @@ def main():
 
     # Verify that raw JSON files were created
     raw_dir = Path('public/data/hanziyuan/raw')
-    missing_files = []
+    missing_files: list[str] = []
 
     print(f"\n{'='*60}")
     print("Verifying raw JSON files...")

@@ -43,7 +43,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise
 
 
-def update_note_field(note_id, field_name, field_value):
+def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     Update a specific field of a note
 
@@ -356,7 +356,7 @@ def generate_example_sentences_html(
     return "\n".join(html_parts)
 
 
-def update_example_sentences(note_types, dry_run=False, limit=None, character=None):
+def update_example_sentences(note_types: list[str], dry_run: bool = False, limit: int | None = None, character: str | None = None) -> None:
     """
     Update notes with Example sentences
 
@@ -383,7 +383,7 @@ def update_example_sentences(note_types, dry_run=False, limit=None, character=No
     char_data = load_all_word_data(learned_chars)
 
     # Get notes to update
-    all_note_ids = []
+    all_note_ids: list[int] = []
 
     for note_type in note_types:
         # Build search query

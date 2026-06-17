@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
 from anki_utils import anki_connect_request
 from pinyin_utils import remove_tone_marks
 from gemini_utils import create_gemini_client, gemini_generate
+from typing import Any
 
 
 def load_pos_mapping():
@@ -34,7 +35,7 @@ def load_pos_mapping():
         return json.load(f)
 
 
-def format_pos_description(pos_value, pos_mapping):
+def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple[str, list[str]]:
     """
     Format POS value into a description with name and examples
 
@@ -67,7 +68,7 @@ def format_pos_description(pos_value, pos_mapping):
     return "\n".join(descriptions), unknown_codes
 
 
-def build_pos_name_to_code_mapping(pos_mapping):
+def build_pos_name_to_code_mapping(pos_mapping: dict[str, Any]) -> dict[str, str]:
     """
     Build a reverse mapping from POS English names to their codes.
 
@@ -84,7 +85,7 @@ def build_pos_name_to_code_mapping(pos_mapping):
     return name_to_code
 
 
-def suggest_pos_with_gemini(traditional, meaning, pos_mapping, gemini_client):
+def suggest_pos_with_gemini(traditional: str, meaning: str, pos_mapping: dict[str, Any], gemini_client: Any) -> str:
     """
     Use Gemini AI to suggest the appropriate POS(s) for a Chinese phrase.
     A single phrase may have multiple POS values.
@@ -128,7 +129,7 @@ Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g
         name_to_code = build_pos_name_to_code_mapping(pos_mapping)
 
         # Find codes for each suggested name
-        codes = []
+        codes: list[str] = []
         for suggested_name in suggested_names:
             # Try exact match first
             if suggested_name in name_to_code:
@@ -155,7 +156,7 @@ Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g
         raise Exception(f"  Error getting POS suggestion from Gemini: {e}")
 
 
-def generate_examples_json_with_gemini(traditional, pos_codes, pos_mapping, gemini_client):
+def generate_examples_json_with_gemini(traditional: str, pos_codes: str, pos_mapping: dict[str, Any], gemini_client: Any) -> dict[str, Any]:
     """
     Use Gemini AI to generate example sentences for each POS of a Chinese phrase.
 
@@ -174,7 +175,7 @@ def generate_examples_json_with_gemini(traditional, pos_codes, pos_mapping, gemi
 
     # Parse POS codes and build descriptions for the prompt
     codes = [code.strip() for code in pos_codes.split('/') if code.strip()]
-    pos_descriptions = []
+    pos_descriptions: list[str] = []
     code_to_name = {}
 
     for code in codes:
@@ -257,7 +258,7 @@ Example response format:
             if not isinstance(examples, list):
                 continue
 
-            validated_examples = []
+            validated_examples: list[dict[str, str]] = []
             for example in examples:
                 if isinstance(example, dict) and 'Traditional' in example and 'English' in example:
                     validated_examples.append({
@@ -276,7 +277,7 @@ Example response format:
         raise Exception(f"Error generating examples from Gemini: {e}")
 
 
-def format_examples_as_html(examples_json_str, pos_mapping):
+def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any]) -> str:
     """
     Format Examples JSON as HTML with POS name as heading, Chinese sentence,
     and gray English translation.
@@ -328,7 +329,7 @@ def format_examples_as_html(examples_json_str, pos_mapping):
     return "<br><br>".join(pos_sections)
 
 
-def extract_tagged_values(tags, prefix, suffix_map=None, separator=", ", sort=True):
+def extract_tagged_values(tags: list[str], prefix: str, suffix_map: dict[str, str] | None = None, separator: str = ", ", sort: bool = True) -> str:
     """
     Extract and process tags that start with a specific prefix
 
@@ -369,7 +370,7 @@ def extract_tagged_values(tags, prefix, suffix_map=None, separator=", ", sort=Tr
     return separator.join(values)
 
 
-def extract_props_from_tags(tags, prop_hanzi_map):
+def extract_props_from_tags(tags: list[str], prop_hanzi_map: dict[str, str]) -> str:
     """
     Extract and process tags that start with 'prop::'
 
@@ -383,7 +384,7 @@ def extract_props_from_tags(tags, prop_hanzi_map):
     return extract_tagged_values(tags, "prop::", prop_hanzi_map, ", ", True)
 
 
-def extract_mnemonic_pegs(tags):
+def extract_mnemonic_pegs(tags: list[str]) -> str:
     """
     Extract and process actor, place, and tone tags for mnemonic pegs
 
@@ -403,7 +404,7 @@ def extract_mnemonic_pegs(tags):
     return "; ".join(filter(None, [actor, place, tone]))
 
 
-def extract_anki_tags(tags):
+def extract_anki_tags(tags: list[str]) -> str:
     """
     Extract tags that are not prop::, actor::, place::, or tone:: prefixed
 
@@ -496,8 +497,8 @@ def load_pinyin_mappings():
     notes_info = get_notes_info(note_ids)
 
     # Create both mappings
-    pinyin_to_chars = {}
-    syllable_to_chars = {}
+    pinyin_to_chars: dict[str, list[str]] = {}
+    syllable_to_chars: dict[str, list[str]] = {}
 
     for note_info in notes_info:
         traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
@@ -524,7 +525,7 @@ def load_pinyin_mappings():
     return pinyin_to_chars, syllable_to_chars
 
 
-def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examples=False):
+def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, include_empty_examples: bool = False) -> list[int]:
     """
     Find notes that have prop::, actor::, place::, tone:: tags, non-empty POS field,
     empty ID, need Same Syllable Traditional field filled, have empty POS field,
@@ -569,7 +570,7 @@ def find_notes_with_tags(note_type, include_empty_pos=False, include_empty_examp
     return []
 
 
-def get_notes_info(note_ids):
+def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
     """
     Get detailed information about multiple notes
 
@@ -587,7 +588,7 @@ def get_notes_info(note_ids):
     raise Exception(f"No notes found for IDs {note_ids}")
 
 
-def update_note_fields(note_id, fields_dict):
+def update_note_fields(note_id: int, fields_dict: dict[str, str]) -> bool:
     """
     Update multiple fields of a note
 
@@ -613,7 +614,7 @@ def update_note_fields(note_id, fields_dict):
     return True
 
 
-def get_same_chars_field_value(traditional, key, char_mapping):
+def get_same_chars_field_value(traditional: str, key: str, char_mapping: dict[str, list[str]]) -> str:
     """
     Get the value for a "Same X Traditional" field by looking up other characters with the same key.
 
@@ -630,7 +631,7 @@ def get_same_chars_field_value(traditional, key, char_mapping):
     return ''.join(sorted(other_chars))
 
 
-def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client=None):
+def update_fields_for_note(note_info: dict[str, Any], prop_hanzi_map: dict[str, str], pos_mapping: dict[str, Any], pinyin_to_chars: dict[str, list[str]], syllable_to_chars: dict[str, list[str]], gemini_client: Any | None = None) -> bool:
     """
     Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
 
@@ -645,7 +646,7 @@ def update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_cha
     Returns:
         bool: True if updated, False if skipped or failed
     """
-    note_id = note_info.get('noteId')
+    note_id = note_info['noteId']
     tags = note_info.get('tags', [])
     fields_to_update = {}
 

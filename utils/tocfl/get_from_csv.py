@@ -447,7 +447,7 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
             print(f"  {diff['traditional']}: {diff['anki_pos']} -> {combined_pos}")
 
             update_note_fields(
-                int(diff['note_id']),
+                diff['note_id'],
                 {
                     "POS": new_pos_value,
                     "POS Description": "",
@@ -465,7 +465,7 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
             print(f"  {update['traditional']}: -> {context_value}")
 
             update_note_fields(
-                int(update["note_id"]),
+                update["note_id"],
                 {"Context": context_value}
             )
         print(f"Updated {len(context_updates)} Context fields")

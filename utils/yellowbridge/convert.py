@@ -19,7 +19,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from html.parser import HTMLParser
 
 
@@ -28,13 +28,13 @@ class YellowBridgeHTMLParser(HTMLParser):
 
     def __init__(self):
         super().__init__()
-        self.current_tag = None
-        self.current_attrs = {}
-        self.data_buffer = []
+        self.current_tag: str | None = None
+        self.current_attrs: dict[str, str | None] = {}
+        self.data_buffer: list[Any] = []
         self.in_zh0_span = False
         self.in_em_tag = False
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.current_tag = tag
         self.current_attrs = dict(attrs)
         if tag == 'span' and self.current_attrs.get('class') == 'zh0':
@@ -42,18 +42,18 @@ class YellowBridgeHTMLParser(HTMLParser):
         if tag == 'em':
             self.in_em_tag = True
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         if tag == 'span':
             self.in_zh0_span = False
         if tag == 'em':
             self.in_em_tag = False
         self.current_tag = None
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         self.data_buffer.append((self.current_tag, data.strip(), self.in_zh0_span, self.in_em_tag))
 
 
-def extract_functional_components(decomp_html: str) -> Dict[str, List[Dict[str, str]]]:
+def extract_functional_components(decomp_html: str) -> dict[str, list[dict[str, Any]]]:
     """
     Extract all functional components with their types from the decomposition HTML.
 
@@ -62,7 +62,7 @@ def extract_functional_components(decomp_html: str) -> Dict[str, List[Dict[str, 
     - semantic: Components that suggest meaning (radicals)
     - primitive: Basic building blocks
     """
-    components = {
+    components: dict[str, list[dict[str, Any]]] = {
         'phonetic': [],
         'semantic': [],
         'primitive': []
@@ -155,7 +155,7 @@ def extract_functional_components(decomp_html: str) -> Dict[str, List[Dict[str, 
     return components
 
 
-def extract_phonetic_components(decomp_html: str) -> List[Dict[str, str]]:
+def extract_phonetic_components(decomp_html: str) -> list[dict[str, Any]]:
     """
     Extract phonetic components from the decomposition HTML.
     (Kept for backward compatibility)
@@ -166,7 +166,7 @@ def extract_phonetic_components(decomp_html: str) -> List[Dict[str, str]]:
     return functional['phonetic']
 
 
-def extract_character_info(decomp_html: str) -> Optional[Dict[str, str]]:
+def extract_character_info(decomp_html: str) -> dict[str, Any] | None:
     """
     Extract the main character information from decomposition HTML.
 
@@ -181,7 +181,7 @@ def extract_character_info(decomp_html: str) -> Optional[Dict[str, str]]:
     if match:
         # Split pinyin by comma to get multiple readings
         pinyin_str = match.group(2).strip()
-        pinyin_list = [p.strip() for p in pinyin_str.split(',')] if pinyin_str else []
+        pinyin_list: list[str] = [p.strip() for p in pinyin_str.split(',')] if pinyin_str else []
 
         return {
             'character': match.group(1).strip(),
@@ -192,7 +192,7 @@ def extract_character_info(decomp_html: str) -> Optional[Dict[str, str]]:
     return None
 
 
-def extract_formation_methods(formation_html: str) -> List[Dict[str, str]]:
+def extract_formation_methods(formation_html: str) -> list[dict[str, Any]]:
     """
     Extract formation methods from the formation HTML.
 
@@ -238,7 +238,7 @@ def extract_definition(formation_html: str) -> Optional[str]:
     return None
 
 
-def extract_components(decomp_html: str) -> List[Dict[str, str]]:
+def extract_components(decomp_html: str) -> list[dict[str, Any]]:
     """
     Extract all components (not just phonetic) from the decomposition.
 
@@ -285,7 +285,7 @@ def extract_components(decomp_html: str) -> List[Dict[str, str]]:
     return components
 
 
-def extract_radical(decomp_html: str) -> Optional[Dict[str, str]]:
+def extract_radical(decomp_html: str) -> dict[str, Any] | None:
     """Extract the key radical component."""
     # Look for radical component with key radical marker
     radical_pattern = r"<img src=['\"]//r\.yellowbridge\.com/images/char-keyradical\.gif['\"][^>]*><span class=['\"]?zh0['\"]?>([^<]+)</span>\s*\[<em>([^<]*)</em>\]\s*([^\"]*)"
@@ -366,7 +366,7 @@ def extract_simplification(formation_html: str) -> Optional[Dict[str, str]]:
     return None
 
 
-def process_file(file_path: Path) -> Dict:
+def process_file(file_path: Path) -> dict[str, Any]:
     """
     Process a single YellowBridge JSON file.
 
@@ -426,7 +426,7 @@ def process_file(file_path: Path) -> Dict:
     return result
 
 
-def build_sounds_component_index(results: Dict[str, Dict]) -> Dict[str, Dict]:
+def build_sounds_component_index(results: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """
     Build an index mapping phonetic/sound components to characters that use them.
 
@@ -436,7 +436,7 @@ def build_sounds_component_index(results: Dict[str, Dict]) -> Dict[str, Dict]:
     Returns:
         Dictionary mapping phonetic components to their usage information.
     """
-    sounds_index = {}
+    sounds_index: dict[str, dict[str, Any]] = {}
 
     for char, data in results.items():
         phonetic_components = data.get('functionalComponents', {}).get('phonetic', [])
@@ -478,7 +478,7 @@ def process_directory(
     input_dir: Path,
     output_file: Optional[Path] = None,
     individual_files_dir: Optional[Path] = None
-) -> Dict[str, Dict]:
+) -> dict[str, dict[str, Any]]:
     """
     Process all JSON files in the input directory.
 
@@ -490,9 +490,9 @@ def process_directory(
     Returns:
         Dictionary mapping characters to their extracted data
     """
-    results = {}
-    errors = []
-    skipped = []
+    results: dict[str, dict[str, Any]] = {}
+    errors: list[str] = []
+    skipped: list[str] = []
 
     json_files = sorted(input_dir.glob('*.json'))
 

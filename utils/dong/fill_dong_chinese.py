@@ -44,7 +44,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise
 
 
-def get_note_info(note_id):
+def get_note_info(note_id: int) -> dict[str, Any]:
     """
     Get detailed information about a note
 
@@ -62,7 +62,7 @@ def get_note_info(note_id):
     raise Exception(f"No note found for ID {note_id}")
 
 
-def update_note_field(note_id, field_name, field_value):
+def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     Update a specific field of a note
 
@@ -89,7 +89,7 @@ def update_note_field(note_id, field_name, field_value):
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
-def load_dong_character(character):
+def load_dong_character(character: str) -> dict[str, Any] | None:
     """
     Load the Dong Chinese character data for a given character
 
@@ -114,7 +114,7 @@ def load_dong_character(character):
         return None
 
 
-def escape_html(text):
+def escape_html(text: str) -> str:
     """
     Escape HTML special characters
 
@@ -134,7 +134,7 @@ def escape_html(text):
             .replace("'", "&#39;"))
 
 
-def format_component_type(component_types):
+def format_component_type(component_types: list[str]) -> str:
     """
     Format component type labels with colors
 
@@ -175,7 +175,7 @@ def format_component_type(component_types):
     return " ".join(labels) + (" component" if "deleted" not in component_types else "")
 
 
-def get_component_info(component_char, dong_data):
+def get_component_info(component_char: str, dong_data: dict[str, Any]) -> tuple[str | None, str | None]:
     """
     Get pronunciation and meaning for a component character
 
@@ -215,7 +215,7 @@ def get_component_info(component_char, dong_data):
     return pinyin, gloss
 
 
-def generate_dong_etymology_html(dong_data):
+def generate_dong_etymology_html(dong_data: dict[str, Any]) -> str | None:
     """
     Generate HTML for Dongchinese Etymology field
 
@@ -228,7 +228,7 @@ def generate_dong_etymology_html(dong_data):
     if not dong_data:
         return None
 
-    html_parts = []
+    html_parts: list[str] = []
 
     if dong_data.get("gloss"):
         char_gloss = escape_html(dong_data["gloss"])
@@ -287,7 +287,7 @@ def generate_dong_etymology_html(dong_data):
     return "\n".join(html_parts)
 
 
-def should_process_note(note_type, traditional):
+def should_process_note(note_type: str, traditional: str) -> bool:
     """
     Determine if a note should be processed based on note type and traditional field
 
@@ -301,7 +301,7 @@ def should_process_note(note_type, traditional):
     return True
 
 
-def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
+def update_dong_etymology_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
     """
     Update notes with Dongchinese Etymology for specified note types
 
@@ -312,7 +312,7 @@ def update_dong_etymology_for_note_types(note_types, dry_run=False, limit=None, 
         overwrite (bool): If True, overwrite existing content in the field
         character (str): If specified, only process this specific character
     """
-    all_note_ids = []
+    all_note_ids: list[int] = []
 
     # Collect notes from all specified note types
     for note_type in note_types:

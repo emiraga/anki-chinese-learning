@@ -205,7 +205,7 @@ def get_list_words_info(lists: List[Dict[str, Any]]) -> Dict[str, str]:
     Returns:
         Dictionary mapping word IDs to traditional characters
     """
-    word_info = {}
+    word_info: dict[str, Any] = {}
 
     for list_data in lists:
         list_words = list_data.get("listWordsObject", {})
@@ -299,7 +299,7 @@ def main():
     # Load all existing words to extract components
     print("\n[2/5] Extracting components from existing words...")
     existing_words = load_word_files(WORDS_DIR)
-    component_info = {}
+    component_info: dict[str, Any] = {}
     for word in existing_words:
         comp_info = extract_component_ids(word)
         for comp_id, traditional in comp_info:
@@ -371,7 +371,7 @@ def main():
     # Process queue
     print("\nStarting download process...")
     downloaded = 0
-    failed = []
+    failed: list[tuple[str, str, str]] = []
 
     while not priority_queue.empty():
         priority, word_id, traditional = priority_queue.get()

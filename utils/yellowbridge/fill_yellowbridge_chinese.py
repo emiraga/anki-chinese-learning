@@ -44,7 +44,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise
 
 
-def get_note_info(note_id):
+def get_note_info(note_id: int) -> dict[str, Any]:
     """
     Get detailed information about a note
 
@@ -62,7 +62,7 @@ def get_note_info(note_id):
     raise Exception(f"No note found for ID {note_id}")
 
 
-def update_note_field(note_id, field_name, field_value):
+def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     Update a specific field of a note
 
@@ -89,7 +89,7 @@ def update_note_field(note_id, field_name, field_value):
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
-def load_yellowbridge_character(character):
+def load_yellowbridge_character(character: str) -> dict[str, Any] | None:
     """
     Load the YellowBridge character data for a given character
 
@@ -114,7 +114,7 @@ def load_yellowbridge_character(character):
         return None
 
 
-def escape_html(text):
+def escape_html(text: str) -> str:
     """
     Escape HTML special characters
 
@@ -134,7 +134,7 @@ def escape_html(text):
             .replace("'", "&#39;"))
 
 
-def format_component_info(component):
+def format_component_info(component: dict[str, Any]) -> str:
     """
     Format a component with pinyin and description
 
@@ -159,7 +159,7 @@ def format_component_info(component):
     return " ".join(parts)
 
 
-def generate_yellowbridge_etymology_html(yb_data):
+def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
     """
     Generate HTML for Yellowbridge Etymology field
 
@@ -172,7 +172,7 @@ def generate_yellowbridge_etymology_html(yb_data):
     if not yb_data:
         return None
 
-    html_parts = []
+    html_parts: list[str] = []
 
     # 1. Definition
     if yb_data.get("definition"):
@@ -243,7 +243,7 @@ def generate_yellowbridge_etymology_html(yb_data):
     return "\n".join(html_parts)
 
 
-def should_process_note(note_type, traditional):
+def should_process_note(note_type: str, traditional: str) -> bool:
     """
     Determine if a note should be processed based on note type and traditional field
 
@@ -257,7 +257,7 @@ def should_process_note(note_type, traditional):
     return True
 
 
-def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
+def update_yellowbridge_etymology_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
     """
     Update notes with Yellowbridge Etymology for specified note types
 
@@ -268,7 +268,7 @@ def update_yellowbridge_etymology_for_note_types(note_types, dry_run=False, limi
         overwrite (bool): If True, overwrite existing content in the field
         character (str): If specified, only process this specific character
     """
-    all_note_ids = []
+    all_note_ids: list[int] = []
 
     # Collect notes from all specified note types
     for note_type in note_types:

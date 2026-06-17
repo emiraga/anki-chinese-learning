@@ -298,7 +298,6 @@ def update_note_audio(note_id: int, audio_filename: str) -> bool:
         return True
     else:
         raise Exception(f"Failed to update Audio field for note {note_id}")
-        return False
 
 
 def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:

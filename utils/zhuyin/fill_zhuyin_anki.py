@@ -43,14 +43,14 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise
 
 
-def pinyin_to_bopomofo(pinyin_text):
+def pinyin_to_bopomofo(pinyin_text: str) -> str:
     if not pinyin_text or pinyin_text.strip() == "":
         return ""
 
     return dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
 
 
-def find_notes_with_empty_zhuyin(note_type):
+def find_notes_with_empty_zhuyin(note_type: str) -> list[int]:
     """
     Find notes with empty Zhuyin field but non-empty Traditional field
 
@@ -75,7 +75,7 @@ def find_notes_with_empty_zhuyin(note_type):
     return []
 
 
-def get_note_info(note_id):
+def get_note_info(note_id: int) -> dict[str, Any]:
     """
     Get detailed information about a note
 
@@ -93,7 +93,7 @@ def get_note_info(note_id):
     raise Exception("No note found")
 
 
-def update_note_zhuyin(note_id, zhuyin_text):
+def update_note_zhuyin(note_id: int, zhuyin_text: str) -> bool:
     """
     Update the Zhuyin field of a note
 
@@ -122,7 +122,7 @@ def update_note_zhuyin(note_id, zhuyin_text):
         return False
 
 
-def update_zhuyin_for_note(note_type, note_id):
+def update_zhuyin_for_note(note_type: str, note_id: int) -> None:
     """
     Update Zhuyin field for a single note based on its Traditional field
 

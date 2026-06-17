@@ -50,7 +50,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
         raise
 
 
-def get_note_info(note_id):
+def get_note_info(note_id: int) -> dict[str, Any]:
     """
     Get detailed information about a note
 
@@ -68,7 +68,7 @@ def get_note_info(note_id):
     raise Exception(f"No note found for ID {note_id}")
 
 
-def update_note_field(note_id, field_name, field_value):
+def update_note_field(note_id: int, field_name: str, field_value: str) -> None:
     """
     Update a specific field of a note
 
@@ -93,7 +93,7 @@ def update_note_field(note_id, field_name, field_value):
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
 
 
-def replace_hrefs_with_pleco_urls(html):
+def replace_hrefs_with_pleco_urls(html: str) -> str:
     """
     Replace href="?c=CHARACTER" with href="plecoapi://x-callback-url/df?hw=CHARACTER"
 
@@ -109,7 +109,7 @@ def replace_hrefs_with_pleco_urls(html):
     return re.sub(pattern, replacement, html)
 
 
-def load_rtega_mnemonic(character):
+def load_rtega_mnemonic(character: str) -> str | None:
     """
     Load the Rtega mnemonic HTML for a given character
 
@@ -139,7 +139,7 @@ def load_rtega_mnemonic(character):
         return None
 
 
-def should_process_note(note_type, traditional):
+def should_process_note(note_type: str, traditional: str) -> bool:
     """
     Determine if a note should be processed based on note type and traditional field
 
@@ -156,7 +156,7 @@ def should_process_note(note_type, traditional):
     return True
 
 
-def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overwrite=False, character=None):
+def update_mnemonics_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
     """
     Update notes with Rtega mnemonics for specified note types
 
@@ -167,7 +167,7 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
         overwrite (bool): If True, overwrite existing content in the field
         character (str): If specified, only process this specific character
     """
-    all_note_ids = []
+    all_note_ids: list[int] = []
 
     # Collect notes from all specified note types
     for note_type in note_types:
@@ -229,7 +229,7 @@ def update_mnemonics_for_note_types(note_types, dry_run=False, limit=None, overw
     for i, note_info in enumerate(all_notes_info, 1):
         note_id = None
         try:
-            note_id = note_info.get('noteId')
+            note_id = note_info['noteId']
             note_type = note_info.get('modelName', 'Unknown')
 
             # Get the Traditional field (which contains the hanzi character)
