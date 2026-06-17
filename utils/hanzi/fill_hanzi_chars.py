@@ -71,23 +71,23 @@ def extract_existing_hanzi_characters() -> set[str]:
                 hanzi_field = note_info["fields"].get("Hanzi", {}).get("value", "").strip()
 
                 if hanzi_field and len(hanzi_field) == 1 and traditional != hanzi_field:
-                        simplified_of_traditional = to_simplified(traditional)
+                    simplified_of_traditional = to_simplified(traditional)
 
-                        if simplified_of_traditional != hanzi_field:
-                            # Traditional doesn't simplify to Hanzi field value
-                            # This could mean Traditional field contains the simplified form
-                            # Check if Hanzi field is already in simplified form
-                            traditional_of_hanzi = to_traditional(hanzi_field)
+                    if simplified_of_traditional != hanzi_field:
+                        # Traditional doesn't simplify to Hanzi field value
+                        # This could mean Traditional field contains the simplified form
+                        # Check if Hanzi field is already in simplified form
+                        traditional_of_hanzi = to_traditional(hanzi_field)
 
-                            if traditional_of_hanzi != traditional and traditional == hanzi_field:
-                                # Traditional field equals Hanzi field, but there's a different traditional form
-                                note_id = note_info.get("noteId", "unknown")
-                                raise ValueError(
-                                    f"Simplified character '{traditional}' found in Traditional field of Hanzi note {note_id}. "
-                                    f"Traditional form should be '{traditional_of_hanzi}'. "
-                                    f"Hanzi (simplified) field correctly contains: '{hanzi_field}'. "
-                                    f"Please correct the Traditional field to use '{traditional_of_hanzi}'."
-                                )
+                        if traditional_of_hanzi != traditional and traditional == hanzi_field:
+                            # Traditional field equals Hanzi field, but there's a different traditional form
+                            note_id = note_info.get("noteId", "unknown")
+                            raise ValueError(
+                                f"Simplified character '{traditional}' found in Traditional field of Hanzi note {note_id}. "
+                                f"Traditional form should be '{traditional_of_hanzi}'. "
+                                f"Hanzi (simplified) field correctly contains: '{hanzi_field}'. "
+                                f"Please correct the Traditional field to use '{traditional_of_hanzi}'."
+                            )
 
                 existing_chars.add(traditional)
 

@@ -280,57 +280,57 @@ def main():
     # Build set of downloaded single characters
     # Include all alphanumeric and common punctuation
     downloaded_chars = {
-            "，",  # noqa: RUF001
-            "。",
-            "！",  # noqa: RUF001
-            "？",  # noqa: RUF001
-            "；",  # noqa: RUF001
-            "：",  # noqa: RUF001
-            "、",
-            "…",
-            "—",
-            "·",
-            "「",
-            "」",
-            "『",
-            "』",
-            "（",  # noqa: RUF001
-            "）",  # noqa: RUF001
-            "《",
-            "》",
-            "!",
-            "?",
-            ";",
-            ":",
-            ",",
-            ".",
-            "-",
-            "_",
-            "'",
-            '"',
-            "(",
-            ")",
-            "[",
-            "]",
-            "{",
-            "}",
-            "<",
-            ">",
-            "/",
-            "\\",
-            "|",
-            "@",
-            "#",
-            "$",
-            "%",
-            "^",
-            "&",
-            "*",
-            "+",
-            "=",
-            "~",
-            "`",
-        }
+        "，",  # noqa: RUF001
+        "。",
+        "！",  # noqa: RUF001
+        "？",  # noqa: RUF001
+        "；",  # noqa: RUF001
+        "：",  # noqa: RUF001
+        "、",
+        "…",
+        "—",
+        "·",
+        "「",
+        "」",
+        "『",
+        "』",
+        "（",  # noqa: RUF001
+        "）",  # noqa: RUF001
+        "《",
+        "》",
+        "!",
+        "?",
+        ";",
+        ":",
+        ",",
+        ".",
+        "-",
+        "_",
+        "'",
+        '"',
+        "(",
+        ")",
+        "[",
+        "]",
+        "{",
+        "}",
+        "<",
+        ">",
+        "/",
+        "\\",
+        "|",
+        "@",
+        "#",
+        "$",
+        "%",
+        "^",
+        "&",
+        "*",
+        "+",
+        "=",
+        "~",
+        "`",
+    }
     # Add all alphanumeric characters
     downloaded_chars.update(chr(i) for i in range(ord("a"), ord("z") + 1))  # a-z
     downloaded_chars.update(chr(i) for i in range(ord("A"), ord("Z") + 1))  # A-Z

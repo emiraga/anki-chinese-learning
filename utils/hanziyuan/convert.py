@@ -199,11 +199,7 @@ def convert_etymology_characters(etymology_html: str, image_map: dict[str, str])
     # Validate: Check if any etymology IDs are missing images
     missing_images: list[tuple[str, str]] = []
     for section_name, section_data in result.items():
-        missing_images.extend(
-            (section_name, item["id"])
-            for item in section_data.get("items", [])
-            if item["id"] and not item["image"]
-        )
+        missing_images.extend((section_name, item["id"]) for item in section_data.get("items", []) if item["id"] and not item["image"])
 
     if missing_images:
         missing_list = ", ".join(f"{section}:{id}" for section, id in missing_images)

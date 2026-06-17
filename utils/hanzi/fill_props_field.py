@@ -541,7 +541,7 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
     """
     # Build the base conditions for all note types
     base_conditions = (
-        '-is:suspended (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* '
+        "-is:suspended (tag:prop::* OR tag:actor::* OR tag:place::* OR tag:tone::* "
         'OR tag:chinese::category::* OR (POS:_* "POS Description:") OR "ID:")'
     )
 
