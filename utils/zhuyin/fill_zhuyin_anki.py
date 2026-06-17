@@ -28,11 +28,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -61,7 +57,7 @@ def find_notes_with_empty_zhuyin(note_type: str) -> list[int]:
         list: List of note IDs
     """
     # Search for notes with non-empty Traditional but empty Zhuyin field
-    search_query = f'note:{note_type} Traditional:_* Zhuyin:'
+    search_query = f"note:{note_type} Traditional:_* Zhuyin:"
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -107,12 +103,7 @@ def update_note_zhuyin(note_id: int, zhuyin_text: str) -> bool:
     # Prepare the update
     fields = {"Zhuyin": zhuyin_text}
 
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
 
     if response and response.get("error") is None:  # anki-connect returns None on success
         print(f"Updated Zhuyin field for note {note_id} with: {zhuyin_text}")
@@ -136,13 +127,13 @@ def update_zhuyin_for_note(note_type: str, note_id: int) -> None:
         return
 
     # Get the Traditional field value (Chinese characters)
-    pinyin_field = note_info['fields'].get('Pinyin', {})
+    pinyin_field = note_info["fields"].get("Pinyin", {})
     print(pinyin_field)
-    current_pinyin = pinyin_field.get('value', '').strip().replace("<div>", "").replace("</div>", "")
+    current_pinyin = pinyin_field.get("value", "").strip().replace("<div>", "").replace("</div>", "")
 
     # Get the current Zhuyin field value
-    zhuyin_field = note_info['fields'].get('Zhuyin', {})
-    current_zhuyin = zhuyin_field.get('value', '').strip()
+    zhuyin_field = note_info["fields"].get("Zhuyin", {})
+    current_zhuyin = zhuyin_field.get("value", "").strip()
 
     # Only update if Zhuyin is empty and Traditional has content
     if current_zhuyin:

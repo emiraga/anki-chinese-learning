@@ -74,7 +74,7 @@ def fetch_all_hanzi_notes() -> list[dict[str, Any]]:
     note_ids = find_notes_by_query("note:Hanzi")
     notes: list[dict[str, Any]] = []
     for i in range(0, len(note_ids), 100):
-        notes.extend(get_notes_info(note_ids[i:i + 100]))
+        notes.extend(get_notes_info(note_ids[i : i + 100]))
     print(f"Fetched {len(notes)} Hanzi notes")
     return notes
 
@@ -104,15 +104,10 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
 
         hanzi = get_field(note, "Hanzi")
         if not hanzi:
-            problems.append(
-                f"Hanzi note {note['noteId']} ('{traditional}') has an empty Hanzi field"
-            )
+            problems.append(f"Hanzi note {note['noteId']} ('{traditional}') has an empty Hanzi field")
             continue
         if len(hanzi) != 1:
-            problems.append(
-                f"Hanzi note {note['noteId']} ('{traditional}') has a multi-character "
-                f"Hanzi field '{hanzi}'"
-            )
+            problems.append(f"Hanzi note {note['noteId']} ('{traditional}') has a multi-character Hanzi field '{hanzi}'")
             continue
 
         # The Hanzi field must be exactly the simplified form of the Traditional
@@ -143,10 +138,7 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
         checked += 1
 
     if problems:
-        raise ValueError(
-            f"Found {len(problems)} inconsistent unsuspended Hanzi note(s):\n  "
-            + "\n  ".join(problems)
-        )
+        raise ValueError(f"Found {len(problems)} inconsistent unsuspended Hanzi note(s):\n  " + "\n  ".join(problems))
 
     print(f"Validated {checked} single-character unsuspended Hanzi notes (no problems found)")
 
@@ -213,7 +205,7 @@ def ensure_minimum_new_cards(notes: list[dict[str, Any]], freq: Counter[str], dr
     card2_ids = find_cards_by_query("note:Hanzi card:2")
     card2_info: list[dict[str, Any]] = []
     for i in range(0, len(card2_ids), 100):
-        card2_info.extend(get_cards_info(card2_ids[i:i + 100]))
+        card2_info.extend(get_cards_info(card2_ids[i : i + 100]))
     note_to_card2 = {card["note"]: card for card in card2_info}
 
     current_new = len(find_cards_by_query("note:Hanzi card:2 is:new -is:suspended"))
@@ -245,15 +237,9 @@ def ensure_minimum_new_cards(notes: list[dict[str, Any]], freq: Counter[str], dr
         print("No suspended card:2 candidates available to activate")
         return
 
-    print(
-        f"Activating {len(to_activate)} suspended card:2 card(s) "
-        f"(by frequency): {' '.join(char for char, _ in to_activate)}"
-    )
+    print(f"Activating {len(to_activate)} suspended card:2 card(s) (by frequency): {' '.join(char for char, _ in to_activate)}")
     if len(to_activate) < needed:
-        print(
-            f"Warning: only {len(to_activate)} suspended candidate(s) available, "
-            f"still short of the target of {MIN_NEW_CARDS} new cards."
-        )
+        print(f"Warning: only {len(to_activate)} suspended candidate(s) available, still short of the target of {MIN_NEW_CARDS} new cards.")
 
     if dry_run:
         print("(dry-run) Skipping un-suspend / reset")
@@ -266,9 +252,7 @@ def ensure_minimum_new_cards(notes: list[dict[str, Any]], freq: Counter[str], dr
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Validate, tag, and schedule Hanzi notes with a differing simplified form"
-    )
+    parser = argparse.ArgumentParser(description="Validate, tag, and schedule Hanzi notes with a differing simplified form")
     parser.add_argument(
         "--dry-run",
         action="store_true",

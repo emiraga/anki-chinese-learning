@@ -97,12 +97,8 @@ def translate_text_with_google(text: str, max_retries: int = 3) -> str:
     # Not in cache, translate it
     for attempt in range(max_retries):
         try:
-            result = client.translate(
-                text,
-                source_language='zh-CN',
-                target_language='en'
-            )
-            translated_text = result['translatedText']
+            result = client.translate(text, source_language="zh-CN", target_language="en")
+            translated_text = result["translatedText"]
 
             # Store in cache
             _translation_cache[text] = translated_text
@@ -135,32 +131,32 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
     all_componentIn_chars: set[str] = set()
 
     # First pass: collect all data from files
-    for file_path in dong_dir.glob('*.json'):
+    for file_path in dong_dir.glob("*.json"):
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Get the character and its pinyinFrequencies from root level
-            if 'char' in data and 'pinyinFrequencies' in data and data['pinyinFrequencies']:
-                char = data['char']
-                pinyin_freqs = data['pinyinFrequencies']
+            if "char" in data and "pinyinFrequencies" in data and data["pinyinFrequencies"]:
+                char = data["char"]
+                pinyin_freqs = data["pinyinFrequencies"]
                 char_to_pinyin[char] = pinyin_freqs
 
             # Also get pinyinFrequencies from chars array as fallback
-            if 'chars' in data and isinstance(data['chars'], list):
-                for char_obj in data['chars']:
-                    if 'char' in char_obj and 'pinyinFrequencies' in char_obj and char_obj['pinyinFrequencies']:
-                        char = char_obj['char']
-                        pinyin_freqs = char_obj['pinyinFrequencies']
+            if "chars" in data and isinstance(data["chars"], list):
+                for char_obj in data["chars"]:
+                    if "char" in char_obj and "pinyinFrequencies" in char_obj and char_obj["pinyinFrequencies"]:
+                        char = char_obj["char"]
+                        pinyin_freqs = char_obj["pinyinFrequencies"]
                         # Only add if not already present (root level takes precedence)
                         if char not in char_to_pinyin:
                             char_to_pinyin[char] = pinyin_freqs
 
             # Collect all characters from componentIn for pypinyin fallback
-            if use_pypinyin_fallback and 'componentIn' in data and isinstance(data['componentIn'], list):
-                for item in data['componentIn']:
-                    if 'char' in item:
-                        all_componentIn_chars.add(item['char'])
+            if use_pypinyin_fallback and "componentIn" in data and isinstance(data["componentIn"], list):
+                for item in data["componentIn"]:
+                    if "char" in item:
+                        all_componentIn_chars.add(item["char"])
         except Exception as e:
             print(f"Warning: Error reading {file_path.name} for mapping: {e}")
             continue
@@ -191,7 +187,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
         True if file was modified, False otherwise
     """
     try:
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
@@ -200,15 +196,15 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
     modified = False
 
     # Process chars array
-    if 'chars' in data and isinstance(data['chars'], list):
-        for char_obj in data['chars']:
+    if "chars" in data and isinstance(data["chars"], list):
+        for char_obj in data["chars"]:
             # Translate shuowen field
-            if char_obj.get('shuowen'):
-                if 'shuowen_en_translation' not in char_obj or not char_obj['shuowen_en_translation']:
+            if char_obj.get("shuowen"):
+                if "shuowen_en_translation" not in char_obj or not char_obj["shuowen_en_translation"]:
                     print(f"Translating shuowen for {char_obj.get('char', 'unknown')}...")
                     try:
-                        translation = translate_text_with_google(char_obj['shuowen'])
-                        char_obj['shuowen_en_translation'] = translation
+                        translation = translate_text_with_google(char_obj["shuowen"])
+                        char_obj["shuowen_en_translation"] = translation
                         modified = True
                         print(f"  Original: {char_obj['shuowen'][:80]}...")
                         print(f"  Translated: {translation[:80]}...")
@@ -217,17 +213,17 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
                         raise
                 else:
                     # Populate cache with existing translation
-                    _translation_cache[char_obj['shuowen']] = char_obj['shuowen_en_translation']
+                    _translation_cache[char_obj["shuowen"]] = char_obj["shuowen_en_translation"]
 
             # Translate comments.text field
-            if 'comments' in char_obj and isinstance(char_obj['comments'], list):
-                for comment in char_obj['comments']:
-                    if comment.get('text'):
-                        if 'text_en_translation' not in comment or not comment['text_en_translation']:
+            if "comments" in char_obj and isinstance(char_obj["comments"], list):
+                for comment in char_obj["comments"]:
+                    if comment.get("text"):
+                        if "text_en_translation" not in comment or not comment["text_en_translation"]:
                             print(f"Translating comment for {char_obj.get('char', 'unknown')}...")
                             try:
-                                translation = translate_text_with_google(comment['text'])
-                                comment['text_en_translation'] = translation
+                                translation = translate_text_with_google(comment["text"])
+                                comment["text_en_translation"] = translation
                                 modified = True
                                 print(f"  Original: {comment['text'][:80]}...")
                                 print(f"  Translated: {translation[:80]}...")
@@ -236,17 +232,17 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
                                 raise
                         else:
                             # Populate cache with existing translation
-                            _translation_cache[comment['text']] = comment['text_en_translation']
+                            _translation_cache[comment["text"]] = comment["text_en_translation"]
 
     # Process componentIn array
-    if 'componentIn' in data and isinstance(data['componentIn'], list):
-        for component_obj in data['componentIn']:
-            if 'char' in component_obj:
-                char = component_obj['char']
+    if "componentIn" in data and isinstance(data["componentIn"], list):
+        for component_obj in data["componentIn"]:
+            if "char" in component_obj:
+                char = component_obj["char"]
                 # Check if pinyinFrequencies already exists and matches
                 if char in char_to_pinyin:
                     expected_pinyin = char_to_pinyin[char]
-                    current_pinyin = component_obj.get('pinyinFrequencies')
+                    current_pinyin = component_obj.get("pinyinFrequencies")
 
                     # Only modify if pinyinFrequencies is missing or different
                     if current_pinyin != expected_pinyin:
@@ -254,13 +250,13 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
                             print(f"Adding pinyinFrequencies for componentIn char '{char}' in {file_path.name}")
                         else:
                             print(f"Updating pinyinFrequencies for componentIn char '{char}' in {file_path.name}")
-                        component_obj['pinyinFrequencies'] = expected_pinyin
+                        component_obj["pinyinFrequencies"] = expected_pinyin
                         modified = True
 
     # Save the modified file
     if modified and not dry_run:
         try:
-            with open(file_path, 'w', encoding='utf-8') as f:
+            with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             print(f"✓ Saved {file_path}")
         except Exception as e:
@@ -276,23 +272,11 @@ def main():
     """
     Main function to process all dong JSON files.
     """
-    parser = argparse.ArgumentParser(
-        description='Add English translations to dong Chinese JSON files using Google Cloud Translation API'
-    )
+    parser = argparse.ArgumentParser(description="Add English translations to dong Chinese JSON files using Google Cloud Translation API")
+    parser.add_argument("--dry-run", action="store_true", help="Print what would be done without actually saving files")
+    parser.add_argument("--file", type=str, help="Process only a specific file (relative to public/data/dong/)")
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Print what would be done without actually saving files'
-    )
-    parser.add_argument(
-        '--file',
-        type=str,
-        help='Process only a specific file (relative to public/data/dong/)'
-    )
-    parser.add_argument(
-        '--credentials',
-        type=str,
-        help='Path to Google Cloud credentials JSON file (default: utils/tts/gcloud_account.json)'
+        "--credentials", type=str, help="Path to Google Cloud credentials JSON file (default: utils/tts/gcloud_account.json)"
     )
 
     args = parser.parse_args()
@@ -304,7 +288,7 @@ def main():
     # Set up credentials
     credentials_path = args.credentials
     if not credentials_path:
-        credentials_path = project_root / 'utils' / 'tts' / 'gcloud_account.json'
+        credentials_path = project_root / "utils" / "tts" / "gcloud_account.json"
     else:
         credentials_path = Path(credentials_path)
 
@@ -313,9 +297,9 @@ def main():
         sys.exit(1)
 
     # Set environment variable for Google Cloud credentials
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = str(credentials_path)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
 
-    dong_dir = project_root / 'public' / 'data' / 'dong'
+    dong_dir = project_root / "public" / "data" / "dong"
 
     if not dong_dir.exists():
         print(f"Error: Directory not found: {dong_dir}")
@@ -334,7 +318,7 @@ def main():
             sys.exit(1)
         files_to_process = [file_path]
     else:
-        files_to_process = sorted(dong_dir.glob('*.json'))
+        files_to_process = sorted(dong_dir.glob("*.json"))
 
     if not files_to_process:
         print("No JSON files found to process")
@@ -358,5 +342,5 @@ def main():
     print(f"Translation cache: {len(_translation_cache)} unique texts cached")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -38,7 +38,7 @@ def load_word_files(directory: Path) -> list[dict[str, Any]]:
 
     for file_path in directory.glob("*.json"):
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 word_data = json.load(f)
                 words.append(word_data)
         except json.JSONDecodeError as e:
@@ -161,7 +161,7 @@ def load_list_files(directory: Path, file_paths: list[Path] | None = None) -> li
             continue
 
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 list_data = json.load(f)
                 lists.append(list_data)
                 list_name = list_data.get("name", file_path.stem)
@@ -185,7 +185,7 @@ def load_single_word_file(file_path: Path) -> dict[str, Any] | None:
         Parsed word dictionary or None if error
     """
     try:
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             return json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error parsing {file_path}: {e}")
@@ -226,28 +226,26 @@ def main():
     3. Multi-character words from lists
     """
     # Parse command line arguments
-    parser = argparse.ArgumentParser(
-        description="Preload words from HackChinese with intelligent prioritization"
-    )
+    parser = argparse.ArgumentParser(description="Preload words from HackChinese with intelligent prioritization")
     parser.add_argument(
         "files",
         nargs="*",
-        help="Specific list files to load (e.g., hsk1.json hsk2.json). If not provided, loads all files from lists directory."
+        help="Specific list files to load (e.g., hsk1.json hsk2.json). If not provided, loads all files from lists directory.",
     )
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Download all words, even if all their characters are already downloaded. By default, skips words where all characters are known."
+        help="Download all words, even if all their characters are already downloaded. By default, skips words where all characters are known.",
     )
     parser.add_argument(
         "--no-components",
         action="store_true",
-        help="Skip queuing components from downloaded words. By default, components from newly downloaded words are added to the queue."
+        help="Skip queuing components from downloaded words. By default, components from newly downloaded words are added to the queue.",
     )
     parser.add_argument(
         "--no-existing-components",
         action="store_true",
-        help="Skip adding components from already downloaded words (Priority 2). By default, components from existing words are added to the queue."
+        help="Skip adding components from already downloaded words (Priority 2). By default, components from existing words are added to the queue.",
     )
     args = parser.parse_args()
 
@@ -275,14 +273,66 @@ def main():
 
     # Build set of downloaded single characters
     # Include all alphanumeric and common punctuation
-    downloaded_chars = set(['，','。','！','？','；','：','、','…','—','·','「','」','『','』','（','）','《','》', '…',
-                           '!','?',';',':',',','.','-','_','\'','"','(',')','[',']','{','}','<','>','/','\\',
-                           '|','@','#','$','%','^','&','*','+','=','~','`'])
+    downloaded_chars = set(
+        [
+            "，",
+            "。",
+            "！",
+            "？",
+            "；",
+            "：",
+            "、",
+            "…",
+            "—",
+            "·",
+            "「",
+            "」",
+            "『",
+            "』",
+            "（",
+            "）",
+            "《",
+            "》",
+            "…",
+            "!",
+            "?",
+            ";",
+            ":",
+            ",",
+            ".",
+            "-",
+            "_",
+            "'",
+            '"',
+            "(",
+            ")",
+            "[",
+            "]",
+            "{",
+            "}",
+            "<",
+            ">",
+            "/",
+            "\\",
+            "|",
+            "@",
+            "#",
+            "$",
+            "%",
+            "^",
+            "&",
+            "*",
+            "+",
+            "=",
+            "~",
+            "`",
+        ]
+    )
     # Add all alphanumeric characters
-    downloaded_chars.update(chr(i) for i in range(ord('a'), ord('z') + 1))  # a-z
-    downloaded_chars.update(chr(i) for i in range(ord('A'), ord('Z') + 1))  # A-Z
-    downloaded_chars.update(chr(i) for i in range(ord('0'), ord('9') + 1))  # 0-9
-    downloaded_chars.add(' ')  # space
+    downloaded_chars.update(chr(i) for i in range(ord("a"), ord("z") + 1))  # a-z
+    downloaded_chars.update(chr(i) for i in range(ord("A"), ord("Z") + 1))  # A-Z
+    downloaded_chars.update(chr(i) for i in range(ord("0"), ord("9") + 1))  # 0-9
+    downloaded_chars.add(" ")  # space
     print(f"  Pre-initialized {len(downloaded_chars)} characters (alphanumeric + punctuation)")
 
     for file_path in WORDS_DIR.glob("*.json"):
@@ -433,6 +483,7 @@ def main():
         print("\nFailed downloads:")
         for word_id, traditional, error in failed:
             print(f"  - {traditional} ({word_id}): {error}")
+
 
 if __name__ == "__main__":
     main()

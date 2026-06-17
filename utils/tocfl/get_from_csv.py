@@ -31,6 +31,7 @@ def load_valid_pos() -> dict[str, str]:
         pos_data = json.load(f)
     return {key.lower(): key for key in pos_data.keys()}
 
+
 LEVEL_ORDER = [
     "Novice 1",
     "Novice 2",
@@ -54,6 +55,7 @@ class TocflWord:
 @dataclass
 class TocflEntry:
     """Aggregated entry for a traditional character, combining all occurrences."""
+
     traditional: str
     entries: list[TocflWord]
     pinyin: list[str]
@@ -401,22 +403,26 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
         csv_pos = set(entry.part_of_speech)
 
         if anki_pos != csv_pos:
-            differences.append({
-                "note_id": note["noteId"],
-                "traditional": traditional,
-                "anki_pos": sorted(anki_pos),
-                "csv_pos": sorted(csv_pos),
-                "anki_only": sorted(anki_pos - csv_pos),
-                "csv_only": sorted(csv_pos - anki_pos),
-            })
+            differences.append(
+                {
+                    "note_id": note["noteId"],
+                    "traditional": traditional,
+                    "anki_pos": sorted(anki_pos),
+                    "csv_pos": sorted(csv_pos),
+                    "anki_only": sorted(anki_pos - csv_pos),
+                    "csv_only": sorted(csv_pos - anki_pos),
+                }
+            )
 
         # Track context updates for notes with empty Context field
         if not anki_context and entry.context:
-            context_updates.append({
-                "note_id": note["noteId"],
-                "traditional": traditional,
-                "csv_context": entry.context,
-            })
+            context_updates.append(
+                {
+                    "note_id": note["noteId"],
+                    "traditional": traditional,
+                    "csv_context": entry.context,
+                }
+            )
 
     # Print results
     print("\n=== Results ===")
@@ -430,30 +436,30 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
             print(f"\n{diff['traditional']}:")
             print(f"  Anki: {diff['anki_pos']}")
             print(f"  CSV:  {diff['csv_pos']}")
-            if diff['anki_only']:
+            if diff["anki_only"]:
                 print(f"  Only in Anki: {diff['anki_only']}")
-            if diff['csv_only']:
+            if diff["csv_only"]:
                 print(f"  Only in CSV:  {diff['csv_only']}")
 
     # Update Anki notes that have POS values only in CSV
-    notes_to_update = [d for d in differences if d['csv_only']]
+    notes_to_update = [d for d in differences if d["csv_only"]]
     if notes_to_update:
         print(f"\n=== Updating {len(notes_to_update)} notes with CSV-only POS values ===")
         for diff in notes_to_update:
             # Combine all POS values (both from Anki and CSV)
-            combined_pos = sorted(set(diff['anki_pos']) | set(diff['csv_pos']))
+            combined_pos = sorted(set(diff["anki_pos"]) | set(diff["csv_pos"]))
             new_pos_value = "/".join(combined_pos)
 
             print(f"  {diff['traditional']}: {diff['anki_pos']} -> {combined_pos}")
 
             update_note_fields(
-                diff['note_id'],
+                diff["note_id"],
                 {
                     "POS": new_pos_value,
                     "POS Description": "",
                     "Examples": "",
                     "Examples JSON": "",
-                }
+                },
             )
         print(f"Updated {len(notes_to_update)} notes")
 
@@ -464,10 +470,7 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
             context_value = ", ".join(update["csv_context"])
             print(f"  {update['traditional']}: -> {context_value}")
 
-            update_note_fields(
-                update["note_id"],
-                {"Context": context_value}
-            )
+            update_note_fields(update["note_id"], {"Context": context_value})
         print(f"Updated {len(context_updates)} Context fields")
 
 

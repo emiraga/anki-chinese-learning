@@ -29,11 +29,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> d
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     response = requests.post("http://localhost:8765", json=request_data)
     response.raise_for_status()
@@ -43,6 +39,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> d
         raise Exception(f"AnkiConnect error: {result['error']}")
 
     return result
+
 
 MODEL_NAME = "ConnectDots"
 CARD_NAME = "Card 1"
@@ -74,27 +71,12 @@ def get_current_styling() -> str:
 
 def update_templates(front: str, back: str) -> None:
     """Update templates in Anki."""
-    anki_connect_request("updateModelTemplates", {
-        "model": {
-            "name": MODEL_NAME,
-            "templates": {
-                CARD_NAME: {
-                    "Front": front,
-                    "Back": back
-                }
-            }
-        }
-    })
+    anki_connect_request("updateModelTemplates", {"model": {"name": MODEL_NAME, "templates": {CARD_NAME: {"Front": front, "Back": back}}}})
 
 
 def update_styling(css: str) -> None:
     """Update CSS styling in Anki."""
-    anki_connect_request("updateModelStyling", {
-        "model": {
-            "name": MODEL_NAME,
-            "css": css
-        }
-    })
+    anki_connect_request("updateModelStyling", {"model": {"name": MODEL_NAME, "css": css}})
 
 
 def normalize_whitespace(text: str) -> str:

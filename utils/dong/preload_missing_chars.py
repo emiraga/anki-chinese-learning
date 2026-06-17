@@ -23,9 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.character_discovery import discover_all_characters, extract_all_characters
 
 
-def get_component_chars_from_dong_files(
-    dong_data_dir: Path, top_words_share_threshold: float = 0.02
-) -> tuple[set[str], "Counter[str]"]:
+def get_component_chars_from_dong_files(dong_data_dir: Path, top_words_share_threshold: float = 0.02) -> tuple[set[str], "Counter[str]"]:
     """
     Extract all component characters referenced in existing dong JSON files
 
@@ -52,13 +50,13 @@ def get_component_chars_from_dong_files(
 
     for json_file in json_files:
         try:
-            with open(json_file, encoding='utf-8') as f:
+            with open(json_file, encoding="utf-8") as f:
                 data = json.load(f)
 
                 # Extract components array
-                components = data.get('components', [])
+                components = data.get("components", [])
                 for component in components:
-                    char = component.get('character', '')
+                    char = component.get("character", "")
                     if char:
                         # Extract individual characters from the component
                         chars = extract_all_characters(char)
@@ -66,19 +64,19 @@ def get_component_chars_from_dong_files(
                         component_frequency.update(chars)
 
                 # Extract characters from hint/description field
-                hint = data.get('hint', '')
+                hint = data.get("hint", "")
                 if hint:
                     chars = extract_all_characters(hint)
                     description_chars.update(chars)
                     description_frequency.update(chars)
 
                 # Extract characters from topWords with share > threshold (from 'trad' field only)
-                statistics = data.get('statistics', {})
-                top_words = statistics.get('topWords', [])
+                statistics = data.get("statistics", {})
+                top_words = statistics.get("topWords", [])
                 for word_entry in top_words:
-                    share = word_entry.get('share', 0)
+                    share = word_entry.get("share", 0)
                     if share > top_words_share_threshold:
-                        trad = word_entry.get('trad', '')
+                        trad = word_entry.get("trad", "")
                         chars = extract_all_characters(trad)
                         top_words_chars.update(chars)
                         top_words_frequency.update(chars)
@@ -98,23 +96,12 @@ def get_component_chars_from_dong_files(
 
 def main():
     # Blacklist of characters to skip (e.g., special radicals, punctuation)
-    BLACKLIST_CHARS = {'⺁', '⺀', '〢'}
+    BLACKLIST_CHARS = {"⺁", "⺀", "〢"}
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(
-        description='Find and preload missing Chinese characters for dong-chinese data'
-    )
-    parser.add_argument(
-        '--no-anki',
-        action='store_true',
-        help='Disable scanning Anki for characters'
-    )
-    parser.add_argument(
-        '--limit',
-        type=int,
-        default=None,
-        help='Limit the number of characters to preload (processes most frequent first)'
-    )
+    parser = argparse.ArgumentParser(description="Find and preload missing Chinese characters for dong-chinese data")
+    parser.add_argument("--no-anki", action="store_true", help="Disable scanning Anki for characters")
+    parser.add_argument("--limit", type=int, default=None, help="Limit the number of characters to preload (processes most frequent first)")
     args = parser.parse_args()
 
     # Get the project root directory (two levels up from this script)
@@ -126,11 +113,7 @@ def main():
     print(f"Dong data directory: {dong_data_dir}")
 
     # Use shared utility to discover all characters from Anki and data directories
-    all_chars, char_frequency = discover_all_characters(
-        project_root,
-        include_anki=not args.no_anki,
-        normalize=False
-    )
+    all_chars, char_frequency = discover_all_characters(project_root, include_anki=not args.no_anki, normalize=False)
 
     # Get component and description characters from existing dong files (script-specific)
     ref_chars, ref_frequency = get_component_chars_from_dong_files(dong_data_dir)
@@ -143,7 +126,7 @@ def main():
         for json_file in dong_data_dir.glob("*.json"):
             existing_chars.add(json_file.stem)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with dong data: {len(existing_chars)}")
     print(f"Referenced characters in dong files (components + descriptions): {len(ref_chars)}")
@@ -168,19 +151,19 @@ def main():
 
     # Apply limit if specified
     if args.limit is not None and args.limit > 0:
-        missing_sorted = missing_sorted[:args.limit]
+        missing_sorted = missing_sorted[: args.limit]
         print(f"\nLimiting to top {args.limit} most frequent characters")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Top {min(20, len(missing_sorted))} most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:20], 1):
         print(f"  {i}. {char} (appears {char_frequency[char]} times)")
 
     # Ask user if they want to open browser tabs
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     response = input(f"Open browser tabs for {len(missing_sorted)} missing characters? (y/N): ")
 
-    if response.lower() != 'y':
+    if response.lower() != "y":
         print("Cancelled. Here are all missing characters:")
         print("".join(missing_sorted))
         return
@@ -188,7 +171,7 @@ def main():
     # Confirm if there are many characters
     if len(missing_sorted) > 50:
         response = input(f"WARNING: This will open {len(missing_sorted)} browser tabs. Continue? (y/N): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Cancelled.")
             return
 
@@ -208,9 +191,9 @@ def main():
         else:
             time.sleep(0.4)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Done! All browser tabs opened.")
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("NEXT STEPS - Download the database:")
     print("1. In your browser, press Cmd+Shift+J (Mac) or Ctrl+Shift+J (Windows/Linux) to open Developer Console")
     print("2. Go to the 'Application' tab (or 'Storage' tab in Firefox)")
@@ -221,18 +204,18 @@ def main():
     print("\nThe populate script will look for: ~/Downloads/keyvaluepairs-*")
     print(f"Data will be saved to: {dong_data_dir}/")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     response = input("Have you downloaded the database file to ~/Downloads/? (y/N): ")
 
-    if response.lower() != 'y':
+    if response.lower() != "y":
         print("\nNo problem! When you're ready, you can manually run:")
         print("  ./utils/dong/populate_dong_chars.py ~/Downloads/keyvaluepairs-* && rm -f ~/Downloads/keyvaluepairs-*")
         return
 
     # Run the populate script
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Running populate script...")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     populate_script = script_dir / "populate_dong_chars.py"
     downloads_pattern = str(Path.home() / "Downloads" / "keyvaluepairs-*")
@@ -259,23 +242,19 @@ def main():
     try:
         # Run the populate script and stream output in real-time
         process = subprocess.Popen(
-            [str(populate_script), input_file],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
+            [str(populate_script), input_file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
         )
 
         # Stream output line by line
         if process.stdout:
             for line in process.stdout:
-                print(line, end='')
+                print(line, end="")
 
         # Wait for process to complete
         return_code = process.wait()
 
         if return_code == 0:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("SUCCESS! Cleaning up downloaded files...")
             # Remove all matching downloaded files
             for file_path in matching_files:
@@ -285,12 +264,12 @@ def main():
                 except Exception as e:
                     print(f"Warning: Could not remove {file_path}: {e}")
             print("Download files cleanup complete.")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
         else:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"ERROR: Populate script failed with return code {return_code}")
             print("Downloaded files were NOT removed.")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
     except FileNotFoundError:
         print(f"ERROR: Could not find populate script at: {populate_script}")

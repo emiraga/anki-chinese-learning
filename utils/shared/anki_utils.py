@@ -27,11 +27,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> d
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -150,10 +146,10 @@ def get_meaning_field(note: dict[str, Any]) -> str:
     Returns:
         The meaning value, trying "Meaning 2" first, then "Meaning"
     """
-    meaning_2 = note['fields'].get('Meaning 2', {}).get('value', '').strip()
+    meaning_2 = note["fields"].get("Meaning 2", {}).get("value", "").strip()
     if meaning_2:
         return meaning_2
-    return note['fields'].get('Meaning', {}).get('value', '').strip()
+    return note["fields"].get("Meaning", {}).get("value", "").strip()
 
 
 def update_note_fields(note_id: int, fields: dict[str, str]) -> None:
@@ -167,9 +163,4 @@ def update_note_fields(note_id: int, fields: dict[str, str]) -> None:
     Raises:
         Exception: If the update fails
     """
-    anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields
-        }
-    })
+    anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})

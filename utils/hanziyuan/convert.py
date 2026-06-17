@@ -48,18 +48,18 @@ def html_to_text(html_string: str) -> str:
     Returns:
         Plain text with HTML tags removed and line breaks preserved
     """
-    soup = BeautifulSoup(html_string, 'lxml')
+    soup = BeautifulSoup(html_string, "lxml")
 
     # Replace <br> tags with newlines before extracting text
-    for br in soup.find_all('br'):
-        br.replace_with('\n')
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
 
     # Get text with newlines preserved
     text = soup.get_text()
 
     # Clean up: remove leading/trailing whitespace from each line
     # but preserve the line breaks
-    lines = text.split('\n')
+    lines = text.split("\n")
     cleaned_lines = [line.strip() for line in lines]
 
     # Remove empty lines at the start and end, but keep internal empty lines
@@ -68,7 +68,7 @@ def html_to_text(html_string: str) -> str:
     while cleaned_lines and not cleaned_lines[-1]:
         cleaned_lines.pop()
 
-    return '\n'.join(cleaned_lines)
+    return "\n".join(cleaned_lines)
 
 
 def extract_label_and_content(html_string: str) -> tuple[str, str] | None:
@@ -81,23 +81,23 @@ def extract_label_and_content(html_string: str) -> tuple[str, str] | None:
     Returns:
         Tuple of (label, content) as plain text, or None if no label found
     """
-    soup = BeautifulSoup(html_string, 'lxml')
+    soup = BeautifulSoup(html_string, "lxml")
 
     # Find the first <b> tag
-    bold_tag = soup.find('b')
+    bold_tag = soup.find("b")
     if not bold_tag:
         return None
 
     # Get the label text (should end with ':')
     label_text = bold_tag.get_text().strip()
-    if not label_text.endswith(':'):
+    if not label_text.endswith(":"):
         return None
 
     # Remove the trailing colon
     label = label_text[:-1].strip()
 
     # Remove " [?]" suffix if present
-    if label.endswith(' [?]'):
+    if label.endswith(" [?]"):
         label = label[:-4].strip()
 
     # Get the content after the bold tag
@@ -128,47 +128,36 @@ def parse_etymology_section(soup: BeautifulSoup, header_text: str, image_map: di
         Dictionary with chinese name, count, and list of items with id and image
     """
     # Find the h3 header containing the section title
-    for h3 in soup.find_all('h3'):
+    for h3 in soup.find_all("h3"):
         header_full = h3.get_text()
         if header_text in header_full:
             # Extract count from header like "Oracle characters 甲骨文 (13)"
-            count_match = re.search(r'\((\d+)\)', header_full)
+            count_match = re.search(r"\((\d+)\)", header_full)
             count = int(count_match.group(1)) if count_match else 0
 
             # Extract Chinese name
-            chinese_match = re.search(r'[\u4e00-\u9fff]+', header_full)
+            chinese_match = re.search(r"[\u4e00-\u9fff]+", header_full)
             chinese_name = chinese_match.group(0) if chinese_match else ""
 
             # Find all etymology IDs in the div elements
             items = []
             # Get the next sibling elements until we hit <hr>
             current = h3.next_sibling
-            while current and getattr(current, 'name', None) != 'hr':
-                if hasattr(current, 'find_all'):
+            while current and getattr(current, "name", None) != "hr":
+                if hasattr(current, "find_all"):
                     # Look for div elements with id starting with "etymology"
-                    for div in current.find_all('div', id=True):
-                        div_id = str(div['id'])
-                        if div_id.startswith('etymology'):
+                    for div in current.find_all("div", id=True):
+                        div_id = str(div["id"])
+                        if div_id.startswith("etymology"):
                             # Extract the ID (everything after "etymology")
-                            etymology_id = div_id.replace('etymology', '')
-                            items.append({
-                                "id": etymology_id,
-                                "image": image_map.get(etymology_id, "")
-                            })
+                            etymology_id = div_id.replace("etymology", "")
+                            items.append({"id": etymology_id, "image": image_map.get(etymology_id, "")})
                 current = current.next_sibling
 
-            return {
-                "chinese": chinese_name,
-                "count": count,
-                "items": items
-            }
+            return {"chinese": chinese_name, "count": count, "items": items}
 
     # Return empty structure if section not found
-    return {
-        "chinese": "",
-        "count": 0,
-        "items": []
-    }
+    return {"chinese": "", "count": 0, "items": []}
 
 
 def convert_etymology_characters(etymology_html: str, image_map: dict[str, str]) -> dict[str, dict[str, Any]]:
@@ -186,19 +175,19 @@ def convert_etymology_characters(etymology_html: str, image_map: dict[str, str])
     Raises:
         ValueError: If an unexpected character type is found or if images are missing for etymology IDs
     """
-    soup = BeautifulSoup(etymology_html, 'lxml')
+    soup = BeautifulSoup(etymology_html, "lxml")
 
     # Define known character types
     character_types = {
         "oracle": "Oracle characters",
         "bronze": "Bronze characters",
         "seal": "Seal characters",
-        "liushutong": "Liushutong characters"
+        "liushutong": "Liushutong characters",
     }
 
     # Check for unexpected character types
     known_type_names = set(character_types.values())
-    for h3 in soup.find_all('h3'):
+    for h3 in soup.find_all("h3"):
         header_text = h3.get_text()
         # Check if this h3 matches any known type
         if not any(known_type in header_text for known_type in known_type_names):
@@ -208,10 +197,7 @@ def convert_etymology_characters(etymology_html: str, image_map: dict[str, str])
             )
 
     # Parse each section using the defined types
-    result = {
-        key: parse_etymology_section(soup, header_text, image_map)
-        for key, header_text in character_types.items()
-    }
+    result = {key: parse_etymology_section(soup, header_text, image_map) for key, header_text in character_types.items()}
 
     # Validate: Check if any etymology IDs are missing images
     missing_images: list[tuple[str, str]] = []
@@ -258,7 +244,7 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
     result: dict[str, str] = {}
     for match in re.finditer(pattern, etymology_styles):
         etymology_id = match.group(1)  # e.g., "J29285"
-        base64_data = match.group(2)   # The base64-encoded SVG
+        base64_data = match.group(2)  # The base64-encoded SVG
 
         # Create unique filename using character and etymology ID
         filename = f"{character}_{etymology_id}.svg"
@@ -267,7 +253,7 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
         try:
             # Decode base64 and write to file
             svg_data = base64.b64decode(base64_data)
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(svg_data)
 
             # Store the path relative to public/
@@ -305,14 +291,14 @@ def extract_best_character(char_string: str) -> str:
     """
     # Check if there are parentheses - if so, prefer characters NOT in parentheses
     # Pattern: "(simplified)traditional" or "(simplified)variant1variant2" - we want the last traditional
-    if '(' in char_string and ')' in char_string:
+    if "(" in char_string and ")" in char_string:
         # Extract characters outside parentheses
         outside_parens = ""
         inside_parens = False
         for char in char_string:
-            if char == '(':
+            if char == "(":
                 inside_parens = True
-            elif char == ')':
+            elif char == ")":
                 inside_parens = False
             elif not inside_parens:
                 outside_parens += char
@@ -336,7 +322,7 @@ def extract_best_character(char_string: str) -> str:
     # Extension B and beyond: U+20000-U+2EBEF (but these are rare/archaic)
     candidates: list[tuple[str, int]] = []
     for char in char_string:
-        if char in ('(', ')'):
+        if char in ("(", ")"):
             continue
         code_point = ord(char)
         # Prefer characters in the main CJK block
@@ -396,7 +382,7 @@ def extract_character_variants(char_field: str) -> dict[str, Any]:
             while i < len(parts) and parts[i] not in ["mutant", "mutants", "older"]:
                 # Each character in the string is a separate older form
                 for char in parts[i]:
-                    if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
+                    if "\u4e00" <= char <= "\u9fff" or "\u3400" <= char <= "\u4dbf" or ord(char) >= 0x20000:
                         result["olderForms"].append(char)
                 i += 1
         elif parts[i] == "mutant" and i + 1 < len(parts):
@@ -405,7 +391,7 @@ def extract_character_variants(char_field: str) -> dict[str, Any]:
                 result["mutants"] = mutants
             i += 1
             for char in parts[i]:
-                if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
+                if "\u4e00" <= char <= "\u9fff" or "\u3400" <= char <= "\u4dbf" or ord(char) >= 0x20000:
                     result["mutants"].append(char)
             i += 1
         elif parts[i] == "mutants" and i + 1 < len(parts):
@@ -416,7 +402,7 @@ def extract_character_variants(char_field: str) -> dict[str, Any]:
             # "mutants" can have multiple characters in one string
             while i < len(parts) and parts[i] not in ["older", "mutant", "mutants"]:
                 for char in parts[i]:
-                    if '\u4e00' <= char <= '\u9fff' or '\u3400' <= char <= '\u4dbf' or ord(char) >= 0x20000:
+                    if "\u4e00" <= char <= "\u9fff" or "\u3400" <= char <= "\u4dbf" or ord(char) >= 0x20000:
                         result["mutants"].append(char)
                 i += 1
         else:
@@ -443,20 +429,20 @@ def extract_simplification_rules(line: str) -> dict[str, Any]:
     result: dict[str, Any] = {}
 
     # Pattern: Letter followed by digits (A037, B012, F003, etc.)
-    rule_match = re.match(r'^([A-Z]\d+)\s+(.+)', line)
+    rule_match = re.match(r"^([A-Z]\d+)\s+(.+)", line)
     if rule_match:
         result["rule"] = rule_match.group(1)
         rest = rule_match.group(2)
 
         # Look for "simp X" pattern
-        simp_match = re.search(r'simp\s+(\S+)', rest)
+        simp_match = re.search(r"simp\s+(\S+)", rest)
         if simp_match:
-            result["simplified"] = simp_match.group(1).rstrip('.')
+            result["simplified"] = simp_match.group(1).rstrip(".")
 
         # Look for "new-char X" pattern
-        newchar_match = re.search(r'new-char\s+(\S+)', rest)
+        newchar_match = re.search(r"new-char\s+(\S+)", rest)
         if newchar_match:
-            result["newChar"] = newchar_match.group(1).rstrip('.')
+            result["newChar"] = newchar_match.group(1).rstrip(".")
 
     return result
 
@@ -482,7 +468,7 @@ def parse_decomposition_notes(notes_text: str) -> dict[str, Any]:
     if not notes_text or notes_text.strip() in ["Not applicable.", "Not applicable", "/"]:
         return {}
 
-    lines = notes_text.strip().split('\n')
+    lines = notes_text.strip().split("\n")
     result: dict[str, Any] = {}
     explanatory_notes: list[str] = []
     rule_references: list[dict[str, str]] = []
@@ -497,40 +483,37 @@ def parse_decomposition_notes(notes_text: str) -> dict[str, Any]:
             continue
 
         # Check for explanatory notes: (- text)
-        if line.startswith('(-'):
+        if line.startswith("(-"):
             # Extract the note content
-            note = line.strip('()')
-            if note.startswith('- '):
+            note = line.strip("()")
+            if note.startswith("- "):
                 note = note[2:].strip()
             explanatory_notes.append(note)
 
         # Check for rule references: A### or similar pattern
-        elif re.match(r'^[A-Z]\d+\s+', line):
+        elif re.match(r"^[A-Z]\d+\s+", line):
             # Parse rule reference line
-            match = re.match(r'^([A-Z]\d+)\s+(.+)', line)
+            match = re.match(r"^([A-Z]\d+)\s+(.+)", line)
             if match:
                 rule_code = match.group(1)
                 characters_part = match.group(2).strip()
-                rule_references.append({
-                    "code": rule_code,
-                    "characters": characters_part
-                })
+                rule_references.append({"code": rule_code, "characters": characters_part})
 
         # Check for cross-references: "see characters" or "(- see characters)"
-        elif 'see ' in line.lower():
+        elif "see " in line.lower():
             # Extract the referenced characters
-            see_match = re.search(r'see\s+([^\)]+)', line, re.IGNORECASE)
+            see_match = re.search(r"see\s+([^\)]+)", line, re.IGNORECASE)
             if see_match:
                 ref_chars = see_match.group(1).strip()
                 cross_references.append(ref_chars)
 
         # Check for special markers in parentheses
-        elif line.startswith('(') and line.endswith(')'):
-            marker = line.strip('()')
+        elif line.startswith("(") and line.endswith(")"):
+            marker = line.strip("()")
             special_markers.append(marker)
 
         # Check for character references: char pinyin (single line)
-        elif re.search(r'[\u4e00-\u9fff]\s+[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛ]+', line):
+        elif re.search(r"[\u4e00-\u9fff]\s+[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛ]+", line):
             related_characters.append(line)
 
         # Plain text explanation
@@ -573,7 +556,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
     if not decomposition_text or decomposition_text.strip() == "":
         return {}
 
-    lines = decomposition_text.strip().split('\n')
+    lines = decomposition_text.strip().split("\n")
     if not lines:
         return {}
 
@@ -599,12 +582,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
     # Extract character and variants from char_field
     variant_info = extract_character_variants(char_field) if char_field else {"character": ""}
 
-    result: dict[str, Any] = {
-        "type": decomp_type,
-        "character": variant_info.get("character", ""),
-        "components": [],
-        "names": []
-    }
+    result: dict[str, Any] = {"type": decomp_type, "character": variant_info.get("character", ""), "components": [], "names": []}
 
     # Add variant information if present
     if "olderForms" in variant_info:
@@ -626,7 +604,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
             continue
 
         # Check for simplification rules (A037, B012, etc.)
-        if re.match(r'^[A-Z]\d+', line):
+        if re.match(r"^[A-Z]\d+", line):
             rule_info = extract_simplification_rules(line)
             if rule_info:
                 simplification_rules.append(rule_info)
@@ -646,14 +624,14 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
             continue
 
         # Check for standalone "simp X" or "new-char X" lines
-        simp_match = re.match(r'^simp\s+(\S+)', line)
+        simp_match = re.match(r"^simp\s+(\S+)", line)
         if simp_match:
-            result["simplifiedForm"] = simp_match.group(1).rstrip('.')
+            result["simplifiedForm"] = simp_match.group(1).rstrip(".")
             continue
 
-        newchar_match = re.match(r'^new-char\s+(\S+)', line)
+        newchar_match = re.match(r"^new-char\s+(\S+)", line)
         if newchar_match:
-            result["newCharForm"] = newchar_match.group(1).rstrip('.')
+            result["newCharForm"] = newchar_match.group(1).rstrip(".")
             continue
 
         # Check for name entries like "(name- heart 忄 xīn)"
@@ -672,11 +650,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                 # Everything before character is the description
                 description = " ".join(parts[:-2]) if len(parts) > 2 else parts[0]
 
-                result["names"].append({
-                    "name": description,
-                    "character": char,
-                    "pronunciation": pronunciation
-                })
+                result["names"].append({"name": description, "character": char, "pronunciation": pronunciation})
 
         # Check for component entries like "from door 户戶戸 hù and" or just "from"
         elif line.startswith("from"):
@@ -692,7 +666,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
             else:
                 line_content = line[4:].strip()  # Remove "from" prefix (no space)
 
-            should_continue = (line.endswith(" and") or line.endswith(" from") or not line_content)
+            should_continue = line.endswith(" and") or line.endswith(" from") or not line_content
 
             # If continuation is needed, collect following lines
             while should_continue and i < len(lines):
@@ -700,9 +674,13 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                 i += 1
                 # Continue collecting if it's a component line (even if it starts with parentheses)
                 # Stop if we hit a rule reference, variant-of, or other metadata
-                if next_line and not re.match(r'^[A-Z]\d+', next_line) and \
-                   not next_line.startswith("See ") and not next_line.startswith("see ") and \
-                   not next_line.startswith("(variant-of "):
+                if (
+                    next_line
+                    and not re.match(r"^[A-Z]\d+", next_line)
+                    and not next_line.startswith("See ")
+                    and not next_line.startswith("see ")
+                    and not next_line.startswith("(variant-of ")
+                ):
                     component_lines.append(next_line)
                     line = next_line  # Update line for next iteration
                     # Continue if this line ends with "and", or if it's a marker line followed by more
@@ -732,63 +710,51 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                 markers: dict[str, Any] = {}
 
                 # Extract (rem- X) pattern - this extracts the character info from the marker
-                rem_minus_match = re.search(r'\(rem-\s+([^)]+)\)', comp_text)
+                rem_minus_match = re.search(r"\(rem-\s+([^)]+)\)", comp_text)
                 if rem_minus_match:
                     marker_content = rem_minus_match.group(1).strip()
                     # Parse the marker content: "char pronunciation" (e.g., "一 yī")
                     marker_parts = marker_content.split()
                     if len(marker_parts) >= 2:
-                        markers["removed"] = {
-                            "character": marker_parts[0],
-                            "pronunciation": marker_parts[1]
-                        }
+                        markers["removed"] = {"character": marker_parts[0], "pronunciation": marker_parts[1]}
                     else:
                         markers["removed"] = marker_content
 
                 # Extract (rem+ X) pattern
-                rem_plus_match = re.search(r'\(rem\+\s+([^)]+)\)', comp_text)
+                rem_plus_match = re.search(r"\(rem\+\s+([^)]+)\)", comp_text)
                 if rem_plus_match:
                     marker_content = rem_plus_match.group(1).strip()
                     # Check if there are multiple components separated by '+'
-                    if '+' in marker_content:
+                    if "+" in marker_content:
                         # Split by '+' and parse each component
-                        component_parts = [part.strip() for part in marker_content.split('+')]
+                        component_parts = [part.strip() for part in marker_content.split("+")]
                         added_list: list[dict[str, str] | str] = []
                         for part in component_parts:
                             part_tokens = part.split()
                             if len(part_tokens) >= 2:
-                                added_list.append({
-                                    "character": part_tokens[0],
-                                    "pronunciation": part_tokens[1]
-                                })
+                                added_list.append({"character": part_tokens[0], "pronunciation": part_tokens[1]})
                             elif len(part_tokens) == 1:
                                 added_list.append(part_tokens[0])
                         markers["added"] = added_list if len(added_list) > 1 else added_list[0] if added_list else marker_content
                     else:
                         marker_parts = marker_content.split()
                         if len(marker_parts) >= 2:
-                            markers["added"] = {
-                                "character": marker_parts[0],
-                                "pronunciation": marker_parts[1]
-                            }
+                            markers["added"] = {"character": marker_parts[0], "pronunciation": marker_parts[1]}
                         else:
                             markers["added"] = marker_content
 
                 # Extract (not- X) pattern
-                not_match = re.search(r'\(not-\s+([^)]+)\)', comp_text)
+                not_match = re.search(r"\(not-\s+([^)]+)\)", comp_text)
                 if not_match:
                     marker_content = not_match.group(1).strip()
                     marker_parts = marker_content.split()
                     if len(marker_parts) >= 2:
-                        markers["not"] = {
-                            "character": marker_parts[0],
-                            "pronunciation": marker_parts[1]
-                        }
+                        markers["not"] = {"character": marker_parts[0], "pronunciation": marker_parts[1]}
                     else:
                         markers["not"] = marker_content
 
                 # Remove all parenthetical notes for cleaner parsing
-                comp_text = re.sub(r'\([^)]+\)', '', comp_text).strip()
+                comp_text = re.sub(r"\([^)]+\)", "", comp_text).strip()
 
                 # If after removing markers, the line is empty or only has a quantity word,
                 # this was a marker-only component with optional quantity
@@ -803,7 +769,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                         "characters": "",
                         "component": "",
                         "pronunciation": "",
-                        "markers": markers
+                        "markers": markers,
                     }
                     if is_quantity_only:
                         component_entry["quantity"] = comp_text
@@ -840,7 +806,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                     # Find where Chinese characters start (they'll be consecutive)
                     # Work backwards from second-to-last part
                     char_start_idx = len(parts) - 2 if len(parts) >= 2 else 0
-                    while char_start_idx > 0 and any('\u4e00' <= c <= '\u9fff' for c in parts[char_start_idx - 1]):
+                    while char_start_idx > 0 and any("\u4e00" <= c <= "\u9fff" for c in parts[char_start_idx - 1]):
                         char_start_idx -= 1
 
                     # Everything from char_start_idx to -1 (exclusive) is characters
@@ -852,7 +818,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                         "description": description,
                         "characters": characters,
                         "component": extract_best_character(characters) if characters else "",
-                        "pronunciation": pronunciation
+                        "pronunciation": pronunciation,
                     }
 
                     if quantity:
@@ -868,7 +834,7 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                     result["components"].append(component_entry)
 
         # Lines starting with capital letters followed by numbers are likely reference codes
-        elif re.match(r'^[A-Z]\d+', line):
+        elif re.match(r"^[A-Z]\d+", line):
             notes_lines.append(line)
 
     # Add notes if any
@@ -962,24 +928,24 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
     """
     try:
         # Read the file
-        with open(input_path, encoding='utf-8') as f:
+        with open(input_path, encoding="utf-8") as f:
             data = json.load(f)
 
         # Extract and convert characterInfo
-        if 'characterInfo' not in data:
+        if "characterInfo" not in data:
             print(f"Warning: No 'characterInfo' field in {input_path.name}", file=sys.stderr)
             return
 
         # Get the character name from filename (e.g., "車.json" -> "車")
         character = input_path.stem
 
-        character_info = data['characterInfo']
+        character_info = data["characterInfo"]
         converted = convert_character_info(character_info)
 
         # Validate that filename character matches the traditional, simplified, or older traditional field
-        traditional_field = converted.get('Traditional in your browser 繁体字的浏览器显示', '')
-        simplified_field = converted.get('Simplified in your browser 简体字的浏览器显示', '')
-        older_traditional_field = converted.get('Older traditional characters 旧繁体字/异体字', '')
+        traditional_field = converted.get("Traditional in your browser 繁体字的浏览器显示", "")
+        simplified_field = converted.get("Simplified in your browser 简体字的浏览器显示", "")
+        older_traditional_field = converted.get("Older traditional characters 旧繁体字/异体字", "")
 
         # Check if the character is actually a simplified character using our utility
         # This handles both standard conversions and special cases not recognized by HanziConv
@@ -988,10 +954,10 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
         # Check if character matches exactly or is contained within the older traditional variants
         # We trust the JSON data: if filename matches simplified field, accept it
         is_valid = (
-            character == traditional_field or
-            (character == simplified_field and is_actually_simplified) or
-            character == simplified_field or  # Trust the data even if conversion detection fails
-            character in older_traditional_field
+            character == traditional_field
+            or (character == simplified_field and is_actually_simplified)
+            or character == simplified_field  # Trust the data even if conversion detection fails
+            or character in older_traditional_field
         )
 
         if not is_valid:
@@ -1003,32 +969,32 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
             )
 
         # Extract and save etymology images first (to get the image map)
-        etymology_styles = data.get('etymologyStyles', '')
+        etymology_styles = data.get("etymologyStyles", "")
         etymology_images = extract_etymology_images(etymology_styles, character, images_dir)
 
         # Convert etymologyCharacters with image paths
-        etymology_chars = data.get('etymologyCharacters', '')
+        etymology_chars = data.get("etymologyCharacters", "")
         converted_etymology = convert_etymology_characters(etymology_chars, etymology_images) if etymology_chars else {}
 
         # Parse character decomposition
-        decomposition_text = converted.get('Character decomposition 字形分解', '')
+        decomposition_text = converted.get("Character decomposition 字形分解", "")
         character_decomposition = parse_character_decomposition(decomposition_text)
 
         # Parse decomposition notes
-        notes_text = converted.get('Decomposition notes 字形分解说明', '')
+        notes_text = converted.get("Decomposition notes 字形分解说明", "")
         decomposition_notes = parse_decomposition_notes(notes_text)
 
         # Create output structure
         output_data = {
-            'characterInfo': converted,
-            'etymologyCharacters': converted_etymology,
-            'characterDecomposition': character_decomposition,
-            'decompositionNotes': decomposition_notes
+            "characterInfo": converted,
+            "etymologyCharacters": converted_etymology,
+            "characterDecomposition": character_decomposition,
+            "decompositionNotes": decomposition_notes,
         }
 
         # Write output
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=2)
 
         print(f"✓ Converted {input_path.name} ({len(etymology_images)} images)")
@@ -1041,24 +1007,10 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
 def main():
     """Main function to process all JSON files in the raw directory."""
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(
-        description="Convert Hanziyuan JSON files by extracting and structuring character data."
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Force rebuild all files, ignoring modification times"
-    )
-    parser.add_argument(
-        "--character",
-        type=str,
-        help="Process only the specified character (e.g., --character 車)"
-    )
-    parser.add_argument(
-        "--delete-invalid",
-        action="store_true",
-        help="Delete files that fail processing due to exceptions"
-    )
+    parser = argparse.ArgumentParser(description="Convert Hanziyuan JSON files by extracting and structuring character data.")
+    parser.add_argument("--overwrite", action="store_true", help="Force rebuild all files, ignoring modification times")
+    parser.add_argument("--character", type=str, help="Process only the specified character (e.g., --character 車)")
+    parser.add_argument("--delete-invalid", action="store_true", help="Delete files that fail processing due to exceptions")
     args = parser.parse_args()
 
     # Set up paths

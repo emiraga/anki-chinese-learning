@@ -77,10 +77,7 @@ def populate_dong_chars(input_file_path: str) -> None:
             # Validate the character data
             if not is_valid_char_data(char_data):
                 if "error" in char_data:
-                    print(
-                        f"Skipping entry with error: {char_data.get('error')} - "
-                        f"{char_data.get('details', '')}"
-                    )
+                    print(f"Skipping entry with error: {char_data.get('error')} - {char_data.get('details', '')}")
                 else:
                     print(f"Skipping invalid entry: {entry['key']}")
                 error_count += 1

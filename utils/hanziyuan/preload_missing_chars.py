@@ -23,15 +23,16 @@ from shared.character_discovery import discover_all_characters, extract_all_char
 
 # Characters that cannot be loaded
 BLACKLISTED_CHARS = set(
-        "顚苺嗿撢櫔抴捗戻椊柾冴榎梛掤穣樋楢籾枠鞄痠雫俬扱麿槙揃喰槻畑廻凪叄込堺榊梶峠塀畠椛"
-        "辻樫塙𠂊𡥉龺匁𦍌顀𢧜𡗞𤽄𠔉𠙽𡿫卆㔷𦳝𢛳䖝𭕆𮎷昍㥁乗敻𤸰𠕋夀舺艶閲鋭搧衞凃藴緖𦰋刕"
-        "㵙氶𦓂𤤴𫥎𨎵𤴜裀䅀𠮛𠓜䤮𡉯𦰩𧴸𢶚応図𠄐𠯳観氺㬰䊪𪀹㹾鬄𤆛𤣩㻎椝𠙜𧘇𡌥㲎𤫍𮥶肰増亖"
-        "𥧨囲𠃍𣏮牪𥎆𩡄𩰲䅘㠌旉𠙼餔𠓛𡖄𩋲𫲽𥘴廱迶𥎲㕞𠂂𨭗𢌀弍𣽙𢶡勈䰜奨𠀗龥㺒䬼処呿奻𡩜𩰪"
-        "㥲㹜𠯃辺𣲖銾㚟𪖣𡧪𧴷𣪘𠂛劎煣碬𠦝𢾿呬𡵂𠩋䊏㐮礡㶤楖𡗜喦罓柲㝉𩵋𦆪𪞎謡啝葻𡨎𨦜𧊤叅"
-        "𡭞晩𫠩𣁋冝𠁳𠀎壐𡰪𣥖𠓥㟢𬀷圤譲𠔿𤰇畕䙲䘮甶䩻鼡蒪㲜弾夒茤𡅟柤𠂒㝴𤿮偸𡕩馵𤶫𪅀𤓰洰"
-        "𦌅𠙹䏍𡱒㯻𠧥芖𦂴𠤦𡵉𨑓𫥞𠄓𣢟絻拪䔒㚅𫂱𠈧顔𢱢𫩏𠦄𤧗扻𬙙𭥍𠦴𡳾仮楽伔㶳髰轊寍摀𨎥䧹"
-        "𧶉𨑛㪔脄𦉪喨豭𠄌𧶻㝠繣笹㢠筈㵎鍂𠆢聦𨸋𠦏𮅕刓焢耴㓷笓咷奌"
-    )
+    "顚苺嗿撢櫔抴捗戻椊柾冴榎梛掤穣樋楢籾枠鞄痠雫俬扱麿槙揃喰槻畑廻凪叄込堺榊梶峠塀畠椛"
+    "辻樫塙𠂊𡥉龺匁𦍌顀𢧜𡗞𤽄𠔉𠙽𡿫卆㔷𦳝𢛳䖝𭕆𮎷昍㥁乗敻𤸰𠕋夀舺艶閲鋭搧衞凃藴緖𦰋刕"
+    "㵙氶𦓂𤤴𫥎𨎵𤴜裀䅀𠮛𠓜䤮𡉯𦰩𧴸𢶚応図𠄐𠯳観氺㬰䊪𪀹㹾鬄𤆛𤣩㻎椝𠙜𧘇𡌥㲎𤫍𮥶肰増亖"
+    "𥧨囲𠃍𣏮牪𥎆𩡄𩰲䅘㠌旉𠙼餔𠓛𡖄𩋲𫲽𥘴廱迶𥎲㕞𠂂𨭗𢌀弍𣽙𢶡勈䰜奨𠀗龥㺒䬼処呿奻𡩜𩰪"
+    "㥲㹜𠯃辺𣲖銾㚟𪖣𡧪𧴷𣪘𠂛劎煣碬𠦝𢾿呬𡵂𠩋䊏㐮礡㶤楖𡗜喦罓柲㝉𩵋𦆪𪞎謡啝葻𡨎𨦜𧊤叅"
+    "𡭞晩𫠩𣁋冝𠁳𠀎壐𡰪𣥖𠓥㟢𬀷圤譲𠔿𤰇畕䙲䘮甶䩻鼡蒪㲜弾夒茤𡅟柤𠂒㝴𤿮偸𡕩馵𤶫𪅀𤓰洰"
+    "𦌅𠙹䏍𡱒㯻𠧥芖𦂴𠤦𡵉𨑓𫥞𠄓𣢟絻拪䔒㚅𫂱𠈧顔𢱢𫩏𠦄𤧗扻𬙙𭥍𠦴𡳾仮楽伔㶳髰轊寍摀𨎥䧹"
+    "𧶉𨑛㪔脄𦉪喨豭𠄌𧶻㝠繣笹㢠筈㵎鍂𠆢聦𨸋𠦏𮅕刓焢耴㓷笓咷奌"
+)
+
 
 def open_hanziyuan_url(char: str, delay: float = 2.0):
     """Open character dictionary page for the given character."""
@@ -51,15 +52,15 @@ def extract_components_from_json(json_file: Path) -> set[str]:
     components = set()
 
     try:
-        with open(json_file, encoding='utf-8') as f:
+        with open(json_file, encoding="utf-8") as f:
             data = json.load(f)
 
         # Extract components from characterDecomposition
-        char_decomp = data.get('characterDecomposition', {})
-        comp_list = char_decomp.get('components', [])
+        char_decomp = data.get("characterDecomposition", {})
+        comp_list = char_decomp.get("components", [])
 
         for comp in comp_list:
-            component = comp.get('component', '')
+            component = comp.get("component", "")
             if component:
                 # Extract only CJK characters from the component field
                 # (component may contain English descriptions or pinyin)
@@ -93,41 +94,15 @@ def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='Preload missing HanziYuan character data'
-    )
+    parser = argparse.ArgumentParser(description="Preload missing HanziYuan character data")
     parser.add_argument(
-        '--info-dir',
-        type=Path,
-        default=Path('public/data/hanziyuan/converted'),
-        help='Directory containing processed character JSON files'
+        "--info-dir", type=Path, default=Path("public/data/hanziyuan/converted"), help="Directory containing processed character JSON files"
     )
-    parser.add_argument(
-        '--delay',
-        type=float,
-        default=0.5,
-        help='Delay in seconds between opening browser tabs (default: 2.0)'
-    )
-    parser.add_argument(
-        '--max-chars',
-        type=int,
-        help='Maximum number of characters to open (for testing)'
-    )
-    parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be opened without actually opening browser'
-    )
-    parser.add_argument(
-        '--skip-anki',
-        action='store_true',
-        help='Skip fetching characters from Anki'
-    )
-    parser.add_argument(
-        '--skip-folders',
-        action='store_true',
-        help='Skip loading characters from data directories'
-    )
+    parser.add_argument("--delay", type=float, default=0.5, help="Delay in seconds between opening browser tabs (default: 2.0)")
+    parser.add_argument("--max-chars", type=int, help="Maximum number of characters to open (for testing)")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be opened without actually opening browser")
+    parser.add_argument("--skip-anki", action="store_true", help="Skip fetching characters from Anki")
+    parser.add_argument("--skip-folders", action="store_true", help="Skip loading characters from data directories")
 
     args = parser.parse_args()
 
@@ -142,10 +117,7 @@ def main():
     # IMPORTANT: Use normalize=True to convert compatibility variants (like U+FA17)
     # to their canonical forms (like U+76CA)
     all_chars, char_frequency = discover_all_characters(
-        project_root,
-        include_anki=not args.skip_anki,
-        include_folders=not args.skip_folders,
-        normalize=True
+        project_root, include_anki=not args.skip_anki, include_folders=not args.skip_folders, normalize=True
     )
 
     # Extract components from existing converted JSON files
@@ -160,7 +132,7 @@ def main():
         for json_file in args.info_dir.glob("*.json"):
             existing_files.add(json_file.stem)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"  - Component characters from converted files: {len(component_chars)}")
     print(f"Existing files: {len(existing_files)}")
@@ -186,7 +158,7 @@ def main():
         return 0
 
     # Show top missing characters with frequency info
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Top 30 most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:30], 1):
         freq = char_frequency.get(char, 0)
@@ -204,35 +176,35 @@ def main():
     # Apply max-chars limit if specified
     chars_to_open = missing_sorted
     if args.max_chars:
-        chars_to_open = missing_sorted[:args.max_chars]
+        chars_to_open = missing_sorted[: args.max_chars]
         print(f"\nLimiting to {args.max_chars} characters")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Opening browser tabs for {len(chars_to_open)} characters...")
     print("(You may need to allow pop-ups in your browser)")
 
     # Confirm before opening many tabs
     if len(chars_to_open) > 300:
         response = input(f"\nAbout to open {len(chars_to_open)} browser tabs. Continue? [y/N] ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Cancelled.")
             return 0
 
     # Open browser tabs
     for i, char in enumerate(chars_to_open, 1):
-        print(f"[{i}/{len(chars_to_open)}] ", end='')
+        print(f"[{i}/{len(chars_to_open)}] ", end="")
         open_hanziyuan_url(char, args.delay)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Opened {len(chars_to_open)} browser tabs")
     print("\nWaiting 10 seconds for data collection...")
     time.sleep(10)
 
     # Verify that raw JSON files were created
-    raw_dir = Path('public/data/hanziyuan/raw')
+    raw_dir = Path("public/data/hanziyuan/raw")
     missing_files: list[str] = []
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Verifying raw JSON files...")
 
     for char in chars_to_open:
@@ -252,30 +224,26 @@ def main():
         print(f"✅ All {len(chars_to_open)} raw JSON files verified successfully")
 
     # Run the convert.py script to process the new data
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Running convert.py to process the new data...")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     convert_script = Path(__file__).parent / "convert.py"
 
     try:
         # Run convert.py with uv to handle dependencies
-        result = subprocess.run(
-            ["uv", "run", str(convert_script)],
-            cwd=Path.cwd(),
-            check=True
-        )
+        result = subprocess.run(["uv", "run", str(convert_script)], cwd=Path.cwd(), check=True)
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("✅ Successfully processed all new character data")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         return result.returncode
 
     except subprocess.CalledProcessError as e:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"❌ ERROR: convert.py failed with exit code {e.returncode}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         return e.returncode
     except FileNotFoundError:
         print(f"\n❌ ERROR: Could not find convert.py at {convert_script}")
@@ -283,5 +251,5 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

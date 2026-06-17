@@ -35,11 +35,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -82,12 +78,7 @@ def update_note_field(note_id: int, field_name: str, field_value: str) -> None:
     """
     fields = {field_name: field_value}
 
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
 
     if response.get("error") is not None:
         raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
@@ -127,7 +118,7 @@ def load_rtega_mnemonic(character: str) -> str | None:
         return None
 
     try:
-        with open(json_file, encoding='utf-8') as f:
+        with open(json_file, encoding="utf-8") as f:
             data = json.load(f)
             html = data.get("mnemonic", {}).get("html")
             if html:
@@ -156,7 +147,9 @@ def should_process_note(note_type: str, traditional: str) -> bool:
     return True
 
 
-def update_mnemonics_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
+def update_mnemonics_for_note_types(
+    note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None
+) -> None:
     """
     Update notes with Rtega mnemonics for specified note types
 
@@ -172,11 +165,11 @@ def update_mnemonics_for_note_types(note_types: list[str], dry_run: bool = False
     # Collect notes from all specified note types
     for note_type in note_types:
         # Build search query
-        search_query = f'note:{note_type}'
+        search_query = f"note:{note_type}"
         if character:
-            search_query += f' Traditional:{character}'
+            search_query += f" Traditional:{character}"
         else:
-            search_query += ' Traditional:_'
+            search_query += " Traditional:_"
 
         if not overwrite:
             # Exclude notes that already have content in the Rtega Mnemonic field
@@ -229,11 +222,11 @@ def update_mnemonics_for_note_types(note_types: list[str], dry_run: bool = False
     for i, note_info in enumerate(all_notes_info, 1):
         note_id = None
         try:
-            note_id = note_info['noteId']
-            note_type = note_info.get('modelName', 'Unknown')
+            note_id = note_info["noteId"]
+            note_type = note_info.get("modelName", "Unknown")
 
             # Get the Traditional field (which contains the hanzi character)
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
 
             if not traditional:
                 print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}): No Traditional field, skipping")
@@ -269,7 +262,7 @@ def update_mnemonics_for_note_types(note_types: list[str], dry_run: bool = False
             error_count += 1
             raise
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Summary:")
     print(f"  Total notes: {len(all_notes_info)}")
     print(f"  Updated: {updated_count}")
@@ -277,13 +270,13 @@ def update_mnemonics_for_note_types(note_types: list[str], dry_run: bool = False
     print(f"  Errors: {error_count}")
     if dry_run:
         print("  (DRY RUN - no changes were made)")
-    print("="*60)
+    print("=" * 60)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill Rtega Mnemonic field for notes in Anki',
-        epilog='''
+        description="Fill Rtega Mnemonic field for notes in Anki",
+        epilog="""
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
   %(prog)s --dry-run --limit 5                 Preview first 5 notes only
@@ -302,27 +295,24 @@ Note: TOCFL notes are only processed if the Traditional field contains a single 
 The script only updates empty fields by default. Use --overwrite to update
 fields that already have content.
 Requires Anki running with AnkiConnect addon installed.
-        ''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('--dry-run', action='store_true',
-                       help='Preview changes without actually updating notes')
-    parser.add_argument('--limit', type=int, metavar='N',
-                       help='Limit number of notes to process (useful for testing)')
-    parser.add_argument('--overwrite', action='store_true',
-                       help='Overwrite existing content in the field (default: skip filled fields)')
-    parser.add_argument('--character', type=str, metavar='CHAR',
-                       help='Process only notes with this specific character')
-    parser.add_argument('--note-types', nargs='+', default=['Hanzi', 'TOCFL'], metavar='TYPE',
-                       help='Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL')
+    parser.add_argument("--dry-run", action="store_true", help="Preview changes without actually updating notes")
+    parser.add_argument("--limit", type=int, metavar="N", help="Limit number of notes to process (useful for testing)")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing content in the field (default: skip filled fields)")
+    parser.add_argument("--character", type=str, metavar="CHAR", help="Process only notes with this specific character")
+    parser.add_argument(
+        "--note-types",
+        nargs="+",
+        default=["Hanzi", "TOCFL"],
+        metavar="TYPE",
+        help="Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL",
+    )
     args = parser.parse_args()
 
     update_mnemonics_for_note_types(
-        note_types=args.note_types,
-        dry_run=args.dry_run,
-        limit=args.limit,
-        overwrite=args.overwrite,
-        character=args.character
+        note_types=args.note_types, dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite, character=args.character
     )
 
 

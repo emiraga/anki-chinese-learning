@@ -33,11 +33,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     response = requests.post("http://localhost:8765", json=request_data)
     response.raise_for_status()
@@ -80,47 +76,27 @@ def query_traditional_field(note_type: str, level: str | None = None) -> list[st
     batch_size = 100
 
     for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
+        batch_ids = note_ids[i : i + batch_size]
         notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
         notes_info = notes_response.get("result", [])
 
         for note_info in notes_info:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             if traditional:
                 # Clean HTML tags if present
-                traditional = re.sub(r'<[^>]+>', '', traditional)
+                traditional = re.sub(r"<[^>]+>", "", traditional)
                 traditional_values.append(traditional)
 
     return traditional_values
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Query Traditional field values from Anki notes"
-    )
-    parser.add_argument(
-        "note_type",
-        help="Note type to query (e.g., TOCFL, Hanzi)"
-    )
-    parser.add_argument(
-        "-l", "--level",
-        help="Level field value to filter by (e.g., 1, 1*, 2)"
-    )
-    parser.add_argument(
-        "--count-only",
-        action="store_true",
-        help="Only show the count, not the values"
-    )
-    parser.add_argument(
-        "--unique",
-        action="store_true",
-        help="Show only unique values"
-    )
-    parser.add_argument(
-        "--sort",
-        action="store_true",
-        help="Sort the output alphabetically"
-    )
+    parser = argparse.ArgumentParser(description="Query Traditional field values from Anki notes")
+    parser.add_argument("note_type", help="Note type to query (e.g., TOCFL, Hanzi)")
+    parser.add_argument("-l", "--level", help="Level field value to filter by (e.g., 1, 1*, 2)")
+    parser.add_argument("--count-only", action="store_true", help="Only show the count, not the values")
+    parser.add_argument("--unique", action="store_true", help="Show only unique values")
+    parser.add_argument("--sort", action="store_true", help="Sort the output alphabetically")
     args = parser.parse_args()
 
     print("=" * 60)

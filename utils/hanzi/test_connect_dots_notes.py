@@ -141,8 +141,7 @@ class TestConnectDotsNoteSplitting:
     def test_interleaved_distribution_maximizes_diversity(self):
         """Items should be distributed to maximize right value diversity in each note"""
         # 20 items with 4 distinct right values (5 each)
-        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + \
-               [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
+        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
         right = ["mā"] * 5 + ["má"] * 5 + ["mǎ"] * 5 + ["mà"] * 5
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
@@ -254,23 +253,14 @@ class TestConnectDotsNoteStringOutput:
 
     def test_comma_escaping(self):
         """Commas in values should be escaped"""
-        note = ConnectDotsNote(
-            key="test:key",
-            left=["hello, world"],
-            right=["你好，世界"]
-        )
+        note = ConnectDotsNote(key="test:key", left=["hello, world"], right=["你好，世界"])
 
         # ASCII comma should be escaped to fullwidth comma + variation selector
         assert "，︀" in note.left_str()
 
     def test_fake_right_str_sorted(self):
         """fake_right_str should return comma-separated sorted elements"""
-        note = ConnectDotsNote(
-            key="test:key",
-            left=["A"],
-            right=["1"],
-            fake_right=["3", "2", "4"]
-        )
+        note = ConnectDotsNote(key="test:key", left=["A"], right=["1"], fake_right=["3", "2", "4"])
 
         assert note.fake_right_str() == "2, 3, 4"
 
@@ -296,8 +286,9 @@ class TestConnectDotsNoteFakeRight:
     def test_fake_right_populated_when_split_missing_values(self):
         """Split notes missing some right values should have them in fake_right"""
         # 22 items with uneven distribution: 10 mā, 6 má, 4 mǎ, 2 mà
-        left = [f"T1_{i}" for i in range(10)] + [f"T2_{i}" for i in range(6)] + \
-               [f"T3_{i}" for i in range(4)] + [f"T4_{i}" for i in range(2)]
+        left = (
+            [f"T1_{i}" for i in range(10)] + [f"T2_{i}" for i in range(6)] + [f"T3_{i}" for i in range(4)] + [f"T4_{i}" for i in range(2)]
+        )
         right = ["mā"] * 10 + ["má"] * 6 + ["mǎ"] * 4 + ["mà"] * 2
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
@@ -317,8 +308,7 @@ class TestConnectDotsNoteFakeRight:
     def test_fake_right_empty_when_all_values_present(self):
         """Split notes with all right values should have empty fake_right"""
         # 20 items with 4 tones, evenly distributed
-        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + \
-               [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
+        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
         right = ["mā"] * 5 + ["má"] * 5 + ["mǎ"] * 5 + ["mà"] * 5
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
@@ -368,14 +358,11 @@ class TestConnectDotsNoteFakeRight:
         The split notes should still include those missing tones in their fake_right.
         """
         # 12 items across tones 2, 3, 4 (no tone 1 or 5)
-        left = [f"T2_{i}" for i in range(4)] + [f"T3_{i}" for i in range(4)] + \
-               [f"T4_{i}" for i in range(4)]
+        left = [f"T2_{i}" for i in range(4)] + [f"T3_{i}" for i in range(4)] + [f"T4_{i}" for i in range(4)]
         right = ["yú (ㄩˊ)"] * 4 + ["yǔ (ㄩˇ)"] * 4 + ["yù (ㄩˋ)"] * 4
         # Original fake_right has tone 1 and 5 (not present in any card)
         fake_right = ["yū (ㄩ)", "yu (ㄩ˙)"]
-        note = ConnectDotsNote(
-            key="syllable:yu", left=left, right=right, fake_right=fake_right
-        )
+        note = ConnectDotsNote(key="syllable:yu", left=left, right=right, fake_right=fake_right)
 
         result = note.split_if_needed(max_items=6)
 
@@ -576,9 +563,7 @@ class TestSplitStably:
         before = ConnectDotsNote(key="k", left=left, right=right).split_stably(max_items=10)
 
         new_char = chr(0x4E00 + 999)
-        after = ConnectDotsNote(
-            key="k", left=left + [new_char], right=right + ["rNEW"]
-        ).split_stably(max_items=10)
+        after = ConnectDotsNote(key="k", left=left + [new_char], right=right + ["rNEW"]).split_stably(max_items=10)
 
         assert len(before) == len(after)  # bin count unchanged
 

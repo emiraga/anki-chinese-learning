@@ -50,11 +50,11 @@ def get_component_chars_from_rtega_files(rtega_data_dir: Path):
 
     for json_file in json_files:
         try:
-            with open(json_file, encoding='utf-8') as f:
+            with open(json_file, encoding="utf-8") as f:
                 data = json.load(f)
 
                 # Extract referenced_characters array
-                referenced = data.get('referenced_characters', [])
+                referenced = data.get("referenced_characters", [])
                 for char in referenced:
                     if char:
                         # Extract individual characters
@@ -65,7 +65,7 @@ def get_component_chars_from_rtega_files(rtega_data_dir: Path):
                         component_frequency.update(normalized_chars)
 
                 # Extract related_characters array
-                related = data.get('related_characters', [])
+                related = data.get("related_characters", [])
                 for char in related:
                     if char:
                         # Extract individual characters
@@ -76,7 +76,7 @@ def get_component_chars_from_rtega_files(rtega_data_dir: Path):
                         component_frequency.update(normalized_chars)
 
                 # Extract additional_related_characters if present
-                additional = data.get('additional_related_characters', [])
+                additional = data.get("additional_related_characters", [])
                 if additional:
                     for char in additional:
                         if char:
@@ -113,19 +113,16 @@ def download_rtega_data(char: str, rtega_data_dir: Path):
 
     try:
         # Use wget to download the file
-        result = subprocess.run(
-            ["wget", url, "-O", str(output_file), "-q"],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        result = subprocess.run(["wget", url, "-O", str(output_file), "-q"], capture_output=True, text=True, timeout=30)
 
         if result.returncode == 0 and output_file.exists():
             # Check if file meets minimum size requirement
             file_size = output_file.stat().st_size
             if file_size < 9500:
                 output_file.unlink()  # Remove undersized file
-                raise Exception(f"Downloaded file for '{char}' is too small ({file_size} bytes, minimum 9500 bytes required). This likely indicates an error page or missing data.")
+                raise Exception(
+                    f"Downloaded file for '{char}' is too small ({file_size} bytes, minimum 9500 bytes required). This likely indicates an error page or missing data."
+                )
             return True
         else:
             print(f"  Error: wget failed with return code {result.returncode}")
@@ -181,11 +178,7 @@ def download_char_with_progress(char: str, rtega_data_dir: Path, index: int | No
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Preload missing RTEGA character data")
-    parser.add_argument(
-        "--char", "-c",
-        type=str,
-        help="Download data for a single character instead of scanning for missing ones"
-    )
+    parser.add_argument("--char", "-c", type=str, help="Download data for a single character instead of scanning for missing ones")
     args = parser.parse_args()
 
     # Get the project root directory (two levels up from this script)
@@ -209,7 +202,7 @@ def main():
         if output_file.exists():
             print(f"Warning: Data file already exists: {output_file}")
             response = input("Overwrite existing file? (y/N): ")
-            if response.lower() != 'y':
+            if response.lower() != "y":
                 print("Cancelled.")
                 return
 
@@ -221,11 +214,7 @@ def main():
         return
 
     # Use shared utility to discover all characters from Anki and data directories
-    all_chars, char_frequency = discover_all_characters(
-        project_root,
-        include_anki=True,
-        normalize=True
-    )
+    all_chars, char_frequency = discover_all_characters(project_root, include_anki=True, normalize=True)
 
     # Get component characters from existing rtega files (script-specific)
     component_chars, component_frequency = get_component_chars_from_rtega_files(rtega_data_dir)
@@ -239,7 +228,7 @@ def main():
             char = normalize_cjk_char(html_file.stem)
             existing_chars.add(char)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Characters with rtega data: {len(existing_chars)}")
     print(f"Referenced/related characters in rtega files: {len(component_chars)}")
@@ -255,16 +244,16 @@ def main():
     # Sort missing characters by frequency (most common first)
     missing_sorted = sorted(missing_chars, key=lambda c: char_frequency[c], reverse=True)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Top 20 most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:20], 1):
         print(f"  {i}. {char} (appears {char_frequency[char]} times)")
 
     # Ask user if they want to download the data
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     response = input(f"Download RTEGA data for {len(missing_chars)} missing characters? (y/N): ")
 
-    if response.lower() != 'y':
+    if response.lower() != "y":
         print("Cancelled. Here are all missing characters:")
         print("".join(missing_sorted))
         return
@@ -272,7 +261,7 @@ def main():
     # Confirm if there are many characters
     if len(missing_chars) > 50:
         response = input(f"WARNING: This will download {len(missing_chars)} files. Continue? (y/N): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Cancelled.")
             return
 
@@ -292,7 +281,7 @@ def main():
             print(f"  Downloaded {i} files, pausing for longer...")
             time.sleep(1)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Done!")
     print(f"Successfully downloaded: {success_count}")
     print(f"Failed: {failure_count}")
@@ -300,26 +289,22 @@ def main():
 
     # Run parse script if any files were successfully downloaded
     if success_count > 0:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("Running parse_rtega_html.py to process downloaded files...")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         parse_script = script_dir / "parse_rtega_html.py"
 
         try:
             # Run the parse script with real-time output
-            result = subprocess.run(
-                [str(parse_script)],
-                cwd=project_root,
-                text=True
-            )
+            result = subprocess.run([str(parse_script)], cwd=project_root, text=True)
 
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             if result.returncode == 0:
                 print("✓ Parse script completed successfully")
             else:
                 print(f"✗ Parse script exited with code {result.returncode}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
         except FileNotFoundError:
             print(f"Error: Parse script not found at {parse_script}")

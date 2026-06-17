@@ -60,15 +60,15 @@ def extract_existing_hanzi_characters() -> set[str]:
     batch_size = 100
 
     for i in range(0, len(hanzi_note_ids), batch_size):
-        batch_ids = hanzi_note_ids[i:i + batch_size]
+        batch_ids = hanzi_note_ids[i : i + batch_size]
         notes_info = get_notes_info(batch_ids)
 
         for note_info in notes_info:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             # Only consider single character notes
             if len(traditional) == 1:
                 # Get the Hanzi (simplified) field for validation
-                hanzi_field = note_info['fields'].get('Hanzi', {}).get('value', '').strip()
+                hanzi_field = note_info["fields"].get("Hanzi", {}).get("value", "").strip()
 
                 if hanzi_field and len(hanzi_field) == 1:
                     # Validate consistency: if Traditional and Hanzi differ,
@@ -84,7 +84,7 @@ def extract_existing_hanzi_characters() -> set[str]:
 
                             if traditional_of_hanzi != traditional and traditional == hanzi_field:
                                 # Traditional field equals Hanzi field, but there's a different traditional form
-                                note_id = note_info.get('noteId', 'unknown')
+                                note_id = note_info.get("noteId", "unknown")
                                 raise ValueError(
                                     f"Simplified character '{traditional}' found in Traditional field of Hanzi note {note_id}. "
                                     f"Traditional form should be '{traditional_of_hanzi}'. "
@@ -120,14 +120,14 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
 
         batch_size = 100
         for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i:i + batch_size]
+            batch_ids = note_ids[i : i + batch_size]
             notes_info = get_notes_info(batch_ids)
 
             for note_info in notes_info:
-                meaning = note_info['fields'].get('Meaning', {}).get('value', '').strip()
+                meaning = note_info["fields"].get("Meaning", {}).get("value", "").strip()
 
                 # Check if Variants field exists and has content
-                variants_raw = note_info['fields'].get('Variants', {}).get('value', '').strip()
+                variants_raw = note_info["fields"].get("Variants", {}).get("value", "").strip()
                 variants_list: list[dict[str, str]] = []
 
                 if variants_raw:
@@ -141,11 +141,11 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
 
                 # If no variants, use the Traditional and Pinyin fields as a single variant
                 if not variants_list:
-                    traditional_raw = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-                    pinyin_raw = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+                    traditional_raw = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+                    pinyin_raw = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
 
                     # Clean HTML tags from pinyin
-                    pinyin_raw = pinyin_raw.replace('<div>', '').replace('</div>', '').strip()
+                    pinyin_raw = pinyin_raw.replace("<div>", "").replace("</div>", "").strip()
 
                     if not traditional_raw or not pinyin_raw:
                         print("Warning: missing traditional or pinyin", note_info)
@@ -155,45 +155,45 @@ def extract_characters_from_phrases(note_types: list[str]) -> dict[str, list[tup
 
                 # Process each variant
                 for variant in variants_list:
-                    traditional_raw = variant.get('Traditional', '').strip()
-                    pinyin_raw = variant.get('Pinyin', '').strip()
+                    traditional_raw = variant.get("Traditional", "").strip()
+                    pinyin_raw = variant.get("Pinyin", "").strip()
 
                     if not traditional_raw or not pinyin_raw:
                         continue
 
                     # Handle variants separated by / (e.g., "一塊/一塊兒" or "yīkuài/yīkuàir")
                     # Take only the first variant before the slash
-                    traditional = traditional_raw.split('/')[0].strip()
-                    pinyin = pinyin_raw.split('/')[0].strip()
+                    traditional = traditional_raw.split("/")[0].strip()
+                    pinyin = pinyin_raw.split("/")[0].strip()
 
                     # Remove parenthetical content (e.g., "籠(子)" -> "籠", "lóng(zi)" -> "lóng")
                     # This handles optional suffixes
-                    traditional = re.sub(r'\([^)]*\)', '', traditional).strip()
-                    pinyin = re.sub(r'\([^)]*\)', '', pinyin).strip()
+                    traditional = re.sub(r"\([^)]*\)", "", traditional).strip()
+                    pinyin = re.sub(r"\([^)]*\)", "", pinyin).strip()
 
                     # Remove ellipsis and surrounding characters (e.g., "以…為…" -> skip)
-                    if '…' in traditional or '...' in traditional:
+                    if "…" in traditional or "..." in traditional:
                         continue
 
                     # Skip entries with Latin letters or numbers (e.g., "KTV", "BBC", "101")
-                    if re.search(r'[A-Za-z0-9]', traditional):
+                    if re.search(r"[A-Za-z0-9]", traditional):
                         continue
 
                     # Remove punctuation from traditional (e.g., "哪裡，哪裡" -> "哪裡哪裡")
                     # Include middle dot ． which is used in foreign names
                     # Also remove question marks and other sentence-ending punctuation
-                    traditional = re.sub(r'[，、。！？；：．·?!]', '', traditional).strip()
+                    traditional = re.sub(r"[，、。！？；：．·?!]", "", traditional).strip()
 
                     # Remove punctuation and clean pinyin
                     # Include middle dot, apostrophes, and question marks used in sentences
-                    pinyin = re.sub(r"[,，、。！？；：．·'?!]", ' ', pinyin).strip()
+                    pinyin = re.sub(r"[,，、。！？；：．·'?!]", " ", pinyin).strip()
                     # Remove hyphens (e.g., "chāo-shāng" -> "chāo shāng")
-                    pinyin = pinyin.replace('-', ' ')
+                    pinyin = pinyin.replace("-", " ")
                     # Convert to lowercase to handle capitalized syllables (e.g., "Ōu" -> "ōu")
                     # But preserve tone marks
                     pinyin = pinyin.lower()
                     # Normalize multiple spaces to single space
-                    pinyin = re.sub(r'\s+', ' ', pinyin).strip()
+                    pinyin = re.sub(r"\s+", " ", pinyin).strip()
 
                     if not traditional or not pinyin:
                         continue
@@ -235,16 +235,12 @@ def extract_pinyin_syllables(pinyin_text: str, expected_count: int) -> list[str]
         zhuyin_syllables = zhuyin.split()
 
         # Convert each zhuyin syllable back to pinyin
-        pinyin_syllables = [
-            dragonmapper.transcriptions.zhuyin_to_pinyin(z)
-            for z in zhuyin_syllables
-        ]
+        pinyin_syllables = [dragonmapper.transcriptions.zhuyin_to_pinyin(z) for z in zhuyin_syllables]
 
         # Verify we got the expected count
         if len(pinyin_syllables) != expected_count:
             raise ValueError(
-                f"Syllable count mismatch: got {len(pinyin_syllables)} syllables "
-                f"but expected {expected_count} for '{pinyin_text}'"
+                f"Syllable count mismatch: got {len(pinyin_syllables)} syllables but expected {expected_count} for '{pinyin_text}'"
             )
 
         return pinyin_syllables
@@ -282,35 +278,36 @@ def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = ""
         bool: True if successful, False otherwise
     """
     # Create the note
-    response = anki_connect_request("addNote", {
-        "note": {
-            "deckName": "Chinese::CharsProps",  # Adjust deck name as needed
-            "modelName": "Hanzi",
-            "fields": {
-                "Traditional": char,
-                "Pinyin": pinyin,
-                "Hanzi": simplified,
-                "Meaning": meaning,
-                # Leave other fields empty
-                "Props": "",
-                "Mnemonic pegs": "",
-                "Audio": "",
-                "Zhuyin": ""
-            },
-            "tags": ["auto-generated"]
-        }
-    })
+    response = anki_connect_request(
+        "addNote",
+        {
+            "note": {
+                "deckName": "Chinese::CharsProps",  # Adjust deck name as needed
+                "modelName": "Hanzi",
+                "fields": {
+                    "Traditional": char,
+                    "Pinyin": pinyin,
+                    "Hanzi": simplified,
+                    "Meaning": meaning,
+                    # Leave other fields empty
+                    "Props": "",
+                    "Mnemonic pegs": "",
+                    "Audio": "",
+                    "Zhuyin": "",
+                },
+                "tags": ["auto-generated"],
+            }
+        },
+    )
 
     if response and response.get("result"):
         note_id = response["result"]
         print(f"Created note {note_id} for character '{char}' with pinyin '{pinyin}'")
 
         # Suspend the note
-        suspend_response = anki_connect_request("suspend", {
-            "cards": anki_connect_request("findCards", {
-                "query": f"nid:{note_id}"
-            })["result"]
-        })
+        suspend_response = anki_connect_request(
+            "suspend", {"cards": anki_connect_request("findCards", {"query": f"nid:{note_id}"})["result"]}
+        )
 
         if suspend_response and suspend_response.get("error") is None:
             print(f"Suspended note {note_id}")
@@ -378,14 +375,8 @@ def main() -> None:
     Main function to discover missing characters and create Hanzi notes
     """
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(
-        description="Create Hanzi notes in Anki for missing characters"
-    )
-    parser.add_argument(
-        "--char",
-        type=str,
-        help="Add a note for a specific character (bypasses existing character check)"
-    )
+    parser = argparse.ArgumentParser(description="Create Hanzi notes in Anki for missing characters")
+    parser.add_argument("--char", type=str, help="Add a note for a specific character (bypasses existing character check)")
     args = parser.parse_args()
 
     print("=== Starting Hanzi note generation ===")
@@ -404,7 +395,7 @@ def main() -> None:
         if char in existing_chars:
             print(f"Warning: Character '{char}' already has a Hanzi note")
             response = input("Do you want to create a duplicate note? (y/n): ")
-            if response.lower() != 'y':
+            if response.lower() != "y":
                 print("Aborted")
                 return
 

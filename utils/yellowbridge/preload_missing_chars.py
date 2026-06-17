@@ -30,27 +30,27 @@ from shared.character_discovery import discover_all_characters
 
 # Characters that cannot be loaded from YellowBridge
 BLACKLISTED_CHARS = {
-    '∋',  # Mathematical symbol, not a Chinese character
-    '∈',  # Mathematical symbol, not a Chinese character
-    '㇆',  # CJK stroke, not a full character
-    'フ',  # Japanese Katakana, not a Chinese character
-    '㇏',  # CJK stroke, not a full character
-    '屮',
-    '艹',
-    '&amp;R_S7;',
-    '&R_S7;',
-    '◎',
-    '𰻞', # biang :-(
-    '㇚',
-    '𬜯',
-    '𭕆',
-    '（',
-    '，',
-    '）',
-    '。',
-    '𮎷',
-    '𫝀',
-    '𪺍',
+    "∋",  # Mathematical symbol, not a Chinese character
+    "∈",  # Mathematical symbol, not a Chinese character
+    "㇆",  # CJK stroke, not a full character
+    "フ",  # Japanese Katakana, not a Chinese character
+    "㇏",  # CJK stroke, not a full character
+    "屮",
+    "艹",
+    "&amp;R_S7;",
+    "&R_S7;",
+    "◎",
+    "𰻞",  # biang :-(
+    "㇚",
+    "𬜯",
+    "𭕆",
+    "（",
+    "，",
+    "）",
+    "。",
+    "𮎷",
+    "𫝀",
+    "𪺍",
 }
 
 
@@ -59,35 +59,35 @@ def extract_referenced_chars(json_data: dict[str, Any]) -> set[str]:
     chars = set()
 
     # Extract from functional components
-    if 'functionalComponents' in json_data:
-        for comp_type in ['phonetic', 'semantic', 'primitive']:
-            if comp_type in json_data['functionalComponents']:
-                for comp in json_data['functionalComponents'][comp_type]:
-                    if 'character' in comp:
-                        chars.add(comp['character'])
+    if "functionalComponents" in json_data:
+        for comp_type in ["phonetic", "semantic", "primitive"]:
+            if comp_type in json_data["functionalComponents"]:
+                for comp in json_data["functionalComponents"][comp_type]:
+                    if "character" in comp:
+                        chars.add(comp["character"])
 
     # Extract from radical
-    if json_data.get('radical'):
-        if 'character' in json_data['radical']:
-            chars.add(json_data['radical']['character'])
+    if json_data.get("radical"):
+        if "character" in json_data["radical"]:
+            chars.add(json_data["radical"]["character"])
 
     # Extract from all components
-    if 'allComponents' in json_data:
-        for comp in json_data['allComponents']:
-            if 'character' in comp:
-                chars.add(comp['character'])
+    if "allComponents" in json_data:
+        for comp in json_data["allComponents"]:
+            if "character" in comp:
+                chars.add(comp["character"])
 
     # Extract from formation methods
-    if 'formationMethods' in json_data:
-        for method in json_data['formationMethods']:
-            if 'referencedCharacters' in method:
-                for char in method['referencedCharacters']:
+    if "formationMethods" in json_data:
+        for method in json_data["formationMethods"]:
+            if "referencedCharacters" in method:
+                for char in method["referencedCharacters"]:
                     chars.add(char)
 
     # Extract from simplification
-    if json_data.get('simplification'):
-        if 'simplifiedForm' in json_data['simplification']:
-            chars.add(json_data['simplification']['simplifiedForm'])
+    if json_data.get("simplification"):
+        if "simplifiedForm" in json_data["simplification"]:
+            chars.add(json_data["simplification"]["simplifiedForm"])
 
     return chars
 
@@ -101,13 +101,13 @@ def get_all_referenced_chars(info_dir: Path) -> tuple[set[str], "Counter[str]"]:
         print(f"Warning: YellowBridge info directory does not exist: {info_dir}")
         return all_chars, char_frequency
 
-    json_files = sorted(info_dir.glob('*.json'))
+    json_files = sorted(info_dir.glob("*.json"))
 
     print(f"\nScanning {len(json_files)} files in {info_dir}...")
 
     for file_path in json_files:
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Extract all referenced characters
@@ -139,36 +139,14 @@ def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description='Preload missing YellowBridge character data'
-    )
+    parser = argparse.ArgumentParser(description="Preload missing YellowBridge character data")
     parser.add_argument(
-        '--info-dir',
-        type=Path,
-        default=Path('public/data/yellowbridge/info'),
-        help='Directory containing processed character JSON files'
+        "--info-dir", type=Path, default=Path("public/data/yellowbridge/info"), help="Directory containing processed character JSON files"
     )
-    parser.add_argument(
-        '--delay',
-        type=float,
-        default=0.2,
-        help='Delay in seconds between opening browser tabs (default: 2.0)'
-    )
-    parser.add_argument(
-        '--max-chars',
-        type=int,
-        help='Maximum number of characters to open (for testing)'
-    )
-    parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Show what would be opened without actually opening browser'
-    )
-    parser.add_argument(
-        '--skip-anki',
-        action='store_true',
-        help='Skip fetching characters from Anki'
-    )
+    parser.add_argument("--delay", type=float, default=0.2, help="Delay in seconds between opening browser tabs (default: 2.0)")
+    parser.add_argument("--max-chars", type=int, help="Maximum number of characters to open (for testing)")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be opened without actually opening browser")
+    parser.add_argument("--skip-anki", action="store_true", help="Skip fetching characters from Anki")
 
     args = parser.parse_args()
 
@@ -180,11 +158,7 @@ def main():
     project_root = Path.cwd()
 
     # Use shared utility to discover all characters from Anki and data directories
-    all_chars, char_frequency = discover_all_characters(
-        project_root,
-        include_anki=not args.skip_anki,
-        normalize=False
-    )
+    all_chars, char_frequency = discover_all_characters(project_root, include_anki=not args.skip_anki, normalize=False)
 
     # Get referenced characters from YellowBridge JSON files (script-specific)
     ref_chars, ref_frequency = get_all_referenced_chars(args.info_dir)
@@ -197,7 +171,7 @@ def main():
         for json_file in args.info_dir.glob("*.json"):
             existing_files.add(json_file.stem)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"Existing files: {len(existing_files)}")
     print(f"Referenced characters from YellowBridge: {len(ref_chars)}")
@@ -222,7 +196,7 @@ def main():
         return 0
 
     # Show top missing characters with frequency info
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Top 30 most frequent missing characters:")
     for i, char in enumerate(missing_sorted[:30], 1):
         freq = char_frequency.get(char, 0)
@@ -240,35 +214,35 @@ def main():
     # Apply max-chars limit if specified
     chars_to_open = missing_sorted
     if args.max_chars:
-        chars_to_open = missing_sorted[:args.max_chars]
+        chars_to_open = missing_sorted[: args.max_chars]
         print(f"\nLimiting to {args.max_chars} characters")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Opening browser tabs for {len(chars_to_open)} characters...")
     print("(You may need to allow pop-ups in your browser)")
 
     # Confirm before opening many tabs
     if len(chars_to_open) > 300:
         response = input(f"\nAbout to open {len(chars_to_open)} browser tabs. Continue? [y/N] ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Cancelled.")
             return 0
 
     # Open browser tabs
     for i, char in enumerate(chars_to_open, 1):
-        print(f"[{i}/{len(chars_to_open)}] ", end='')
+        print(f"[{i}/{len(chars_to_open)}] ", end="")
         open_yellowbridge_url(char, args.delay)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Opened {len(chars_to_open)} browser tabs")
     print("\nWaiting 2 seconds for data collection...")
     time.sleep(2)
 
     # Verify that raw JSON files were created
-    raw_dir = Path('public/data/yellowbridge/raw')
+    raw_dir = Path("public/data/yellowbridge/raw")
     missing_files: list[str] = []
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Verifying raw JSON files...")
 
     for char in chars_to_open:
@@ -289,30 +263,26 @@ def main():
     print(f"✅ All {len(chars_to_open)} raw JSON files verified successfully")
 
     # Run the convert.py script to process the new data
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Running convert.py to process the new data...")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     convert_script = Path(__file__).parent / "convert.py"
 
     try:
         # Run convert.py and stream output in real time
-        result = subprocess.run(
-            [sys.executable, str(convert_script)],
-            cwd=Path.cwd(),
-            check=True
-        )
+        result = subprocess.run([sys.executable, str(convert_script)], cwd=Path.cwd(), check=True)
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("✅ Successfully processed all new character data")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         return result.returncode
 
     except subprocess.CalledProcessError as e:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"❌ ERROR: convert.py failed with exit code {e.returncode}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         return e.returncode
     except FileNotFoundError:
         print(f"\n❌ ERROR: Could not find convert.py at {convert_script}")
@@ -320,5 +290,5 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

@@ -29,11 +29,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -58,12 +54,7 @@ def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     fields = {field_name: field_value}
 
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
 
     if response and response.get("error") is None:
         return True
@@ -79,7 +70,7 @@ def get_learned_characters() -> set[str]:
         Set[str]: Set of learned characters
     """
     # Query for Hanzi notes that are not new and not suspended
-    search_query = 'note:Hanzi -is:suspended'
+    search_query = "note:Hanzi -is:suspended"
 
     response = anki_connect_request("findNotes", {"query": search_query})
 
@@ -97,7 +88,7 @@ def get_learned_characters() -> set[str]:
 
     if notes_info and notes_info.get("result"):
         for note_info in notes_info["result"]:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             if traditional:
                 # Take only the first character
                 char = traditional[0]
@@ -118,15 +109,15 @@ def is_punctuation(char: str) -> bool:
         bool: True if character is punctuation
     """
     # Common Chinese and Western punctuation
-    chinese_punctuation = '。，、；：？！""''（）《》【】…—·'
-    western_punctuation = '.,;:?!\'"()[]{}<>-–—…·'
+    chinese_punctuation = '。，、；：？！""（）《》【】…—·'
+    western_punctuation = ".,;:?!'\"()[]{}<>-–—…·"
 
     if char in chinese_punctuation or char in western_punctuation:
         return True
 
     # Check Unicode category for punctuation
     category = unicodedata.category(char)
-    return category.startswith('P')
+    return category.startswith("P")
 
 
 def can_use_sentence(sentence_text: str, learned_chars: set[str]) -> bool:
@@ -181,7 +172,7 @@ def load_anki_sentences(learned_chars: set[str]) -> dict[str, list[tuple[str, st
     total_sentences = 0
 
     for note_type in ANKI_SENTENCE_NOTE_TYPES:
-        search_query = f'note:{note_type} -is:suspended'
+        search_query = f"note:{note_type} -is:suspended"
         response = anki_connect_request("findNotes", {"query": search_query})
 
         if not response or not response.get("result"):
@@ -197,8 +188,8 @@ def load_anki_sentences(learned_chars: set[str]) -> dict[str, list[tuple[str, st
             continue
 
         for note_info in notes_info["result"]:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-            meaning = note_info['fields'].get('Meaning', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+            meaning = note_info["fields"].get("Meaning", {}).get("value", "").strip()
 
             if not traditional or not meaning:
                 continue
@@ -246,7 +237,7 @@ def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tupl
 
     for json_file in sorted(words_dir.glob("*.json")):
         try:
-            with open(json_file, encoding='utf-8') as f:
+            with open(json_file, encoding="utf-8") as f:
                 data = json.load(f)
 
             processed_files += 1
@@ -305,9 +296,7 @@ def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tupl
 
 
 def generate_example_sentences_html(
-    anki_sentences: list[tuple[str, str]],
-    sentences: list[tuple[str, str]],
-    compounds: list[tuple[str, str]]
+    anki_sentences: list[tuple[str, str]], sentences: list[tuple[str, str]], compounds: list[tuple[str, str]]
 ) -> str:
     """
     Generate HTML for Example sentences field (includes anki sentences, HackChinese sentences and compounds)
@@ -388,14 +377,14 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
 
     for note_type in note_types:
         # Build search query
-        search_query = f'note:{note_type}'
+        search_query = f"note:{note_type}"
         if character:
-            search_query += f' Traditional:{character}'
+            search_query += f" Traditional:{character}"
         else:
-            search_query += ' Traditional:_'
+            search_query += " Traditional:_"
 
         # Only get non-suspended notes
-        search_query += ' -is:suspended'
+        search_query += " -is:suspended"
 
         response = anki_connect_request("findNotes", {"query": search_query})
         if response and response.get("result"):
@@ -434,11 +423,11 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
 
     for i, note_info in enumerate(all_notes_info, 1):
         try:
-            note_id = note_info.get('noteId')
-            note_type = note_info.get('modelName', 'Unknown')
+            note_id = note_info.get("noteId")
+            note_type = note_info.get("modelName", "Unknown")
 
             # Get the Traditional field
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             if not traditional:
                 print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}): No Traditional field, skipping")
                 skipped_count += 1
@@ -447,7 +436,7 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
             char = traditional[0]
 
             # Get current field value
-            current_value = note_info['fields'].get('Example sentences', {}).get('value', '').strip()
+            current_value = note_info["fields"].get("Example sentences", {}).get("value", "").strip()
 
             # Get Anki sentences for this character (highest priority)
             char_anki_sentences = anki_sentences.get(char, [])
@@ -481,15 +470,17 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
             else:
                 # Update the note
                 update_note_field(note_id, "Example sentences", new_html)
-                print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese, {len(compounds)} compounds")
+                print(
+                    f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): Updated with {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese, {len(compounds)} compounds"
+                )
                 updated_count += 1
 
         except Exception as e:
-            note_id = note_info.get('noteId', 'unknown')
+            note_id = note_info.get("noteId", "unknown")
             print(f"[{i}/{len(all_notes_info)}] Error processing note {note_id}: {e}")
             raise
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Summary:")
     print(f"  Total notes: {len(all_notes_info)}")
     print(f"  Updated: {updated_count}")
@@ -498,13 +489,13 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
     print(f"  Skipped: {skipped_count}")
     if dry_run:
         print("  (DRY RUN - no changes were made)")
-    print("="*60)
+    print("=" * 60)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill Example sentences field for Hanzi notes in Anki',
-        epilog='''
+        description="Fill Example sentences field for Hanzi notes in Anki",
+        epilog="""
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
   %(prog)s --dry-run --limit 5                 Preview first 5 notes only
@@ -519,25 +510,18 @@ Sentences are shown first, followed by compounds (separated by a horizontal line
 It will overwrite existing content if it differs from the generated content.
 
 Requires Anki running with AnkiConnect addon installed.
-        ''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('--dry-run', action='store_true',
-                       help='Preview changes without actually updating notes')
-    parser.add_argument('--limit', type=int, metavar='N',
-                       help='Limit number of notes to process (useful for testing)')
-    parser.add_argument('--character', type=str, metavar='CHAR',
-                       help='Process only this specific character (e.g., 被)')
-    parser.add_argument('--note-types', nargs='+', default=['Hanzi'], metavar='TYPE',
-                       help='Note types to process (default: Hanzi). Examples: Hanzi, TOCFL')
+    parser.add_argument("--dry-run", action="store_true", help="Preview changes without actually updating notes")
+    parser.add_argument("--limit", type=int, metavar="N", help="Limit number of notes to process (useful for testing)")
+    parser.add_argument("--character", type=str, metavar="CHAR", help="Process only this specific character (e.g., 被)")
+    parser.add_argument(
+        "--note-types", nargs="+", default=["Hanzi"], metavar="TYPE", help="Note types to process (default: Hanzi). Examples: Hanzi, TOCFL"
+    )
     args = parser.parse_args()
 
-    update_example_sentences(
-        note_types=args.note_types,
-        dry_run=args.dry_run,
-        limit=args.limit,
-        character=args.character
-    )
+    update_example_sentences(note_types=args.note_types, dry_run=args.dry_run, limit=args.limit, character=args.character)
 
 
 if __name__ == "__main__":

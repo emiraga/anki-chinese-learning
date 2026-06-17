@@ -40,11 +40,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -108,9 +104,7 @@ def check_traditional_exists(traditional: str) -> bool:
     """
     # Search for notes with this exact Traditional field value
     # Using quotes for exact match
-    response = anki_connect_request("findNotes", {
-        "query": f'note:TOCFL Traditional:"{traditional}"'
-    })
+    response = anki_connect_request("findNotes", {"query": f'note:TOCFL Traditional:"{traditional}"'})
 
     if response and response.get("result") is not None:
         note_ids = response["result"]
@@ -120,7 +114,9 @@ def check_traditional_exists(traditional: str) -> bool:
         raise Exception(f"Failed to check if Traditional field exists: {error}")
 
 
-def create_tocfl_note(traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::Phrases", set_due_today: bool = True) -> int:
+def create_tocfl_note(
+    traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::Phrases", set_due_today: bool = True
+) -> int:
     """
     Create a new TOCFL note
 
@@ -142,31 +138,32 @@ def create_tocfl_note(traditional: str, pinyin: str, zhuyin: str, meaning: str, 
     if check_traditional_exists(traditional):
         raise Exception(f"A note with Traditional field '{traditional}' already exists")
 
-    response = anki_connect_request("addNote", {
-        "note": {
-            "deckName": deck_name,
-            "modelName": "TOCFL",
-            "fields": {
-                "ID": "my_" + traditional,
-                "Traditional": traditional,
-                "Pinyin": pinyin,
-                "Zhuyin": zhuyin,
-                "Meaning": meaning,
-                "Mnemonic": "",
-                "Audio": ""
-            },
-            "tags": ["auto-generated"]
-        }
-    })
+    response = anki_connect_request(
+        "addNote",
+        {
+            "note": {
+                "deckName": deck_name,
+                "modelName": "TOCFL",
+                "fields": {
+                    "ID": "my_" + traditional,
+                    "Traditional": traditional,
+                    "Pinyin": pinyin,
+                    "Zhuyin": zhuyin,
+                    "Meaning": meaning,
+                    "Mnemonic": "",
+                    "Audio": "",
+                },
+                "tags": ["auto-generated"],
+            }
+        },
+    )
 
     if response and response.get("result"):
         note_id = response["result"]
         print(f"✓ Created note {note_id} for '{traditional}'")
 
         # Get cards for this note
-        cards_response = anki_connect_request("findCards", {
-            "query": f"nid:{note_id}"
-        })
+        cards_response = anki_connect_request("findCards", {"query": f"nid:{note_id}"})
 
         if cards_response and cards_response.get("result"):
             card_ids = cards_response["result"]
@@ -174,11 +171,7 @@ def create_tocfl_note(traditional: str, pinyin: str, zhuyin: str, meaning: str, 
             if set_due_today:
                 # Set cards due today (due = 0 means due today)
                 for card_id in card_ids:
-                    set_due_response = anki_connect_request("setSpecificValueOfCard", {
-                        "card": card_id,
-                        "keys": ["due"],
-                        "newValues": [0]
-                    })
+                    set_due_response = anki_connect_request("setSpecificValueOfCard", {"card": card_id, "keys": ["due"], "newValues": [0]})
 
                     if set_due_response and set_due_response.get("error") is None:
                         print(f"✓ Set card {card_id} due today")
@@ -186,9 +179,7 @@ def create_tocfl_note(traditional: str, pinyin: str, zhuyin: str, meaning: str, 
                         print(f"⚠ Warning: Failed to set card {card_id} due today")
             else:
                 # Suspend the cards
-                suspend_response = anki_connect_request("suspend", {
-                    "cards": card_ids
-                })
+                suspend_response = anki_connect_request("suspend", {"cards": card_ids})
 
                 if suspend_response and suspend_response.get("error") is None:
                     print(f"✓ Suspended {len(card_ids)} card(s) for note {note_id}")
@@ -234,43 +225,20 @@ def main():
     parser = argparse.ArgumentParser(
         description="Add a Chinese word to Anki TOCFL note type with automatic translation and pinyin generation"
     )
-    parser.add_argument(
-        "traditional",
-        nargs="?",
-        default=None,
-        help="Traditional Chinese text to add"
-    )
+    parser.add_argument("traditional", nargs="?", default=None, help="Traditional Chinese text to add")
     parser.add_argument(
         "--price",
         nargs="?",
         const="1-999",
         default=None,
         metavar="[MAX or MIN-MAX]",
-        help="Generate a random price phrase (default: 1-999). Use --price 9999 or --price 100-999"
+        help="Generate a random price phrase (default: 1-999). Use --price 9999 or --price 100-999",
     )
-    parser.add_argument(
-        "--note",
-        default="TOCFL",
-        help="Note type to use (default: TOCFL)"
-    )
-    parser.add_argument(
-        "--deck",
-        default="Chinese::Phrases",
-        help="Deck name to add the note to (default: Chinese::Phrases)"
-    )
-    parser.add_argument(
-        "--no-due-today",
-        action="store_true",
-        help="Don't set cards due today (will suspend them instead)"
-    )
-    parser.add_argument(
-        "--pinyin",
-        help="Manual pinyin (optional, will be auto-generated if not provided)"
-    )
-    parser.add_argument(
-        "--meaning",
-        help="Manual meaning/translation (optional, will be auto-generated if not provided)"
-    )
+    parser.add_argument("--note", default="TOCFL", help="Note type to use (default: TOCFL)")
+    parser.add_argument("--deck", default="Chinese::Phrases", help="Deck name to add the note to (default: Chinese::Phrases)")
+    parser.add_argument("--no-due-today", action="store_true", help="Don't set cards due today (will suspend them instead)")
+    parser.add_argument("--pinyin", help="Manual pinyin (optional, will be auto-generated if not provided)")
+    parser.add_argument("--meaning", help="Manual meaning/translation (optional, will be auto-generated if not provided)")
 
     args = parser.parse_args()
 
@@ -348,7 +316,7 @@ def main():
             zhuyin=zhuyin,
             meaning=meaning,
             deck_name=args.deck,
-            set_due_today=not args.no_due_today
+            set_due_today=not args.no_due_today,
         )
 
         print("\n=== Success! ===")

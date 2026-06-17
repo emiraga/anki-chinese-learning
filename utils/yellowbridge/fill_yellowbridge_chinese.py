@@ -28,11 +28,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -75,12 +71,7 @@ def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     fields = {field_name: field_value}
 
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
 
     if response and response.get("error") is None:
         return True
@@ -106,7 +97,7 @@ def load_yellowbridge_character(character: str) -> dict[str, Any] | None:
         return None
 
     try:
-        with open(json_file, encoding='utf-8') as f:
+        with open(json_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading YellowBridge data for {character}: {e}")
@@ -125,12 +116,7 @@ def escape_html(text: str) -> str:
     """
     if not text:
         return text
-    return (text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#39;"))
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#39;")
 
 
 def format_component_info(component: dict[str, Any]) -> str:
@@ -143,17 +129,19 @@ def format_component_info(component: dict[str, Any]) -> str:
     Returns:
         str: HTML formatted component
     """
-    parts = [f'<strong>{escape_html(component["character"])}</strong>']
+    parts = [f"<strong>{escape_html(component['character'])}</strong>"]
 
     if component.get("pinyin") and len(component["pinyin"]) > 0:
         pinyin_str = ", ".join(component["pinyin"])
-        parts.append(f'<em>{escape_html(pinyin_str)}</em>')
+        parts.append(f"<em>{escape_html(pinyin_str)}</em>")
 
     if component.get("description"):
         parts.append(f'"{escape_html(component["description"])}"')
 
     if component.get("isAltered"):
-        parts.append('<span style="font-size: 0.75em; background-color: #fef3c7; color: #92400e; padding: 0.125rem 0.375rem; border-radius: 0.25rem;">altered</span>')
+        parts.append(
+            '<span style="font-size: 0.75em; background-color: #fef3c7; color: #92400e; padding: 0.125rem 0.375rem; border-radius: 0.25rem;">altered</span>'
+        )
 
     return " ".join(parts)
 
@@ -176,28 +164,28 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
     # 1. Definition
     if yb_data.get("definition"):
         definition = escape_html(yb_data["definition"])
-        html_parts.append(f'<p><strong>Definition:</strong> {definition}</p>')
+        html_parts.append(f"<p><strong>Definition:</strong> {definition}</p>")
 
     # 2. Character Formation
     if yb_data.get("formationMethods") and len(yb_data["formationMethods"]) > 0:
         # html_parts.append('<p><strong>Character Formation:</strong></p>')
-        html_parts.append('<ul>')
+        html_parts.append("<ul>")
 
         for method in yb_data["formationMethods"]:
             type_english = escape_html(method.get("typeEnglish", ""))
             type_chinese = escape_html(method.get("typeChinese", ""))
             description = escape_html(method.get("description", ""))
 
-            method_html = f'<li><strong>{type_english}</strong> ({type_chinese}): {description}'
+            method_html = f"<li><strong>{type_english}</strong> ({type_chinese}): {description}"
 
             if method.get("referencedCharacters") and len(method["referencedCharacters"]) > 0:
                 ref_chars = ", ".join([escape_html(c) for c in method["referencedCharacters"]])
-                method_html += f' [{ref_chars}]'
+                method_html += f" [{ref_chars}]"
 
-            method_html += '</li>'
+            method_html += "</li>"
             html_parts.append(method_html)
 
-        html_parts.append('</ul>')
+        html_parts.append("</ul>")
 
     # 3. Functional Components (Phonetic and Semantic)
     functional_comps = yb_data.get("functionalComponents", {})
@@ -206,35 +194,35 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
 
     if has_phonetic or has_semantic:
         # html_parts.append('<p><strong>Functional Components:</strong></p>')
-        html_parts.append('<ul>')
+        html_parts.append("<ul>")
 
         if has_phonetic:
             html_parts.append('<li><strong style="color: #2563eb;">Phonetic (Sound):</strong>')
-            html_parts.append('<ul>')
+            html_parts.append("<ul>")
             for comp in functional_comps["phonetic"]:
-                html_parts.append(f'<li>{format_component_info(comp)}</li>')
-            html_parts.append('</ul>')
-            html_parts.append('</li>')
+                html_parts.append(f"<li>{format_component_info(comp)}</li>")
+            html_parts.append("</ul>")
+            html_parts.append("</li>")
 
         if has_semantic:
             html_parts.append('<li><strong style="color: #16a34a;">Semantic (Meaning):</strong>')
-            html_parts.append('<ul>')
+            html_parts.append("<ul>")
             for comp in functional_comps["semantic"]:
-                html_parts.append(f'<li>{format_component_info(comp)}</li>')
-            html_parts.append('</ul>')
-            html_parts.append('</li>')
+                html_parts.append(f"<li>{format_component_info(comp)}</li>")
+            html_parts.append("</ul>")
+            html_parts.append("</li>")
 
-        html_parts.append('</ul>')
+        html_parts.append("</ul>")
 
     # 4. Primitive Components
     has_primitive = functional_comps.get("primitive") and len(functional_comps["primitive"]) > 0
 
     if has_primitive:
         # html_parts.append('<p><strong>Primitive Components:</strong></p>')
-        html_parts.append('<ul>')
+        html_parts.append("<ul>")
         for comp in functional_comps["primitive"]:
-            html_parts.append(f'<li>{format_component_info(comp)}</li>')
-        html_parts.append('</ul>')
+            html_parts.append(f"<li>{format_component_info(comp)}</li>")
+        html_parts.append("</ul>")
 
     if not html_parts:
         return None
@@ -256,7 +244,9 @@ def should_process_note(note_type: str, traditional: str) -> bool:
     return True
 
 
-def update_yellowbridge_etymology_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
+def update_yellowbridge_etymology_for_note_types(
+    note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None
+) -> None:
     """
     Update notes with Yellowbridge Etymology for specified note types
 
@@ -272,11 +262,11 @@ def update_yellowbridge_etymology_for_note_types(note_types: list[str], dry_run:
     # Collect notes from all specified note types
     for note_type in note_types:
         # Build search query
-        search_query = f'note:{note_type}'
+        search_query = f"note:{note_type}"
         if character:
-            search_query += f' Traditional:{character}'
+            search_query += f" Traditional:{character}"
         else:
-            search_query += ' Traditional:_'
+            search_query += " Traditional:_"
 
         if not overwrite:
             # Exclude notes that already have content in the Yellowbridge Etymology field
@@ -309,10 +299,10 @@ def update_yellowbridge_etymology_for_note_types(note_types: list[str], dry_run:
     for i, note_id in enumerate(all_note_ids, 1):
         try:
             note_info = get_note_info(note_id)
-            note_type = note_info.get('modelName', 'Unknown')
+            note_type = note_info.get("modelName", "Unknown")
 
             # Get the Traditional field (which contains the hanzi character)
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             traditional = traditional[0:1]
 
             if not traditional:
@@ -357,7 +347,7 @@ def update_yellowbridge_etymology_for_note_types(note_types: list[str], dry_run:
             error_count += 1
             raise
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Summary:")
     print(f"  Total notes: {len(all_note_ids)}")
     print(f"  Updated: {updated_count}")
@@ -365,13 +355,13 @@ def update_yellowbridge_etymology_for_note_types(note_types: list[str], dry_run:
     print(f"  Errors: {error_count}")
     if dry_run:
         print("  (DRY RUN - no changes were made)")
-    print("="*60)
+    print("=" * 60)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill Yellowbridge Etymology field for notes in Anki',
-        epilog='''
+        description="Fill Yellowbridge Etymology field for notes in Anki",
+        epilog="""
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
   %(prog)s --dry-run --limit 5                 Preview first 5 notes only
@@ -392,27 +382,24 @@ Note: TOCFL notes are only processed if the Traditional field contains a single 
 
 The script only updates empty fields and skips notes that already have content.
 Requires Anki running with AnkiConnect addon installed.
-        ''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('--dry-run', action='store_true',
-                       help='Preview changes without actually updating notes')
-    parser.add_argument('--limit', type=int, metavar='N',
-                       help='Limit number of notes to process (useful for testing)')
-    parser.add_argument('--overwrite', action='store_true',
-                       help='Overwrite existing content in the field (default: skip filled fields)')
-    parser.add_argument('--character', type=str, metavar='CHAR',
-                       help='Process only this specific character (e.g., 你)')
-    parser.add_argument('--note-types', nargs='+', default=['Hanzi', 'TOCFL'], metavar='TYPE',
-                       help='Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL')
+    parser.add_argument("--dry-run", action="store_true", help="Preview changes without actually updating notes")
+    parser.add_argument("--limit", type=int, metavar="N", help="Limit number of notes to process (useful for testing)")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing content in the field (default: skip filled fields)")
+    parser.add_argument("--character", type=str, metavar="CHAR", help="Process only this specific character (e.g., 你)")
+    parser.add_argument(
+        "--note-types",
+        nargs="+",
+        default=["Hanzi", "TOCFL"],
+        metavar="TYPE",
+        help="Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL",
+    )
     args = parser.parse_args()
 
     update_yellowbridge_etymology_for_note_types(
-        note_types=args.note_types,
-        dry_run=args.dry_run,
-        limit=args.limit,
-        overwrite=args.overwrite,
-        character=args.character
+        note_types=args.note_types, dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite, character=args.character
     )
 
 

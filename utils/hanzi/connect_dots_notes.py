@@ -51,84 +51,85 @@ MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 # Tags to generate Hanzi-to-Pinyin ConnectDots notes for (using TagHanziToPinyin generator)
 # Full tag names in format "prefix::name"
 HANZI_TO_PINYIN_TAGS = [
-    'prop::square',
-    'prop::pendant',
-    'prop::water-around-the-house',
-    'prop::buddhist-temple',
-    'prop::arrow',
-    'prop::monkey',
-    'prop::cloth-filter',
-    'prop::shrine',
-    'prop::shrine-gate',
-    'prop-top::sheep',
-    'prop-bottom::child',
-    'prop-left::slice-of-a-tree',
-    'prop-right::hook',
-    'prop::helmet',
-    'prop-left::boat',
-    'prop::the-one-who-makes',
-    'prop::fountain',
-    'prop-left::foot',
-    'prop-bottom::narrow-meat',
-    'prop::long-roots',
-    'prop::salt-shake',
-    'prop-right::boa-constrictor-snake',
-    'prop::folded-hands',
-    'prop::grape-vines',
-    'prop-left::sea-shell',
-    'prop::pump',
+    "prop::square",
+    "prop::pendant",
+    "prop::water-around-the-house",
+    "prop::buddhist-temple",
+    "prop::arrow",
+    "prop::monkey",
+    "prop::cloth-filter",
+    "prop::shrine",
+    "prop::shrine-gate",
+    "prop-top::sheep",
+    "prop-bottom::child",
+    "prop-left::slice-of-a-tree",
+    "prop-right::hook",
+    "prop::helmet",
+    "prop-left::boat",
+    "prop::the-one-who-makes",
+    "prop::fountain",
+    "prop-left::foot",
+    "prop-bottom::narrow-meat",
+    "prop::long-roots",
+    "prop::salt-shake",
+    "prop-right::boa-constrictor-snake",
+    "prop::folded-hands",
+    "prop::grape-vines",
+    "prop-left::sea-shell",
+    "prop::pump",
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
 # Format: (key_name, [full_tag1, full_tag2, ...])
 HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
-    ('small-table+insect', ['prop::small-table', 'prop::insect']),
-    ('square+walking-legs', ['prop-right::walking-legs', 'prop::square']),
-    ('left-moon-mean', ['prop-left::narrow-meat', 'prop-left::moon']),
+    ("small-table+insect", ["prop::small-table", "prop::insect"]),
+    ("square+walking-legs", ["prop-right::walking-legs", "prop::square"]),
+    ("left-moon-mean", ["prop-left::narrow-meat", "prop-left::moon"]),
 ]
 
 # Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)
 # Format: 'key_name': 'characters_as_string'
 CUSTOM_HANZI_TO_PINYIN_SETS = {
-    'continuedrama': '繼續戲劇',
-    'zhe-zhi': '這者折稚址質',
-    'filler-sounds': '啦呵哦嗯阿呀喔哈耶',
-    'top-hat-simple': '宜牢穴它宅',
-    'scarecrow-like': '辛幸辜',
-    'people-standing': '來夾',
-    'tree-like': '夫未末美失朱犬尖天'
+    "continuedrama": "繼續戲劇",
+    "zhe-zhi": "這者折稚址質",
+    "filler-sounds": "啦呵哦嗯阿呀喔哈耶",
+    "top-hat-simple": "宜牢穴它宅",
+    "scarecrow-like": "辛幸辜",
+    "people-standing": "來夾",
+    "tree-like": "夫未末美失朱犬尖天",
 }
 
 # Combined sound components - for sound components that don't have enough chars individually
 # Format: 'key_name': ['component1', 'component2', ...]
 COMBINED_SOUND_COMPONENTS_TO_PINYIN: dict[str, list[str]] = {
-    '朝+苗': ['朝', '苗'],
+    "朝+苗": ["朝", "苗"],
 }
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
 # Note: Do NOT include 'tag:' prefix - it's added automatically in the query
 TAG_TRADITIONAL_MEANING = [
-    'chinese::category::food',
-    'chinese::category::time-of-the-day',
-    'chinese::category::touch',
-    'chinese::category::frequency-of-doing',
-    'chinese::category::protect-care',
-    'chinese::category::strength',
+    "chinese::category::food",
+    "chinese::category::time-of-the-day",
+    "chinese::category::touch",
+    "chinese::category::frequency-of-doing",
+    "chinese::category::protect-care",
+    "chinese::category::strength",
 ]
 
 # Whitelist for two-character phrase generators (by common character)
 # Only characters in this list will have ConnectDots notes generated
 TWO_CHAR_PHRASE_WHITELIST = [
-    '如',
-    '例',
-    '列',
-    '隨',
+    "如",
+    "例",
+    "列",
+    "隨",
 ]
 
 
 @dataclass
 class HanziNote:
     """Pre-fetched data for a single Hanzi note"""
+
     note_id: int
     traditional: str
     pinyin: str
@@ -150,6 +151,7 @@ class HanziNote:
 @dataclass
 class TOCFLNote:
     """Pre-fetched data for a single TOCFL note"""
+
     note_id: int
     traditional: str
     meaning: str
@@ -162,6 +164,7 @@ class HanziDataStore:
 
     This avoids making many individual API calls by fetching all data upfront.
     """
+
     hanzi_notes: list[HanziNote] = field(default_factory=lambda: list[HanziNote]())
     tocfl_notes: list[TOCFLNote] = field(default_factory=lambda: list[TOCFLNote]())
 
@@ -238,11 +241,7 @@ class HanziDataStore:
 
     def get_all_traditional_chars(self) -> set[str]:
         """Get all unique single traditional characters"""
-        return {
-            normalize_cjk_char(n.traditional)
-            for n in self.hanzi_notes
-            if n.traditional and len(n.traditional) == 1
-        }
+        return {normalize_cjk_char(n.traditional) for n in self.hanzi_notes if n.traditional and len(n.traditional) == 1}
 
     def get_sound_component_counts(self) -> dict[str, int]:
         """Get count of characters per sound component"""
@@ -255,12 +254,12 @@ class HanziDataStore:
     def stats(self) -> dict[str, int]:
         """Return statistics about the data store"""
         return {
-            'hanzi_notes': len(self.hanzi_notes),
-            'tocfl_notes': len(self.tocfl_notes),
-            'unique_sound_components': len(self._hanzi_by_sound_component),
-            'unique_syllables': len(self._hanzi_by_syllable),
-            'unique_tags': len(self._hanzi_by_tag),
-            'two_char_tocfl': len(self._tocfl_two_char),
+            "hanzi_notes": len(self.hanzi_notes),
+            "tocfl_notes": len(self.tocfl_notes),
+            "unique_sound_components": len(self._hanzi_by_sound_component),
+            "unique_syllables": len(self._hanzi_by_syllable),
+            "unique_tags": len(self._hanzi_by_tag),
+            "two_char_tocfl": len(self._tocfl_two_char),
         }
 
 
@@ -289,7 +288,7 @@ def load_all_data() -> HanziDataStore:
     print("Loading all Hanzi notes from Anki...")
 
     # Fetch all unsuspended Hanzi notes
-    hanzi_query = 'note:Hanzi -is:suspended'
+    hanzi_query = "note:Hanzi -is:suspended"
     response = anki_connect_request("findNotes", {"query": hanzi_query})
     hanzi_ids = response.get("result", [])
 
@@ -299,31 +298,33 @@ def load_all_data() -> HanziDataStore:
     hanzi_notes: list[HanziNote] = []
     batch_size = 500
     for i in range(0, len(hanzi_ids), batch_size):
-        batch_ids = hanzi_ids[i:i + batch_size]
+        batch_ids = hanzi_ids[i : i + batch_size]
         response = anki_connect_request("notesInfo", {"notes": batch_ids})
         notes_info = response.get("result", [])
 
         for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
-            pinyin = note['fields'].get('Pinyin', {}).get('value', '').strip()
+            traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
+            pinyin = note["fields"].get("Pinyin", {}).get("value", "").strip()
             meaning = get_meaning_field(note)
-            sound_component = note['fields'].get('Sound component character', {}).get('value', '').strip()
-            tags = set(note.get('tags', []))
+            sound_component = note["fields"].get("Sound component character", {}).get("value", "").strip()
+            tags = set(note.get("tags", []))
 
-            hanzi_notes.append(HanziNote(
-                note_id=note['noteId'],
-                traditional=traditional,
-                pinyin=pinyin,
-                meaning=meaning,
-                sound_component=sound_component,
-                tags=tags,
-            ))
+            hanzi_notes.append(
+                HanziNote(
+                    note_id=note["noteId"],
+                    traditional=traditional,
+                    pinyin=pinyin,
+                    meaning=meaning,
+                    sound_component=sound_component,
+                    tags=tags,
+                )
+            )
 
     print(f"  Loaded {len(hanzi_notes)} Hanzi notes")
 
     # Fetch all unsuspended TOCFL notes
     print("Loading all TOCFL notes from Anki...")
-    tocfl_query = 'note:TOCFL -is:suspended'
+    tocfl_query = "note:TOCFL -is:suspended"
     response = anki_connect_request("findNotes", {"query": tocfl_query})
     tocfl_ids = response.get("result", [])
 
@@ -331,19 +332,21 @@ def load_all_data() -> HanziDataStore:
 
     tocfl_notes: list[TOCFLNote] = []
     for i in range(0, len(tocfl_ids), batch_size):
-        batch_ids = tocfl_ids[i:i + batch_size]
+        batch_ids = tocfl_ids[i : i + batch_size]
         response = anki_connect_request("notesInfo", {"notes": batch_ids})
         notes_info = response.get("result", [])
 
         for note in notes_info:
-            traditional = note['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
             meaning = get_meaning_field(note)
 
-            tocfl_notes.append(TOCFLNote(
-                note_id=note['noteId'],
-                traditional=traditional,
-                meaning=meaning,
-            ))
+            tocfl_notes.append(
+                TOCFLNote(
+                    note_id=note["noteId"],
+                    traditional=traditional,
+                    meaning=meaning,
+                )
+            )
 
     print(f"  Loaded {len(tocfl_notes)} TOCFL notes")
 
@@ -355,15 +358,17 @@ def load_all_data() -> HanziDataStore:
     _data_store.build_indexes()
 
     stats = _data_store.stats()
-    print(f"  Built indexes: {stats['unique_sound_components']} sound components, "
-          f"{stats['unique_syllables']} syllables, {stats['unique_tags']} tags")
+    print(
+        f"  Built indexes: {stats['unique_sound_components']} sound components, "
+        f"{stats['unique_syllables']} syllables, {stats['unique_tags']} tags"
+    )
 
     return _data_store
 
 
 def escape_comma(text: str) -> str:
     """Replace ASCII comma with fullwidth comma + variation selector to avoid field delimiter conflicts"""
-    return text.replace(',', '，︀')
+    return text.replace(",", "，︀")
 
 
 def stable_bin(value: str, num_bins: int) -> int:
@@ -389,6 +394,7 @@ def stable_bin(value: str, num_bins: int) -> int:
 @dataclass
 class ConnectDotsNote:
     """Represents a ConnectDots note to be created or updated"""
+
     key: str
     left: list[str]
     right: list[str]
@@ -397,19 +403,13 @@ class ConnectDotsNote:
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
-            raise ValueError(
-                f"Left and Right must have equal lengths: "
-                f"left={len(self.left)}, right={len(self.right)}"
-            )
+            raise ValueError(f"Left and Right must have equal lengths: left={len(self.left)}, right={len(self.right)}")
         if self.explanation and len(self.explanation) != len(self.left):
-            raise ValueError(
-                f"Explanation must have same length as Left/Right: "
-                f"explanation={len(self.explanation)}, left={len(self.left)}"
-            )
+            raise ValueError(f"Explanation must have same length as Left/Right: explanation={len(self.explanation)}, left={len(self.left)}")
 
     def get_sorted_tuples(self) -> list[tuple[str, str, str]]:
         """Get (left, right, explanation) tuples sorted by left element"""
-        explanations = self.explanation if self.explanation else [''] * len(self.left)
+        explanations = self.explanation if self.explanation else [""] * len(self.left)
         return sorted(zip(self.left, self.right, explanations), key=lambda x: x[0])
 
     def left_str(self) -> str:
@@ -437,7 +437,7 @@ class ConnectDotsNote:
         all_right_values = set(self.right) | set(self.fake_right)
         return len(all_right_values) <= 1
 
-    def split_if_needed(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list['ConnectDotsNote']:
+    def split_if_needed(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list["ConnectDotsNote"]:
         """
         Split into multiple notes if there are more than max_items.
 
@@ -460,10 +460,10 @@ class ConnectDotsNote:
 
         # Sort by (right, left) to group by right value, then interleave
         # This maximizes diversity of right values in each split note
-        explanations = self.explanation if self.explanation else [''] * len(self.left)
+        explanations = self.explanation if self.explanation else [""] * len(self.left)
         sorted_tuples = sorted(
             zip(self.left, self.right, explanations),
-            key=lambda x: (x[1], x[0])  # Sort by (right, left)
+            key=lambda x: (x[1], x[0]),  # Sort by (right, left)
         )
 
         # Calculate number of notes needed (ceiling division)
@@ -501,19 +501,21 @@ class ConnectDotsNote:
             # Limit fake_right so that: len(left) >= len(unique_right) + len(fake_right)
             # This ensures there aren't more options than items to match
             max_fake_right = len(left_slice) - len(this_note_right)
-            fake_right = fake_right_candidates[:max(0, max_fake_right)]
+            fake_right = fake_right_candidates[: max(0, max_fake_right)]
 
-            notes.append(ConnectDotsNote(
-                key=key,
-                left=left_slice,
-                right=right_slice,
-                explanation=explanation_slice if self.explanation else [],
-                fake_right=fake_right
-            ))
+            notes.append(
+                ConnectDotsNote(
+                    key=key,
+                    left=left_slice,
+                    right=right_slice,
+                    explanation=explanation_slice if self.explanation else [],
+                    fake_right=fake_right,
+                )
+            )
 
         return notes
 
-    def split_stably(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list['ConnectDotsNote']:
+    def split_stably(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list["ConnectDotsNote"]:
         """
         Split into notes of at most ~max_items using a content-stable assignment.
 
@@ -536,14 +538,12 @@ class ConnectDotsNote:
         if len(self.left) <= max_items:
             return [self]
 
-        explanations = self.explanation if self.explanation else [''] * len(self.left)
+        explanations = self.explanation if self.explanation else [""] * len(self.left)
 
         # Number of bins needed (ceiling division).
         num_notes = -(-len(self.left) // max_items)
 
-        bins: list[tuple[list[str], list[str], list[str]]] = [
-            ([], [], []) for _ in range(num_notes)
-        ]
+        bins: list[tuple[list[str], list[str], list[str]]] = [([], [], []) for _ in range(num_notes)]
         for left, right, expl in zip(self.left, self.right, explanations):
             idx = stable_bin(left, num_notes)
             bins[idx][0].append(left)
@@ -566,15 +566,17 @@ class ConnectDotsNote:
             this_note_right = set(right_slice)
             fake_right_candidates = sorted(all_right_values - this_note_right)
             max_fake_right = len(left_slice) - len(this_note_right)
-            fake_right = fake_right_candidates[:max(0, max_fake_right)]
+            fake_right = fake_right_candidates[: max(0, max_fake_right)]
 
-            notes.append(ConnectDotsNote(
-                key=key,
-                left=left_slice,
-                right=right_slice,
-                explanation=explanation_slice if self.explanation else [],
-                fake_right=fake_right,
-            ))
+            notes.append(
+                ConnectDotsNote(
+                    key=key,
+                    left=left_slice,
+                    right=right_slice,
+                    explanation=explanation_slice if self.explanation else [],
+                    fake_right=fake_right,
+                )
+            )
 
         return notes
 
@@ -849,7 +851,7 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
 
     def generate_notes(self) -> list[ConnectDotsNote]:
         # Query notes with this tag
-        query = f'-is:suspended tag:{self.tag}'
+        query = f"-is:suspended tag:{self.tag}"
         note_ids = find_notes_by_query(query)
 
         if not note_ids:
@@ -863,15 +865,11 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
         for note in notes_info:
             # Try different field names for traditional
             traditional = (
-                note['fields'].get('Traditional', {}).get('value', '').strip() or
-                note['fields'].get('Hanzi', {}).get('value', '').strip()
+                note["fields"].get("Traditional", {}).get("value", "").strip() or note["fields"].get("Hanzi", {}).get("value", "").strip()
             )
 
             # Try different field names for meaning (Meaning 2 > Meaning > English)
-            meaning = (
-                get_meaning_field(note) or
-                note['fields'].get('English', {}).get('value', '').strip()
-            )
+            meaning = get_meaning_field(note) or note["fields"].get("English", {}).get("value", "").strip()
 
             if traditional and meaning:
                 left.append(traditional)
@@ -968,12 +966,7 @@ class IntersectionGenerator(ConnectDotsGenerator):
             return []
 
         key = f"{self.generator_type}:{self.key_name}"
-        return [ConnectDotsNote(
-            key=key,
-            left=left,
-            right=right,
-            explanation=explanation if explanation else []
-        )]
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation if explanation else [])]
 
 
 class CustomHanziToPinyin(BaseHanziToPinyinGenerator):
@@ -1006,6 +999,7 @@ class CustomHanziToPinyin(BaseHanziToPinyinGenerator):
 
 class ExistingNoteInfo(TypedDict):
     """Type for existing note info dictionary"""
+
     noteId: int
     left: str
     right: str
@@ -1015,6 +1009,7 @@ class ExistingNoteInfo(TypedDict):
 
 class ProcessStats(TypedDict):
     """Type for process_generators statistics"""
+
     created: int
     updated: int
     unchanged: int
@@ -1043,9 +1038,7 @@ class ConnectDotsManager:
         Returns:
             List of card IDs for this note
         """
-        response = anki_connect_request("findCards", {
-            "query": f"nid:{note_id}"
-        })
+        response = anki_connect_request("findCards", {"query": f"nid:{note_id}"})
         return response.get("result", [])
 
     def get_existing_notes(self) -> dict[str, ExistingNoteInfo]:
@@ -1055,7 +1048,7 @@ class ConnectDotsManager:
         Returns:
             Dictionary mapping Key to note info
         """
-        query = f'note:{self.NOTE_TYPE}'
+        query = f"note:{self.NOTE_TYPE}"
         note_ids = find_notes_by_query(query)
 
         if not note_ids:
@@ -1065,14 +1058,14 @@ class ConnectDotsManager:
         existing: dict[str, ExistingNoteInfo] = {}
 
         for note in notes_info:
-            key = note['fields'].get('Key', {}).get('value', '').strip()
+            key = note["fields"].get("Key", {}).get("value", "").strip()
             if key:
                 existing[key] = {
-                    'noteId': note['noteId'],
-                    'left': note['fields'].get('Left', {}).get('value', '').strip(),
-                    'right': note['fields'].get('Right', {}).get('value', '').strip(),
-                    'explanation': note['fields'].get('Explanation', {}).get('value', '').strip(),
-                    'fake_right': note['fields'].get('Fake Right', {}).get('value', '').strip(),
+                    "noteId": note["noteId"],
+                    "left": note["fields"].get("Left", {}).get("value", "").strip(),
+                    "right": note["fields"].get("Right", {}).get("value", "").strip(),
+                    "explanation": note["fields"].get("Explanation", {}).get("value", "").strip(),
+                    "fake_right": note["fields"].get("Fake Right", {}).get("value", "").strip(),
                 }
 
         return existing
@@ -1097,20 +1090,23 @@ class ConnectDotsManager:
                 print(f"    Fake Right: {note.fake_right_str()}")
             return 0
 
-        response = anki_connect_request("addNote", {
-            "note": {
-                "deckName": self.DECK_NAME,
-                "modelName": self.NOTE_TYPE,
-                "fields": {
-                    "Key": note.key,
-                    "Left": note.left_str(),
-                    "Right": note.right_str(),
-                    "Explanation": note.explanation_str(),
-                    "Fake Right": note.fake_right_str(),
-                },
-                "tags": ["auto-generated", "connect-dots"]
-            }
-        })
+        response = anki_connect_request(
+            "addNote",
+            {
+                "note": {
+                    "deckName": self.DECK_NAME,
+                    "modelName": self.NOTE_TYPE,
+                    "fields": {
+                        "Key": note.key,
+                        "Left": note.left_str(),
+                        "Right": note.right_str(),
+                        "Explanation": note.explanation_str(),
+                        "Fake Right": note.fake_right_str(),
+                    },
+                    "tags": ["auto-generated", "connect-dots"],
+                }
+            },
+        )
 
         note_id = response.get("result")
         if not note_id:
@@ -1119,12 +1115,7 @@ class ConnectDotsManager:
         print(f"  Created note {note_id} for key '{note.key}'")
         return note_id
 
-    def update_note(
-        self,
-        note_id: int,
-        note: ConnectDotsNote,
-        existing: ExistingNoteInfo | None = None
-    ) -> None:
+    def update_note(self, note_id: int, note: ConnectDotsNote, existing: ExistingNoteInfo | None = None) -> None:
         """
         Update an existing ConnectDots note
 
@@ -1141,19 +1132,19 @@ class ConnectDotsManager:
             new_fake_right = note.fake_right_str()
 
             if existing:
-                if existing['left'] != new_left:
+                if existing["left"] != new_left:
                     print("    Left:")
                     print(f"      - {existing['left']}")
                     print(f"      + {new_left}")
-                if existing['right'] != new_right:
+                if existing["right"] != new_right:
                     print("    Right:")
                     print(f"      - {existing['right']}")
                     print(f"      + {new_right}")
-                if existing['explanation'] != new_explanation:
+                if existing["explanation"] != new_explanation:
                     print("    Explanation:")
                     print(f"      - {existing['explanation']}")
                     print(f"      + {new_explanation}")
-                if existing['fake_right'] != new_fake_right:
+                if existing["fake_right"] != new_fake_right:
                     print("    Fake Right:")
                     print(f"      - {existing['fake_right']}")
                     print(f"      + {new_fake_right}")
@@ -1166,31 +1157,28 @@ class ConnectDotsManager:
                     print(f"    Fake Right: {new_fake_right}")
             return
 
-        anki_connect_request("updateNoteFields", {
-            "note": {
-                "id": note_id,
-                "fields": {
-                    "Key": note.key,
-                    "Left": note.left_str(),
-                    "Right": note.right_str(),
-                    "Explanation": note.explanation_str(),
-                    "Fake Right": note.fake_right_str(),
+        anki_connect_request(
+            "updateNoteFields",
+            {
+                "note": {
+                    "id": note_id,
+                    "fields": {
+                        "Key": note.key,
+                        "Left": note.left_str(),
+                        "Right": note.right_str(),
+                        "Explanation": note.explanation_str(),
+                        "Fake Right": note.fake_right_str(),
+                    },
                 }
-            }
-        })
+            },
+        )
 
         # Reset due date to today and interval to 1 day using "1!"
         if not self.skip_reschedule:
             card_ids = self._get_card_ids_for_note(note_id)
             if card_ids:
-                anki_connect_request("setDueDate", {
-                    "cards": card_ids,
-                    "days": "1!"
-                })
-                anki_connect_request("setDueDate", {
-                    "cards": card_ids,
-                    "days": "0"
-                })
+                anki_connect_request("setDueDate", {"cards": card_ids, "days": "1!"})
+                anki_connect_request("setDueDate", {"cards": card_ids, "days": "0"})
 
         print(f"  Updated note {note_id} for key '{note.key}'")
 
@@ -1205,12 +1193,12 @@ class ConnectDotsManager:
             Tuple of (statistics dictionary, notes_by_type dictionary)
         """
         stats: ProcessStats = {
-            'created': 0,
-            'updated': 0,
-            'unchanged': 0,
-            'skipped_single_right': 0,
-            'errors': 0,
-            'untracked': 0,
+            "created": 0,
+            "updated": 0,
+            "unchanged": 0,
+            "skipped_single_right": 0,
+            "errors": 0,
+            "untracked": 0,
         }
         processed_keys: set[str] = set()
         notes_by_type: dict[str, list[ConnectDotsNote]] = {}
@@ -1228,7 +1216,7 @@ class ConnectDotsManager:
                 notes = generator.generate_notes()
             except Exception as e:
                 print(f"  Error generating notes: {e}")
-                stats['errors'] += 1
+                stats["errors"] += 1
                 continue
 
             for note in notes:
@@ -1242,7 +1230,7 @@ class ConnectDotsManager:
                     # Skip notes where all right elements are the same (trivial matching)
                     if split_note.has_single_right_value():
                         print(f"  Skipped (single right value): {split_note.key}")
-                        stats['skipped_single_right'] += 1
+                        stats["skipped_single_right"] += 1
                         continue
 
                     processed_keys.add(split_note.key)
@@ -1256,27 +1244,29 @@ class ConnectDotsManager:
                             new_explanation = split_note.explanation_str()
                             new_fake_right = split_note.fake_right_str()
 
-                            if (existing['left'] == new_left and
-                                existing['right'] == new_right and
-                                existing['explanation'] == new_explanation and
-                                existing['fake_right'] == new_fake_right):
+                            if (
+                                existing["left"] == new_left
+                                and existing["right"] == new_right
+                                and existing["explanation"] == new_explanation
+                                and existing["fake_right"] == new_fake_right
+                            ):
                                 print(f"  Unchanged: {split_note.key}")
-                                stats['unchanged'] += 1
+                                stats["unchanged"] += 1
                             else:
-                                self.update_note(existing['noteId'], split_note, existing)
-                                stats['updated'] += 1
+                                self.update_note(existing["noteId"], split_note, existing)
+                                stats["updated"] += 1
                         else:
                             self.create_note(split_note)
-                            stats['created'] += 1
+                            stats["created"] += 1
 
                     except Exception as e:
                         print(f"  Error processing note '{split_note.key}': {e}")
-                        stats['errors'] += 1
+                        stats["errors"] += 1
 
         # Check for untracked notes
         untracked_keys = set(existing_notes.keys()) - processed_keys
         if untracked_keys:
-            stats['untracked'] = len(untracked_keys)
+            stats["untracked"] = len(untracked_keys)
             untracked_list = "\n  - ".join(sorted(untracked_keys))
             raise ValueError(
                 f"{len(untracked_keys)} untracked ConnectDots note(s) found:\n  - {untracked_list}\n"
@@ -1290,6 +1280,7 @@ class ConnectDotsManager:
 @dataclass
 class FrequencyData:
     """Data from frequency analysis"""
+
     counts: dict[str, int]
     examples: dict[str, list[str]]
     total_items: int
@@ -1385,12 +1376,7 @@ def get_syllable_frequencies() -> FrequencyData:
     return FrequencyData(counts=counts, examples=examples, total_items=len(single_char_notes))
 
 
-def print_frequency_table(
-    title: str,
-    data: FrequencyData,
-    item_label: str,
-    top_n: int = 50
-) -> None:
+def print_frequency_table(title: str, data: FrequencyData, item_label: str, top_n: int = 50) -> None:
     """
     Print a formatted frequency table.
 
@@ -1463,6 +1449,7 @@ def get_items_above_threshold(data: FrequencyData, min_count: int) -> list[str]:
 @dataclass
 class CoverageStats:
     """Statistics about Hanzi coverage in ConnectDots notes"""
+
     total_hanzi: int
     covered_characters: set[str]
     coverage_by_type: dict[str, set[str]]  # generator_type -> set of characters
@@ -1496,10 +1483,7 @@ def get_all_hanzi_characters() -> set[str]:
     return data_store.get_all_traditional_chars()
 
 
-def calculate_coverage_from_notes(
-    notes_by_type: dict[str, list[ConnectDotsNote]],
-    all_hanzi_characters: set[str]
-) -> CoverageStats:
+def calculate_coverage_from_notes(notes_by_type: dict[str, list[ConnectDotsNote]], all_hanzi_characters: set[str]) -> CoverageStats:
     """
     Calculate coverage statistics from generated notes.
 
@@ -1527,7 +1511,7 @@ def calculate_coverage_from_notes(
         total_hanzi=len(all_hanzi_characters),
         covered_characters=covered_characters,
         coverage_by_type=coverage_by_type,
-        all_characters=all_hanzi_characters
+        all_characters=all_hanzi_characters,
     )
 
 
@@ -1593,8 +1577,7 @@ def get_leftover_chars_by_initial(
 
 
 def get_two_char_phrase_characters_above_threshold(
-    min_count: int = TWO_CHAR_PHRASE_MIN_COUNT,
-    whitelist: list[str] | None = None
+    min_count: int = TWO_CHAR_PHRASE_MIN_COUNT, whitelist: list[str] | None = None
 ) -> list[str]:
     """
     Get characters from two-character phrases that meet the minimum count threshold.
@@ -1619,9 +1602,7 @@ def _is_prop_tag(tag: str) -> bool:
     return tag.startswith("prop::") or tag.startswith("prop-")
 
 
-def analyze_uncovered_character_tags(
-    uncovered_characters: set[str]
-) -> list[tuple[str, int, int]]:
+def analyze_uncovered_character_tags(uncovered_characters: set[str]) -> list[tuple[str, int, int]]:
     """
     Analyze the prop tags of uncovered characters to find the most common ones.
 
@@ -1651,50 +1632,22 @@ def analyze_uncovered_character_tags(
                 total_tag_counts[tag] = total_tag_counts.get(tag, 0) + 1
 
     # Combine counts: (tag, uncovered_count, total_count)
-    result = [
-        (tag, uncovered_count, total_tag_counts.get(tag, 0))
-        for tag, uncovered_count in uncovered_tag_counts.items()
-    ]
+    result = [(tag, uncovered_count, total_tag_counts.get(tag, 0)) for tag, uncovered_count in uncovered_tag_counts.items()]
 
     # Sort by uncovered count descending
     return sorted(result, key=lambda x: x[1], reverse=True)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Create and update ConnectDots notes in Anki"
-    )
+    parser = argparse.ArgumentParser(description="Create and update ConnectDots notes in Anki")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")
+    parser.add_argument("--list-syllables", action="store_true", help="List syllables by frequency instead of processing generators")
     parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would be done without making changes"
+        "--list-sound-components", action="store_true", help="List sound components by frequency instead of processing generators"
     )
-    parser.add_argument(
-        "--list-syllables",
-        action="store_true",
-        help="List syllables by frequency instead of processing generators"
-    )
-    parser.add_argument(
-        "--list-sound-components",
-        action="store_true",
-        help="List sound components by frequency instead of processing generators"
-    )
-    parser.add_argument(
-        "--list-tocfl-chars",
-        action="store_true",
-        help="List characters by frequency from two-character TOCFL phrases"
-    )
-    parser.add_argument(
-        "--top",
-        type=int,
-        default=50,
-        help="Number of top items to show (default: 50)"
-    )
-    parser.add_argument(
-        "--skip-reschedule",
-        action="store_true",
-        help="Skip rescheduling cards after updating notes"
-    )
+    parser.add_argument("--list-tocfl-chars", action="store_true", help="List characters by frequency from two-character TOCFL phrases")
+    parser.add_argument("--top", type=int, default=50, help="Number of top items to show (default: 50)")
+    parser.add_argument("--skip-reschedule", action="store_true", help="Skip rescheduling cards after updating notes")
     args = parser.parse_args()
 
     # Load all data upfront to avoid repeated API calls
@@ -1767,8 +1720,7 @@ def main():
     # Two-character phrase generators (by common character)
     print(f"Finding whitelisted characters with {TWO_CHAR_PHRASE_MIN_COUNT}+ two-char phrases...")
     two_char_characters = get_two_char_phrase_characters_above_threshold(
-        min_count=TWO_CHAR_PHRASE_MIN_COUNT,
-        whitelist=TWO_CHAR_PHRASE_WHITELIST
+        min_count=TWO_CHAR_PHRASE_MIN_COUNT, whitelist=TWO_CHAR_PHRASE_WHITELIST
     )
     print(f"Found {len(two_char_characters)} characters: {', '.join(two_char_characters)}\n")
     for character in two_char_characters:

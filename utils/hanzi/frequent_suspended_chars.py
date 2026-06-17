@@ -35,25 +35,25 @@ def load_frequency_data(csv_path: str | Path):
         dict: Mapping of character to frequency data (written_frequency, spoken_frequency)
     """
     frequency_data = {}
-    with open(csv_path, encoding='utf-8') as f:
+    with open(csv_path, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            traditional = row['traditional']
+            traditional = row["traditional"]
             # Handle alternative characters separated by / or ／
             # Take only the first character
-            if '/' in traditional:
-                traditional = traditional.split('/')[0]
-            elif '／' in traditional:
-                traditional = traditional.split('／')[0]
+            if "/" in traditional:
+                traditional = traditional.split("/")[0]
+            elif "／" in traditional:
+                traditional = traditional.split("／")[0]
 
             # Only consider single characters
             if len(traditional) == 1:
                 frequency_data[traditional] = {
-                    'written': int(row['written_frequency']),
-                    'spoken': int(row['spoken_frequency']),
-                    'rank': int(row['no']),
-                    'grade': row['grade'],
-                    'level': row['level'],
+                    "written": int(row["written_frequency"]),
+                    "spoken": int(row["spoken_frequency"]),
+                    "rank": int(row["no"]),
+                    "grade": row["grade"],
+                    "level": row["level"],
                 }
     return frequency_data
 
@@ -72,11 +72,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     response = requests.post("http://localhost:8765", json=request_data)
     response.raise_for_status()
@@ -98,9 +94,7 @@ def get_suspended_hanzi_characters():
     print("=== Finding suspended Hanzi characters ===")
 
     # Find suspended Hanzi notes
-    response = anki_connect_request("findNotes", {
-        "query": "note:Hanzi is:suspended"
-    })
+    response = anki_connect_request("findNotes", {"query": "note:Hanzi is:suspended"})
 
     note_ids = response.get("result", [])
     print(f"Found {len(note_ids)} suspended Hanzi notes")
@@ -113,12 +107,12 @@ def get_suspended_hanzi_characters():
     batch_size = 100
 
     for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
+        batch_ids = note_ids[i : i + batch_size]
         notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
         notes_info = notes_response.get("result", [])
 
         for note_info in notes_info:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             # Only consider single character notes
             if len(traditional) == 1:
                 suspended_chars.add(traditional)
@@ -137,9 +131,7 @@ def get_active_hanzi_characters():
     print("\n=== Finding active Hanzi characters ===")
 
     # Find non-suspended Hanzi notes
-    response = anki_connect_request("findNotes", {
-        "query": "note:Hanzi -is:suspended"
-    })
+    response = anki_connect_request("findNotes", {"query": "note:Hanzi -is:suspended"})
 
     note_ids = response.get("result", [])
     print(f"Found {len(note_ids)} active Hanzi notes")
@@ -152,12 +144,12 @@ def get_active_hanzi_characters():
     batch_size = 100
 
     for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i:i + batch_size]
+        batch_ids = note_ids[i : i + batch_size]
         notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
         notes_info = notes_response.get("result", [])
 
         for note_info in notes_info:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             # Only consider single character notes
             if len(traditional) == 1:
                 active_chars.add(traditional)
@@ -183,9 +175,7 @@ def count_characters_in_phrases(note_types: list[str], target_chars: set[str]):
     for note_type in note_types:
         print(f"\nProcessing {note_type} notes...")
 
-        response = anki_connect_request("findNotes", {
-            "query": f"note:{note_type}"
-        })
+        response = anki_connect_request("findNotes", {"query": f"note:{note_type}"})
 
         note_ids = response.get("result", [])
         print(f"  Found {len(note_ids)} notes")
@@ -195,21 +185,21 @@ def count_characters_in_phrases(note_types: list[str], target_chars: set[str]):
 
         batch_size = 100
         for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i:i + batch_size]
+            batch_ids = note_ids[i : i + batch_size]
             notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
             notes_info = notes_response.get("result", [])
 
             for note_info in notes_info:
-                traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+                traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
 
                 if not traditional:
                     continue
 
                 # Clean the traditional text
                 # Remove HTML tags
-                traditional = re.sub(r'<[^>]+>', '', traditional)
+                traditional = re.sub(r"<[^>]+>", "", traditional)
                 # Remove punctuation and non-Chinese characters
-                traditional = re.sub(r'[^\u4e00-\u9fff]', '', traditional)
+                traditional = re.sub(r"[^\u4e00-\u9fff]", "", traditional)
 
                 # Count each character that's in our target set
                 for char in traditional:
@@ -223,31 +213,15 @@ def main():
     """
     Main function to find most frequent suspended characters in phrases
     """
-    parser = argparse.ArgumentParser(
-        description="Find most frequent suspended Hanzi characters in phrase notes"
-    )
-    parser.add_argument(
-        "-n", "--top",
-        type=int,
-        default=50,
-        help="Number of top characters to display (default: 50)"
-    )
-    parser.add_argument(
-        "--note-types",
-        nargs="+",
-        default=["TOCFL"],
-        help="Note types to search in (default: TOCFL)"
-    )
+    parser = argparse.ArgumentParser(description="Find most frequent suspended Hanzi characters in phrase notes")
+    parser.add_argument("-n", "--top", type=int, default=50, help="Number of top characters to display (default: 50)")
+    parser.add_argument("--note-types", nargs="+", default=["TOCFL"], help="Note types to search in (default: TOCFL)")
     source_group = parser.add_mutually_exclusive_group()
     source_group.add_argument(
-        "--csv-written",
-        action="store_true",
-        help="Use written frequency from data/frequency.csv instead of phrase counts"
+        "--csv-written", action="store_true", help="Use written frequency from data/frequency.csv instead of phrase counts"
     )
     source_group.add_argument(
-        "--csv-spoken",
-        action="store_true",
-        help="Use spoken frequency from data/frequency.csv instead of phrase counts"
+        "--csv-spoken", action="store_true", help="Use spoken frequency from data/frequency.csv instead of phrase counts"
     )
     args = parser.parse_args()
 

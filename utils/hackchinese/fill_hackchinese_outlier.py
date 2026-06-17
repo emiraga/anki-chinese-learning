@@ -28,11 +28,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -75,12 +71,7 @@ def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
     """
     fields = {field_name: field_value}
 
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
 
     if response and response.get("error") is None:
         return True
@@ -105,7 +96,7 @@ def load_hackchinese_outlier_data(character: str) -> dict[str, Any] | None:
         return None
 
     try:
-        with open(json_file, encoding='utf-8') as f:
+        with open(json_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading HackChinese Outlier data for {character}: {e}")
@@ -162,7 +153,9 @@ def generate_hackchinese_outlier_html(outlier_data: dict[str, Any]) -> str | Non
     return process_explanation_text(explanation)
 
 
-def update_hackchinese_outlier_for_note_types(note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None) -> None:
+def update_hackchinese_outlier_for_note_types(
+    note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None
+) -> None:
     """
     Update notes with HackChineseOutlier Etymology for specified note types
 
@@ -178,11 +171,11 @@ def update_hackchinese_outlier_for_note_types(note_types: list[str], dry_run: bo
     # Collect notes from all specified note types
     for note_type in note_types:
         # Build search query
-        search_query = f'note:{note_type}'
+        search_query = f"note:{note_type}"
         if character:
-            search_query += f' Traditional:{character}'
+            search_query += f" Traditional:{character}"
         else:
-            search_query += ' Traditional:_'
+            search_query += " Traditional:_"
 
         if not overwrite:
             # Exclude notes that already have content in the HackChineseOutlier Etymology field
@@ -215,10 +208,10 @@ def update_hackchinese_outlier_for_note_types(note_types: list[str], dry_run: bo
     for i, note_id in enumerate(all_note_ids, 1):
         try:
             note_info = get_note_info(note_id)
-            note_type = note_info.get('modelName', 'Unknown')
+            note_type = note_info.get("modelName", "Unknown")
 
             # Get the Traditional field (which contains the hanzi character)
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
             traditional = traditional[0:1]
 
             if not traditional:
@@ -256,7 +249,7 @@ def update_hackchinese_outlier_for_note_types(note_types: list[str], dry_run: bo
             error_count += 1
             raise
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Summary:")
     print(f"  Total notes: {len(all_note_ids)}")
     print(f"  Updated: {updated_count}")
@@ -264,13 +257,13 @@ def update_hackchinese_outlier_for_note_types(note_types: list[str], dry_run: bo
     print(f"  Errors: {error_count}")
     if dry_run:
         print("  (DRY RUN - no changes were made)")
-    print("="*60)
+    print("=" * 60)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Fill HackChineseOutlier Etymology field for notes in Anki',
-        epilog='''
+        description="Fill HackChineseOutlier Etymology field for notes in Anki",
+        epilog="""
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
   %(prog)s --dry-run --limit 5                 Preview first 5 notes only
@@ -286,27 +279,24 @@ to form_explanation_simp if not available.
 
 The script only updates empty fields and skips notes that already have content.
 Requires Anki running with AnkiConnect addon installed.
-        ''',
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument('--dry-run', action='store_true',
-                       help='Preview changes without actually updating notes')
-    parser.add_argument('--limit', type=int, metavar='N',
-                       help='Limit number of notes to process (useful for testing)')
-    parser.add_argument('--overwrite', action='store_true',
-                       help='Overwrite existing content in the field (default: skip filled fields)')
-    parser.add_argument('--character', type=str, metavar='CHAR',
-                       help='Process only this specific character (e.g., `)')
-    parser.add_argument('--note-types', nargs='+', default=['Hanzi', 'TOCFL'], metavar='TYPE',
-                       help='Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL')
+    parser.add_argument("--dry-run", action="store_true", help="Preview changes without actually updating notes")
+    parser.add_argument("--limit", type=int, metavar="N", help="Limit number of notes to process (useful for testing)")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing content in the field (default: skip filled fields)")
+    parser.add_argument("--character", type=str, metavar="CHAR", help="Process only this specific character (e.g., `)")
+    parser.add_argument(
+        "--note-types",
+        nargs="+",
+        default=["Hanzi", "TOCFL"],
+        metavar="TYPE",
+        help="Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL",
+    )
     args = parser.parse_args()
 
     update_hackchinese_outlier_for_note_types(
-        note_types=args.note_types,
-        dry_run=args.dry_run,
-        limit=args.limit,
-        overwrite=args.overwrite,
-        character=args.character
+        note_types=args.note_types, dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite, character=args.character
     )
 
 

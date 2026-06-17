@@ -129,10 +129,7 @@ def get_matching_files(media_path: Path) -> list[tuple[str, str]]:
     return files
 
 
-def analyze_file(
-    filepath: str,
-    cache: dict[str, dict[str, Any]] | None = None
-) -> float | None:
+def analyze_file(filepath: str, cache: dict[str, dict[str, Any]] | None = None) -> float | None:
     """Analyze a single file and return its dBFS value.
 
     If cache is provided, checks cache first and updates it with new values.
@@ -157,11 +154,7 @@ def analyze_file(
         return None
 
 
-def analyze_all_files(
-    files: list[tuple[str, str]],
-    verbose: bool = False,
-    cache_save_interval: int = 100
-) -> list[AudioFile]:
+def analyze_all_files(files: list[tuple[str, str]], verbose: bool = False, cache_save_interval: int = 100) -> list[AudioFile]:
     """Analyze all files and return their loudness values.
 
     Uses a cache file to avoid re-analyzing unchanged files.
@@ -240,22 +233,12 @@ def print_statistics(files: list[AudioFile], config: NormalizationConfig) -> Non
             pattern_dbfs = [f.dbfs for f in pattern_files]
             pattern_avg = sum(pattern_dbfs) / len(pattern_dbfs)
             pattern_loud = [f for f in pattern_files if f.dbfs > config.loud_threshold]
-            print(f"  {pattern:12s}: {len(pattern_files):5d} files, "
-                  f"avg {pattern_avg:.1f} dBFS, "
-                  f"{len(pattern_loud)} loud")
+            print(f"  {pattern:12s}: {len(pattern_files):5d} files, avg {pattern_avg:.1f} dBFS, {len(pattern_loud)} loud")
 
 
-def print_loud_files(
-    files: list[AudioFile],
-    config: NormalizationConfig,
-    limit: int = 20
-) -> None:
+def print_loud_files(files: list[AudioFile], config: NormalizationConfig, limit: int = 20) -> None:
     """Print details about the loudest files."""
-    loud_files = sorted(
-        [f for f in files if f.dbfs > config.loud_threshold],
-        key=lambda x: x.dbfs,
-        reverse=True
-    )
+    loud_files = sorted([f for f in files if f.dbfs > config.loud_threshold], key=lambda x: x.dbfs, reverse=True)
 
     if not loud_files:
         print(f"\nNo files found louder than {config.loud_threshold:.1f} dBFS")
@@ -275,10 +258,7 @@ def print_loud_files(
 
 
 def normalize_file(
-    filepath: str,
-    target_dbfs: float,
-    dry_run: bool = True,
-    cache: dict[str, dict[str, Any]] | None = None
+    filepath: str, target_dbfs: float, dry_run: bool = True, cache: dict[str, dict[str, Any]] | None = None
 ) -> tuple[bool, str]:
     """Normalize a single file to the target loudness.
 
@@ -309,10 +289,7 @@ def normalize_file(
 
 
 def normalize_loud_files(
-    files: list[AudioFile],
-    config: NormalizationConfig,
-    dry_run: bool = True,
-    patterns: list[str] | None = None
+    files: list[AudioFile], config: NormalizationConfig, dry_run: bool = True, patterns: list[str] | None = None
 ) -> None:
     """Normalize files that are louder than the threshold."""
     # Filter to loud files
@@ -323,10 +300,7 @@ def normalize_loud_files(
         loud_files = [f for f in loud_files if f.pattern in patterns]
 
     # Filter out files that don't need significant adjustment
-    loud_files = [
-        f for f in loud_files
-        if abs(f.dbfs - config.target_dbfs) >= config.min_adjustment
-    ]
+    loud_files = [f for f in loud_files if abs(f.dbfs - config.target_dbfs) >= config.min_adjustment]
 
     if not loud_files:
         print("No files need normalization.")
@@ -372,76 +346,32 @@ Examples:
   %(prog)s --normalize                  Actually normalize loud files
   %(prog)s --normalize --patterns emir_tts  Only normalize emir_tts files
   %(prog)s --target -18 --loud -14      Use custom thresholds
-        """
+        """,
     )
 
     # Actions
     action_group = parser.add_mutually_exclusive_group(required=True)
-    action_group.add_argument(
-        "--analyze", "-a",
-        action="store_true",
-        help="Analyze files and show loudness statistics"
-    )
-    action_group.add_argument(
-        "--normalize", "-n",
-        action="store_true",
-        help="Normalize loud files to target loudness"
-    )
+    action_group.add_argument("--analyze", "-a", action="store_true", help="Analyze files and show loudness statistics")
+    action_group.add_argument("--normalize", "-n", action="store_true", help="Normalize loud files to target loudness")
 
     # Options
+    parser.add_argument("--dry-run", "-d", action="store_true", help="Show what would be done without making changes")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed progress")
     parser.add_argument(
-        "--dry-run", "-d",
-        action="store_true",
-        help="Show what would be done without making changes"
-    )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Show detailed progress"
-    )
-    parser.add_argument(
-        "--patterns", "-p",
+        "--patterns",
+        "-p",
         nargs="+",
         choices=["tocfl-tts", "sapi5", "emir_tts", "dangdai"],
-        help="Only process specific patterns (default: all)"
+        help="Only process specific patterns (default: all)",
     )
 
     # Thresholds
-    parser.add_argument(
-        "--target",
-        type=float,
-        default=-20.0,
-        help="Target loudness in dBFS (default: -20.0)"
-    )
-    parser.add_argument(
-        "--loud",
-        type=float,
-        default=-16.0,
-        help="Threshold above which files are considered loud (default: -16.0)"
-    )
-    parser.add_argument(
-        "--quiet",
-        type=float,
-        default=-24.0,
-        help="Threshold below which files are considered quiet (default: -24.0)"
-    )
-    parser.add_argument(
-        "--min-adjustment",
-        type=float,
-        default=1.0,
-        help="Minimum dB adjustment to make (default: 1.0)"
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=20,
-        help="Number of loud files to show in analysis (default: 20)"
-    )
-    parser.add_argument(
-        "--clear-cache",
-        action="store_true",
-        help="Clear the analysis cache before running"
-    )
+    parser.add_argument("--target", type=float, default=-20.0, help="Target loudness in dBFS (default: -20.0)")
+    parser.add_argument("--loud", type=float, default=-16.0, help="Threshold above which files are considered loud (default: -16.0)")
+    parser.add_argument("--quiet", type=float, default=-24.0, help="Threshold below which files are considered quiet (default: -24.0)")
+    parser.add_argument("--min-adjustment", type=float, default=1.0, help="Minimum dB adjustment to make (default: 1.0)")
+    parser.add_argument("--limit", type=int, default=20, help="Number of loud files to show in analysis (default: 20)")
+    parser.add_argument("--clear-cache", action="store_true", help="Clear the analysis cache before running")
 
     args = parser.parse_args()
 
@@ -485,12 +415,7 @@ Examples:
 
         elif args.normalize:
             print_statistics(analyzed, config)
-            normalize_loud_files(
-                analyzed,
-                config,
-                dry_run=args.dry_run,
-                patterns=args.patterns
-            )
+            normalize_loud_files(analyzed, config, dry_run=args.dry_run, patterns=args.patterns)
 
             if args.dry_run:
                 print("\nTo apply changes, run again without --dry-run")

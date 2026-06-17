@@ -40,11 +40,7 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None):
     if params is None:
         params = {}
 
-    request_data = {
-        "action": action,
-        "params": params,
-        "version": 6
-    }
+    request_data = {"action": action, "params": params, "version": 6}
 
     try:
         response = requests.post("http://localhost:8765", json=request_data)
@@ -104,7 +100,7 @@ def clean_pinyin(pinyin_text: str) -> str:
         str: Cleaned and normalized pinyin
     """
     # Remove HTML tags
-    pinyin = re.sub(r'<[^>]+>', '', pinyin_text)
+    pinyin = re.sub(r"<[^>]+>", "", pinyin_text)
     # Convert to lowercase
     pinyin = pinyin.lower()
     # Remove extra whitespace
@@ -129,12 +125,12 @@ def extract_hanzi_notes() -> dict[tuple[str, str], dict[str, Any]]:
     batch_size = 100
 
     for i in range(0, len(hanzi_note_ids), batch_size):
-        batch_ids = hanzi_note_ids[i:i + batch_size]
+        batch_ids = hanzi_note_ids[i : i + batch_size]
         notes_info = get_notes_info(batch_ids)
 
         for note_info in notes_info:
-            traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-            pinyin_raw = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+            pinyin_raw = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
 
             # Only consider single character notes
             if len(traditional) == 1 and pinyin_raw:
@@ -168,12 +164,12 @@ def extract_single_char_phrase_notes(note_types: list[str]) -> list[tuple[dict[s
 
         batch_size = 100
         for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i:i + batch_size]
+            batch_ids = note_ids[i : i + batch_size]
             notes_info = get_notes_info(batch_ids)
 
             for note_info in notes_info:
-                traditional_raw = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-                pinyin_raw = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+                traditional_raw = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+                pinyin_raw = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
 
                 # Check if Traditional field has exactly one character
                 if len(traditional_raw) == 1 and pinyin_raw:
@@ -195,14 +191,7 @@ def update_hanzi_meaning2(note_id: int, meaning: str) -> bool:
     Returns:
         bool: True if successful
     """
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": {
-                "Meaning 2": meaning
-            }
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": {"Meaning 2": meaning}}})
 
     if response and response.get("error") is None:
         return True
@@ -221,10 +210,7 @@ def add_tag_to_note(note_id: int, tag: str) -> bool:
     Returns:
         bool: True if successful
     """
-    response = anki_connect_request("addTags", {
-        "notes": [note_id],
-        "tags": tag
-    })
+    response = anki_connect_request("addTags", {"notes": [note_id], "tags": tag})
 
     if response and response.get("error") is None:
         return True
@@ -232,7 +218,9 @@ def add_tag_to_note(note_id: int, tag: str) -> bool:
         raise RuntimeError(f"Failed to add tag to note {note_id}: {response}")
 
 
-def process_phrase_note(phrase_note_info: dict[str, Any], character: str, pinyin: str, hanzi_map: dict[tuple[str, str], dict[str, Any]], note_type: str) -> tuple[bool, str | None]:
+def process_phrase_note(
+    phrase_note_info: dict[str, Any], character: str, pinyin: str, hanzi_map: dict[tuple[str, str], dict[str, Any]], note_type: str
+) -> tuple[bool, str | None]:
     """
     Process a single-character phrase note and update corresponding Hanzi note
 
@@ -252,11 +240,11 @@ def process_phrase_note(phrase_note_info: dict[str, Any], character: str, pinyin
         return False, "no_matching_hanzi"
 
     hanzi_note_info = hanzi_map[key]
-    phrase_note_id = phrase_note_info['noteId']
-    hanzi_note_id = hanzi_note_info['noteId']
+    phrase_note_id = phrase_note_info["noteId"]
+    hanzi_note_id = hanzi_note_info["noteId"]
 
     # Get the meaning from phrase note
-    phrase_meaning = phrase_note_info['fields'].get('Meaning', {}).get('value', '').strip()
+    phrase_meaning = phrase_note_info["fields"].get("Meaning", {}).get("value", "").strip()
 
     if not phrase_meaning:
         return False, "no_meaning"
@@ -267,7 +255,7 @@ def process_phrase_note(phrase_note_info: dict[str, Any], character: str, pinyin
     # Skip the Meaning 2 update if it already matches, but still tag the phrase note
     meaning_already_matches = False
     if should_update_meaning:
-        hanzi_meaning2 = hanzi_note_info['fields'].get('Meaning 2', {}).get('value', '').strip()
+        hanzi_meaning2 = hanzi_note_info["fields"].get("Meaning 2", {}).get("value", "").strip()
         meaning_already_matches = hanzi_meaning2 == phrase_meaning
 
     try:
@@ -313,8 +301,8 @@ def main():
     skip_reasons = defaultdict(int)
 
     for phrase_note_info, character, pinyin in single_char_phrases:
-        phrase_note_id = phrase_note_info.get('noteId')
-        note_type = phrase_note_info.get('modelName', 'unknown')
+        phrase_note_id = phrase_note_info.get("noteId")
+        note_type = phrase_note_info.get("modelName", "unknown")
 
         success, skip_reason = process_phrase_note(phrase_note_info, character, pinyin, hanzi_map, note_type)
 
@@ -325,10 +313,9 @@ def main():
         else:
             assert skip_reason is not None
             skip_reasons[skip_reason] += 1
-            reason_msg = {
-                "no_matching_hanzi": "No matching Hanzi note found",
-                "no_meaning": "Phrase note has no meaning"
-            }.get(skip_reason, skip_reason)
+            reason_msg = {"no_matching_hanzi": "No matching Hanzi note found", "no_meaning": "Phrase note has no meaning"}.get(
+                skip_reason, skip_reason
+            )
             print(f"  ⊘ Skipped: {reason_msg}")
 
     # Step 4: Print summary
@@ -339,10 +326,9 @@ def main():
     if skip_reasons:
         print("\nSkip reasons:")
         for reason, count in skip_reasons.items():
-            reason_msg = {
-                "no_matching_hanzi": "No matching Hanzi note found",
-                "no_meaning": "Phrase note has no meaning"
-            }.get(reason, reason)
+            reason_msg = {"no_matching_hanzi": "No matching Hanzi note found", "no_meaning": "Phrase note has no meaning"}.get(
+                reason, reason
+            )
             print(f"  - {reason_msg}: {count}")
     print("\n=== All done! ===")
 

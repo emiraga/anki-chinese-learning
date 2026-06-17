@@ -6,7 +6,6 @@ This module provides a common interface for looking up Chinese words/phrases
 in the chinese-english-lookup dictionary.
 """
 
-
 from chinese_english_lookup import Dictionary
 
 # Module-level dictionary instance (lazy initialized)
@@ -55,7 +54,7 @@ def lookup_meaning(text: str, max_definitions: int = 3) -> str | None:
             if all_definitions:
                 # Limit to max_definitions and join with semicolons
                 limited_defs = all_definitions[:max_definitions]
-                return '; '.join(limited_defs)
+                return "; ".join(limited_defs)
     except Exception:
         # Dictionary lookup failed, return None to allow fallback
         pass

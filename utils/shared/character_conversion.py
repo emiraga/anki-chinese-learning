@@ -6,7 +6,6 @@ This module provides conversion functions that handle edge cases not covered by 
 particularly for radicals and rare characters.
 """
 
-
 # Traditional -> simplified is performed by OpenCC (Open Chinese Convert), which
 # is more accurate than hanziconv for our goal (learning Mainland simplified):
 # hanziconv both misses simplifications (週, 託, 採, ...) and has outright bugs
@@ -40,6 +39,7 @@ def _opencc_simplified_all(char: str) -> dict[str, str] | None:
     if _opencc_converters is None:
         try:
             from opencc import OpenCC
+
             _opencc_converters = {cfg: OpenCC(cfg) for cfg in _OPENCC_CONFIGS}
         except ImportError:
             _opencc_disabled = True
@@ -47,18 +47,17 @@ def _opencc_simplified_all(char: str) -> dict[str, str] | None:
     return {cfg: conv.convert(char) for cfg, conv in _opencc_converters.items()}  # type: ignore[attr-defined]
 
 
-
 # Special cases where HanziConv doesn't recognize the simplified/traditional relationship
 # Format: (simplified, traditional)
 SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS: list[tuple[str, str]] = [
     # Metal radical
-    ('钅', '釒'),
+    ("钅", "釒"),
     # Food radical
-    ('饣', '飠'),
+    ("饣", "飠"),
     # Keep-eye-on character
-    ('𠬤', '睪'),
+    ("𠬤", "睪"),
     # Huge/great character
-    ('钜', '鉅'),
+    ("钜", "鉅"),
 ]
 
 # Build lookup dictionaries for fast access
@@ -87,6 +86,7 @@ def to_traditional(char: str, use_hanziconv: bool = True) -> str:
     if use_hanziconv:
         try:
             from hanziconv import HanziConv
+
             return HanziConv.toTraditional(char)
         except ImportError:
             pass
@@ -122,6 +122,7 @@ def to_simplified(char: str, use_hanziconv: bool = True) -> str:
     # up front (tolerating its absence).
     try:
         from hanziconv import HanziConv
+
         hanziconv_result: str | None = HanziConv.toSimplified(char)
     except ImportError:
         hanziconv_result = None

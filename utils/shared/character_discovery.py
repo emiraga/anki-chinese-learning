@@ -21,8 +21,8 @@ def normalize_cjk_char(char: str) -> str:
     """
     if not char:
         return char
-    normalized = unicodedata.normalize('NFKC', char)
-    return unicodedata.normalize('NFC', normalized)
+    normalized = unicodedata.normalize("NFKC", char)
+    return unicodedata.normalize("NFC", normalized)
 
 
 def extract_all_characters(text: str, normalize: bool = False) -> set[str]:
@@ -32,24 +32,24 @@ def extract_all_characters(text: str, normalize: bool = False) -> set[str]:
     chars = set()
     for char in text:
         code_point = ord(char)
-        if (0x4E00 <= code_point <= 0x9FFF or  # CJK Unified Ideographs
-            0x3400 <= code_point <= 0x4DBF or  # CJK Unified Ideographs Extension A
-            0x20000 <= code_point <= 0x2A6DF or  # CJK Unified Ideographs Extension B
-            0x2A700 <= code_point <= 0x2B73F or  # CJK Unified Ideographs Extension C
-            0x2B740 <= code_point <= 0x2B81F or  # CJK Unified Ideographs Extension D
-            0x2B820 <= code_point <= 0x2CEAF or  # CJK Unified Ideographs Extension E
-            0x2CEB0 <= code_point <= 0x2EBEF or  # CJK Unified Ideographs Extension F
-            0xF900 <= code_point <= 0xFAFF or    # CJK Compatibility Ideographs
-            0x2F800 <= code_point <= 0x2FA1F):   # CJK Compatibility Ideographs Supplement
+        if (
+            0x4E00 <= code_point <= 0x9FFF  # CJK Unified Ideographs
+            or 0x3400 <= code_point <= 0x4DBF  # CJK Unified Ideographs Extension A
+            or 0x20000 <= code_point <= 0x2A6DF  # CJK Unified Ideographs Extension B
+            or 0x2A700 <= code_point <= 0x2B73F  # CJK Unified Ideographs Extension C
+            or 0x2B740 <= code_point <= 0x2B81F  # CJK Unified Ideographs Extension D
+            or 0x2B820 <= code_point <= 0x2CEAF  # CJK Unified Ideographs Extension E
+            or 0x2CEB0 <= code_point <= 0x2EBEF  # CJK Unified Ideographs Extension F
+            or 0xF900 <= code_point <= 0xFAFF  # CJK Compatibility Ideographs
+            or 0x2F800 <= code_point <= 0x2FA1F
+        ):  # CJK Compatibility Ideographs Supplement
             chars.add(normalize_cjk_char(char) if normalize else char)
     return chars
 
 
-
-
 def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> list[int]:
     """Find all notes with Traditional field."""
-    search_query = f'note:{note_type} Traditional:_* {extra_filter}'
+    search_query = f"note:{note_type} Traditional:_* {extra_filter}"
     response = anki_connect_request("findNotes", {"query": search_query})
 
     if response and response.get("result"):
@@ -78,12 +78,12 @@ def _get_anki_characters(normalize: bool = False) -> tuple[set[str], Counter[str
         note_ids = find_all_notes_with_traditional(note_type, extra_filter)
 
         for i in range(0, len(note_ids), batch_size):
-            batch = note_ids[i:i + batch_size]
+            batch = note_ids[i : i + batch_size]
             try:
                 notes_info = get_notes_info(batch)
 
                 for note_info in notes_info:
-                    traditional = note_info['fields'].get('Traditional', {}).get('value', '')
+                    traditional = note_info["fields"].get("Traditional", {}).get("value", "")
                     if traditional:
                         chars = extract_all_characters(traditional, normalize=normalize)
                         anki_chars.update(chars)
@@ -157,48 +157,48 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
 
     for file_path in json_files:
         try:
-            with open(file_path, encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # Extract from references[].char
-            for ref in data.get('references', []):
-                char = ref.get('char', '')
+            for ref in data.get("references", []):
+                char = ref.get("char", "")
                 if char:
                     chars = extract_all_characters(char, normalize=normalize)
                     all_chars.update(chars)
                     char_frequency.update(chars)
 
             # Extract from sound_series.characters[].traditional
-            sound_series = data.get('sound_series', {})
-            for char_entry in sound_series.get('characters', []):
-                trad = char_entry.get('traditional', '')
+            sound_series = data.get("sound_series", {})
+            for char_entry in sound_series.get("characters", []):
+                trad = char_entry.get("traditional", "")
                 if trad:
                     chars = extract_all_characters(trad, normalize=normalize)
                     all_chars.update(chars)
                     char_frequency.update(chars)
 
             # Extract from semantic_series.characters[].traditional
-            semantic_series = data.get('semantic_series', {})
-            for char_entry in semantic_series.get('characters', []):
-                trad = char_entry.get('traditional', '')
+            semantic_series = data.get("semantic_series", {})
+            for char_entry in semantic_series.get("characters", []):
+                trad = char_entry.get("traditional", "")
                 if trad:
                     chars = extract_all_characters(trad, normalize=normalize)
                     all_chars.update(chars)
                     char_frequency.update(chars)
 
             # Extract from empty_component.characters[].traditional
-            empty_component = data.get('empty_component', {})
-            for char_entry in empty_component.get('characters', []):
-                trad = char_entry.get('traditional', '')
+            empty_component = data.get("empty_component", {})
+            for char_entry in empty_component.get("characters", []):
+                trad = char_entry.get("traditional", "")
                 if trad:
                     chars = extract_all_characters(trad, normalize=normalize)
                     all_chars.update(chars)
                     char_frequency.update(chars)
 
             # Extract from radical.characters[].traditional
-            radical = data.get('radical', {})
-            for char_entry in radical.get('characters', []):
-                trad = char_entry.get('traditional', '')
+            radical = data.get("radical", {})
+            for char_entry in radical.get("characters", []):
+                trad = char_entry.get("traditional", "")
                 if trad:
                     chars = extract_all_characters(trad, normalize=normalize)
                     all_chars.update(chars)
@@ -212,10 +212,7 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
 
 
 def discover_all_characters(
-    project_root: Path,
-    include_anki: bool = True,
-    include_folders: bool = True,
-    normalize: bool = False
+    project_root: Path, include_anki: bool = True, include_folders: bool = True, normalize: bool = False
 ) -> tuple[set[str], Counter[str]]:
     """
     Discover all characters from Anki and the standard data directories.
@@ -243,9 +240,9 @@ def discover_all_characters(
 
     # Get characters from Anki
     if include_anki:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("SCANNING ANKI")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         try:
             anki_chars, anki_freq = _get_anki_characters(normalize=normalize)
             all_chars.update(anki_chars)
@@ -258,25 +255,25 @@ def discover_all_characters(
 
     # Get characters from data directories
     if include_folders:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("SCANNING DATA DIRECTORIES")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         dir_chars, dir_freq = _scan_data_directories(project_root, normalize=normalize)
         all_chars.update(dir_chars)
         char_frequency.update(dir_freq)
 
         # Scan outlier series JSON files for referenced characters
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("SCANNING OUTLIER SERIES JSON FILES")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         outlier_chars, outlier_freq = _scan_outlier_series_json(project_root, normalize=normalize)
         all_chars.update(outlier_chars)
         char_frequency.update(outlier_freq)
     else:
         print("Skipping data directories scan")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOTAL: {len(all_chars)} unique characters discovered")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     return all_chars, char_frequency

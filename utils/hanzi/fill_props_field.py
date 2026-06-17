@@ -30,9 +30,9 @@ def load_pos_mapping():
     """
     # Get the path to pos.json relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    pos_json_path = os.path.join(script_dir, '..', '..', 'app', 'data', 'pos.json')
+    pos_json_path = os.path.join(script_dir, "..", "..", "app", "data", "pos.json")
 
-    with open(pos_json_path, encoding='utf-8') as f:
+    with open(pos_json_path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -50,7 +50,7 @@ def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple
     if not pos_value or not pos_value.strip():
         return "", []
 
-    pos_codes = [code.strip() for code in pos_value.split('/')]
+    pos_codes = [code.strip() for code in pos_value.split("/")]
     descriptions = []
     unknown_codes = []
 
@@ -124,7 +124,7 @@ Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g
 
     try:
         response = gemini_generate(prompt, client=gemini_client, max_retries=2)
-        suggested_names = [name.strip().lower() for name in response.strip().split(',')]
+        suggested_names = [name.strip().lower() for name in response.strip().split(",")]
 
         # Build reverse mapping
         name_to_code = build_pos_name_to_code_mapping(pos_mapping)
@@ -175,7 +175,7 @@ def generate_examples_json_with_gemini(traditional: str, pos_codes: str, pos_map
         return {}
 
     # Parse POS codes and build descriptions for the prompt
-    codes = [code.strip() for code in pos_codes.split('/') if code.strip()]
+    codes = [code.strip() for code in pos_codes.split("/") if code.strip()]
     pos_descriptions: list[str] = []
     code_to_name = {}
 
@@ -238,13 +238,13 @@ Example response format:
 
         # Clean up response - remove markdown code blocks if present
         response = response.strip()
-        if response.startswith('```'):
+        if response.startswith("```"):
             # Remove opening code block
-            first_newline = response.find('\n')
+            first_newline = response.find("\n")
             if first_newline != -1:
-                response = response[first_newline + 1:]
+                response = response[first_newline + 1 :]
             # Remove closing code block
-            if response.endswith('```'):
+            if response.endswith("```"):
                 response = response[:-3].strip()
 
         # Parse JSON response
@@ -261,11 +261,8 @@ Example response format:
 
             validated_examples: list[dict[str, str]] = []
             for example in examples:
-                if isinstance(example, dict) and 'Traditional' in example and 'English' in example:
-                    validated_examples.append({
-                        'Traditional': example['Traditional'],
-                        'English': example['English']
-                    })
+                if isinstance(example, dict) and "Traditional" in example and "English" in example:
+                    validated_examples.append({"Traditional": example["Traditional"], "English": example["English"]})
 
             if validated_examples:
                 validated_dict[pos_code] = validated_examples
@@ -318,10 +315,10 @@ def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any])
 
         # Add each example
         for example in examples:
-            if isinstance(example, dict) and 'Traditional' in example and 'English' in example:
-                chinese = example['Traditional']
-                english = example['English']
-                section_parts.append(f"{chinese}<br><span style=\"color: gray;\">{english}</span>")
+            if isinstance(example, dict) and "Traditional" in example and "English" in example:
+                chinese = example["Traditional"]
+                english = example["English"]
+                section_parts.append(f'{chinese}<br><span style="color: gray;">{english}</span>')
 
         # Join examples within a POS with single line break
         pos_sections.append("<br>".join(section_parts))
@@ -330,7 +327,9 @@ def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any])
     return "<br><br>".join(pos_sections)
 
 
-def extract_tagged_values(tags: list[str], prefix: str, suffix_map: dict[str, str] | None = None, separator: str = ", ", sort: bool = True) -> str:
+def extract_tagged_values(
+    tags: list[str], prefix: str, suffix_map: dict[str, str] | None = None, separator: str = ", ", sort: bool = True
+) -> str:
     """
     Extract and process tags that start with a specific prefix
 
@@ -468,8 +467,8 @@ def load_prop_hanzi_mapping():
     # Create the mapping
     prop_hanzi_map = {}
     for note_info in notes_info:
-        prop_name = note_info['fields'].get('Prop', {}).get('value', '').strip()
-        hanzi = note_info['fields'].get('Hanzi', {}).get('value', '').strip()
+        prop_name = note_info["fields"].get("Prop", {}).get("value", "").strip()
+        hanzi = note_info["fields"].get("Hanzi", {}).get("value", "").strip()
 
         if prop_name and hanzi:
             prop_hanzi_map[prop_name] = hanzi
@@ -502,8 +501,8 @@ def load_pinyin_mappings():
     syllable_to_chars: dict[str, list[str]] = {}
 
     for note_info in notes_info:
-        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-        pinyin_accented = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+        pinyin_accented = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
 
         if not traditional or not pinyin_accented:
             continue
@@ -554,9 +553,9 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
         if include_empty_examples:
             # Include unsuspended TOCFL notes with empty Examples JSON/Examples field, due today or tomorrow
             conditions.append('(-is:suspended ("Examples JSON:" OR "Examples:"))')
-        search_query = f'note:{note_type} ({" OR ".join(conditions)})'
+        search_query = f"note:{note_type} ({' OR '.join(conditions)})"
     else:
-        search_query = f'note:{note_type} {base_conditions}'
+        search_query = f"note:{note_type} {base_conditions}"
 
     print(search_query)
     response = anki_connect_request("findNotes", {"query": search_query})
@@ -600,12 +599,7 @@ def update_note_fields(note_id: int, fields_dict: dict[str, str]) -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
-    response = anki_connect_request("updateNoteFields", {
-        "note": {
-            "id": note_id,
-            "fields": fields_dict
-        }
-    })
+    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields_dict}})
 
     if not response or response.get("error") is not None:
         raise Exception(f"Failed to update note {note_id}: {response}")
@@ -629,10 +623,17 @@ def get_same_chars_field_value(traditional: str, key: str, char_mapping: dict[st
     """
     same_chars = char_mapping.get(key, [])
     other_chars = [c for c in same_chars if c != traditional]
-    return ''.join(sorted(other_chars))
+    return "".join(sorted(other_chars))
 
 
-def update_fields_for_note(note_info: dict[str, Any], prop_hanzi_map: dict[str, str], pos_mapping: dict[str, Any], pinyin_to_chars: dict[str, list[str]], syllable_to_chars: dict[str, list[str]], gemini_client: Any | None = None) -> bool:
+def update_fields_for_note(
+    note_info: dict[str, Any],
+    prop_hanzi_map: dict[str, str],
+    pos_mapping: dict[str, Any],
+    pinyin_to_chars: dict[str, list[str]],
+    syllable_to_chars: dict[str, list[str]],
+    gemini_client: Any | None = None,
+) -> bool:
     """
     Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON, Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
 
@@ -647,110 +648,108 @@ def update_fields_for_note(note_info: dict[str, Any], prop_hanzi_map: dict[str, 
     Returns:
         bool: True if updated, False if skipped or failed
     """
-    note_id = note_info['noteId']
-    tags = note_info.get('tags', [])
+    note_id = note_info["noteId"]
+    tags = note_info.get("tags", [])
     fields_to_update = {}
 
     # Process Props field
-    current_props = note_info['fields'].get('Props', {}).get('value', '').strip()
+    current_props = note_info["fields"].get("Props", {}).get("value", "").strip()
     new_props = extract_props_from_tags(tags, prop_hanzi_map)
 
     if new_props and current_props != new_props:
-        fields_to_update['Props'] = new_props
+        fields_to_update["Props"] = new_props
 
     # Process Mnemonic pegs field
-    current_pegs = note_info['fields'].get('Mnemonic pegs', {}).get('value', '').strip()
+    current_pegs = note_info["fields"].get("Mnemonic pegs", {}).get("value", "").strip()
     new_pegs = extract_mnemonic_pegs(tags)
 
     if new_pegs and current_pegs != new_pegs:
-        fields_to_update['Mnemonic pegs'] = new_pegs
+        fields_to_update["Mnemonic pegs"] = new_pegs
 
     # Process Anki Tags field (remaining tags not matching special prefixes)
-    current_anki_tags = note_info['fields'].get('Anki Tags', {}).get('value', '').strip()
+    current_anki_tags = note_info["fields"].get("Anki Tags", {}).get("value", "").strip()
     new_anki_tags = extract_anki_tags(tags)
     if current_anki_tags != new_anki_tags:
-        fields_to_update['Anki Tags'] = new_anki_tags
+        fields_to_update["Anki Tags"] = new_anki_tags
 
     # Process POS field - suggest using AI if empty and Traditional ≤ 5 characters
-    if 'POS' in note_info['fields'] and 'POS Description' in note_info['fields']:
-        current_pos = note_info['fields'].get('POS', {}).get('value', '').strip()
-        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-        meaning = note_info['fields'].get('Meaning', {}).get('value', '').strip()
+    if "POS" in note_info["fields"] and "POS Description" in note_info["fields"]:
+        current_pos = note_info["fields"].get("POS", {}).get("value", "").strip()
+        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+        meaning = note_info["fields"].get("Meaning", {}).get("value", "").strip()
 
         # Use AI to suggest POS if empty, Traditional ≤ 5 chars, and Gemini client available
         if not current_pos and traditional and len(traditional) <= 5 and meaning and gemini_client:
             print(f"  Suggesting POS for '{traditional}' ({meaning})...")
             suggested_pos = suggest_pos_with_gemini(traditional, meaning, pos_mapping, gemini_client)
             if suggested_pos:
-                fields_to_update['POS'] = suggested_pos
+                fields_to_update["POS"] = suggested_pos
                 current_pos = suggested_pos  # Use for POS Description processing below
 
-        current_pos_desc = note_info['fields'].get('POS Description', {}).get('value', '').strip()
+        current_pos_desc = note_info["fields"].get("POS Description", {}).get("value", "").strip()
         new_pos_desc, unknown_codes = format_pos_description(current_pos, pos_mapping)
 
         if unknown_codes:
-            note_identifier = traditional or \
-                              note_info['fields'].get('Hanzi', {}).get('value', '') or \
-                              str(note_id)
+            note_identifier = traditional or note_info["fields"].get("Hanzi", {}).get("value", "") or str(note_id)
             raise ValueError(f"Unknown POS codes in note {note_identifier}: {unknown_codes}")
 
         if current_pos_desc != new_pos_desc:
-            fields_to_update['POS Description'] = new_pos_desc
+            fields_to_update["POS Description"] = new_pos_desc
 
     # Process Examples JSON field - generate examples for each POS if empty and Traditional ≤ 3 chars
-    if 'Examples JSON' in note_info['fields'] and 'POS' in note_info['fields']:
-        current_examples_json = note_info['fields'].get('Examples JSON', {}).get('value', '').strip()
-        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+    if "Examples JSON" in note_info["fields"] and "POS" in note_info["fields"]:
+        current_examples_json = note_info["fields"].get("Examples JSON", {}).get("value", "").strip()
+        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
         # Use the potentially updated POS value
-        pos_value = fields_to_update.get('POS') or note_info['fields'].get('POS', {}).get('value', '').strip()
+        pos_value = fields_to_update.get("POS") or note_info["fields"].get("POS", {}).get("value", "").strip()
 
         # Generate examples if empty, Traditional ≤ 3 chars, has POS, and Gemini client available
         if not current_examples_json and traditional and len(traditional) <= 6 and pos_value and gemini_client:
             print(f"  Generating examples for '{traditional}' with POS: {pos_value}...")
             examples_dict = generate_examples_json_with_gemini(traditional, pos_value, pos_mapping, gemini_client)
             if examples_dict:
-                fields_to_update['Examples JSON'] = json.dumps(examples_dict, ensure_ascii=False)
+                fields_to_update["Examples JSON"] = json.dumps(examples_dict, ensure_ascii=False)
 
         # Process Examples field (HTML formatted) if it exists
-        if 'Examples' in note_info['fields']:
-            current_examples_html = note_info['fields'].get('Examples', {}).get('value', '').strip()
+        if "Examples" in note_info["fields"]:
+            current_examples_html = note_info["fields"].get("Examples", {}).get("value", "").strip()
             # Use potentially updated Examples JSON or existing one
-            examples_json_str = fields_to_update.get('Examples JSON') or current_examples_json
+            examples_json_str = fields_to_update.get("Examples JSON") or current_examples_json
             new_examples_html = format_examples_as_html(examples_json_str, pos_mapping)
 
             if new_examples_html and current_examples_html != new_examples_html:
-                fields_to_update['Examples'] = new_examples_html
+                fields_to_update["Examples"] = new_examples_html
 
     # Process ID field - only if empty, set to "my_" + Traditional
-    if 'ID' in note_info['fields'] and 'Traditional' in note_info['fields']:
-        current_id = note_info['fields'].get('ID', {}).get('value', '').strip()
-        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
+    if "ID" in note_info["fields"] and "Traditional" in note_info["fields"]:
+        current_id = note_info["fields"].get("ID", {}).get("value", "").strip()
+        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
 
         if not current_id and traditional:
-            fields_to_update['ID'] = f"my_{traditional}"
+            fields_to_update["ID"] = f"my_{traditional}"
 
     # Process Same Pinyin Traditional and Same Syllable Traditional fields - only for Hanzi notes
-    if 'Traditional' in note_info['fields'] and 'Pinyin' in note_info['fields']:
-        traditional = note_info['fields'].get('Traditional', {}).get('value', '').strip()
-        pinyin_accented = note_info['fields'].get('Pinyin', {}).get('value', '').strip()
+    if "Traditional" in note_info["fields"] and "Pinyin" in note_info["fields"]:
+        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+        pinyin_accented = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
 
         if traditional and pinyin_accented:
             pinyin_lower = pinyin_accented.lower()
             syllable = remove_tone_marks(pinyin_accented)
 
             # Process Same Pinyin Traditional field (exact pinyin match including tone)
-            if 'Same Pinyin Traditional' in note_info['fields']:
-                current_value = note_info['fields'].get('Same Pinyin Traditional', {}).get('value', '').strip()
+            if "Same Pinyin Traditional" in note_info["fields"]:
+                current_value = note_info["fields"].get("Same Pinyin Traditional", {}).get("value", "").strip()
                 new_value = get_same_chars_field_value(traditional, pinyin_lower, pinyin_to_chars)
                 if current_value != new_value:
-                    fields_to_update['Same Pinyin Traditional'] = new_value
+                    fields_to_update["Same Pinyin Traditional"] = new_value
 
             # Process Same Syllable Traditional field (syllable match without tone)
-            if 'Same Syllable Traditional' in note_info['fields']:
-                current_value = note_info['fields'].get('Same Syllable Traditional', {}).get('value', '').strip()
+            if "Same Syllable Traditional" in note_info["fields"]:
+                current_value = note_info["fields"].get("Same Syllable Traditional", {}).get("value", "").strip()
                 new_value = get_same_chars_field_value(traditional, syllable, syllable_to_chars)
                 if current_value != new_value:
-                    fields_to_update['Same Syllable Traditional'] = new_value
+                    fields_to_update["Same Syllable Traditional"] = new_value
 
     # Only update if there are changes
     if not fields_to_update:
@@ -758,7 +757,7 @@ def update_fields_for_note(note_info: dict[str, Any], prop_hanzi_map: dict[str, 
 
     print(f"Updating note {note_id}:")
     for field_name, new_value in fields_to_update.items():
-        current_value = note_info['fields'].get(field_name, {}).get('value', '').strip()
+        current_value = note_info["fields"].get(field_name, {}).get("value", "").strip()
         print(f"  {field_name}: '{current_value}' -> '{new_value}'")
 
     # Update the note's fields
@@ -798,8 +797,8 @@ def main():
     for note_type in note_types:
         print(f"\n=== Processing {note_type} ===")
         # For TOCFL, include notes with empty POS and empty Examples JSON for AI suggestion
-        include_empty_pos = (note_type == "TOCFL")
-        include_empty_examples = (note_type == "TOCFL")
+        include_empty_pos = note_type == "TOCFL"
+        include_empty_examples = note_type == "TOCFL"
         note_ids = find_notes_with_tags(note_type, include_empty_pos=include_empty_pos, include_empty_examples=include_empty_examples)
 
         if not note_ids:
@@ -810,7 +809,7 @@ def main():
         total_processed = 0
 
         for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i:i + batch_size]
+            batch_ids = note_ids[i : i + batch_size]
             batch_num = i // batch_size + 1
 
             try:
@@ -818,13 +817,15 @@ def main():
 
                 for note_info in notes_info:
                     try:
-                        if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client):
+                        if update_fields_for_note(
+                            note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client
+                        ):
                             total_updated += 1
                         total_processed += 1
                     except ValueError as e:
                         # Skip notes with validation errors (e.g., unknown POS codes)
-                        note_id = note_info.get('noteId')
-                        traditional = note_info['fields'].get('Traditional', {}).get('value', '')
+                        note_id = note_info.get("noteId")
+                        traditional = note_info["fields"].get("Traditional", {}).get("value", "")
                         print(f"  Skipping note {note_id} ({traditional}): {e}")
                         total_processed += 1
 

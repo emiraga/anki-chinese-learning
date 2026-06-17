@@ -37,7 +37,7 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
     project_root = script_dir.parent.parent
 
     # Try to get from API key file first
-    api_key_path = project_root / 'utils' / 'tts' / 'gcloud_api_key.txt'
+    api_key_path = project_root / "utils" / "tts" / "gcloud_api_key.txt"
     if api_key_path.exists():
         with open(api_key_path) as f:
             api_key = f.read().strip()
@@ -46,20 +46,21 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
 
     # Try credentials JSON file
     if credentials_path is None:
-        credentials_path = project_root / 'utils' / 'tts' / 'gcloud_account.json'
+        credentials_path = project_root / "utils" / "tts" / "gcloud_account.json"
     else:
         credentials_path = Path(credentials_path)
 
     if credentials_path.exists():
         import json
+
         with open(credentials_path) as f:
             creds = json.load(f)
-            api_key = creds.get('gemini_api_key')
+            api_key = creds.get("gemini_api_key")
             if api_key:
                 return api_key
 
     # Try environment variable
-    api_key = os.environ.get('GEMINI_API_KEY')
+    api_key = os.environ.get("GEMINI_API_KEY")
     if api_key:
         return api_key
 
@@ -95,11 +96,7 @@ def create_gemini_client(api_key: str | None = None) -> Any:
 
 
 def gemini_generate(
-    prompt: str,
-    client: Any | None = None,
-    model_name: str = "gemini-2.5-flash",
-    max_retries: int = 3,
-    retry_delay: float = 2.0
+    prompt: str, client: Any | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3, retry_delay: float = 2.0
 ) -> str:
     """
     Generate content using Google Gemini API.
@@ -127,10 +124,7 @@ def gemini_generate(
         try:
             response = active_client.models.generate_content(model=model_name, contents=prompt)
             if response.text is None:
-                raise ValueError(
-                    f"Gemini returned empty response (possibly blocked by safety filters). "
-                    f"Candidates: {response.candidates}"
-                )
+                raise ValueError(f"Gemini returned empty response (possibly blocked by safety filters). Candidates: {response.candidates}")
             return response.text.strip()
         except Exception as e:
             if attempt < max_retries - 1:
@@ -144,10 +138,7 @@ def gemini_generate(
 
 
 def translate_with_gemini(
-    traditional_text: str,
-    client: Any | None = None,
-    model_name: str = "gemini-2.5-flash",
-    max_retries: int = 3
+    traditional_text: str, client: Any | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3
 ) -> str:
     """
     Use Google Gemini API to translate Chinese text to English.
@@ -175,9 +166,4 @@ Traditional Chinese: {traditional_text}
 
 Provide only the English translation, nothing else."""
 
-    return gemini_generate(
-        prompt=prompt,
-        client=client,
-        model_name=model_name,
-        max_retries=max_retries
-    )
+    return gemini_generate(prompt=prompt, client=client, model_name=model_name, max_retries=max_retries)

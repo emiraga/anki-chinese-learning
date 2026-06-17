@@ -32,16 +32,34 @@ def remove_tone_marks(pinyin: str) -> str:
         # Convert to numbered pinyin first, then strip numbers
         numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin)
         # Remove the tone numbers
-        return re.sub(r'[1-5]', '', numbered).lower()
+        return re.sub(r"[1-5]", "", numbered).lower()
     except Exception:
         # If conversion fails, try manual approach
         tone_map = {
-            'ā': 'a', 'á': 'a', 'ǎ': 'a', 'à': 'a',
-            'ē': 'e', 'é': 'e', 'ě': 'e', 'è': 'e',
-            'ī': 'i', 'í': 'i', 'ǐ': 'i', 'ì': 'i',
-            'ō': 'o', 'ó': 'o', 'ǒ': 'o', 'ò': 'o',
-            'ū': 'u', 'ú': 'u', 'ǔ': 'u', 'ù': 'u',
-            'ǖ': 'ü', 'ǘ': 'ü', 'ǚ': 'ü', 'ǜ': 'ü',
+            "ā": "a",
+            "á": "a",
+            "ǎ": "a",
+            "à": "a",
+            "ē": "e",
+            "é": "e",
+            "ě": "e",
+            "è": "e",
+            "ī": "i",
+            "í": "i",
+            "ǐ": "i",
+            "ì": "i",
+            "ō": "o",
+            "ó": "o",
+            "ǒ": "o",
+            "ò": "o",
+            "ū": "u",
+            "ú": "u",
+            "ǔ": "u",
+            "ù": "u",
+            "ǖ": "ü",
+            "ǘ": "ü",
+            "ǚ": "ü",
+            "ǜ": "ü",
         }
         result = pinyin.lower()
         for toned, plain in tone_map.items():
@@ -63,7 +81,7 @@ def get_tone_number(pinyin: str) -> int | None:
     try:
         numbered = dragonmapper.transcriptions.accented_to_numbered(pinyin)
         # Extract the number at the end
-        match = re.search(r'([1-5])$', numbered)
+        match = re.search(r"([1-5])$", numbered)
         if match:
             return int(match.group(1))
         # No tone number means neutral tone (tone 5)

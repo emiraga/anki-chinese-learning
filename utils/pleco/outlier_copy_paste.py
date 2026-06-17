@@ -30,6 +30,7 @@ from typing import Any, TypedDict
 
 try:
     from bs4 import BeautifulSoup
+
     BS4_AVAILABLE = True
 except ImportError:
     BS4_AVAILABLE = False
@@ -38,12 +39,14 @@ except ImportError:
 # Type definitions for Outlier dictionary data
 class Reference(TypedDict, total=False):
     """A reference to another character"""
+
     char: str
     href: str
 
 
 class Character(TypedDict, total=False):
     """A character entry in a series"""
+
     traditional: str
     simplified: str | None
     pinyin: list[str]
@@ -53,24 +56,28 @@ class Character(TypedDict, total=False):
 
 class Series(TypedDict, total=False):
     """A sound or semantic series"""
+
     explanation: str
     characters: list[Character]
 
 
 class EmptyComponentData(TypedDict, total=False):
     """Empty component data"""
+
     explanation: str
     characters: list[Character]
 
 
 class RadicalData(TypedDict, total=False):
     """Radical data"""
+
     explanation: str
     characters: list[Character]
 
 
 class OutlierData(TypedDict, total=False):
     """Complete Outlier dictionary entry structure"""
+
     traditional: str
     simplified: str | None
     pinyin: list[str] | None
@@ -96,58 +103,33 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring", clear_clipboard
         if clear_clipboard:
             print("Step 0: Clearing clipboard...")
             clear_clipboard_script = 'set the clipboard to ""'
-            subprocess.run(
-                ['osascript', '-e', clear_clipboard_script],
-                capture_output=True,
-                text=True,
-                check=True
-            )
+            subprocess.run(["osascript", "-e", clear_clipboard_script], capture_output=True, text=True, check=True)
             time.sleep(0.2)
             print("  ✓ Clipboard cleared")
 
         # Step 1: Activate the application
         print(f"Step 1: Activating '{window_name}' window...")
         activate_script = f'tell application "{window_name}" to activate'
-        subprocess.run(
-            ['osascript', '-e', activate_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        subprocess.run(["osascript", "-e", activate_script], capture_output=True, text=True, check=True)
         time.sleep(0.8)
         print("  ✓ Window activated")
 
         # Step 3: Select all (twice)
         print("Step 3: Selecting all content (twice)...")
         select_all_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "a" using command down'
-        subprocess.run(
-            ['osascript', '-e', select_all_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        subprocess.run(["osascript", "-e", select_all_script], capture_output=True, text=True, check=True)
         time.sleep(0.3)
         print("  First select all done...")
 
         # Select all again to ensure everything is selected
-        subprocess.run(
-            ['osascript', '-e', select_all_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        subprocess.run(["osascript", "-e", select_all_script], capture_output=True, text=True, check=True)
         time.sleep(0.5)
         print("  ✓ Select all completed")
 
         # Step 4: Copy
         print("Step 4: Copying to clipboard...")
         copy_script = f'tell application "System Events" to tell process "{window_name}" to keystroke "c" using command down'
-        subprocess.run(
-            ['osascript', '-e', copy_script],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        subprocess.run(["osascript", "-e", copy_script], capture_output=True, text=True, check=True)
         time.sleep(0.8)
         print("  ✓ Copy command sent")
 
@@ -164,12 +146,7 @@ def auto_copy_from_window(window_name: str = "iPhone Mirroring", clear_clipboard
 def get_clipboard_formats():
     """Get all available clipboard formats"""
     try:
-        result = subprocess.run(
-            ['osascript', '-e', 'clipboard info'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["osascript", "-e", "clipboard info"], capture_output=True, text=True, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"Error getting clipboard formats: {e}", file=sys.stderr)
@@ -179,12 +156,7 @@ def get_clipboard_formats():
 def get_clipboard_rtf():
     """Get RTF content from clipboard"""
     try:
-        result = subprocess.run(
-            ['osascript', '-e', 'the clipboard as «class RTF »'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["osascript", "-e", "the clipboard as «class RTF »"], capture_output=True, text=True, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError:
         return None
@@ -193,12 +165,7 @@ def get_clipboard_rtf():
 def get_clipboard_html():
     """Get HTML content from clipboard"""
     try:
-        result = subprocess.run(
-            ['osascript', '-e', 'the clipboard as «class HTML»'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["osascript", "-e", "the clipboard as «class HTML»"], capture_output=True, text=True, check=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError:
         return None
@@ -207,12 +174,7 @@ def get_clipboard_html():
 def get_clipboard_plain_text():
     """Get plain text from clipboard"""
     try:
-        result = subprocess.run(
-            ['pbpaste'],
-            capture_output=True,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["pbpaste"], capture_output=True, text=True, check=True)
         return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"Error getting plain text: {e}", file=sys.stderr)
@@ -221,37 +183,37 @@ def get_clipboard_plain_text():
 
 def parse_hex_data(data_str: str, data_type: str = "DATA") -> str | None:
     """Parse hex data from AppleScript format"""
-    if not data_str or data_str == 'missing value':
+    if not data_str or data_str == "missing value":
         return None
 
     # Data from AppleScript comes as hex, try to decode it
     try:
         # Remove «data TYPE  and » markers if present
-        if '«data ' in data_str:
+        if "«data " in data_str:
             # Extract hex part after the type identifier
             # Format is like: «data HTML3C686561643E...»
             # The type name (like HTML) is followed immediately by hex digits
-            match = re.search(r'«data\s+[A-Z]+([0-9A-Fa-f]+)»', data_str)
+            match = re.search(r"«data\s+[A-Z]+([0-9A-Fa-f]+)»", data_str)
             if match:
                 hex_data = match.group(1)
                 bytes_data = bytes.fromhex(hex_data)
-                return bytes_data.decode('utf-8', errors='replace')
+                return bytes_data.decode("utf-8", errors="replace")
     except Exception as e:
         print(f"Could not parse {data_type} hex data: {e}", file=sys.stderr)
         # Try alternate approach - just extract all hex after data TYPE
         try:
-            if '«data ' in data_str:
+            if "«data " in data_str:
                 # Get everything between «data TYPE and »
-                inner = data_str.split('«data ')[ 1].split('»')[0]
+                inner = data_str.split("«data ")[1].split("»")[0]
                 # Remove non-hex characters from the beginning
                 hex_start = 0
                 for i, c in enumerate(inner):
-                    if c in '0123456789ABCDEFabcdef':
+                    if c in "0123456789ABCDEFabcdef":
                         hex_start = i
                         break
                 hex_data = inner[hex_start:]
                 bytes_data = bytes.fromhex(hex_data)
-                return bytes_data.decode('utf-8', errors='replace')
+                return bytes_data.decode("utf-8", errors="replace")
         except Exception as e2:
             print(f"Alternate parse also failed: {e2}", file=sys.stderr)
 
@@ -264,12 +226,12 @@ def format_html_readable(html_str: str) -> str | None:
         return None
 
     if BS4_AVAILABLE:
-        soup = BeautifulSoup(html_str, 'html.parser')
+        soup = BeautifulSoup(html_str, "html.parser")
         return soup.prettify()
     else:
         # Basic formatting without BeautifulSoup
         formatted = html_str
-        formatted = formatted.replace('><', '>\n<')
+        formatted = formatted.replace("><", ">\n<")
         return formatted
 
 
@@ -288,15 +250,15 @@ def validate_pinyin(pinyin: str) -> bool:
         return False
 
     # Check each character is either Latin letter or pinyin tone mark
-    valid_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    tone_marks = set('āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ')
+    valid_chars = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    tone_marks = set("āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ")
 
     for char in pinyin:
         if char not in valid_chars and char not in tone_marks:
             return False
 
     # Must contain at least one vowel
-    vowels = set('aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ')
+    vowels = set("aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ")
     if not any(c in vowels for c in pinyin.lower()):
         return False
 
@@ -314,7 +276,7 @@ def validate_pinyin(pinyin: str) -> bool:
         # Only accept if it looks phonetically valid
         # Common English words that aren't pinyin: "is", "This", "some", etc.
         # Real pinyin syllables always start with valid pinyin initials
-        valid_initials = set('bpmfdtnlgkhjqxzhchshrzcsyw')
+        valid_initials = set("bpmfdtnlgkhjqxzhchshrzcsyw")
         first_char = pinyin[0].lower()
 
         # If doesn't start with valid pinyin initial, reject
@@ -327,7 +289,7 @@ def validate_pinyin(pinyin: str) -> bool:
 def extract_pinyin_from_text(text: str) -> list[str]:
     """Extract pinyin syllables from text"""
     # Match pinyin with tone marks (including single-character pinyin like ā, ē)
-    pinyin_pattern = r'\b[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ]+\b'
+    pinyin_pattern = r"\b[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜńňǹ]+\b"
     matches = re.findall(pinyin_pattern, text)
     # Keep syllables that are either:
     # 1. More than 1 character, OR
@@ -345,10 +307,10 @@ def validate_character_pinyin(char: Character, char_hanzi: str):
     Validate the pinyin field in a Character object.
     Throws exception if pinyin is present but invalid.
     """
-    if 'pinyin' not in char:
+    if "pinyin" not in char:
         return  # No pinyin to validate
 
-    pinyin_list: list[str] = char.get('pinyin', [])
+    pinyin_list: list[str] = char.get("pinyin", [])
     if not pinyin_list:
         return  # Empty list is okay
 
@@ -358,10 +320,7 @@ def validate_character_pinyin(char: Character, char_hanzi: str):
             invalid.append(pinyin)
 
     if invalid:
-        raise ValueError(
-            f"Invalid pinyin in character '{char_hanzi}': {invalid}. "
-            f"Full character data: {char}"
-        )
+        raise ValueError(f"Invalid pinyin in character '{char_hanzi}': {invalid}. Full character data: {char}")
 
 
 def parse_character_from_li(li_element: Any) -> Character | None:
@@ -375,7 +334,7 @@ def parse_character_from_li(li_element: Any) -> Character | None:
     li_text = li_element.get_text()
 
     # Get text from red tags (this is the explanation)
-    red_elements = li_element.find_all('red')
+    red_elements = li_element.find_all("red")
     red_text = ""
     for red in red_elements:
         red_text += red.get_text() + " "
@@ -384,10 +343,10 @@ def parse_character_from_li(li_element: Any) -> Character | None:
     # Parse the structure: "榊 shén: explanation; meaning"
     # or "阿 ā (ē): meaning"
     # First, get character and pinyin
-    match = re.match(r'^([^\s]+)\s+([^:]+):\s*(.*)$', li_text)
+    match = re.match(r"^([^\s]+)\s+([^:]+):\s*(.*)$", li_text)
 
     if match:
-        char['traditional'] = match.group(1)
+        char["traditional"] = match.group(1)
 
         # Extract pinyin from the second group (handles "shén" or "ā (ē)")
         pinyin_text = match.group(2).strip()
@@ -407,21 +366,21 @@ def parse_character_from_li(li_element: Any) -> Character | None:
                     pinyin = red_pinyin
 
         if pinyin:
-            char['pinyin'] = pinyin
+            char["pinyin"] = pinyin
 
         # Everything after colon
         after_colon = match.group(3).strip()
 
         # Split on semicolon to separate explanation from meaning
-        if ';' in after_colon:
-            parts = after_colon.split(';', 1)
+        if ";" in after_colon:
+            parts = after_colon.split(";", 1)
             # explanation_part = parts[0].strip()
             meaning_part = parts[1].strip()
 
             # Check if explanation part matches red text
             if red_text:
                 # Remove trailing colon from red text if present
-                clean_red = red_text.rstrip(':')
+                clean_red = red_text.rstrip(":")
 
                 # Check if red text is just pinyin (after removing (orig.) for comparison)
                 red_without_orig = clean_red.replace("(orig.)", "").strip()
@@ -429,20 +388,20 @@ def parse_character_from_li(li_element: Any) -> Character | None:
 
                 # Only set explanation if it's not just the pinyin
                 if clean_red and not is_just_pinyin:
-                    char['explanation'] = clean_red
+                    char["explanation"] = clean_red
                     # Meaning is everything after the semicolon (explanation was extracted)
-                    char['meaning'] = meaning_part
+                    char["meaning"] = meaning_part
                 else:
                     # Red text was just pinyin, so the semicolon is separating meanings, not explanation
                     # Keep the full meaning including all parts
-                    char['meaning'] = after_colon
+                    char["meaning"] = after_colon
             else:
                 # No red text, so everything is meaning
-                char['meaning'] = after_colon
+                char["meaning"] = after_colon
         else:
             # No semicolon - check if we have red text
             if red_text:
-                clean_red = red_text.rstrip(':')
+                clean_red = red_text.rstrip(":")
 
                 # Check if red text is just pinyin (after removing (orig.) for comparison)
                 red_without_orig = clean_red.replace("(orig.)", "").strip()
@@ -450,20 +409,20 @@ def parse_character_from_li(li_element: Any) -> Character | None:
 
                 # Only set explanation if it's not just the pinyin
                 if clean_red and not is_just_pinyin:
-                    char['explanation'] = clean_red
+                    char["explanation"] = clean_red
                 # The non-red part is the meaning
-                meaning = after_colon.replace(red_text, '').strip()
+                meaning = after_colon.replace(red_text, "").strip()
                 if meaning:
-                    char['meaning'] = meaning
+                    char["meaning"] = meaning
             else:
                 # Everything is the meaning
-                char['meaning'] = after_colon
+                char["meaning"] = after_colon
 
     # Validate pinyin before returning
-    if char.get('traditional'):
-        validate_character_pinyin(char, char['traditional'])
+    if char.get("traditional"):
+        validate_character_pinyin(char, char["traditional"])
 
-    return char if char.get('traditional') else None
+    return char if char.get("traditional") else None
 
 
 def extract_image_id_from_img_tag(img_tag: Any) -> tuple[str | None, bytes | None]:
@@ -474,14 +433,14 @@ def extract_image_id_from_img_tag(img_tag: Any) -> tuple[str | None, bytes | Non
     if not img_tag:
         return None, None
 
-    src = img_tag.get('src', '')
-    if not src.startswith('data:image/'):
+    src = img_tag.get("src", "")
+    if not src.startswith("data:image/"):
         return None, None
 
     # Parse data URL: data:image/svg+xml;base64,<data>
     try:
         # Split on comma to get the base64 data
-        parts = src.split(',', 1)
+        parts = src.split(",", 1)
         if len(parts) != 2:
             return None, None
 
@@ -508,19 +467,19 @@ def save_image_to_disk(image_id: str, image_bytes: bytes, images_dir: Path) -> b
 
         # Determine file extension from image data
         # SVG images start with <?xml or <svg
-        if image_bytes.startswith(b'<?xml') or image_bytes.startswith(b'<svg'):
-            ext = 'svg'
-        elif image_bytes.startswith(b'\x89PNG'):
-            ext = 'png'
-        elif image_bytes.startswith(b'\xff\xd8\xff'):
-            ext = 'jpg'
+        if image_bytes.startswith(b"<?xml") or image_bytes.startswith(b"<svg"):
+            ext = "svg"
+        elif image_bytes.startswith(b"\x89PNG"):
+            ext = "png"
+        elif image_bytes.startswith(b"\xff\xd8\xff"):
+            ext = "jpg"
         else:
             # Default to svg for unknown types
-            ext = 'svg'
+            ext = "svg"
 
-        image_path = images_dir / f'{image_id}.{ext}'
+        image_path = images_dir / f"{image_id}.{ext}"
 
-        with open(image_path, 'wb') as f:
+        with open(image_path, "wb") as f:
             f.write(image_bytes)
 
         print(f"  Saved image: {image_path}")
@@ -535,101 +494,98 @@ def parse_outlier_html(html_str: str) -> OutlierData:
     if not html_str or not BS4_AVAILABLE:
         return {}
 
-    soup = BeautifulSoup(html_str, 'html.parser')
+    soup = BeautifulSoup(html_str, "html.parser")
     data: OutlierData = {}
 
     # Get main character from h1
-    h1 = soup.find('h1')
+    h1 = soup.find("h1")
     if h1:
         h1_text = h1.get_text(strip=True)
 
         # First check if there's an img tag in the h1 (character as image)
-        img_tag = h1.find('img')
+        img_tag = h1.find("img")
         if img_tag:
             image_id, image_bytes = extract_image_id_from_img_tag(img_tag)
             if image_id and image_bytes is not None:
                 # Save the image
                 script_dir = Path(__file__).parent.parent.parent
-                images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'
+                images_dir = script_dir / "public" / "data" / "pleco" / "images"
                 save_image_to_disk(image_id, image_bytes, images_dir)
 
                 # Use the image ID as the "traditional" character
-                data['traditional'] = f"img_{image_id}"
+                data["traditional"] = f"img_{image_id}"
             else:
                 raise ValueError(f"Failed to extract image ID from img tag in h1: {h1}")
         else:
             # Extract character from "System level info for component 神"
-            match = re.search(r'component\s+(.)', h1_text)
+            match = re.search(r"component\s+(.)", h1_text)
             if match:
-                data['traditional'] = match.group(1)
+                data["traditional"] = match.group(1)
 
     # Extract top-level note between h1 and first h2 (if any)
     # This captures notes like "口 is the canonical form. See also the series for variants: 厶(口)"
     # Also extract references from links
     if h1:
-        first_h2 = soup.find('h2')
+        first_h2 = soup.find("h2")
         note_parts = []
         references: list[Reference] = []
 
         for sibling in h1.find_next_siblings():
             if sibling == first_h2:
                 break
-            if sibling.name == 'p':
+            if sibling.name == "p":
                 # Get text with separator to preserve spacing between elements
-                p_text = sibling.get_text(separator=' ', strip=True)
+                p_text = sibling.get_text(separator=" ", strip=True)
                 if p_text:
                     note_parts.append(p_text)
 
                 # Extract references from links in this paragraph
-                for link in sibling.find_all('a'):
-                    href = str(link.get('href', ''))
+                for link in sibling.find_all("a"):
+                    href = str(link.get("href", ""))
                     # Get text from link, or from img alt if it's an image link
                     link_text = link.get_text(strip=True)
                     if not link_text:
                         # Check if there's an img tag inside
-                        img = link.find('img')
+                        img = link.find("img")
                         if img:
                             # Extract and save the image, use its ID as the reference
                             image_id, image_bytes = extract_image_id_from_img_tag(img)
                             if image_id and image_bytes:
                                 script_dir = Path(__file__).parent.parent.parent
-                                images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'
+                                images_dir = script_dir / "public" / "data" / "pleco" / "images"
                                 save_image_to_disk(image_id, image_bytes, images_dir)
                                 link_text = f"img_{image_id}"
                             else:
                                 continue
 
                     if href and link_text:
-                        ref: Reference = {
-                            'char': link_text,
-                            'href': href
-                        }
+                        ref: Reference = {"char": link_text, "href": href}
                         references.append(ref)
 
         if note_parts:
-            data['note'] = ' '.join(note_parts)
+            data["note"] = " ".join(note_parts)
         if references:
-            data['references'] = references
+            data["references"] = references
 
     # Extract main character pinyin from the first h2 section (usually sound series)
     # Look for pattern like "This is the sound series for 且 qiě."
-    first_section = soup.find('h2')
+    first_section = soup.find("h2")
     if first_section:
         # Get all siblings between this h2 and the next h2 or ul
         # The red tag with pinyin appears at the same level as span tags
         for sibling in first_section.find_next_siblings():
-            if sibling.name == 'h2':
+            if sibling.name == "h2":
                 break
-            if sibling.name == 'ul':
+            if sibling.name == "ul":
                 break
             # Check if this element itself is a red tag
-            if sibling.name == 'red':
+            if sibling.name == "red":
                 red_text = sibling.get_text(strip=True)
                 pinyin_candidates = extract_pinyin_from_text(red_text)
                 if pinyin_candidates:
                     valid_pinyin = [p for p in pinyin_candidates if validate_pinyin(p)]
                     if valid_pinyin:
-                        data['pinyin'] = valid_pinyin
+                        data["pinyin"] = valid_pinyin
                         break
 
     # Process each h2 section
@@ -642,77 +598,74 @@ def parse_outlier_html(html_str: str) -> OutlierData:
         if not h2_name:
             return
 
-        explanation = ' '.join(text_list).strip() if text_list else None
+        explanation = " ".join(text_list).strip() if text_list else None
 
         # Extract references from links in this section's elements
         section_refs: list[Reference] = []
         for elem in element_list:
-            for link in elem.find_all('a'):
-                href = link.get('href', '')
+            for link in elem.find_all("a"):
+                href = link.get("href", "")
                 link_text = link.get_text(strip=True)
                 if not link_text:
                     # Check if there's an img tag inside
-                    img = link.find('img')
+                    img = link.find("img")
                     if img:
                         # Extract and save the image, use its ID as the reference
                         image_id, image_bytes = extract_image_id_from_img_tag(img)
                         if image_id and image_bytes:
                             script_dir = Path(__file__).parent.parent.parent
-                            images_dir = script_dir / 'public' / 'data' / 'pleco' / 'images'
+                            images_dir = script_dir / "public" / "data" / "pleco" / "images"
                             save_image_to_disk(image_id, image_bytes, images_dir)
                             link_text = f"img_{image_id}"
                         else:
                             continue
                 if href and link_text:
-                    ref: Reference = {
-                        'char': link_text,
-                        'href': href
-                    }
+                    ref: Reference = {"char": link_text, "href": href}
                     section_refs.append(ref)
 
         # Add section references to global references
         if section_refs:
-            if 'references' not in data:
-                data['references'] = []
+            if "references" not in data:
+                data["references"] = []
             # Only add unique references
             for ref in section_refs:
-                if ref not in data['references']:
-                    data['references'].append(ref)
+                if ref not in data["references"]:
+                    data["references"].append(ref)
 
-        if 'sound series' in h2_name:
-            if 'sound_series' not in data:
-                data['sound_series'] = {}
+        if "sound series" in h2_name:
+            if "sound_series" not in data:
+                data["sound_series"] = {}
             if chars_list:
-                data['sound_series']['characters'] = chars_list
+                data["sound_series"]["characters"] = chars_list
             if explanation:
-                data['sound_series']['explanation'] = explanation
+                data["sound_series"]["explanation"] = explanation
 
-        elif 'semantic series' in h2_name:
-            if 'semantic_series' not in data:
-                data['semantic_series'] = {}
+        elif "semantic series" in h2_name:
+            if "semantic_series" not in data:
+                data["semantic_series"] = {}
             if chars_list:
-                data['semantic_series']['characters'] = chars_list
+                data["semantic_series"]["characters"] = chars_list
             if explanation:
-                data['semantic_series']['explanation'] = explanation
+                data["semantic_series"]["explanation"] = explanation
 
-        elif 'empty component' in h2_name:
-            if 'empty_component' not in data:
-                data['empty_component'] = {}
+        elif "empty component" in h2_name:
+            if "empty_component" not in data:
+                data["empty_component"] = {}
             if chars_list:
-                data['empty_component']['characters'] = chars_list
+                data["empty_component"]["characters"] = chars_list
             if explanation:
-                data['empty_component']['explanation'] = explanation
+                data["empty_component"]["explanation"] = explanation
 
-        elif 'radical' in h2_name:
-            if 'radical' not in data:
-                data['radical'] = {}
+        elif "radical" in h2_name:
+            if "radical" not in data:
+                data["radical"] = {}
             if chars_list:
-                data['radical']['characters'] = chars_list
+                data["radical"]["characters"] = chars_list
             if explanation:
-                data['radical']['explanation'] = explanation
+                data["radical"]["explanation"] = explanation
 
-    for element in soup.find_all(['h2', 'p', 'ul', 'span']):
-        if element.name == 'h2':
+    for element in soup.find_all(["h2", "p", "ul", "span"]):
+        if element.name == "h2":
             # Save previous section if it had only text, no list
             if current_h2 and pending_text:
                 save_section(current_h2, pending_text, pending_elements)
@@ -721,16 +674,16 @@ def parse_outlier_html(html_str: str) -> OutlierData:
             pending_text: list[str] = []
             pending_elements: list[Any] = []
 
-        elif element.name in ['p', 'span'] and current_h2:
+        elif element.name in ["p", "span"] and current_h2:
             p_text = element.get_text(strip=True)
             if p_text:
                 pending_text.append(p_text)
                 pending_elements.append(element)
 
-        elif element.name == 'ul' and current_h2:
+        elif element.name == "ul" and current_h2:
             # Parse list items as characters
             characters = []
-            for li in element.find_all('li', recursive=False):
+            for li in element.find_all("li", recursive=False):
                 char = parse_character_from_li(li)
                 if char:
                     characters.append(char)
@@ -755,8 +708,8 @@ def generate_preload_list():
     For each sound component, include one sample character that uses it.
     """
     script_dir = Path(__file__).parent.parent.parent
-    dong_dir = script_dir / 'public' / 'data' / 'dong'
-    outlier_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
+    dong_dir = script_dir / "public" / "data" / "dong"
+    outlier_dir = script_dir / "public" / "data" / "pleco" / "outlier_series"
 
     if not dong_dir.exists():
         raise FileNotFoundError(f"Dong Chinese directory not found: {dong_dir}")
@@ -764,7 +717,7 @@ def generate_preload_list():
     # Get existing outlier characters
     existing_outlier_chars = set()
     if outlier_dir.exists():
-        for json_file in outlier_dir.glob('*.json'):
+        for json_file in outlier_dir.glob("*.json"):
             char_name = json_file.stem
             if char_name and len(char_name) <= 2:
                 existing_outlier_chars.add(char_name)
@@ -776,30 +729,30 @@ def generate_preload_list():
     sound_component_counts = {}
     sound_component_samples: dict[str, str] = {}  # Map from component to a sample character that uses it
 
-    dong_files = list(dong_dir.glob('*.json'))
+    dong_files = list(dong_dir.glob("*.json"))
     print(f"Scanning {len(dong_files)} Dong Chinese files...")
     print()
 
     for json_file in dong_files:
         try:
-            with open(json_file, encoding='utf-8') as f:
+            with open(json_file, encoding="utf-8") as f:
                 data = json.load(f)
 
-            char = data.get('char')
+            char = data.get("char")
             if not char:
                 continue
 
             # Count how many entries in componentIn have type "sound"
-            component_in = data.get('componentIn', [])
+            component_in = data.get("componentIn", [])
             sound_count = 0
 
             for usage in component_in:
-                components = usage.get('components', [])
-                using_char = usage.get('char')  # The character that uses this component
+                components = usage.get("components", [])
+                using_char = usage.get("char")  # The character that uses this component
 
                 for comp in components:
                     # Check if this is our character and has "sound" in type
-                    if comp.get('character') == char and 'sound' in comp.get('type', []):
+                    if comp.get("character") == char and "sound" in comp.get("type", []):
                         sound_count += 1
                         # Store the first sample character we find
                         if char not in sound_component_samples and using_char:
@@ -814,11 +767,7 @@ def generate_preload_list():
             continue
 
     # Filter out characters that already have Outlier data
-    filtered_counts = {
-        char: count
-        for char, count in sound_component_counts.items()
-        if char not in existing_outlier_chars
-    }
+    filtered_counts = {char: count for char, count in sound_component_counts.items() if char not in existing_outlier_chars}
 
     # Sort by count (descending) and take top 50
     sorted_chars = sorted(filtered_counts.items(), key=lambda x: x[1], reverse=True)
@@ -834,7 +783,7 @@ def generate_preload_list():
         # Print as single line with sample characters
         result_parts = []
         for char, count in top_50:
-            sample = sound_component_samples.get(char, '')
+            sample = sound_component_samples.get(char, "")
             result_parts.append(f"{char}{sample}")
 
         result = "".join(result_parts)
@@ -854,13 +803,13 @@ def generate_preload_list():
 def rebuild_from_html_files(html_dir: Path) -> None:
     """Rebuild JSON files from saved HTML files"""
     script_dir = Path(__file__).parent.parent.parent
-    json_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
+    json_dir = script_dir / "public" / "data" / "pleco" / "outlier_series"
 
     if not html_dir.exists():
         print(f"Directory not found: {html_dir}", file=sys.stderr)
         return
 
-    html_files = list(html_dir.glob('*.html'))
+    html_files = list(html_dir.glob("*.html"))
 
     if not html_files:
         print(f"No HTML files found in {html_dir}", file=sys.stderr)
@@ -876,16 +825,16 @@ def rebuild_from_html_files(html_dir: Path) -> None:
         print(f"\nProcessing: {html_file.name}")
 
         try:
-            with open(html_file, encoding='utf-8') as f:
+            with open(html_file, encoding="utf-8") as f:
                 html_content = f.read()
 
             outlier_data = parse_outlier_html(html_content)
 
-            if outlier_data.get('traditional'):
-                char = outlier_data['traditional']
-                json_file = json_dir / f'{char}.json'
+            if outlier_data.get("traditional"):
+                char = outlier_data["traditional"]
+                json_file = json_dir / f"{char}.json"
 
-                with open(json_file, 'w', encoding='utf-8') as f:
+                with open(json_file, "w", encoding="utf-8") as f:
                     json.dump(outlier_data, f, ensure_ascii=False, indent=2)
 
                 print(f"  ✓ Saved: {json_file}")
@@ -900,20 +849,18 @@ def rebuild_from_html_files(html_dir: Path) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Extract Outlier dictionary data from clipboard')
-    parser.add_argument('--rebuild', action='store_true',
-                       help='Rebuild JSON files from saved HTML files')
-    parser.add_argument('--preload-list', action='store_true',
-                       help='Generate list of top 50 sound components to preload')
-    parser.add_argument('--auto-copy', action='store_true',
-                       help='Automatically copy from iPhone Mirroring window before processing')
-    parser.add_argument('--window-name', type=str, default='iPhone Mirroring',
-                       help='Name of window to copy from (default: iPhone Mirroring)')
+    parser = argparse.ArgumentParser(description="Extract Outlier dictionary data from clipboard")
+    parser.add_argument("--rebuild", action="store_true", help="Rebuild JSON files from saved HTML files")
+    parser.add_argument("--preload-list", action="store_true", help="Generate list of top 50 sound components to preload")
+    parser.add_argument("--auto-copy", action="store_true", help="Automatically copy from iPhone Mirroring window before processing")
+    parser.add_argument(
+        "--window-name", type=str, default="iPhone Mirroring", help="Name of window to copy from (default: iPhone Mirroring)"
+    )
     args = parser.parse_args()
 
     if args.rebuild:
         script_dir = Path(__file__).parent.parent.parent
-        html_dir = script_dir / 'data' / 'pleco' / 'outlier_series_tc'
+        html_dir = script_dir / "data" / "pleco" / "outlier_series_tc"
         rebuild_from_html_files(html_dir)
         return
 
@@ -941,7 +888,7 @@ def main():
 
         while retry_count < max_retries:
             html_data = get_clipboard_html()
-            if html_data and html_data != 'missing value':
+            if html_data and html_data != "missing value":
                 parsed_html = parse_hex_data(html_data, "HTML")
                 if parsed_html and len(parsed_html.strip()) > 0:
                     print("✓ Successfully verified clipboard content")
@@ -993,7 +940,7 @@ def main():
     print("RTF CONTENT:")
     print("-" * 80)
     rtf_data = get_clipboard_rtf()
-    if rtf_data and rtf_data != 'missing value':
+    if rtf_data and rtf_data != "missing value":
         parsed_rtf = parse_hex_data(rtf_data, "RTF")
         if parsed_rtf:
             print(parsed_rtf)
@@ -1008,7 +955,7 @@ def main():
 
     html_data = get_clipboard_html()
     # Parse and output JSON
-    if html_data and html_data != 'missing value':
+    if html_data and html_data != "missing value":
         parsed_html = parse_hex_data(html_data, "HTML")
         if parsed_html and BS4_AVAILABLE:
             print("=" * 80)
@@ -1020,28 +967,28 @@ def main():
             print()
 
             # Save to file
-            if outlier_data.get('traditional'):
-                char = outlier_data['traditional']
+            if outlier_data.get("traditional"):
+                char = outlier_data["traditional"]
 
                 # Get script directory and construct paths
                 script_dir = Path(__file__).parent.parent.parent
-                json_dir = script_dir / 'public' / 'data' / 'pleco' / 'outlier_series'
-                html_dir = script_dir / 'data' / 'pleco' / 'outlier_series'
+                json_dir = script_dir / "public" / "data" / "pleco" / "outlier_series"
+                html_dir = script_dir / "data" / "pleco" / "outlier_series"
 
                 # Ensure directories exist
                 json_dir.mkdir(parents=True, exist_ok=True)
                 html_dir.mkdir(parents=True, exist_ok=True)
 
-                json_file = json_dir / f'{char}.json'
-                html_file = html_dir / f'{char}.html'
+                json_file = json_dir / f"{char}.json"
+                html_file = html_dir / f"{char}.html"
 
                 try:
                     # Save JSON to public/data
-                    with open(json_file, 'w', encoding='utf-8') as f:
+                    with open(json_file, "w", encoding="utf-8") as f:
                         json.dump(outlier_data, f, ensure_ascii=False, indent=2)
 
                     # Save HTML to data
-                    with open(html_file, 'w', encoding='utf-8') as f:
+                    with open(html_file, "w", encoding="utf-8") as f:
                         f.write(parsed_html)
 
                     print("=" * 80)
@@ -1064,5 +1011,5 @@ def main():
     #     print()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -29,9 +29,9 @@ def extract_text_from_html(element: Tag) -> str:
         return ""
     # Use separator to preserve spaces between elements
     # get_text(' ') adds a space when transitioning from one element to another
-    text = element.get_text(' ', strip=True)
+    text = element.get_text(" ", strip=True)
     # Clean up multiple spaces
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"\s+", " ", text)
     return text
 
 
@@ -40,7 +40,7 @@ def extract_html_content(element: Tag) -> str:
     if element is None:
         return ""
     # Get inner HTML
-    return ''.join(str(child) for child in element.children)
+    return "".join(str(child) for child in element.children)
 
 
 # Global cache for SVG content (in-memory)
@@ -54,14 +54,14 @@ CACHE_EXPIRY_DAYS = 30
 def get_cache_dir() -> Path:
     """Get the cache directory path."""
     script_dir = Path(__file__).parent
-    cache_dir = script_dir / '.cache' / 'svg'
+    cache_dir = script_dir / ".cache" / "svg"
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 
 
 def get_cache_metadata_file() -> Path:
     """Get the cache metadata file path."""
-    return get_cache_dir() / 'metadata.json'
+    return get_cache_dir() / "metadata.json"
 
 
 def load_cache_metadata() -> dict[str, Any]:
@@ -69,19 +69,19 @@ def load_cache_metadata() -> dict[str, Any]:
     metadata_file = get_cache_metadata_file()
     if metadata_file.exists():
         try:
-            with open(metadata_file, encoding='utf-8') as f:
+            with open(metadata_file, encoding="utf-8") as f:
                 return json.load(f)
         except (OSError, json.JSONDecodeError) as e:
             print(f"  Warning: Failed to load cache metadata: {e}")
-            return {'version': CACHE_VERSION, 'entries': {}}
-    return {'version': CACHE_VERSION, 'entries': {}}
+            return {"version": CACHE_VERSION, "entries": {}}
+    return {"version": CACHE_VERSION, "entries": {}}
 
 
 def save_cache_metadata(metadata: dict[str, Any]):
     """Save cache metadata to disk."""
     metadata_file = get_cache_metadata_file()
     try:
-        with open(metadata_file, 'w', encoding='utf-8') as f:
+        with open(metadata_file, "w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
     except OSError as e:
         print(f"  Warning: Failed to save cache metadata: {e}")
@@ -90,23 +90,23 @@ def save_cache_metadata(metadata: dict[str, Any]):
 def get_cache_file_path(svg_name: str) -> Path:
     """Get the cache file path for a given SVG name."""
     # Use hash to avoid filesystem issues with special characters
-    name_hash = hashlib.md5(svg_name.encode('utf-8')).hexdigest()
+    name_hash = hashlib.md5(svg_name.encode("utf-8")).hexdigest()
     return get_cache_dir() / f"{name_hash}.svg"
 
 
 def is_cache_valid(svg_name: str, metadata: dict[str, Any]) -> bool:
     """Check if cached SVG is still valid."""
-    if svg_name not in metadata.get('entries', {}):
+    if svg_name not in metadata.get("entries", {}):
         return False
 
-    entry = metadata['entries'][svg_name]
+    entry = metadata["entries"][svg_name]
 
     # Check cache version
-    if entry.get('version') != CACHE_VERSION:
+    if entry.get("version") != CACHE_VERSION:
         return False
 
     # Check expiry
-    cached_time = entry.get('timestamp', 0)
+    cached_time = entry.get("timestamp", 0)
     current_time = time.time()
     age_days = (current_time - cached_time) / (60 * 60 * 24)
 
@@ -125,7 +125,7 @@ def load_from_cache(svg_name: str, metadata: dict[str, Any]) -> str | None:
 
     cache_file = get_cache_file_path(svg_name)
     try:
-        with open(cache_file, encoding='utf-8') as f:
+        with open(cache_file, encoding="utf-8") as f:
             return f.read()
     except OSError as e:
         print(f"  Warning: Failed to read cached SVG {svg_name}: {e}")
@@ -138,19 +138,15 @@ def save_to_cache(svg_name: str, svg_content: str, metadata: dict[str, Any]):
 
     try:
         # Save SVG content
-        with open(cache_file, 'w', encoding='utf-8') as f:
+        with open(cache_file, "w", encoding="utf-8") as f:
             f.write(svg_content)
 
         # Update metadata
-        if 'entries' not in metadata:
+        if "entries" not in metadata:
             entries: dict[str, dict[str, Any]] = {}
-            metadata['entries'] = entries
+            metadata["entries"] = entries
 
-        metadata['entries'][svg_name] = {
-            'version': CACHE_VERSION,
-            'timestamp': time.time(),
-            'file': cache_file.name
-        }
+        metadata["entries"][svg_name] = {"version": CACHE_VERSION, "timestamp": time.time(), "file": cache_file.name}
 
         save_cache_metadata(metadata)
     except OSError as e:
@@ -197,46 +193,46 @@ def fetch_svg_content(svg_name: str, cache_metadata: dict[str, Any] | None = Non
 def extract_abbreviation_definitions(soup: BeautifulSoup) -> dict[str, str]:
     """Extract abbreviation/term definitions from the HTML."""
     definitions = {
-        'triggeralo': 'allograph (different shape but same meaning)',
-        'triggercon': 'connotation as a character part',
-        'triggerabbr': 'abbreviated, abbreviation',
-        'triggercontr': 'contracted, contraction',
-        'triggerext': 'extended meaning',
-        'triggergovt': 'government',
-        'triggerk': 'kanji, ideograph, character',
-        'triggerlit': 'literal translation from the Shuowen Jiezi',
-        'triggermodf': 'modified, modification',
-        'triggeropp': 'opposite meaning or situation',
-        'triggerpt': 'when used as a character part',
-        'triggerrs': 'explanation according to Richard Sears (http://hanziyuan.net/)',
-        'triggerrad': 'one of the 214 radicals in the traditional character classification system',
-        'triggersit': 'situation chosen for evoking this meaning',
-        'triggerx': 'suffix for counting units of objects, etc.',
-        'triggeruncl': 'Unclassified by Joseph De Roo.'
+        "triggeralo": "allograph (different shape but same meaning)",
+        "triggercon": "connotation as a character part",
+        "triggerabbr": "abbreviated, abbreviation",
+        "triggercontr": "contracted, contraction",
+        "triggerext": "extended meaning",
+        "triggergovt": "government",
+        "triggerk": "kanji, ideograph, character",
+        "triggerlit": "literal translation from the Shuowen Jiezi",
+        "triggermodf": "modified, modification",
+        "triggeropp": "opposite meaning or situation",
+        "triggerpt": "when used as a character part",
+        "triggerrs": "explanation according to Richard Sears (http://hanziyuan.net/)",
+        "triggerrad": "one of the 214 radicals in the traditional character classification system",
+        "triggersit": "situation chosen for evoking this meaning",
+        "triggerx": "suffix for counting units of objects, etc.",
+        "triggeruncl": "Unclassified by Joseph De Roo.",
     }
 
     # Try to extract definitions from the HTML divs if they exist
     div_map = {
-        'triggeralo': 'alo',
-        'triggercon': 'conno',
-        'triggerabbr': 'abbr',
-        'triggercontr': 'contr',
-        'triggerext': 'ext',
-        'triggergovt': 'govt',
-        'triggerk': 'kanji',
-        'triggerlit': 'lit',
-        'triggermodf': 'modf',
-        'triggeropp': 'opp',
-        'triggerpt': 'pt',
-        'triggerrs': 'rs',
-        'triggerrad': 'rad',
-        'triggersit': 'sit',
-        'triggerx': 'suff',
-        'triggeruncl': 'uncl'
+        "triggeralo": "alo",
+        "triggercon": "conno",
+        "triggerabbr": "abbr",
+        "triggercontr": "contr",
+        "triggerext": "ext",
+        "triggergovt": "govt",
+        "triggerk": "kanji",
+        "triggerlit": "lit",
+        "triggermodf": "modf",
+        "triggeropp": "opp",
+        "triggerpt": "pt",
+        "triggerrs": "rs",
+        "triggerrad": "rad",
+        "triggersit": "sit",
+        "triggerx": "suff",
+        "triggeruncl": "uncl",
     }
 
     for trigger_id, div_id in div_map.items():
-        div = soup.find('div', {'id': div_id})
+        div = soup.find("div", {"id": div_id})
         if div:
             text = div.get_text(strip=True)
             if text:
@@ -247,11 +243,11 @@ def extract_abbreviation_definitions(soup: BeautifulSoup) -> dict[str, str]:
 
 def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str]) -> str:
     """Replace <img svg="..."> tags with inlined SVG content, clean up style attributes, and inline abbreviations."""
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
 
     # Inline abbreviation definitions
-    for a_tag in soup.find_all('a', attrs={'id': True}):
-        trigger_id = a_tag.get('id')
+    for a_tag in soup.find_all("a", attrs={"id": True}):
+        trigger_id = a_tag.get("id")
         if trigger_id in abbreviation_definitions:
             # Get the text content
             text = a_tag.get_text(strip=True)
@@ -260,50 +256,50 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
             a_tag.replace_with(f"{text} ({definition})")
 
     # Remove style attributes from remaining <a> tags
-    for a_tag in soup.find_all('a', attrs={'style': True}):
-        del a_tag['style']
+    for a_tag in soup.find_all("a", attrs={"style": True}):
+        del a_tag["style"]
 
     # Find all img tags with svg attribute
-    img_tags = soup.find_all('img', attrs={'svg': True})
+    img_tags = soup.find_all("img", attrs={"svg": True})
 
     for img_tag in img_tags:
-        svg_name_raw = img_tag.get('svg')
-        svg_name = str(svg_name_raw) if svg_name_raw else ''
+        svg_name_raw = img_tag.get("svg")
+        svg_name = str(svg_name_raw) if svg_name_raw else ""
         if svg_name:
             # Fetch the SVG content
             svg_content = fetch_svg_content(svg_name)
             if svg_content:
                 # Parse the SVG content
-                svg_soup = BeautifulSoup(svg_content, 'xml')
-                svg_element = svg_soup.find('svg')
+                svg_soup = BeautifulSoup(svg_content, "xml")
+                svg_element = svg_soup.find("svg")
 
                 if svg_element:
                     # Add a class to identify these as inlined SVGs
-                    existing_class = str(svg_element.get('class', ''))
-                    svg_element['class'] = f"{existing_class} inlined-svg".strip() if existing_class else 'inlined-svg'
+                    existing_class = str(svg_element.get("class", ""))
+                    svg_element["class"] = f"{existing_class} inlined-svg".strip() if existing_class else "inlined-svg"
 
                     # Add data attribute to track original svg name
-                    svg_element['data-svg-name'] = svg_name
+                    svg_element["data-svg-name"] = svg_name
 
                     # Remove fixed width/height attributes, keep viewBox for proper scaling
-                    if svg_element.get('width'):
-                        del svg_element['width']
-                    if svg_element.get('height'):
-                        del svg_element['height']
+                    if svg_element.get("width"):
+                        del svg_element["width"]
+                    if svg_element.get("height"):
+                        del svg_element["height"]
 
                     # Ensure viewBox is present for proper scaling
                     # If no viewBox, try to create one from original width/height
-                    if not svg_element.get('viewBox'):
+                    if not svg_element.get("viewBox"):
                         # Try to extract from original dimensions in the fetched content
-                        original_svg = BeautifulSoup(svg_content, 'xml').find('svg')
+                        original_svg = BeautifulSoup(svg_content, "xml").find("svg")
                         if original_svg is not None:
-                            width = original_svg.get('width', '100')
-                            height = original_svg.get('height', '100')
+                            width = original_svg.get("width", "100")
+                            height = original_svg.get("height", "100")
                             # Remove any units from width/height
-                            width_val = re.sub(r'[^0-9.]', '', str(width))
-                            height_val = re.sub(r'[^0-9.]', '', str(height))
+                            width_val = re.sub(r"[^0-9.]", "", str(width))
+                            height_val = re.sub(r"[^0-9.]", "", str(height))
                             if width_val and height_val:
-                                svg_element['viewBox'] = f"0 0 {width_val} {height_val}"
+                                svg_element["viewBox"] = f"0 0 {width_val} {height_val}"
 
                     # Replace img tag with SVG element
                     img_tag.replace_with(svg_element)
@@ -311,7 +307,7 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
                     print(f"  Warning: No SVG element found in {svg_name}")
             else:
                 # If fetch failed, add src attribute as fallback
-                img_tag['src'] = f"http://rtega.be/chmn/img/{svg_name}.svg"
+                img_tag["src"] = f"http://rtega.be/chmn/img/{svg_name}.svg"
 
     return str(soup)
 
@@ -319,13 +315,13 @@ def inline_svg_images(html_content: str, abbreviation_definitions: dict[str, str
 def extract_referenced_characters(html_content: str) -> list[str]:
     """Extract all referenced Chinese characters from mnemonic HTML."""
     # Find all links with character references
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
     chars = []
 
-    for link in soup.find_all('a'):
+    for link in soup.find_all("a"):
         # Check for href with ?c= parameter
-        href = str(link.get('href', ''))
-        match = re.search(r'\?c=([^&]+)', href)
+        href = str(link.get("href", ""))
+        match = re.search(r"\?c=([^&]+)", href)
         if match:
             char = match.group(1)
             chars.append(char)
@@ -337,11 +333,11 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
     """Parse a single table row containing character data."""
     try:
         # Get row ID
-        row_id = row.get('id')
+        row_id = row.get("id")
         if not row_id:
             return None
 
-        cells = row.find_all('td')
+        cells = row.find_all("td")
         if len(cells) < 4:
             return None
 
@@ -355,22 +351,22 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
         char_uid = None
 
         # Look for the main character (chanzilarge)
-        trad_font = char_cell.find('font', {'id': 'chanzilarge'})
+        trad_font = char_cell.find("font", {"id": "chanzilarge"})
         if trad_font:
             traditional_char = trad_font.get_text(strip=True)
-            char_uid = trad_font.get('uid')
+            char_uid = trad_font.get("uid")
 
         # Look for Japanese variant
-        jp_font = char_cell.find('font', {'id': 'jhanzilarge'})
+        jp_font = char_cell.find("font", {"id": "jhanzilarge"})
         if jp_font:
             japanese_char = jp_font.get_text(strip=True)
 
         # Check for simplified variant (after <hr> tag)
-        hr_tag = char_cell.find('hr')
+        hr_tag = char_cell.find("hr")
         if hr_tag:
             # Get fonts after hr tag
             for sibling in hr_tag.find_next_siblings():
-                if sibling.name == 'font':
+                if sibling.name == "font":
                     # Try to determine if this is simplified
                     # Simplified chars don't have specific ID in the example
                     text = sibling.get_text(strip=True)
@@ -397,7 +393,7 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
         related_chars: list[str] = []
         related_cell = cells[1]
         # Look for font tags with uid attributes
-        related_fonts = related_cell.find_all('font', {'id': 'chanzilarge'})
+        related_fonts = related_cell.find_all("font", {"id": "chanzilarge"})
         for font in related_fonts:
             char_text = font.get_text(strip=True)
             if char_text:
@@ -405,9 +401,9 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
 
         # Also check for links (backup method)
         if not related_chars:
-            for link in related_cell.find_all('a'):
-                href = str(link.get('href', ''))
-                match = re.search(r'\?c=([^&]+)', href)
+            for link in related_cell.find_all("a"):
+                href = str(link.get("href", ""))
+                match = re.search(r"\?c=([^&]+)", href)
                 if match:
                     related_chars.append(match.group(1))
 
@@ -415,10 +411,10 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
         additional_related_chars: list[str] = []
         if len(cells) >= 5:
             additional_cell = cells[4]
-            additional_links = additional_cell.find_all('a')
+            additional_links = additional_cell.find_all("a")
             for link in additional_links:
-                href = str(link.get('href', ''))
-                match = re.search(r'\?c=([^&]+)', href)
+                href = str(link.get("href", ""))
+                match = re.search(r"\?c=([^&]+)", href)
                 if match:
                     additional_related_chars.append(match.group(1))
 
@@ -427,20 +423,17 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
 
         # Build character data
         char_data = {
-            'id': row_id,
-            'character': main_char,
-            'traditional': traditional_char,
-            'simplified': simplified_char if simplified_char != main_char else None,
-            'japanese': japanese_char if japanese_char != main_char else None,
-            'uid': char_uid,
-            'meaning': meaning,
-            'mnemonic': {
-                'text': mnemonic_text,
-                'html': mnemonic_html
-            },
-            'referenced_characters': referenced_chars,
-            'related_characters': related_chars,
-            'additional_related_characters': additional_related_chars if additional_related_chars else None
+            "id": row_id,
+            "character": main_char,
+            "traditional": traditional_char,
+            "simplified": simplified_char if simplified_char != main_char else None,
+            "japanese": japanese_char if japanese_char != main_char else None,
+            "uid": char_uid,
+            "meaning": meaning,
+            "mnemonic": {"text": mnemonic_text, "html": mnemonic_html},
+            "referenced_characters": referenced_chars,
+            "related_characters": related_chars,
+            "additional_related_characters": additional_related_chars if additional_related_chars else None,
         }
 
         return char_data
@@ -455,23 +448,23 @@ def parse_html_file(file_path: Path, file_num: int, total_files: int) -> list[di
     progress_pct = (file_num / total_files) * 100
     print(f"[{progress_pct:5.1f}%] Parsing {file_path.name}...")
 
-    with open(file_path, encoding='utf-8') as f:
+    with open(file_path, encoding="utf-8") as f:
         html_content = f.read()
 
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
 
     # Extract abbreviation definitions from the page
     abbreviation_definitions = extract_abbreviation_definitions(soup)
 
     # Find the main table with class 'chmn'
-    table = soup.find('table', {'class': 'chmn'})
+    table = soup.find("table", {"class": "chmn"})
     if not table:
         print(f"         No table found in {file_path.name}")
         return []
 
     # Parse all rows
     characters = []
-    rows = table.find_all('tr')
+    rows = table.find_all("tr")
 
     for row in rows:
         char_data = parse_character_row(row, abbreviation_definitions)
@@ -510,18 +503,18 @@ def update_marker_file(html_file: Path, output_dir: Path):
 
 def save_character_json(char_data: dict[str, Any], output_dir: Path):
     """Save character data to a JSON file."""
-    char = char_data['character']
+    char = char_data["character"]
 
     # Create filename - use character as filename
     # For special characters, use the uid or id
     try:
         filepath = output_dir / f"{char}.json"
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(char_data, f, ensure_ascii=False, indent=2)
     except (OSError, ValueError):
         # Fallback for problematic filename characters
         filepath = output_dir / f"char_{char_data['id']}.json"
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(char_data, f, ensure_ascii=False, indent=2)
 
 
@@ -532,8 +525,8 @@ def main():
     project_root = script_dir.parent.parent
 
     # Input and output directories
-    input_dir = project_root / 'data' / 'rtega'
-    output_dir = project_root / 'public' / 'data' / 'rtega'
+    input_dir = project_root / "data" / "rtega"
+    output_dir = project_root / "public" / "data" / "rtega"
 
     if not input_dir.exists():
         raise FileNotFoundError(f"Input directory not found: {input_dir}")
@@ -548,7 +541,7 @@ def main():
     print()
 
     # Find all HTML files
-    html_files = sorted(input_dir.glob('*.html'))
+    html_files = sorted(input_dir.glob("*.html"))
 
     if not html_files:
         raise FileNotFoundError(f"No HTML files found in {input_dir}")
@@ -596,5 +589,5 @@ def main():
     print("Done!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

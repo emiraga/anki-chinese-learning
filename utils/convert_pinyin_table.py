@@ -1,12 +1,10 @@
-#/usr/bin/env python3
+# /usr/bin/env python3
 
 import csv
 import json
 
 
-def csv_to_2d_array(
-    csv_filepath: str, output_filepath: str | None = None
-) -> list[list[str]]:
+def csv_to_2d_array(csv_filepath: str, output_filepath: str | None = None) -> list[list[str]]:
     """
     Reads a CSV file with header row and index column and converts it to a 2D array.
     Optionally outputs a JSON file that can be imported in TypeScript.
@@ -19,7 +17,7 @@ def csv_to_2d_array(
         list: 2D array of the CSV data (excluding header row and index column)
     """
     # Read the CSV file
-    with open(csv_filepath, newline='', encoding='utf-8') as csvfile:
+    with open(csv_filepath, newline="", encoding="utf-8") as csvfile:
         csv_reader = csv.reader(csvfile)
 
         # Read all rows
@@ -38,19 +36,16 @@ def csv_to_2d_array(
         row_indices = [row[0] for row in all_rows[1:]]
 
         # Create TypeScript-friendly structure with metadata
-        result = {
-            "data": data_array,
-            "headers": headers,
-            "rowIndices": row_indices
-        }
+        result = {"data": data_array, "headers": headers, "rowIndices": row_indices}
 
         # Optionally save to JSON file
         if output_filepath:
-            with open(output_filepath, 'w', encoding='utf-8') as jsonfile:
+            with open(output_filepath, "w", encoding="utf-8") as jsonfile:
                 json.dump(result, jsonfile, indent=2)
             print(f"Data saved to {output_filepath}")
 
         return data_array
+
 
 # Example usage
 if __name__ == "__main__":
