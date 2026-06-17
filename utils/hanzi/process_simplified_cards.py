@@ -88,13 +88,15 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
     """
     print("\n=== Validating Hanzi/Traditional fields of unsuspended cards ===")
     checked = 0
+    problems: list[str] = []
     for note in notes:
         if note["noteId"] not in unsuspended_ids:
             continue
 
         traditional = get_field(note, "Traditional")
         if not traditional:
-            raise ValueError(f"Hanzi note {note['noteId']} has an empty Traditional field")
+            problems.append(f"Hanzi note {note['noteId']} has an empty Traditional field")
+            continue
 
         # Only single-character notes carry a simplified/traditional relationship.
         if len(traditional) != 1:
@@ -102,16 +104,25 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
 
         hanzi = get_field(note, "Hanzi")
         if not hanzi:
-            raise ValueError(
+            problems.append(
                 f"Hanzi note {note['noteId']} ('{traditional}') has an empty Hanzi field"
             )
+            continue
         if len(hanzi) != 1:
-            raise ValueError(
+            problems.append(
                 f"Hanzi note {note['noteId']} ('{traditional}') has a multi-character "
                 f"Hanzi field '{hanzi}'"
             )
+            continue
 
-        # The Hanzi field must be the simplified form of the Traditional field.
+        # The Hanzi field must be exactly the simplified form of the Traditional
+        # field. There is intentionally no "Hanzi may equal Traditional" escape
+        # hatch: when a traditional character is genuinely unchanged in Mainland
+        # simplified (e.g. 著, 瞭), simplified_form() already returns that same
+        # character, so such notes still pass the equality check below. But when
+        # OpenCC has a real simplification (佔 -> 占, 乾 -> 干, 於 -> 于, ...), a
+        # note that left the Traditional character in the Hanzi field is wrong
+        # and must be fixed to the simplified form.
         #
         # Note: we intentionally do NOT round-trip through to_traditional() to
         # confirm the Traditional field isn't itself a simplified character.
@@ -120,22 +131,22 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
         # to_traditional('了') == '瞭' != '了'. Such one-simplified-to-many-
         # traditional cases are indistinguishable from a genuinely misplaced
         # simplified character using hanziconv alone, so we rely on the forward
-        # check below (what is the simplified form of the Traditional field?).
-        #
-        # We accept the Hanzi field when it is either:
-        #   (a) the simplified form derived for the Traditional field, or
-        #   (b) the Traditional character itself -- many traditional characters
-        #       map to several simplified forms (e.g. 著 -> 着/著, 乾 -> 干/乾),
-        #       and the note is the source of truth for which one applies, so a
-        #       note keeping the character unchanged is valid.
+        # check (what is the simplified form of the Traditional field?).
         expected_simplified = simplified_form(traditional)
-        if hanzi != expected_simplified and hanzi != traditional:
-            raise ValueError(
+        if hanzi != expected_simplified:
+            problems.append(
                 f"Hanzi note {note['noteId']}: Hanzi field '{hanzi}' does not match the "
                 f"simplified form '{expected_simplified}' of Traditional '{traditional}'."
             )
+            continue
 
         checked += 1
+
+    if problems:
+        raise ValueError(
+            f"Found {len(problems)} inconsistent unsuspended Hanzi note(s):\n  "
+            + "\n  ".join(problems)
+        )
 
     print(f"Validated {checked} single-character unsuspended Hanzi notes (no problems found)")
 

@@ -6,15 +6,13 @@ This module provides conversion functions that handle edge cases not covered by 
 particularly for radicals and rare characters.
 """
 
-import sys
 from typing import Dict, Optional, Tuple
 
 
 # Traditional -> simplified is performed by OpenCC (Open Chinese Convert), which
 # is more accurate than hanziconv for our goal (learning Mainland simplified):
 # hanziconv both misses simplifications (週, 託, 採, ...) and has outright bugs
-# (呼 -> 唿). hanziconv is kept only as an independent cross-check that warns
-# when it disagrees, and as a fallback if OpenCC is not installed.
+# (呼 -> 唿). hanziconv is kept if OpenCC is not installed.
 #
 # The authoritative config is "t2s" (generic Traditional -> Simplified). The
 # region-specific configs (tw2s/hk2s) are intentionally NOT used as the source
@@ -29,7 +27,6 @@ _OPENCC_PRIMARY_CONFIG = "t2s"
 _OPENCC_CONFIGS = ("t2s", "tw2s", "tw2sp", "hk2s")
 _OPENCC_CONVERTERS: Optional[Dict[str, object]] = None
 _OPENCC_DISABLED = False
-_REPORTED_DISAGREEMENTS: set[str] = set()
 
 
 def _opencc_simplified_all(char: str) -> Optional[Dict[str, str]]:
@@ -49,23 +46,6 @@ def _opencc_simplified_all(char: str) -> Optional[Dict[str, str]]:
             return None
     return {cfg: conv.convert(char) for cfg, conv in _OPENCC_CONVERTERS.items()}  # type: ignore[attr-defined]
 
-
-def _report_disagreement(char: str, chosen: str, hanziconv_result: str, opencc_results: Dict[str, str]) -> None:
-    """
-    Print a one-time warning when hanziconv disagrees with the authoritative
-    OpenCC t2s result we are returning.
-    """
-    if char in _REPORTED_DISAGREEMENTS:
-        return
-    _REPORTED_DISAGREEMENTS.add(char)
-    others = ", ".join(
-        f"{cfg} -> '{opencc_results[cfg]}'" for cfg in _OPENCC_CONFIGS if cfg != _OPENCC_PRIMARY_CONFIG
-    )
-    print(
-        f"[conversion-disagreement] traditional '{char}': using OpenCC t2s -> '{chosen}' "
-        f"(hanziconv -> '{hanziconv_result}' overridden; other OpenCC: {others})",
-        file=sys.stderr,
-    )
 
 
 # Special cases where HanziConv doesn't recognize the simplified/traditional relationship
@@ -123,10 +103,6 @@ def to_simplified(char: str, use_hanziconv: bool = True) -> str:
       2. OpenCC's authoritative `t2s` (generic Traditional -> Simplified) mapping.
       3. hanziconv, used only as a fallback when OpenCC is not installed.
 
-    When OpenCC is available, hanziconv is still consulted purely as an
-    independent cross-check: a one-time warning is printed when it disagrees
-    with the OpenCC result we return.
-
     Args:
         char: A single Chinese character
         use_hanziconv: Whether to use external converters at all (default: True).
@@ -154,8 +130,6 @@ def to_simplified(char: str, use_hanziconv: bool = True) -> str:
     opencc_results = _opencc_simplified_all(char)
     if opencc_results is not None:
         chosen = opencc_results[_OPENCC_PRIMARY_CONFIG]
-        if hanziconv_result is not None and hanziconv_result != chosen:
-            _report_disagreement(char, chosen, hanziconv_result, opencc_results)
         return chosen
 
     # OpenCC unavailable: fall back to hanziconv, then to the original char.
