@@ -84,7 +84,7 @@ def normalize_whitespace(text: str) -> str:
     return text.strip()
 
 
-def show_diff(name: str, old: str, new: str, max_lines: int = 8) -> None:
+def show_diff(name: str, old: str, new: str, max_lines: int = 10**9) -> None:
     """Show a compact diff of changes."""
     old_lines = old.strip().splitlines()
     new_lines = new.strip().splitlines()
