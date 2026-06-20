@@ -147,3 +147,36 @@ def pinyin_to_zhuyin_toneless(pinyin: str) -> str:
         return "".join(c for c in zhuyin if c not in ZHUYIN_TONE_MARKS)
     except Exception:
         return ""
+
+
+def extract_pinyin_syllables(pinyin_text: str, expected_count: int) -> list[str]:
+    """
+    Extract individual pinyin syllables from a pinyin string using zhuyin conversion
+
+    Args:
+        pinyin_text (str): Pinyin text (e.g., "nǐ hǎo" or "nǐhǎo")
+        expected_count (int): Expected number of syllables
+
+    Returns:
+        list: List of pinyin syllables
+    """
+    try:
+        # Convert pinyin to zhuyin (which automatically adds spaces between syllables)
+        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
+
+        # Split zhuyin by spaces
+        zhuyin_syllables = zhuyin.split()
+
+        # Convert each zhuyin syllable back to pinyin
+        pinyin_syllables = [dragonmapper.transcriptions.zhuyin_to_pinyin(z) for z in zhuyin_syllables]
+
+        # Verify we got the expected count
+        if len(pinyin_syllables) != expected_count:
+            raise ValueError(
+                f"Syllable count mismatch: got {len(pinyin_syllables)} syllables but expected {expected_count} for '{pinyin_text}'"
+            )
+
+        return pinyin_syllables
+
+    except Exception as e:
+        raise ValueError(f"Cannot segment pinyin '{pinyin_text}' into {expected_count} syllables: {e}") from e

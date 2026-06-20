@@ -22,9 +22,6 @@ from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-# Reuse the phrase-scanning logic that already knows how to read TOCFL notes.
-from fill_hanzi_chars import extract_characters_from_phrases
-
 from shared.anki_utils import (
     add_tags,
     find_cards_by_query,
@@ -36,6 +33,9 @@ from shared.anki_utils import (
     unsuspend_cards,
 )
 from shared.character_conversion import to_simplified
+
+# Reuse the phrase-scanning logic that already knows how to read TOCFL notes.
+from shared.phrase_utils import extract_characters_from_phrases
 
 DIFFERENT_SIMPLIFIED_TAG = "chinese::different-simplified-form"
 MIN_NEW_CARDS = 5
@@ -204,9 +204,9 @@ def tag_different_simplified(notes: list[dict[str, Any]], dry_run: bool) -> None
 
 
 def compute_character_frequency() -> Counter[str]:
-    """Count how often each character appears across the phrase notes."""
+    """Count how often each character appears across the unsuspended phrase notes."""
     print("\n=== Computing character frequency from phrases ===")
-    char_data = extract_characters_from_phrases(PHRASE_NOTE_TYPES)
+    char_data = extract_characters_from_phrases(PHRASE_NOTE_TYPES, only_unsuspended=True)
     freq: Counter[str] = Counter()
     for char, occurrences in char_data.items():
         freq[char] = len(occurrences)
@@ -217,15 +217,22 @@ def build_priority_order(notes: list[dict[str, Any]], freq: Counter[str]) -> lis
     """
     Order the differing-simplified characters by learning priority.
 
+    Only characters whose first card (note:Hanzi card:1) is unsuspended are
+    considered: the second card is meant to be scheduled once the first card is
+    already being learned.
+
     Sorting keys (in order):
-      1. Phrase frequency (primary): characters that appear more often across the
-         TOCFL phrases come first.
-      2. FrequencyRank (secondary tie-breaker): smaller rank = more common
-         character = higher priority; blank/unknown ranks sort last.
+      1. FrequencyRank (primary): smaller rank = more common character = higher
+         priority; blank/unknown ranks sort last.
+      2. Phrase frequency (secondary tie-breaker): characters that appear more
+         often across the TOCFL phrases come first.
 
     Returns a list of entry dicts, each with: char (traditional), simplified,
     count (phrase frequency), freq_rank, note_id.
     """
+    # Notes whose first card is unsuspended; only these are eligible.
+    card1_unsuspended_ids = set(find_notes_by_query("note:Hanzi card:1 -is:suspended"))
+
     # Map each single-character traditional form to its full note.
     trad_to_note: dict[str, dict[str, Any]] = {}
     for note in notes:
@@ -240,6 +247,8 @@ def build_priority_order(notes: list[dict[str, Any]], freq: Counter[str]) -> lis
         note = trad_to_note.get(char)
         if note is None:
             continue
+        if note["noteId"] not in card1_unsuspended_ids:
+            continue  # first card not yet active -> skip the second card
         entries.append(
             {
                 "char": char,
@@ -250,8 +259,8 @@ def build_priority_order(notes: list[dict[str, Any]], freq: Counter[str]) -> lis
             }
         )
 
-    # Higher phrase count first (-count), then smaller FrequencyRank first.
-    entries.sort(key=lambda e: (-e["count"], e["freq_rank"]))
+    # Smaller FrequencyRank first, then higher phrase count first (-count).
+    entries.sort(key=lambda e: (e["freq_rank"], -e["count"]))
     return entries
 
 
