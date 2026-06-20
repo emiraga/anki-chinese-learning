@@ -103,6 +103,7 @@ CUSTOM_HANZI_TO_PINYIN_SETS = {
 # Format: 'key_name': ['component1', 'component2', ...]
 COMBINED_SOUND_COMPONENTS_TO_PINYIN: dict[str, list[str]] = {
     "朝+苗": ["朝", "苗"],
+    "到+列": ["到", "列"],
 }
 
 # Tags to generate ConnectDots notes for (using TagTraditionalToMeaning generator)
