@@ -69,6 +69,32 @@ def get_field(note: dict[str, Any], name: str) -> str:
     return note["fields"].get(name, {}).get("value", "").strip()
 
 
+# Sentinel used when a note has no usable FrequencyRank. A blank (or malformed)
+# rank means "we don't know how common this character is", which should sort
+# *after* every character that does have a rank, so we treat it as +infinity.
+NO_FREQUENCY_RANK = float("inf")
+
+
+def get_frequency_rank(note: dict[str, Any]) -> float:
+    """
+    Return the FrequencyRank field as a number (smaller = more frequent = higher
+    priority). Blank or non-numeric ranks become NO_FREQUENCY_RANK so they sort
+    last.
+    """
+    raw = get_field(note, "FrequencyRank")
+    if not raw:
+        return NO_FREQUENCY_RANK
+    try:
+        return int(raw)
+    except ValueError:
+        return NO_FREQUENCY_RANK
+
+
+def format_frequency_rank(rank: float) -> str:
+    """Human-readable FrequencyRank for tables ('—' when unknown)."""
+    return "—" if rank == NO_FREQUENCY_RANK else str(int(rank))
+
+
 def fetch_all_hanzi_notes() -> list[dict[str, Any]]:
     """Fetch full note info for every Hanzi note."""
     note_ids = find_notes_by_query("note:Hanzi")
@@ -187,19 +213,68 @@ def compute_character_frequency() -> Counter[str]:
     return freq
 
 
-def ensure_minimum_new_cards(notes: list[dict[str, Any]], freq: Counter[str], dry_run: bool) -> None:
+def build_priority_order(notes: list[dict[str, Any]], freq: Counter[str]) -> list[dict[str, Any]]:
     """
-    Ensure at least MIN_NEW_CARDS "new" second cards (note:Hanzi card:2) exist by
-    un-suspending the most frequent suspended ones (and resetting them to new).
-    """
-    print("\n=== Ensuring minimum number of new card:2 cards ===")
+    Order the differing-simplified characters by learning priority.
 
-    # Map each single-character traditional form to its note id.
-    trad_to_note: dict[str, int] = {}
+    Sorting keys (in order):
+      1. Phrase frequency (primary): characters that appear more often across the
+         TOCFL phrases come first.
+      2. FrequencyRank (secondary tie-breaker): smaller rank = more common
+         character = higher priority; blank/unknown ranks sort last.
+
+    Returns a list of entry dicts, each with: char (traditional), simplified,
+    count (phrase frequency), freq_rank, note_id.
+    """
+    # Map each single-character traditional form to its full note.
+    trad_to_note: dict[str, dict[str, Any]] = {}
     for note in notes:
         traditional = get_field(note, "Traditional")
         if len(traditional) == 1:
-            trad_to_note[traditional] = note["noteId"]
+            trad_to_note[traditional] = note
+
+    entries: list[dict[str, Any]] = []
+    for char, count in freq.items():
+        if simplified_form(char) == char:
+            continue  # simplified form identical to traditional -> not relevant
+        note = trad_to_note.get(char)
+        if note is None:
+            continue
+        entries.append(
+            {
+                "char": char,
+                "simplified": simplified_form(char),
+                "count": count,
+                "freq_rank": get_frequency_rank(note),
+                "note_id": note["noteId"],
+            }
+        )
+
+    # Higher phrase count first (-count), then smaller FrequencyRank first.
+    entries.sort(key=lambda e: (-e["count"], e["freq_rank"]))
+    return entries
+
+
+def print_priority_order(priority: list[dict[str, Any]]) -> None:
+    """Print the prioritized differing-simplified characters as a table."""
+    print("\n=== Differing-simplified characters by priority ===")
+    header = f"{'#':>4}  {'Trad':<6}{'Simp':<6}{'PhraseFreq':>10}  {'FreqRank':>9}"
+    print(header)
+    print("-" * len(header))
+    for i, e in enumerate(priority, start=1):
+        print(
+            f"{i:>4}  {e['char']:<5} {e['simplified']:<5} "
+            f"{e['count']:>10}  {format_frequency_rank(e['freq_rank']):>9}"
+        )
+    print(f"\nTotal: {len(priority)} characters")
+
+
+def ensure_minimum_new_cards(priority: list[dict[str, Any]], dry_run: bool) -> None:
+    """
+    Ensure at least MIN_NEW_CARDS "new" second cards (note:Hanzi card:2) exist by
+    un-suspending the highest-priority suspended ones (and resetting them to new).
+    """
+    print("\n=== Ensuring minimum number of new card:2 cards ===")
 
     # Fetch the state of every second card of the Hanzi note type.
     card2_ids = find_cards_by_query("note:Hanzi card:2")
@@ -216,22 +291,17 @@ def ensure_minimum_new_cards(notes: list[dict[str, Any]], freq: Counter[str], dr
         print("Already have enough new cards; nothing to do")
         return
 
-    # Walk the differing-simplified characters in order of phrase frequency and
-    # collect suspended second cards until the quota is satisfied.
+    # Walk the differing-simplified characters in priority order and collect
+    # suspended second cards until the quota is satisfied.
     to_activate: list[tuple[str, int]] = []
-    for char, _count in freq.most_common():
+    for entry in priority:
         if len(to_activate) >= needed:
             break
-        if simplified_form(char) == char:
-            continue  # simplified form identical to traditional -> not relevant
-        note_id = trad_to_note.get(char)
-        if note_id is None:
-            continue
-        card = note_to_card2.get(note_id)
+        card = note_to_card2.get(entry["note_id"])
         if card is None:
             continue
         if card["queue"] == QUEUE_SUSPENDED:
-            to_activate.append((char, card["cardId"]))
+            to_activate.append((entry["char"], card["cardId"]))
 
     if not to_activate:
         print("No suspended card:2 candidates available to activate")
@@ -258,18 +328,29 @@ def main() -> None:
         action="store_true",
         help="Report what would change without modifying Anki (validation still runs)",
     )
+    parser.add_argument(
+        "--print-priority",
+        action="store_true",
+        help="Only print the differing-simplified characters in priority order, then exit",
+    )
     args = parser.parse_args()
+
+    notes = fetch_all_hanzi_notes()
+    freq = compute_character_frequency()
+    priority = build_priority_order(notes, freq)
+
+    if args.print_priority:
+        print_priority_order(priority)
+        return
 
     print("=== Processing simplified-form Hanzi cards ===")
 
-    notes = fetch_all_hanzi_notes()
     unsuspended_ids = set(find_notes_by_query("note:Hanzi -is:suspended"))
 
     validate_unsuspended_notes(notes, unsuspended_ids)
     tag_different_simplified(notes, args.dry_run)
 
-    freq = compute_character_frequency()
-    ensure_minimum_new_cards(notes, freq, args.dry_run)
+    ensure_minimum_new_cards(priority, args.dry_run)
 
     print("\n=== Done ===")
 
