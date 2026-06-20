@@ -210,7 +210,12 @@ export const CharCardDetails: React.FC<{ char: CharacterType }> = ({
                   return 0;
                 }
                 const notes = await anki.note.notesInfo({ notes: notesId });
-                await anki.card.unsuspend({ cards: notes[0].cards });
+                // Only unsuspend the first card; the second "Simplified" card
+                // (card:2) must stay suspended.
+                const firstCards = await anki.card.findCards({
+                  query: "nid:" + notesId[0] + " card:1",
+                });
+                await anki.card.unsuspend({ cards: firstCards });
                 if (notes[0].fields["Meaning 2"].value.length === 0) {
                   await anki.note.updateNoteFields({
                     note: {
