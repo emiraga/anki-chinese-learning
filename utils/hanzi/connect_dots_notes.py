@@ -372,6 +372,19 @@ def escape_comma(text: str) -> str:
     return text.replace(",", "，︀")  # noqa: RUF001
 
 
+def contains_zhuyin(text: str) -> bool:
+    """
+    Check whether a string contains any zhuyin (bopomofo) characters.
+
+    Right-side values produced by pinyin generators have the form
+    "pinyin (zhuyin)" (e.g. "hǎo (ㄏㄠˇ)"), so the presence of a bopomofo
+    character distinguishes pronunciation right-values from meaning right-values.
+    Bopomofo occupies the Unicode block U+3105..U+312F (plus the extended block
+    U+31A0..U+31BF); tone marks (ˊˇˋ˙) live outside this range and are ignored.
+    """
+    return any("ㄅ" <= c <= "ㄯ" or "ㆠ" <= c <= "ㆿ" for c in text)
+
+
 def stable_bin(value: str, num_bins: int) -> int:
     """
     Deterministically map a string to one of num_bins bins via a content hash.
@@ -437,6 +450,21 @@ class ConnectDotsNote:
         """Check if all right elements (including fake_right) are the same value."""
         all_right_values = set(self.right) | set(self.fake_right)
         return len(all_right_values) <= 1
+
+    def right_is_pronunciation(self) -> bool:
+        """
+        Whether the right-side values are pinyin/zhuyin pronunciations.
+
+        True when every non-empty right value (including fake_right) contains a
+        zhuyin character, i.e. the note maps Hanzi to pronunciations rather than
+        to meanings. Used to populate the "Right Is Pronunciation" field ("1"/"0").
+        """
+        values = [v for v in (*self.right, *self.fake_right) if v]
+        return bool(values) and all(contains_zhuyin(v) for v in values)
+
+    def right_is_pronunciation_str(self) -> str:
+        """Get the "Right Is Pronunciation" field value as "1" or "0"."""
+        return "1" if self.right_is_pronunciation() else "0"
 
     def split_if_needed(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list["ConnectDotsNote"]:
         """
@@ -999,6 +1027,7 @@ class ExistingNoteInfo(TypedDict):
     right: str
     explanation: str
     fake_right: str
+    right_is_pronunciation: str
 
 
 class ProcessStats(TypedDict):
@@ -1060,6 +1089,7 @@ class ConnectDotsManager:
                     "right": note["fields"].get("Right", {}).get("value", "").strip(),
                     "explanation": note["fields"].get("Explanation", {}).get("value", "").strip(),
                     "fake_right": note["fields"].get("Fake Right", {}).get("value", "").strip(),
+                    "right_is_pronunciation": note["fields"].get("Right Is Pronunciation", {}).get("value", "").strip(),
                 }
 
         return existing
@@ -1082,6 +1112,7 @@ class ConnectDotsManager:
                 print(f"    Explanation: {note.explanation_str()}")
             if note.fake_right_str():
                 print(f"    Fake Right: {note.fake_right_str()}")
+            print(f"    Right Is Pronunciation: {note.right_is_pronunciation_str()}")
             return 0
 
         response = anki_connect_request(
@@ -1096,6 +1127,7 @@ class ConnectDotsManager:
                         "Right": note.right_str(),
                         "Explanation": note.explanation_str(),
                         "Fake Right": note.fake_right_str(),
+                        "Right Is Pronunciation": note.right_is_pronunciation_str(),
                     },
                     "tags": ["auto-generated", "connect-dots"],
                 }
@@ -1124,6 +1156,7 @@ class ConnectDotsManager:
             new_right = note.right_str()
             new_explanation = note.explanation_str()
             new_fake_right = note.fake_right_str()
+            new_right_is_pronunciation = note.right_is_pronunciation_str()
 
             if existing:
                 if existing["left"] != new_left:
@@ -1142,6 +1175,10 @@ class ConnectDotsManager:
                     print("    Fake Right:")
                     print(f"      - {existing['fake_right']}")
                     print(f"      + {new_fake_right}")
+                if existing["right_is_pronunciation"] != new_right_is_pronunciation:
+                    print("    Right Is Pronunciation:")
+                    print(f"      - {existing['right_is_pronunciation']}")
+                    print(f"      + {new_right_is_pronunciation}")
             else:
                 print(f"    Left: {new_left}")
                 print(f"    Right: {new_right}")
@@ -1149,6 +1186,7 @@ class ConnectDotsManager:
                     print(f"    Explanation: {new_explanation}")
                 if new_fake_right:
                     print(f"    Fake Right: {new_fake_right}")
+                print(f"    Right Is Pronunciation: {new_right_is_pronunciation}")
             return
 
         anki_connect_request(
@@ -1162,6 +1200,7 @@ class ConnectDotsManager:
                         "Right": note.right_str(),
                         "Explanation": note.explanation_str(),
                         "Fake Right": note.fake_right_str(),
+                        "Right Is Pronunciation": note.right_is_pronunciation_str(),
                     },
                 }
             },
@@ -1237,12 +1276,14 @@ class ConnectDotsManager:
                             new_right = split_note.right_str()
                             new_explanation = split_note.explanation_str()
                             new_fake_right = split_note.fake_right_str()
+                            new_right_is_pronunciation = split_note.right_is_pronunciation_str()
 
                             if (
                                 existing["left"] == new_left
                                 and existing["right"] == new_right
                                 and existing["explanation"] == new_explanation
                                 and existing["fake_right"] == new_fake_right
+                                and existing["right_is_pronunciation"] == new_right_is_pronunciation
                             ):
                                 print(f"  Unchanged: {split_note.key}")
                                 stats["unchanged"] += 1

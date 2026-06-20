@@ -11,6 +11,9 @@
 <script type="text/template" id="data-key">
   {{Key}}
 </script>
+<script type="text/template" id="data-right-is-pronunciation">
+  {{Right Is Pronunciation}}
+</script>
 
 <div class="connect-dots-container">
   <div id="error-banner" class="error-banner" style="display: none"></div>
@@ -47,6 +50,10 @@
     const rightRaw = document.getElementById("data-right").textContent;
     const fakeRightRaw = document.getElementById("data-fake-right").textContent;
     const keyRaw = document.getElementById("data-key").textContent.trim();
+    const rightIsPronunciation =
+      document
+        .getElementById("data-right-is-pronunciation")
+        .textContent.trim() === "1";
 
     const leftItems = leftRaw
       .split(",")
@@ -92,8 +99,15 @@
       if (/[áéíóúǘÁÉÍÓÚǗ]/.test(pinyin)) return 2;
       if (/[ǎěǐǒǔǚǍĚǏǑǓǙ]/.test(pinyin)) return 3;
       if (/[àèìòùǜÀÈÌÒÙǛ]/.test(pinyin)) return 4;
+      // Zhuyin (bopomofo) tone marks
+      if (/ˊ/.test(pinyin)) return 2;
+      if (/ˇ/.test(pinyin)) return 3;
+      if (/ˋ/.test(pinyin)) return 4;
+      if (/˙/.test(pinyin)) return 5;
       const numMatch = pinyin.match(/(\d)$/);
       if (numMatch) return parseInt(numMatch[1]);
+      // Unmarked bopomofo syllable is tone 1
+      if (/[ㄅ-ㄯ]/.test(pinyin)) return 1;
       return 5; // neutral tone
     }
 
@@ -169,6 +183,11 @@
 
     // Render functions
     function getColorForRight(rightValue) {
+      // When the right value is a pronunciation, color by tone:
+      // tone 1 red, 2 green, 3 blue, 4 purple, 5 gray (first five colors).
+      if (rightIsPronunciation) {
+        return colors[(getToneNumber(rightValue) - 1) % colors.length];
+      }
       const idx = shuffledRight.indexOf(rightValue);
       return colors[idx % colors.length];
     }
@@ -237,11 +256,12 @@
         const div = document.createElement("div");
         div.className = "item right-item";
         div.dataset.value = item;
-        div.style.borderColor = colors[idx % colors.length];
+        const itemColor = getColorForRight(item);
+        div.style.borderColor = itemColor;
 
         if (rightUsageCount[item] > 0) {
           div.classList.add("used");
-          div.style.backgroundColor = colors[idx % colors.length] + "20";
+          div.style.backgroundColor = itemColor + "20";
         }
 
         // Show keyboard shortcut number on desktop (1-9 only)
@@ -260,7 +280,7 @@
         if (rightUsageCount[item] > 0) {
           const count = document.createElement("span");
           count.className = "usage-count";
-          count.style.backgroundColor = colors[idx % colors.length];
+          count.style.backgroundColor = itemColor;
           count.textContent = rightUsageCount[item];
           div.appendChild(count);
         }
