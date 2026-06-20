@@ -7,7 +7,7 @@ export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   ],
   Hanzi: [
     { name: "Recognize Hanzi", deck: "Chinese::CharsProps" },
-    { name: "Write Hanzi", deck: "Chinese::Writting" },
+    { name: "Simplified", deck: "Chinese::Simplified" },
   ],
   Props: [
     { name: "Recognize prop", deck: "Chinese::CharsProps" },

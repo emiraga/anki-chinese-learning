@@ -985,7 +985,6 @@ export const IntegrityEverything: React.FC<{}> = ({}) => {
       {!loading && (
         <section className="block m-4">
           <MixedSuspension noteType="TOCFL" notesByCards={notesByCards} />
-          <MixedSuspension noteType="Hanzi" notesByCards={notesByCards} />
         </section>
       )}
       {!loading && (
