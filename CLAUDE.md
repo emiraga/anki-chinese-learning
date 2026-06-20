@@ -32,29 +32,6 @@ This is a React-based Chinese learning companion application that integrates wit
 
 This is a known limitation when combining React Compiler with Vite, and the explicit dependency list is the recommended approach.
 
-## Development Commands
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server (runs on http://localhost:5173)
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm run start
-
-# Type checking
-npm run typecheck
-
-# Linting
-npm run lint
-npm run lint:fix
-```
-
 ## Architecture Overview
 
 ### Data Layer (`app/data/`)

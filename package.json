@@ -7,9 +7,9 @@
     "build": "react-router build",
     "dev": "react-router dev --port 5173",
     "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "yarn typecheck:js && yarn typecheck:python",
-    "typecheck:js": "react-router typegen && tsc && npm run typecheck --prefix public/tone_trainer",
-    "typecheck:python": "uv run pyrefly check --min-severity warn",
+    "check": "yarn check:js && yarn check:python",
+    "check:js": "react-router typegen && tsc && npm run typecheck --prefix public/tone_trainer",
+    "check:python": "uv run pyrefly check --min-severity warn",
     "test": "yarn test:js && yarn test:python",
     "test:js": "jest",
     "test:python": "uv run --script utils/hanzi/test_connect_dots_notes.py",
@@ -18,7 +18,10 @@
     "lint:js": "eslint . --ext .ts,.tsx",
     "lint:js:fix": "eslint . --ext .ts,.tsx --fix",
     "lint:python": "uv run ruff check",
-    "lint:python:fix": "uv run ruff check --fix"
+    "lint:python:fix": "uv run ruff check --fix",
+    "format": "yarn format:js && yarn format:python",
+    "format:js": "true",
+    "format:python": "uv run ruff format"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-alpha.7",
