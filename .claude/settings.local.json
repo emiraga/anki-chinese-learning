@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint)",
+      "mcp__anki-mcp-server__list_note_types",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(npm outdated)",
+      "Bash(npm install:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(npx tsx:*)",
+      "Bash(yarn build)",
+      "Bash(yarn remove:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn lint:*)",
+      "Bash(yarn outdated:*)",
+      "Bash(yarn typecheck:*)",
+      "Bash(git stash:*)",
+      "Bash(rm:*)",
+      "Bash(cat:*)",
+      "Bash(./utils/tocfl/get_from_csv.py)",
+      "Bash(uv run *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3)"
+    ],
+    "deny": []
+  }
+}
