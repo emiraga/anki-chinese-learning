@@ -14,9 +14,7 @@ from .anki_utils import find_notes_by_query, get_notes_info
 from .pinyin_utils import extract_pinyin_syllables
 
 
-def extract_characters_from_phrases(
-    note_types: list[str], only_unsuspended: bool = False
-) -> dict[str, list[tuple[str, str, str]]]:
+def extract_characters_from_phrases(note_types: list[str], only_unsuspended: bool = False) -> dict[str, list[tuple[str, str, str]]]:
     """
     Extract all unique characters from TOCFL notes with their pinyin and meanings
 

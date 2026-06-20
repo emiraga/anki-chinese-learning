@@ -271,10 +271,7 @@ def print_priority_order(priority: list[dict[str, Any]]) -> None:
     print(header)
     print("-" * len(header))
     for i, e in enumerate(priority, start=1):
-        print(
-            f"{i:>4}  {e['char']:<5} {e['simplified']:<5} "
-            f"{e['count']:>10}  {format_frequency_rank(e['freq_rank']):>9}"
-        )
+        print(f"{i:>4}  {e['char']:<5} {e['simplified']:<5} {e['count']:>10}  {format_frequency_rank(e['freq_rank']):>9}")
     print(f"\nTotal: {len(priority)} characters")
 
 
