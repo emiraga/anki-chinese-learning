@@ -141,7 +141,10 @@ export function useAnkiPhrases() {
 
         if (variants.length > 0) {
           for (const variant of JSON.parse(variants)) {
-            processPinyin(variant["Pinyin"], variant["Traditional"]);
+            processPinyin(
+              variant["Pinyin"].toLowerCase(),
+              variant["Traditional"],
+            );
           }
         } else {
           processPinyin(
