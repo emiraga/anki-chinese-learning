@@ -98,6 +98,7 @@ CUSTOM_HANZI_TO_PINYIN_SETS = {
     "scarecrow-like": "辛幸辜",
     "people-standing": "來夾",
     "tree-like": "夫未末美失朱犬尖天",
+    "city-on-a-hill-left": "陳陣隊阿限陸陀陪",
 }
 
 # Combined sound components - for sound components that don't have enough chars individually
