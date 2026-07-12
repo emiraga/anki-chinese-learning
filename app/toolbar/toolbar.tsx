@@ -146,6 +146,12 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/phrase_conflicts",
+          name: "Conflicts",
+          show: phraseConflicts > 0,
+          counter: phraseConflicts,
+        },
+        {
           pathname: "/phrases_more",
           name: "Discover More",
           show: true,
@@ -164,12 +170,6 @@ export const MainToolbarNoOutlet: React.FC<{
           pathname: "/homophones",
           name: "Homophones",
           show: phrases.length > 0,
-        },
-        {
-          pathname: "/phrase_conflicts",
-          name: "Conflicts",
-          show: phraseConflicts > 0,
-          counter: phraseConflicts,
         },
       ],
     },
