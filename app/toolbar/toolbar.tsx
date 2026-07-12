@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useLocation, NavLink, useOutletContext, Link } from "react-router";
 import type { CharactersType } from "~/data/characters";
 import type { CharsToPhrasesPinyin, PhraseType } from "~/data/phrases";
-import type { KnownPropsType } from "~/data/props";
+import type { KnownPropsType, PropType } from "~/data/props";
 import type { InvalidDataRecord, OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
 import { DarkModeToggle } from "~/components/DarkModeToggle";
@@ -11,6 +11,10 @@ import {
   getConflictingChars,
   getMissingPhraseChars,
 } from "~/data/char_conflicts";
+import {
+  getCharacterConflictsExtrasCount,
+  getPhraseConflictsCount,
+} from "~/data/integrity_checks";
 
 type MenuItem = {
   pathname: string;
@@ -35,6 +39,7 @@ const Counter: React.FC<{ count: number; show?: boolean }> = ({
 
 export const MainToolbarNoOutlet: React.FC<{
   knownProps: KnownPropsType;
+  props: PropType[];
   characters: CharactersType;
   phrases: PhraseType[];
   charPhrasesPinyin: CharsToPhrasesPinyin;
@@ -43,6 +48,7 @@ export const MainToolbarNoOutlet: React.FC<{
   loading: boolean;
 }> = ({
   knownProps,
+  props,
   characters,
   phrases,
   reload,
@@ -59,11 +65,10 @@ export const MainToolbarNoOutlet: React.FC<{
   let location = useLocation();
   let { settings } = useSettings();
 
-  const conflictingChars = getConflictingChars(
-    knownProps,
-    characters,
-    charPhrasesPinyin,
-  ).length;
+  const conflictingChars =
+    getConflictingChars(knownProps, characters, charPhrasesPinyin).length +
+    getCharacterConflictsExtrasCount(characters, props);
+  const phraseConflicts = getPhraseConflictsCount(phrases);
   const missingChars = getMissingPhraseChars(phrases, characters);
 
   var list: MenuItem[] = [
@@ -159,6 +164,12 @@ export const MainToolbarNoOutlet: React.FC<{
           pathname: "/homophones",
           name: "Homophones",
           show: phrases.length > 0,
+        },
+        {
+          pathname: "/phrase_conflicts",
+          name: "Conflicts",
+          show: phraseConflicts > 0,
+          counter: phraseConflicts,
         },
       ],
     },
@@ -460,6 +471,7 @@ export const MainToolbarNoOutlet: React.FC<{
 const MainToolbar: React.FC<{}> = ({}) => {
   const {
     knownProps,
+    props,
     characters,
     phrases,
     charPhrasesPinyin,
@@ -470,6 +482,7 @@ const MainToolbar: React.FC<{}> = ({}) => {
   return (
     <MainToolbarNoOutlet
       knownProps={knownProps}
+      props={props}
       characters={characters}
       phrases={phrases}
       charPhrasesPinyin={charPhrasesPinyin}

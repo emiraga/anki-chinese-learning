@@ -9,6 +9,7 @@ export default [
   route("invalid_data", "routes/invalid_data.tsx"),
   route("integrity", "routes/integrity.tsx"),
   route("phrase/:phraseHanzi", "routes/phrase/$phraseHanzi.tsx"),
+  route("phrase_conflicts", "routes/phrase_conflicts.tsx"),
   route("phrases", "routes/phrases.tsx"),
   route("phrases_import", "routes/phrases_import.tsx"),
   route("phrases_more", "routes/phrases_more.tsx"),

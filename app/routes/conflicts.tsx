@@ -7,6 +7,7 @@ import {
   getConflictingChars,
   type CharacterConflict,
 } from "~/data/char_conflicts";
+import { CharConflictSections } from "~/components/CharConflictSections";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -82,6 +83,8 @@ export default function Conflicts() {
           conflicts={groupedConflicts.noPinyinFromPhrases}
           charPhrasesPinyin={charPhrasesPinyin}
         />
+
+        <CharConflictSections />
       </section>
     </MainFrame>
   );

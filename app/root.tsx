@@ -109,6 +109,7 @@ export default function App() {
       <>
         <MainToolbarNoOutlet
           knownProps={{}}
+          props={[]}
           characters={{}}
           phrases={[]}
           charPhrasesPinyin={{}}
