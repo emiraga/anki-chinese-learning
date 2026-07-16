@@ -337,6 +337,12 @@ def main():
         subprocess.run([str(fill_props)], check=True)
         print("✓ Props filled")
 
+        # Step 5: Sync with AnkiWeb
+        sync_script = Path(__file__).resolve().parent.parent / "sync_ankiweb.py"
+        print("\n⋯ Running sync_ankiweb.py...")
+        subprocess.run([str(sync_script)], check=True)
+        print("✓ Synced with AnkiWeb")
+
     except Exception as e:
         print(f"\n✗ Error: {e}", file=sys.stderr)
         sys.exit(1)

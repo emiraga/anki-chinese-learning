@@ -79,6 +79,7 @@ HANZI_TO_PINYIN_TAGS = [
     "prop-left::sea-shell",
     "prop::pump",
     "prop-top::turkey",
+    "prop::ale-brother",
 ]
 
 # Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
