@@ -25,6 +25,7 @@ This is a React-based Chinese learning companion application that integrates wit
 **Workaround**: Dependencies must be explicitly listed in `vite.config.ts` under `optimizeDeps.include`. This ensures all dependencies are pre-bundled at startup, preventing mid-navigation reloads and module loading errors.
 
 **What to do when seeing "new dependencies optimized" messages**:
+
 1. Note the dependency name from the console message (e.g., "react-async-hook")
 2. Add it to the `optimizeDeps.include` array in `vite.config.ts`
 3. Clear the cache: `rm -rf node_modules/.vite .react-router`
@@ -35,6 +36,7 @@ This is a known limitation when combining React Compiler with Vite, and the expl
 ## Architecture Overview
 
 ### Data Layer (`app/data/`)
+
 - **types.ts**: Core TypeScript interfaces and types
 - **characters.ts**: Character data management and Anki integration
 - **phrases.ts**: Phrase data and pinyin mapping
@@ -43,12 +45,15 @@ This is a known limitation when combining React Compiler with Vite, and the expl
 - **utils.ts**: Common utility functions
 
 ### API Layer (`app/apis/`)
+
 - **anki.ts**: Anki desktop integration using YankiConnect
 - **claude.ts**: Claude AI API integration for content generation
 - **google_genai.ts**: Google Generative AI integration
 
 ### Components (`app/components/`)
+
 Key components include:
+
 - **Practice.tsx**: Main practice interface with multiple practice modes
 - **Learn.tsx**: AI-powered learning link generation
 - **CharCard.tsx**: Individual character display and interaction
@@ -56,7 +61,9 @@ Key components include:
 - **Settings.tsx**: Application settings management
 
 ### Routing (`app/routes/`)
+
 Uses React Router's file-based routing with comprehensive routes for:
+
 - Characters (`/chars`, `/char/:charHanzi`)
 - Phrases (`/phrases`, `/phrase/:phraseHanzi`)
 - Practice modes (`/practice`)
@@ -65,6 +72,7 @@ Uses React Router's file-based routing with comprehensive routes for:
 - All routes should be added to @app/routes.ts
 
 ### Settings System (`app/settings/`)
+
 - **SettingsContext.tsx**: React Context for global settings
 - **schema.ts**: Settings schema and validation
 - Settings are persisted to localStorage
@@ -72,23 +80,27 @@ Uses React Router's file-based routing with comprehensive routes for:
 ## Key Features
 
 ### Anki Integration
+
 - Requires AnkiConnect addon installed in Anki desktop
 - Fetches cards, notes, and manages Anki data
 - Automatic synchronization with Anki database
 - API documentation: https://git.sr.ht/~foosoft/anki-connect
 
 ### AI-Powered Learning
+
 - Claude API integration for sentence generation
 - Google Generative AI for practice content
 - Customizable prompts and learning scenarios
 
 ### Practice Modes
+
 - English to Chinese translation
 - Listening comprehension exercises
 - Character recognition and writing practice
 - Pinyin tone practice
 
 ### Character Analysis
+
 - Pinyin extraction and tone analysis
 - Character component/radical breakdown
 - Frequency analysis and learning prioritization
@@ -96,21 +108,25 @@ Uses React Router's file-based routing with comprehensive routes for:
 ## Development Setup Requirements
 
 ### Anki Setup
+
 1. Install Anki desktop application
 2. Install AnkiConnect addon (code: 2055492159)
 3. Configure AnkiConnect with these CORS settings:
+
 ```json
 {
-    "webCorsOriginList": [
-        "http://localhost",
-        "http://localhost:3000",
-        "http://localhost:5173"
-    ]
+  "webCorsOriginList": [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:5173"
+  ]
 }
 ```
 
 ### API Keys
+
 The application requires API keys for:
+
 - Claude API (stored in settings)
 - Google Generative AI (stored in settings)
 
@@ -137,18 +153,22 @@ Files are named using underscores as separators.
 ## Common Development Patterns
 
 ### Data Hooks
+
 Custom hooks like `useAnkiCards`, `useAnkiCharacters`, etc. handle:
+
 - Loading states
 - Error handling
 - Data transformation
 - Automatic retries
 
 ### Component Structure
+
 - Props interfaces defined with TypeScript
 - Context consumption via `useOutletContext<OutletContext>()`
 - Settings access via `useSettings()` hook
 
 ### API Integration
+
 - Chunked batch processing for large datasets
 - Proper error handling and user feedback
 - Progress tracking for long-running operations

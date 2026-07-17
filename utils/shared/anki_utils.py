@@ -101,6 +101,21 @@ def forget_cards(card_ids: list[int]) -> None:
     anki_connect_request("forgetCards", {"cards": card_ids})
 
 
+def set_due_date(card_ids: list[int], days: str) -> None:
+    """
+    Set the due date of the given cards using Anki's native set-due-date syntax.
+
+    Args:
+        card_ids: List of card IDs
+        days: Anki set-due-date spec, e.g. "0" (today), "3" (in 3 days),
+            "3-7" (random between 3 and 7 days). A trailing "!" also resets
+            the interval; without it only the due date is moved.
+    """
+    if not card_ids:
+        return
+    anki_connect_request("setDueDate", {"cards": card_ids, "days": days})
+
+
 def add_tags(note_ids: list[int], tags: str) -> None:
     """Add the given space-separated tags to the notes."""
     if not note_ids:
