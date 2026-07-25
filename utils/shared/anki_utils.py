@@ -87,6 +87,13 @@ def get_cards_info(card_ids: list[int]) -> list[dict[str, Any]]:
     return response.get("result", [])
 
 
+def suspend_cards(card_ids: list[int]) -> None:
+    """Suspend the given cards."""
+    if not card_ids:
+        return
+    anki_connect_request("suspend", {"cards": card_ids})
+
+
 def unsuspend_cards(card_ids: list[int]) -> None:
     """Unsuspend the given cards."""
     if not card_ids:
