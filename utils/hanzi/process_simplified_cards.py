@@ -38,7 +38,7 @@ from shared.character_conversion import to_simplified
 from shared.phrase_utils import extract_characters_from_phrases
 
 DIFFERENT_SIMPLIFIED_TAG = "chinese::different-simplified-form"
-MIN_NEW_CARDS = 5
+MIN_NEW_CARDS = 2
 PHRASE_NOTE_TYPES = ["TOCFL"]
 
 # Anki card queue values (see https://docs.ankiweb.net)
