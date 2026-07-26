@@ -73,6 +73,103 @@ export const HanziText: React.FC<{ value?: string }> = ({ value }) => {
   );
 };
 
+// Matches any CJK ideograph so we only linkify actual Chinese, leaving
+// surrounding English text (as produced by the AI) untouched.
+const CJK_REGEX = /[㐀-䶿一-鿿豈-﫿]/;
+
+const containsChinese = (text: string): boolean => CJK_REGEX.test(text);
+
+/**
+ * Renders arbitrary text (typically mixed English/Chinese coming back from the
+ * AI) with the Chinese portions linkified via segmentation, while keeping the
+ * original font, spacing and flow of the surrounding text intact. Multi-char
+ * Chinese words are underlined to show segmentation boundaries; single chars
+ * are only colored to indicate their learning status.
+ */
+export const HanziInlineText: React.FC<{
+  value?: string;
+  algorithm?: SegmentationAlgorithm;
+}> = ({ value, algorithm }) => {
+  const { characters, phrases } = useOutletContext<OutletContext>();
+
+  const knowPhrases = useMemo(() => {
+    return new Set(phrases.map((p) => p.traditional));
+  }, [phrases]);
+
+  if (!value) {
+    return <></>;
+  }
+
+  const segments = segmentChineseText(value, algorithm);
+
+  const charClassName = (c: string): string => {
+    if (!characters[c]) {
+      return "text-red-600";
+    } else if (!characters[c].withSound) {
+      return "text-green-600";
+    }
+    return "";
+  };
+
+  return (
+    <>
+      {segments.map((segment, i) => {
+        if (segment.text === "\n") {
+          return <br key={i} />;
+        }
+
+        // Leave non-Chinese runs (English words, spaces, punctuation) as plain
+        // text so the surrounding prose flows exactly as before.
+        if (!containsChinese(segment.text)) {
+          return <span key={i}>{segment.text}</span>;
+        }
+
+        // Multi-character Chinese word: link to the phrase, underlined to show
+        // the segmentation boundary. Kept inline so text flow is preserved.
+        if (segment.text.length > 1 && !IGNORE_PHRASES.has(segment.text)) {
+          return (
+            <Link
+              key={i}
+              to={`/phrase/${segment.text}`}
+              className={
+                knowPhrases.has(segment.text)
+                  ? "border-b-2 border-gray-600 hover:border-blue-500"
+                  : "border-b-2 border-red-500 hover:border-blue-500"
+              }
+            >
+              {[...segment.text].map((c, charIndex) => {
+                if (IGNORE_PHRASE_CHARS.has(c)) {
+                  return c;
+                }
+                return (
+                  <span key={charIndex} className={charClassName(c)}>
+                    {c}
+                  </span>
+                );
+              })}
+            </Link>
+          );
+        }
+
+        // Single character (or an ignored phrase falling through): linkify each
+        // Chinese char on its own.
+        return [...segment.text].map((c, charIndex) => {
+          if (IGNORE_PHRASE_CHARS.has(c)) {
+            return <span key={`${i}-${charIndex}`}>{c}</span>;
+          }
+          return (
+            <CharLink
+              key={`${i}-${charIndex}`}
+              traditional={c}
+              className={charClassName(c)}
+            />
+          );
+        });
+      })}
+    </>
+  );
+};
+
 export const HanziCardDetails: React.FC<{
   c: string;
   characters: CharactersType;

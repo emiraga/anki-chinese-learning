@@ -11,7 +11,7 @@ import {
   type PracticeSentencePair,
 } from "./Practice";
 import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
-import { HanziText } from "./HanziText";
+import { HanziText, HanziInlineText } from "./HanziText";
 
 // Defines the structure for the feedback from the AI
 interface AIFeedback {
@@ -340,7 +340,7 @@ export const PracticeEnglishToChinese: React.FC<{
                   Advice
                 </h4>
                 <p className="text-amber-800 dark:text-amber-200">
-                  {feedback.advice}
+                  <HanziInlineText value={feedback.advice} />
                 </p>
               </div>
               {/* Grammar Point */}
@@ -349,7 +349,7 @@ export const PracticeEnglishToChinese: React.FC<{
                   Grammar Point
                 </h4>
                 <p className="text-sky-800 dark:text-sky-200">
-                  {feedback.grammarPoint}
+                  <HanziInlineText value={feedback.grammarPoint} />
                 </p>
               </div>
             </div>

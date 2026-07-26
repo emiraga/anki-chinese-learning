@@ -11,6 +11,7 @@ import {
   PracticeListeningToChinese,
 } from "./PracticeTypes";
 import Textarea from "react-textarea-autosize";
+import { HanziInlineText } from "./HanziText";
 
 export interface PracticeSentencePair {
   english: string;
@@ -178,10 +179,12 @@ ${
               : s.type === PracticeHistoryType.WRONG
               ? "⛔️"
               : "🟡"}{" "}
-            {s.chinese} || {s.userInput} || {s.english}
+            <HanziInlineText value={s.chinese} /> ||{" "}
+            <HanziInlineText value={s.userInput} /> || {s.english}
             {s.aiAdvice || s.aiGrammarPoint ? (
               <span className="text-xs block">
-                {s.aiAdvice} || {s.aiGrammarPoint}
+                <HanziInlineText value={s.aiAdvice} /> ||{" "}
+                <HanziInlineText value={s.aiGrammarPoint} />
               </span>
             ) : undefined}
           </p>
