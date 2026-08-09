@@ -10,7 +10,7 @@
 Rank subtitle files by how many unknown Chinese characters they contain.
 
 Given a folder, this script recursively collects every "*.srt" file (skipping
-"*_simplified.srt" companions), extracts the traditional Chinese characters used
+"*_simplified.srt" and "*_pinyin.srt" companions), extracts the traditional Chinese characters used
 in each file, and compares them against the characters you already know in Anki.
 
 A character counts as known when it has an unsuspended first card in the Hanzi
@@ -20,14 +20,20 @@ Files are sorted by the number of *unique* unknown characters (ascending), so
 the videos that are easiest to watch right now come first. The unknown
 characters of each file are listed, most frequent first.
 
+With "--copy-into", every copied video is additionally passed through
+"fix_for_vlc_ios.sh", which remuxes or re-encodes it into an iPhone/iPad
+playable MP4 (use "--no-fix-for-vlc" to keep the files untouched).
+
 Usage:
     ./find_appropriate_videos.py /path/to/videos
     ./find_appropriate_videos.py /path/to/videos --top 20
+    ./find_appropriate_videos.py /path/to/videos --max-missing 5
     ./find_appropriate_videos.py /path/to/videos --top 10 --copy-into /path/to/watch_next
 """
 
 import argparse
 import shutil
+import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -45,7 +51,18 @@ KNOWN_CHARS_QUERY = "note:Hanzi -is:suspended card:1"
 # garbage.
 SUBTITLE_ENCODINGS = ("utf-8-sig", "big5", "gb18030", "utf-16")
 
-SIMPLIFIED_SUFFIX = "_simplified.srt"
+# Companion subtitle files generated from a main "*.srt" file, which should not be
+# analyzed on their own.
+IGNORED_SUFFIXES = ("_simplified.srt", "_pinyin.srt")
+
+# Script that makes a video file playable by VLC on iOS, and the extensions it
+# accepts. Both must stay in sync with "fix_for_vlc_ios.sh".
+FIX_FOR_VLC_SCRIPT = Path(__file__).resolve().parent / "fix_for_vlc_ios.sh"
+VIDEO_EXTENSIONS = {".mp4", ".m4v", ".mkv", ".mov", ".avi", ".ts", ".webm", ".flv", ".wmv", ".mpg", ".mpeg", ".m2ts"}
+
+# Folder where "fix_for_vlc_ios.sh" moves the originals it replaced. A video whose
+# original is parked there has already been copied and converted by a previous run.
+BACKUP_DIR_NAME = "originals"
 
 
 @dataclass
@@ -94,7 +111,8 @@ def fetch_known_characters() -> set[str]:
 
 def find_subtitle_files(root: Path, exclude: Path | None = None) -> list[Path]:
     """
-    Recursively find subtitle files, excluding the "*_simplified.srt" ones.
+    Recursively find subtitle files, excluding the "*_simplified.srt" and
+    "*_pinyin.srt" companions.
 
     Args:
         root: Folder to search
@@ -113,7 +131,7 @@ def find_subtitle_files(root: Path, exclude: Path | None = None) -> list[Path]:
     return sorted(
         path
         for path in root.rglob("*.srt")
-        if not path.name.lower().endswith(SIMPLIFIED_SUFFIX) and not (exclude is not None and exclude in path.parents)
+        if not path.name.lower().endswith(IGNORED_SUFFIXES) and not (exclude is not None and exclude in path.parents)
     )
 
 
@@ -191,7 +209,7 @@ def find_related_files(srt_path: Path) -> list[Path]:
     Find every sibling file sharing the subtitle's name prefix.
 
     For "My Video.srt" this returns "My Video.srt", "My Video.mp4",
-    "My Video_simplified.srt", and any other "My Video*" file.
+    "My Video_simplified.srt", "My Video_pinyin.srt", and any other "My Video*" file.
 
     Args:
         srt_path: Subtitle file path
@@ -203,16 +221,21 @@ def find_related_files(srt_path: Path) -> list[Path]:
     return sorted(path for path in srt_path.parent.iterdir() if path.is_file() and path.name.startswith(prefix))
 
 
-def copy_reports(reports: list[SubtitleReport], destination: Path) -> None:
+def copy_reports(reports: list[SubtitleReport], destination: Path) -> list[Path]:
     """
     Copy every file belonging to the reported videos into a single folder.
 
     Files already present in the destination with the same size are left alone,
-    so the script can be re-run without re-copying large videos.
+    so the script can be re-run without re-copying large videos. The same holds
+    for files whose original was moved into the "originals/" backup folder by
+    "fix_for_vlc_ios.sh", which would otherwise be copied and converted again.
 
     Args:
         reports: Reports whose videos should be copied
         destination: Folder to copy into (created if missing)
+
+    Returns:
+        The copied files, as paths inside the destination
 
     Raises:
         FileExistsError: If a different file with the same name is already there
@@ -220,12 +243,16 @@ def copy_reports(reports: list[SubtitleReport], destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     print(f"=== Copying {len(reports)} video(s) into {destination} ===\n")
 
-    copied = 0
+    copied: list[Path] = []
     skipped = 0
 
     for report in reports:
         for source in find_related_files(report.path):
             target = destination / source.name
+            backup = destination / BACKUP_DIR_NAME / source.name
+            if backup.exists():
+                skipped += 1
+                continue
             if target.exists():
                 if target.stat().st_size == source.stat().st_size:
                     skipped += 1
@@ -233,9 +260,33 @@ def copy_reports(reports: list[SubtitleReport], destination: Path) -> None:
                 raise FileExistsError(f"'{target}' already exists with a different size than '{source}'")
             print(f"  {source.name}")
             shutil.copy2(source, target)
-            copied += 1
+            copied.append(target)
 
-    print(f"\nCopied {copied} file(s), skipped {skipped} already present\n")
+    print(f"\nCopied {len(copied)} file(s), skipped {skipped} already present\n")
+    return copied
+
+
+def fix_videos_for_vlc(paths: list[Path]) -> None:
+    """
+    Run "fix_for_vlc_ios.sh" on every video file, one file at a time.
+
+    Args:
+        paths: Files to consider; non-video files are ignored
+
+    Raises:
+        FileNotFoundError: If the fixing script is missing
+        subprocess.CalledProcessError: If the script fails for a video
+    """
+    if not FIX_FOR_VLC_SCRIPT.is_file():
+        raise FileNotFoundError(f"Missing script: {FIX_FOR_VLC_SCRIPT}")
+
+    videos = [path for path in paths if path.suffix.lower() in VIDEO_EXTENSIONS]
+    if not videos:
+        return
+
+    print(f"=== Making {len(videos)} video(s) playable by VLC on iOS ===\n")
+    for video in videos:
+        subprocess.run([str(FIX_FOR_VLC_SCRIPT), str(video)], check=True)
 
 
 def print_reports(reports: list[SubtitleReport], root: Path, max_missing_shown: int) -> None:
@@ -258,6 +309,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Sort subtitle files by the number of unknown Chinese characters they contain")
     parser.add_argument("folder", type=Path, help="Folder to search recursively for *.srt files")
     parser.add_argument("--top", type=int, default=0, help="Only show the N easiest files (0 = all)")
+    parser.add_argument(
+        "--max-missing",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Only show files with at most N unique unknown characters",
+    )
     parser.add_argument("--max-missing-shown", type=int, default=50, help="Maximum number of missing characters listed per file")
     parser.add_argument(
         "--copy-into",
@@ -265,6 +323,11 @@ def main() -> None:
         default=None,
         metavar="FOLDER",
         help="Copy every file of the listed videos (subtitles, video, ...) into this folder",
+    )
+    parser.add_argument(
+        "--no-fix-for-vlc",
+        action="store_true",
+        help="Do not run fix_for_vlc_ios.sh on the copied videos",
     )
     args = parser.parse_args()
 
@@ -280,13 +343,19 @@ def main() -> None:
     reports = [analyze_subtitle(path, known_chars) for path in subtitle_files]
     reports.sort(key=lambda report: (report.missing_count, len(report.unique_chars), report.path))
 
+    if args.max_missing is not None:
+        reports = [report for report in reports if report.missing_count <= args.max_missing]
+        print(f"{len(reports)} file(s) with at most {args.max_missing} unknown character(s)")
+
     if args.top > 0:
         reports = reports[: args.top]
 
     print_reports(reports, root, args.max_missing_shown)
 
     if destination is not None:
-        copy_reports(reports, destination)
+        copied = copy_reports(reports, destination)
+        if not args.no_fix_for_vlc:
+            fix_videos_for_vlc(copied)
 
 
 if __name__ == "__main__":
