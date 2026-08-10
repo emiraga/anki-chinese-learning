@@ -123,6 +123,43 @@ def set_due_date(card_ids: list[int], days: str) -> None:
     anki_connect_request("setDueDate", {"cards": card_ids, "days": days})
 
 
+def set_new_card_positions(positions: dict[int, int]) -> None:
+    """
+    Set the position of cards in the new-card queue.
+
+    For a card that is still new, Anki stores its queue position in the `due`
+    column, so repositioning is just a matter of writing that column. Cards are
+    then introduced in ascending position order (subject to the deck's
+    new-cards/day limit).
+
+    Args:
+        positions: Mapping of card id -> new queue position.
+
+    Raises:
+        Exception: If AnkiConnect rejects any of the writes.
+    """
+    if not positions:
+        return
+
+    items = list(positions.items())
+    for i in range(0, len(items), 100):
+        chunk = items[i : i + 100]
+        actions = [
+            {
+                "action": "setSpecificValueOfCard",
+                "params": {"card": card_id, "keys": ["due"], "newValues": [position]},
+            }
+            for card_id, position in chunk
+        ]
+        results = anki_connect_request("multi", {"actions": actions})["result"]
+        for (card_id, position), result in zip(chunk, results, strict=True):
+            # setSpecificValueOfCard returns one entry per key: True on success,
+            # [False, message] otherwise. `multi` reports a failed action as a
+            # dict holding the error message.
+            if isinstance(result, dict) or any(entry is not True for entry in result):
+                raise Exception(f"Failed to set position {position} on card {card_id}: {result}")
+
+
 def add_tags(note_ids: list[int], tags: str) -> None:
     """Add the given space-separated tags to the notes."""
     if not note_ids:
