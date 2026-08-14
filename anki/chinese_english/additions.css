@@ -1,0 +1,110 @@
+/* Chinese::English deck – center alignment, tone colors, Pleco link. */
+
+.card {
+  text-align: center;
+}
+
+.card .ce-back {
+  text-align: center;
+  max-width: 100%;
+  padding: 0.5em 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card .ce-back .ce-traditional,
+.card .ce-back .ce-pinyin,
+.card .ce-back .ce-meaning,
+.card .ce-back .char-main,
+.card .ce-back .pinyin,
+.card .ce-back .ce-pleco-wrap {
+  text-align: center;
+  width: 100%;
+}
+
+/* TOCFL block: .char-main and .pinyin (same as tocfl_single_chars) */
+.card .ce-back .char-main {
+  font-size: clamp(2rem, 12vw, 4rem) !important;
+  font-weight: 400 !important;
+  line-height: 1.25;
+  margin: 0.25em 0;
+}
+.card .ce-back .char-main .char-syllable.tone-1 { color: #dc2626; }
+.card .ce-back .char-main .char-syllable.tone-2 { color: #008000; }
+.card .ce-back .char-main .char-syllable.tone-3 { color: #0000ff; }
+.card .ce-back .char-main .char-syllable.tone-4 { color: #9333ea; }
+.card .ce-back .char-main .char-syllable.tone-5 { color: #6b7280; }
+.nightMode .card .ce-back .char-main .char-syllable.tone-1 { color: #f87171; }
+.nightMode .card .ce-back .char-main .char-syllable.tone-2 { color: #00c000; }
+.nightMode .card .ce-back .char-main .char-syllable.tone-3 { color: #4444ff; }
+.nightMode .card .ce-back .char-main .char-syllable.tone-4 { color: #c084fc; }
+.nightMode .card .ce-back .char-main .char-syllable.tone-5 { color: #9ca3af; }
+
+.card .ce-back .pinyin {
+  font-size: clamp(1rem, 3.5vw, 1.35rem) !important;
+  color: #555;
+  margin: 0.35em 0;
+}
+.card .ce-back .pinyin .pinyin-syllable.tone-1 { color: #dc2626; }
+.card .ce-back .pinyin .pinyin-syllable.tone-2 { color: #008000; }
+.card .ce-back .pinyin .pinyin-syllable.tone-3 { color: #0000ff; }
+.card .ce-back .pinyin .pinyin-syllable.tone-4 { color: #9333ea; }
+.card .ce-back .pinyin .pinyin-syllable.tone-5 { color: #6b7280; }
+.nightMode .card .ce-back .pinyin .pinyin-syllable.tone-1 { color: #f87171; }
+.nightMode .card .ce-back .pinyin .pinyin-syllable.tone-2 { color: #00c000; }
+.nightMode .card .ce-back .pinyin .pinyin-syllable.tone-3 { color: #4444ff; }
+.nightMode .card .ce-back .pinyin .pinyin-syllable.tone-4 { color: #c084fc; }
+.nightMode .card .ce-back .pinyin .pinyin-syllable.tone-5 { color: #9ca3af; }
+.nightMode .card .ce-back .pinyin { color: #aaa; }
+
+/* Fallback when not using TOCFL block */
+.card .ce-back .ce-traditional {
+  font-size: clamp(2rem, 12vw, 4rem) !important;
+  font-weight: 400 !important;
+  line-height: 1.25;
+  margin: 0.25em 0;
+}
+.card .ce-back .ce-pinyin {
+  font-size: clamp(1rem, 3.5vw, 1.35rem) !important;
+  color: #555;
+  margin: 0.35em 0;
+}
+
+/* Meaning / English */
+.card .ce-meaning {
+  font-size: clamp(1rem, 3.5vw, 1.25rem) !important;
+  line-height: 1.45;
+  color: #222;
+  margin: 0.5em 0;
+}
+.nightMode .card .ce-meaning {
+  color: #ddd;
+}
+
+/* Pleco link */
+.card .ce-pleco-wrap {
+  text-align: center;
+  margin: 0.75em 0 0.25em;
+}
+.card .ce-pleco-wrap .pleco-link {
+  display: inline-block;
+  font-size: 0.9em;
+  color: #2563eb;
+  text-decoration: none;
+  padding: 0.25em 0.6em;
+  border: 1px solid #2563eb;
+  border-radius: 0.375em;
+}
+.card .ce-pleco-wrap .pleco-link:hover {
+  text-decoration: underline;
+}
+.nightMode .card .ce-pleco-wrap .pleco-link {
+  color: #93c5fd;
+  border-color: #93c5fd;
+}
+.nightMode .card .ce-pleco-wrap .pleco-link:hover {
+  color: #bfdbfe;
+}

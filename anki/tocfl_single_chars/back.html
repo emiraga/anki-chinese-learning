@@ -1,0 +1,55 @@
+<div class="tocfl-card tocfl-back">
+  <div class="char-main">
+  {{#Traditional Colored}}{{Traditional Colored}}{{/Traditional Colored}}
+  {{^Traditional Colored}}<span id="char-tone-container">{{Traditional}}</span>
+  <script type="text/template" id="trad-data">{{Traditional}}</script>
+  <script type="text/template" id="pinyin-data">{{Pinyin}}</script>
+  <script>(function(){try{var t=document.getElementById('trad-data'),p=document.getElementById('pinyin-data');if(!t||!p)return;var tr=(t.textContent||t.innerText||'').trim(),py=(p.textContent||p.innerText||'').trim(),c=document.getElementById('char-tone-container'),pc=document.getElementById('pinyin-tone-container');if(!tr||!c)return;var M={'\u0101':1,'\u0113':1,'\u012b':1,'\u014d':1,'\u016b':1,'\u01d6':1,'\u00e1':2,'\u00e9':2,'\u00ed':2,'\u00f3':2,'\u00fa':2,'\u01d8':2,'\u01ce':3,'\u011b':3,'\u01d0':3,'\u01d2':3,'\u01d4':3,'\u01da':3,'\u00e0':4,'\u00e8':4,'\u00ec':4,'\u00f2':4,'\u00f9':4,'\u01dc':4},v='aeiou\u00fc\u0101\u0113\u012b\u014d\u016b\u01d6\u00e1\u00e9\u00ed\u00f3\u00fa\u01d8\u01ce\u011b\u01d0\u01d2\u01d4\u01da\u00e0\u00e8\u00ec\u00f2\u00f9\u01dc';function gt(s){for(var i=0;i<s.length;i++)if(M[s[i]])return M[s[i]];return 5;}function esc(s){var d=document.createElement('span');d.textContent=s;return d.innerHTML;}function iv(c){return v.indexOf(c)>=0;}function split(s){s=s.trim();if(!s)return[];var x=s.split(/\s+/).filter(function(a){return a.length;});if(x.length>1)return x;var o=[],cur='',sv=false,i2={zh:1,ch:1,sh:1};for(var i=0;i<s.length;i++){var c=s[i],c2=s.substr(i,2),i2ok=(i<s.length-1&&i2[c2]),iok=i2ok||'bpmfdtnlgkhjqxyzcsrwy'.indexOf(c)>=0;if(i>0&&iok&&sv){if(i2ok){if(cur)o.push(cur);cur=c2;i++;sv=iv(s[i]);continue;}if(c==='n'&&(cur.slice(-1)==='a'||cur.slice(-1)==='e'||cur.slice(-1)==='i'||cur.slice(-1)==='o'||cur.slice(-1)==='u'||cur.slice(-1)==='\u00fc'||M[cur.slice(-1)])){cur+=c;continue;}if(c==='g'&&cur.slice(-1)==='n'){cur+=c;continue;}if(c==='r'&&cur.length>0&&i===s.length-1){cur+=c;continue;}if(cur)o.push(cur);cur=c;sv=iv(c);}else{cur+=c;if(iv(c)||M[c])sv=true;}}if(cur)o.push(cur);return o.length?o:[s];}var syl=split(py),ch=Array.from(tr),co=[],po=[];for(var i=0;i<ch.length;i++){var s=syl[i]||syl[0]||'';co.push('<span class="char-syllable tone-'+gt(s)+'">'+esc(ch[i])+'</span>');}for(var j=0;j<syl.length;j++){var s=syl[j].trim();if(s)po.push('<span class="pinyin-syllable tone-'+gt(s)+'">'+esc(s)+'</span>');}c.innerHTML=co.join('');if(pc)pc.innerHTML=po.join(' ');}catch(e){}})();</script>{{/Traditional Colored}}
+  </div>
+  <div class="pinyin">
+  {{#Pinyin Colored}}{{Pinyin Colored}}{{/Pinyin Colored}}
+  {{^Pinyin Colored}}<span id="pinyin-tone-container">{{Pinyin}}</span>{{/Pinyin Colored}}
+  </div>
+  <div class="meaning" id="meaning-container">{{Meaning}}</div>
+  <script>
+  (function(){
+    var el = document.getElementById('meaning-container');
+    if (!el) return;
+    var raw = (el.textContent || el.innerText || '').trim();
+    if (!raw) return;
+    var parts = raw.split(/\s*[;\/]\s*/).map(function(p){ return p.trim(); }).filter(Boolean);
+    if (parts.length <= 1) return;
+    var html = '<ul class="meaning-bullets">';
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      html += '<li>' + p + '</li>';
+    }
+    html += '</ul>';
+    el.innerHTML = html;
+  })();
+  </script>
+  <script type="text/template" id="pleco-char">{{Traditional}}</script>
+  <div class="pleco-link-wrap" id="pleco-link-container"></div>
+  <script>
+  (function(){
+    var t = document.getElementById('pleco-char');
+    var container = document.getElementById('pleco-link-container');
+    if (!t || !container) return;
+    var char = (t.textContent || t.innerText || '').trim();
+    if (!char) return;
+    var url = 'plecoapi://x-callback-url/df?hw=' + encodeURIComponent(char);
+    var a = document.createElement('a');
+    a.href = url;
+    a.className = 'pleco-link';
+    a.textContent = 'Open in Pleco';
+    container.appendChild(a);
+  })();
+  </script>
+  <div class="audio-center">{{Audio}}</div>
+  {{#Sample Sentences}}
+  <div class="sample-sentences">
+    <div class="sample-sentences-label">Example sentences</div>
+    <div class="sample-sentences-content">{{Sample Sentences}}</div>
+  </div>
+  {{/Sample Sentences}}
+</div>
