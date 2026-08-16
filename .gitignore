@@ -150,9 +150,6 @@ __pycache__
 utils/rtega/.cache/
 utils/audio/.loudness_cache.json
 
-# Local scripts
-routine_script.sh
-
 # Secrets
 keys_secret.txt
 ai_key.txt
@@ -181,15 +178,3 @@ data/hackchinese/lists/*
 public/data/hackchinese/*
 public/data/pleco/*
 data/pleco/*
-
-# anki widget publish state
-utils/widget/widget.json
-utils/widget/.gist_id
-utils/widget/.last_hash
-utils/widget/dangdai.json
-utils/widget/.dangdai_gist_id
-utils/widget/.dangdai_last_hash
-utils/widget/dangdai_all.json
-utils/widget/dangdai_all.md
-utils/widget/.dangdai_all_gist_id
-utils/widget/.dangdai_script_gist_id
