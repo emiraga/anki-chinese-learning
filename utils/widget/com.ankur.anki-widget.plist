@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ankur.anki-widget</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/ankur/github/anki-chinese-learning/utils/widget/publish.sh</string>
+    </array>
+
+    <!-- Every 30 minutes. Exits immediately when Anki is not running. -->
+    <key>StartInterval</key>
+    <integer>1800</integer>
+
+    <!-- Also run shortly after load/login so the first publish is not a
+         30 minute wait. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- launchd starts jobs with a minimal PATH; gh and uv live in
+         /usr/local/bin and would not otherwise be found. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/anki-widget.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/anki-widget.err.log</string>
+</dict>
+</plist>
