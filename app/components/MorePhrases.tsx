@@ -7,13 +7,94 @@ import { HanziCardDetails } from "./HanziText";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "./index.module.css";
 import { PhraseLink } from "./Phrase";
-import {
-  DANGDAI_NEXT_LEVEL,
-  TBCL_NEXT_LEVEL,
-  TOCFL_NEXT_LEVEL,
-} from "~/data/status";
+import { TBCL_NEXT_LEVEL, TOCFL_NEXT_LEVEL } from "~/data/status";
 import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import { POSList } from "./POSDisplay";
+import { useSettings } from "~/settings/SettingsContext";
+import { useLanguage } from "~/i18n/i18n";
+
+// Lesson counts per Dangdai book, used to populate the lesson selector.
+const DANGDAI_BOOK_LESSONS: Record<number, number> = {
+  1: 15,
+  2: 15,
+  3: 12,
+  4: 12,
+  5: 10,
+  6: 10,
+};
+
+// Build the Anki lesson-tag suffix for a book/lesson selection.
+// lesson 0 -> every lesson in the book ("B2L*"); a specific lesson is
+// zero-padded to match the note ID convention ("B2L05*").
+function dangdaiTagSuffix(book: number, lesson: number): string {
+  if (!lesson) return `B${book}L*`;
+  return `B${book}L${String(lesson).padStart(2, "0")}*`;
+}
+
+// Persisted Book + Lesson selector driving the "next level" Dangdai phrases.
+// The choice lives in settings (localStorage), so it is restored on reopen.
+function DangdaiNextLevel() {
+  const { settings, updateSettings } = useSettings();
+  const { t } = useLanguage();
+  const book = settings.dangdaiSelection?.book ?? 2;
+  const lesson = settings.dangdaiSelection?.lesson ?? 0;
+
+  const setSelection = (next: { book?: number; lesson?: number }) =>
+    updateSettings({
+      dangdaiSelection: { book, lesson, ...next },
+    });
+
+  const lessonCount = DANGDAI_BOOK_LESSONS[book] ?? 15;
+  const suffix = dangdaiTagSuffix(book, lesson);
+
+  return (
+    <section className="block m-4">
+      <div className="flex items-center gap-3 mb-2">
+        <h3 className="font-serif text-3xl">
+          {t("Next level phrases Dangdai")} {suffix}
+        </h3>
+        <label className="text-sm">
+          {t("Book")}{" "}
+          <select
+            className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-1 py-0.5"
+            value={book}
+            onChange={(e) =>
+              // Reset lesson to "all" when switching book, since lesson
+              // numbers are not comparable across books.
+              setSelection({ book: Number(e.target.value), lesson: 0 })
+            }
+          >
+            {Object.keys(DANGDAI_BOOK_LESSONS).map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          {t("Lesson")}{" "}
+          <select
+            className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-1 py-0.5"
+            value={lesson}
+            onChange={(e) => setSelection({ lesson: Number(e.target.value) })}
+          >
+            <option value={0}>{t("All")}</option>
+            {Array.from({ length: lessonCount }, (_, i) => i + 1).map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <SearchMorePhrases
+        noteTypes={["TOCFL"]}
+        withTags={["Dangdai::Lesson::" + suffix]}
+        filterKnownChars={false}
+      />
+    </section>
+  );
+}
 
 function TodoPhrases() {
   const [notes, setNotes] = useState<NoteInfo[] | undefined>(undefined);
@@ -295,22 +376,7 @@ export const MorePhrases: React.FC<{}> = ({}) => {
           </Collapsible.Panel>
         </Collapsible.Root>
       </section>
-      <section className="block m-4">
-        <Collapsible.Root className={styles.Collapsible}>
-          <Collapsible.Trigger className={styles.Trigger}>
-            <h3 className="font-serif text-3xl">
-              Next level phrases Dangdai {DANGDAI_NEXT_LEVEL} ... (expandable)
-            </h3>
-          </Collapsible.Trigger>
-          <Collapsible.Panel className={styles.Panel}>
-            <SearchMorePhrases
-              noteTypes={["TOCFL"]}
-              withTags={["Dangdai::Lesson::" + DANGDAI_NEXT_LEVEL]}
-              filterKnownChars={false}
-            />
-          </Collapsible.Panel>
-        </Collapsible.Root>
-      </section>
+      <DangdaiNextLevel />
       <section className="block m-4">
         <Collapsible.Root className={styles.Collapsible}>
           <Collapsible.Trigger className={styles.Trigger}>

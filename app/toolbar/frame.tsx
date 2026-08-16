@@ -1,5 +1,6 @@
 import { Tooltip } from "@base-ui-components/react/tooltip";
 import MainToolbar from "~/toolbar/toolbar";
+import { Footer } from "~/components/Footer";
 import { useNavigate } from "react-router";
 import { useEffect, useMemo } from "react";
 import {
@@ -92,6 +93,7 @@ const MainFrame: React.FC<{
     <Tooltip.Provider delay={0} closeDelay={0}>
       <MainToolbar />
       <main className={disablePadding ? "" : "p-4"}>{children}</main>
+      <Footer />
     </Tooltip.Provider>
   );
 };

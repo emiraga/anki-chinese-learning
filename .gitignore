@@ -178,3 +178,15 @@ data/hackchinese/lists/*
 public/data/hackchinese/*
 public/data/pleco/*
 data/pleco/*
+
+# anki widget: generated data + local state (regenerated from Anki)
+utils/widget/widget.json
+utils/widget/dangdai.json
+utils/widget/dangdai_all.json
+utils/widget/dangdai_all.md
+utils/widget/.gist_id
+utils/widget/.dangdai_gist_id
+utils/widget/.dangdai_all_gist_id
+utils/widget/.dangdai_script_gist_id
+utils/widget/.last_hash
+utils/widget/.dangdai_last_hash
