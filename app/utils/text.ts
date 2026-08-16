@@ -70,30 +70,3 @@ function segmentByCharacter(text: string): SegmentedWord[] {
 
   return segments;
 }
-
-/** Escape HTML entities so a string can be used safely inside HTML. */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-/**
- * If meaning contains multiple meanings separated by semicolon or slash,
- * return HTML with a bullet list. Otherwise return the original string.
- */
-export function formatMeaningAsBullets(meaning: string): string {
-  if (!meaning || !meaning.trim()) return meaning;
-  const parts = meaning
-    .split(/\s*[;/]\s*/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-  if (parts.length <= 1) return meaning;
-  const listItems = parts
-    .map((p) => "<li>" + escapeHtml(p) + "</li>")
-    .join("");
-  return '<ul class="meaning-bullets">' + listItems + "</ul>";
-}

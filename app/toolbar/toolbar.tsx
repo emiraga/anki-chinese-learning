@@ -7,7 +7,6 @@ import type { KnownPropsType, PropType } from "~/data/props";
 import type { InvalidDataRecord, OutletContext } from "~/data/types";
 import { useSettings } from "~/settings/SettingsContext";
 import { DarkModeToggle } from "~/components/DarkModeToggle";
-import { LanguageToggle, useLanguage } from "~/i18n/i18n";
 import {
   getConflictingChars,
   getMissingPhraseChars,
@@ -65,7 +64,6 @@ export const MainToolbarNoOutlet: React.FC<{
     "block mx-1 py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-500 md:p-0 dark:text-white md:dark:hover:text-blue-400 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent";
   let location = useLocation();
   let { settings } = useSettings();
-  const { t } = useLanguage();
 
   const conflictingChars =
     getConflictingChars(knownProps, characters, charPhrasesPinyin).length +
@@ -363,23 +361,16 @@ export const MainToolbarNoOutlet: React.FC<{
     <nav className="bg-gray-200 border-gray-200 dark:bg-gray-900">
       <div className="max-w-7xl flex flex-wrap items-center justify-between mx-auto p-4">
         <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-          <Link to="/">{t("Learning Chinese")}</Link>
+          <Link to="/">Learning Chinese</Link>
           <button
             className="inline-flex items-center justify-center gap-1 text-blue-700 bg-blue-100 hover:bg-blue-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed px-3 py-1 rounded-lg mx-3 text-sm w-22 transition-colors dark:text-blue-500 dark:bg-blue-900"
             onClick={reload}
             disabled={loading}
           >
-            {loading ? (
-              t("loading...")
-            ) : (
-              <>
-                <span className="text-2xl leading-none">⟳</span> {t("reload")}
-              </>
-            )}
+            {loading ? "loading..." : (<><span className="text-2xl leading-none">⟳</span> reload</>)}
           </button>
         </span>
-        <span className="self-center whitespace-nowrap mr-auto flex items-center gap-1">
-          <LanguageToggle />
+        <span className="self-center whitespace-nowrap mr-auto">
           <DarkModeToggle />
           {invalidData.length > 0 && (
             <NavLink
@@ -409,7 +400,7 @@ export const MainToolbarNoOutlet: React.FC<{
                         isMenuItemActive(item) ? styleSelected : styleInactive
                       }`}
                     >
-                      {t(item.name)}
+                      {item.name}
                       <Counter count={item.counter || 0} />
                       <svg
                         className="w-2.5 h-2.5 ms-2.5"
@@ -444,7 +435,7 @@ export const MainToolbarNoOutlet: React.FC<{
                                   to={submenuItem.pathname}
                                   className={`${styleInactive} block px-4 py-2`}
                                 >
-                                  {t(submenuItem.name)}
+                                  {submenuItem.name}
                                   <Counter count={submenuItem.counter || 0} />
                                 </NavLink>
                               </li>
@@ -463,7 +454,7 @@ export const MainToolbarNoOutlet: React.FC<{
                         isMenuItemActive(item) ? styleSelected : styleInactive
                       }
                     >
-                      {t(item.name)}
+                      {item.name}
                     </NavLink>
                   </li>
                 );

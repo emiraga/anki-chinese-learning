@@ -310,13 +310,3 @@ tr.row-male > th {
 .dt #decompLegend {
   display: none;
 }
-
-/* Multiple meanings as bullet list (semicolon or slash separated) */
-.meaning-bullets {
-  list-style: disc;
-  margin: 0.25em 0 0.5em 1.5em;
-  padding-left: 0.25em;
-}
-.meaning-bullets li {
-  margin: 0.15em 0;
-}

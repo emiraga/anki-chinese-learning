@@ -5,7 +5,7 @@ import { useSettings } from "~/settings/SettingsContext";
 import { useGenerativeModel } from "~/apis/google_genai";
 import { useAnkiPhrases } from "~/data/phrases";
 import Textarea from "react-textarea-autosize";
-import { PhraseLink, PhraseMeaning } from "./Phrase";
+import { PhraseLink } from "./Phrase";
 
 interface ProcessedPhrase {
   traditional: string;
@@ -283,7 +283,7 @@ const PhrasesProcess: React.FC = () => {
                       {phrase.pinyin}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                      <PhraseMeaning meaning={phrase.meaning} />
+                      {phrase.meaning}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {phrase.comment}

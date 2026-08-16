@@ -15,14 +15,12 @@ import { useAnkiCharacters } from "./data/characters";
 import { MainToolbarNoOutlet } from "./toolbar/toolbar";
 import { SettingsProvider } from "./settings/SettingsContext";
 import { DarkModeProvider, useDarkMode } from "./components/DarkModeToggle";
-import { LanguageProvider, useLanguage } from "./i18n/i18n";
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isDarkMode } = useDarkMode();
-  const { language } = useLanguage();
 
   return (
-    <html lang={language} className={isDarkMode ? "dark" : ""}>
+    <html lang="en" className={isDarkMode ? "dark" : ""}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -65,9 +63,7 @@ export const links = () => [
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <DarkModeProvider>
-      <LanguageProvider>
-        <LayoutContent>{children}</LayoutContent>
-      </LanguageProvider>
+      <LayoutContent>{children}</LayoutContent>
     </DarkModeProvider>
   );
 }

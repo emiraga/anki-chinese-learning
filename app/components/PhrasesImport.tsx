@@ -6,7 +6,7 @@ import { useGenerativeModel } from "~/apis/google_genai";
 import { useAnkiPhrases } from "~/data/phrases";
 import anki from "~/apis/anki";
 import Textarea from "react-textarea-autosize";
-import { PhraseLink, PhraseMeaning } from "./Phrase";
+import { PhraseLink } from "./Phrase";
 
 export interface ExtractedPhrase {
   traditional: string;
@@ -509,7 +509,7 @@ IMPORTANT RULES:
                       Meaning
                     </span>
                     <p className="text-sm text-gray-800 dark:text-gray-200">
-                      <PhraseMeaning meaning={phrase.meaning} />
+                      {phrase.meaning}
                     </p>
                   </div>
                 </div>

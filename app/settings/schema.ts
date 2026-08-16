@@ -28,13 +28,6 @@ export interface AppSettings {
   features?: {
     showZhuyin?: boolean;
   };
-  // Which Dangdai book/lesson the "next level phrases" section targets.
-  // Persisted so the selection is restored when the app is reopened.
-  // lesson === 0 means "all lessons in the book".
-  dangdaiSelection?: {
-    book?: number;
-    lesson?: number;
-  };
 }
 
 export const defaultSettings: AppSettings = {
@@ -59,7 +52,6 @@ const dummySettings: DeepRequired<AppSettings> = {
   toolbar: { showPropsLink: true, showStatsLink: true },
   generativeAi: { llmModelName: "test" },
   features: { showZhuyin: true },
-  dangdaiSelection: { book: 2, lesson: 0 },
 };
 
 export const DEFAULT_GEN_AI_MODEL = "gemini-2.5-flash";
@@ -152,22 +144,6 @@ export const settingsJsonSchema: JSONSchema7 = {
         showZhuyin: {
           type: "boolean",
           title: "Show zhuyin in places where it's possible",
-        },
-      },
-    },
-    dangdaiSelection: {
-      type: "object",
-      title: "Dangdai book/lesson selection",
-      description:
-        "Which Dangdai book and lesson the 'next level phrases' section targets. Remembered across sessions.",
-      properties: {
-        book: {
-          type: "number",
-          title: "Book number",
-        },
-        lesson: {
-          type: "number",
-          title: "Lesson number (0 = all lessons in the book)",
         },
       },
     },
