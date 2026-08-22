@@ -52,6 +52,7 @@ MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 # Full tag names in format "prefix::name"
 HANZI_TO_PINYIN_TAGS = [
     "prop::square",
+    "prop::fork",
     "prop::pendant",
     "prop::water-around-the-house",
     "prop::buddhist-temple",
