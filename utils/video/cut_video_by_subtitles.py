@@ -18,8 +18,10 @@ to extract every entry that contains Chinese text.
 
 The clips are cut with ffmpeg stream copy, so cutting is fast but the start
 may snap to the nearest keyframe before the subtitle time. Pass --reencode
-for frame-accurate cuts (slower, re-encodes to H.264/AAC). Audio-only output
-(--mp3) re-encodes the audio track to MP3.
+for frame-accurate cuts (slower, re-encodes to browser-playable H.264/AAC
+stereo). Pass --webm to output WebM clips with VP9 video and Opus audio
+instead of MP4/H.264 (implies --reencode). Audio-only output (--mp3)
+re-encodes the audio track to MP3.
 
 Pass --translation movie.en.srt to attach a translation to each produced
 sentence. Translation entries are matched to the Chinese entries by how much
@@ -30,18 +32,30 @@ into the output folder with one object per produced sentence: sequence
 number, clip filename, Chinese text, translation, translation match count,
 timestamps, and cut status.
 
+Pass --anki-prefix apple_of_my_eye_ to create or update one LocalMediaClips
+note in Anki per produced clip, keyed by a unique ID such as
+"apple_of_my_eye_001". The note fields are ID, LocalFilePath (absolute path
+to the clip), RelativeFilePath (the clip's movie folder plus filename),
+Traditional (the subtitle sentence), Translation (the same translation
+written to the JSON manifest), and Context (HTML with the previous and next
+subtitle sentences, interleaved with their overlapping translations by
+timestamp).
+
 Usage:
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --all --reencode
+    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --all --webm
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --translation movie.en.srt --overlap-min 0.2
+    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --translation movie.en.srt --anki-prefix apple_of_my_eye_
 
 Requirements:
     ffmpeg must be installed (brew install ffmpeg on macOS)
 """
 
 import argparse
+import html
 import json
 import re
 import shutil
@@ -52,6 +66,7 @@ from pathlib import Path
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import anki_connect_request, find_notes_by_query, get_notes_info, update_note_fields
 from shared.character_discovery import extract_all_characters, extract_known_chars
 
 # Encodings to try when reading subtitle files, in order of likelihood. utf-16 is
@@ -252,24 +267,147 @@ def find_translation_matches(
     return matches
 
 
+def build_context_html(
+    entries: list[SubtitleEntry],
+    position: int,
+    translation_entries: list[SubtitleEntry],
+    overlap_min: float,
+) -> str:
+    """
+    Build the Context HTML for one clip.
+
+    The context is the subtitle sentence immediately before and immediately
+    after the clip's sentence. Translations overlapping either context
+    sentence are interleaved with them by timestamp; each translation text is
+    included at most once.
+    """
+    context_entries: list[SubtitleEntry] = []
+    if position > 0:
+        context_entries.append(entries[position - 1])
+    if position + 1 < len(entries):
+        context_entries.append(entries[position + 1])
+
+    # Items are (timestamp, kind, text) with kind "zh" or "en"; sorting by
+    # timestamp interleaves the Chinese context sentences with the English
+    # translations that overlap them.
+    items: list[tuple[float, str, str]] = []
+    seen_translations: set[str] = set()
+
+    for context_entry in context_entries:
+        items.append((context_entry.start, "zh", context_entry.text))
+        for match in find_translation_matches(context_entry, translation_entries, overlap_min):
+            if match.text and match.text not in seen_translations:
+                seen_translations.add(match.text)
+                items.append((match.start, "en", match.text))
+
+    items.sort(key=lambda item: (item[0], 0 if item[1] == "zh" else 1))
+
+    lines: list[str] = []
+    for _, kind, text in items:
+        escaped = html.escape(text)
+        css_class = "zh" if kind == "zh" else "en"
+        lines.append(f'<div class="{css_class}">{escaped}</div>')
+    return "".join(lines)
+
+
+class LocalMediaClipsManager:
+    """Create and update LocalMediaClips notes in Anki."""
+
+    DECK_NAME = "Chinese::Media"
+    NOTE_TYPE = "LocalMediaClips"
+
+    def get_existing_notes(self) -> dict[str, dict]:
+        """Get all existing LocalMediaClips notes indexed by their ID field."""
+        note_ids = find_notes_by_query(f"note:{self.NOTE_TYPE}")
+        if not note_ids:
+            return {}
+
+        existing: dict[str, dict] = {}
+        for note in get_notes_info(note_ids):
+            note_id_value = note["fields"].get("ID", {}).get("value", "").strip()
+            if note_id_value:
+                existing[note_id_value] = note
+        return existing
+
+    def create_note(self, fields: dict[str, str]) -> None:
+        """Create a new LocalMediaClips note."""
+        response = anki_connect_request(
+            "addNote",
+            {
+                "note": {
+                    "deckName": self.DECK_NAME,
+                    "modelName": self.NOTE_TYPE,
+                    "fields": fields,
+                    "tags": ["auto-generated"],
+                }
+            },
+        )
+        note_id = response.get("result")
+        if not note_id:
+            raise Exception(f"Failed to create note for ID '{fields.get('ID')}'")
+        print(f"  Created note {note_id} for ID '{fields.get('ID')}'")
+
+    def update_note(self, note_id: int, fields: dict[str, str]) -> None:
+        """Update an existing LocalMediaClips note."""
+        update_note_fields(note_id, fields)
+        print(f"  Updated note {note_id} for ID '{fields.get('ID')}'")
+
+
+def note_fields_differ(existing_note: dict, fields: dict[str, str]) -> bool:
+    """Return True when any of the given field values differ from the note's."""
+    existing_fields = existing_note.get("fields", {})
+    for name, value in fields.items():
+        if existing_fields.get(name, {}).get("value", "") != value:
+            return True
+    return False
+
+
 def build_ffmpeg_command(
-    video: Path, start: float, end: float, output: Path, audio_only: bool, reencode: bool = False
+    video: Path,
+    start: float,
+    end: float,
+    output: Path,
+    audio_only: bool,
+    reencode: bool = False,
+    webm: bool = False,
 ) -> list[str]:
     """
     Build the ffmpeg command for one clip.
 
     Video clips use stream copy for speed; audio-only clips re-encode the audio
     track to MP3. With reencode, seeking happens on the output side and video is
-    re-encoded to H.264/AAC, which gives frame-accurate cuts at the cost of speed.
+    re-encoded to H.264/AAC (or VP9/Opus with webm), which gives frame-accurate
+    cuts at the cost of speed.
     """
     command = ["ffmpeg", "-hide_banner", "-loglevel", "error"]
 
-    if reencode:
+    if reencode or webm:
         # Output-side seeking decodes from the requested frame instead of
-        # snapping to the nearest keyframe.
+        # snapping to the nearest keyframe. WebM output always re-encodes.
         command += ["-i", str(video), "-ss", format_timestamp(start), "-to", format_timestamp(end)]
         if audio_only:
-            command += ["-vn", "-map", "0:a:0?", "-c:a", "libmp3lame", "-q:a", "2"]
+            command += ["-vn", "-map", "0:a:0?", "-c:a", "libmp3lame", "-q:a", "2", "-ac", "2"]
+        elif webm:
+            command += [
+                "-map",
+                "0:v:0",
+                "-map",
+                "0:a:0?",
+                "-c:v",
+                "libvpx-vp9",
+                "-crf",
+                "32",
+                "-b:v",
+                "0",
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "libopus",
+                "-b:a",
+                "128k",
+                "-ac",
+                "2",
+            ]
         else:
             command += [
                 "-map",
@@ -286,6 +424,8 @@ def build_ffmpeg_command(
                 "aac",
                 "-b:a",
                 "192k",
+                "-ac",
+                "2",
                 "-movflags",
                 "+faststart",
             ]
@@ -312,7 +452,9 @@ Examples:
   %(prog)s movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
   %(prog)s movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
   %(prog)s movie.zh.srt movie.mkv --all --reencode
+  %(prog)s movie.zh.srt movie.mkv --all --webm
   %(prog)s movie.zh.srt movie.mkv --translation movie.en.srt --overlap-min 0.2
+  %(prog)s movie.zh.srt movie.mkv --translation movie.en.srt --anki-prefix apple_of_my_eye_
         """,
     )
     parser.add_argument("subtitle", type=Path, help="SRT subtitle file with the sentence timing")
@@ -329,7 +471,13 @@ Examples:
     parser.add_argument(
         "--reencode",
         action="store_true",
-        help="Re-encode clips for frame-accurate cuts instead of fast keyframe-snapped stream copy",
+        help="Re-encode clips for frame-accurate cuts instead of fast keyframe-snapped stream copy "
+        "(H.264/AAC stereo, browser-playable)",
+    )
+    parser.add_argument(
+        "--webm",
+        action="store_true",
+        help="Output .webm video clips with VP9 video and Opus audio instead of .mp4/H.264; implies --reencode",
     )
     parser.add_argument("--limit", type=int, default=0, help="Only extract the first N matching entries (0 = all)")
     parser.add_argument("--padding-start", type=float, default=0.0, help="Seconds added before each subtitle interval")
@@ -355,12 +503,24 @@ Examples:
         default=0.0,
         help="Minimum seconds of timestamp overlap required for a translation entry to match (default: 0.0)",
     )
+    parser.add_argument(
+        "--anki-prefix",
+        type=str,
+        default=None,
+        metavar="PREFIX",
+        help="Create or update one LocalMediaClips note in Anki per produced clip, with IDs "
+        "'<prefix>001', '<prefix>002', ... (requires Anki running with AnkiConnect)",
+    )
     args = parser.parse_args()
 
     if args.padding_start < 0 or args.padding_end < 0:
         parser.error("padding values must be >= 0")
     if args.overlap_min < 0:
         parser.error("--overlap-min must be >= 0")
+    if args.webm and args.mp3:
+        parser.error("--webm and --mp3 are mutually exclusive")
+    if args.anki_prefix is not None and not args.anki_prefix.strip():
+        parser.error("--anki-prefix must not be empty")
 
     subtitle_path = args.subtitle
     video_path = args.video
@@ -383,7 +543,12 @@ Examples:
         translation_entries = parse_srt(translation_path)
         print(f"Parsed {len(translation_entries)} translation entries from {translation_path.name}")
 
-    extension = ".mp3" if args.mp3 else ".mp4"
+    if args.mp3:
+        extension = ".mp3"
+    elif args.webm:
+        extension = ".webm"
+    else:
+        extension = ".mp4"
     output_dir = args.output if args.output is not None else video_path.with_name(video_path.stem + "_clips")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -431,6 +596,14 @@ Examples:
     failed = 0
     records: list[dict] = []
 
+    # Precompute each selected entry's position in the full subtitle list and
+    # its Context HTML, both of which the Anki notes need later.
+    contexts: dict[int, str] = {}
+    if args.anki_prefix:
+        entry_positions = {id(entry): position for position, entry in enumerate(entries)}
+    else:
+        entry_positions = {}
+
     for seq, entry in enumerate(selected, start=1):
         filename_text = sanitize_filename_text(entry.text)
         timestamp = format_filename_timestamp(entry.start)
@@ -457,6 +630,11 @@ Examples:
         if match_info and match_info["matches"]:
             record["translation_matches"] = match_info["matches"]
 
+        if args.anki_prefix:
+            contexts[seq] = build_context_html(
+                entries, entry_positions[id(entry)], translation_entries, args.overlap_min
+            )
+
         if output_path.exists():
             record["status"] = "skipped_existing"
             records.append(record)
@@ -474,7 +652,15 @@ Examples:
         print(f"[{entry.index:03d}] {format_timestamp(start)} -> {format_timestamp(end)}  {entry.text[:40]}{translation_note}")
         try:
             subprocess.run(
-                build_ffmpeg_command(video_path, start, end, output_path, audio_only=args.mp3, reencode=args.reencode),
+                build_ffmpeg_command(
+                    video_path,
+                    start,
+                    end,
+                    output_path,
+                    audio_only=args.mp3,
+                    reencode=args.reencode or args.webm,
+                    webm=args.webm,
+                ),
                 check=True,
             )
             record["status"] = "cut"
@@ -501,7 +687,53 @@ Examples:
         matched_sentences = sum(1 for record in records if record["translation_count"] > 0)
         print(f"Sentences with at least one translation: {matched_sentences}/{len(records)}")
 
-    if failed:
+    anki_errors = 0
+    if args.anki_prefix:
+        print("\n=== Upserting LocalMediaClips notes in Anki ===")
+        manager = LocalMediaClipsManager()
+        try:
+            existing_notes = manager.get_existing_notes()
+            print(f"Found {len(existing_notes)} existing LocalMediaClips notes")
+        except Exception as e:
+            print(f"Error: Could not load LocalMediaClips notes from Anki: {e}")
+            print("Make sure Anki is running with the AnkiConnect addon.")
+            sys.exit(1)
+
+        created = 0
+        updated = 0
+        unchanged = 0
+        for record in records:
+            if record.get("status") not in ("cut", "skipped_existing"):
+                continue
+
+            seq = record["sequence"]
+            note_id_str = f"{args.anki_prefix}{seq:03d}"
+            fields = {
+                "ID": note_id_str,
+                "LocalFilePath": str((output_dir / record["filename"]).resolve()),
+                "RelativeFilePath": f"{output_dir.name}/{record['filename']}",
+                "Traditional": record["chinese"],
+                "Translation": record["translation"],
+                "Context": contexts.get(seq, ""),
+            }
+
+            try:
+                existing_note = existing_notes.get(note_id_str)
+                if existing_note is None:
+                    manager.create_note(fields)
+                    created += 1
+                elif note_fields_differ(existing_note, fields):
+                    manager.update_note(existing_note["noteId"], fields)
+                    updated += 1
+                else:
+                    unchanged += 1
+            except Exception as e:
+                anki_errors += 1
+                print(f"  Error upserting note '{note_id_str}': {e}")
+
+        print(f"Anki: {created} created, {updated} updated, {unchanged} unchanged, {anki_errors} errors")
+
+    if failed or anki_errors:
         sys.exit(1)
 
 
