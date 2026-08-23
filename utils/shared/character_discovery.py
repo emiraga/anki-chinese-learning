@@ -14,7 +14,6 @@ from pathlib import Path
 
 from .anki_utils import anki_connect_request, find_notes_by_query, get_notes_info
 
-
 KNOWN_CHARS_QUERY = "note:Hanzi -is:suspended card:1"
 
 

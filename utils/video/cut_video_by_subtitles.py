@@ -27,19 +27,16 @@ Pass --translation movie.en.srt to attach a translation to each produced
 sentence. Translation entries are matched to the Chinese entries by how much
 their timestamps overlap in the movie (see --overlap-min). When a Chinese
 entry overlaps several translation entries, their texts are concatenated in
-timestamp order. The script then writes a "<video>_sentences.json" manifest
-into the output folder with one object per produced sentence: sequence
-number, clip filename, Chinese text, translation, translation match count,
-timestamps, and cut status.
+timestamp order.
 
 Pass --anki-prefix apple_of_my_eye_ to create or update one LocalMediaClips
-note in Anki per produced clip, keyed by a unique ID such as
+note in Anki as soon as each clip is processed, keyed by a unique ID such as
 "apple_of_my_eye_001". The note fields are ID, LocalFilePath (absolute path
 to the clip), RelativeFilePath (the clip's movie folder plus filename),
-Traditional (the subtitle sentence), Translation (the same translation
-written to the JSON manifest), and Context (HTML with the previous, current
-(bold), and next subtitle sentences, interleaved with the translations that
-fall anywhere in that window by timestamp).
+Traditional (the subtitle sentence), Translation (the matched translation),
+and Context (HTML with the previous, current (bold), and next subtitle
+sentences, interleaved with the translations that fall anywhere in that
+window by timestamp).
 
 Usage:
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv
@@ -56,13 +53,13 @@ Requirements:
 
 import argparse
 import html
-import json
 import re
 import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -245,6 +242,11 @@ def select_entries(
     return selected, skipped_no_cjk, skipped_unknown
 
 
+def _subtitle_start_key(entry: SubtitleEntry) -> float:
+    """Return a subtitle entry's start time for sorting."""
+    return entry.start
+
+
 def find_translation_matches(
     entry: SubtitleEntry, translations: list[SubtitleEntry], overlap_min: float
 ) -> list[SubtitleEntry]:
@@ -258,12 +260,12 @@ def find_translation_matches(
     a single point count as matching; pass a small positive value such as
     0.001 to require a real overlap.
     """
-    matches = []
+    matches: list[SubtitleEntry] = []
     for translation in translations:
         overlap = min(entry.end, translation.end) - max(entry.start, translation.start)
         if overlap >= overlap_min:
             matches.append(translation)
-    matches.sort(key=lambda item: item.start)
+    matches.sort(key=_subtitle_start_key)
     return matches
 
 
@@ -305,8 +307,10 @@ def build_context_html(
     items: list[tuple[float, str, str, bool]] = []
     seen_translations: set[str] = set()
 
-    for context_entry in context_entries:
-        items.append((context_entry.start, "zh", context_entry.text, context_entry is current))
+    items += [
+        (context_entry.start, "zh", context_entry.text, context_entry is current)
+        for context_entry in context_entries
+    ]
     for match in find_translation_matches(window, translation_entries, overlap_min):
         if match.text and match.text not in seen_translations:
             seen_translations.add(match.text)
@@ -319,7 +323,12 @@ def build_context_html(
         escaped = html.escape(text)
         if kind == "zh":
             if is_current:
-                lines.append(f'<div class="zh current"><strong>{escaped}</strong></div>')
+                lines.append(
+                    f'<div class="zh current" '
+                    f'style="border: 2px solid #f59e0b; border-radius: 6px; '
+                    f'padding: 4px 10px; display: inline-block;">'
+                    f"<strong>{escaped}</strong></div>"
+                )
             else:
                 lines.append(f'<div class="zh">{escaped}</div>')
         else:
@@ -333,13 +342,13 @@ class LocalMediaClipsManager:
     DECK_NAME = "Chinese::Media"
     NOTE_TYPE = "LocalMediaClips"
 
-    def get_existing_notes(self) -> dict[str, dict]:
+    def get_existing_notes(self) -> dict[str, Any]:
         """Get all existing LocalMediaClips notes indexed by their ID field."""
         note_ids = find_notes_by_query(f"note:{self.NOTE_TYPE}")
         if not note_ids:
             return {}
 
-        existing: dict[str, dict] = {}
+        existing: dict[str, Any] = {}
         for note in get_notes_info(note_ids):
             note_id_value = note["fields"].get("ID", {}).get("value", "").strip()
             if note_id_value:
@@ -370,13 +379,10 @@ class LocalMediaClipsManager:
         print(f"  Updated note {note_id} for ID '{fields.get('ID')}'")
 
 
-def note_fields_differ(existing_note: dict, fields: dict[str, str]) -> bool:
+def note_fields_differ(existing_note: dict[str, Any], fields: dict[str, str]) -> bool:
     """Return True when any of the given field values differ from the note's."""
     existing_fields = existing_note.get("fields", {})
-    for name, value in fields.items():
-        if existing_fields.get(name, {}).get("value", "") != value:
-            return True
-    return False
+    return any(existing_fields.get(name, {}).get("value", "") != value for name, value in fields.items())
 
 
 def build_ffmpeg_command(
@@ -511,8 +517,7 @@ Examples:
         type=Path,
         default=None,
         metavar="SRT",
-        help="Translation subtitle file (e.g. movie.en.srt). Matched to each Chinese entry by time overlap; "
-        "writes a <video>_sentences.json manifest of the produced clips",
+        help="Translation subtitle file (e.g. movie.en.srt). Matched to each Chinese entry by time overlap",
     )
     parser.add_argument(
         "--overlap-min",
@@ -525,7 +530,7 @@ Examples:
         type=str,
         default=None,
         metavar="PREFIX",
-        help="Create or update one LocalMediaClips note in Anki per produced clip, with IDs "
+        help="Create or update one LocalMediaClips note in Anki as each clip is produced, with IDs "
         "'<prefix>001', '<prefix>002', ... (requires Anki running with AnkiConnect)",
     )
     args = parser.parse_args()
@@ -593,7 +598,7 @@ Examples:
         print(f"Limiting to the first {len(selected)} matching entries")
 
     # Precompute translation matches for every entry that will be produced.
-    translations_by_index: dict[int, dict] = {}
+    translations_by_index: dict[int, Any] = {}
     if args.translation_subtitle is not None:
         for entry in selected:
             matches = find_translation_matches(entry, translation_entries, args.overlap_min)
@@ -608,105 +613,14 @@ Examples:
 
     print(f"=== Cutting {len(selected)} clip(s) into {output_dir} ===\n")
 
-    cut_count = 0
-    skipped_existing = 0
-    failed = 0
-    records: list[dict] = []
-
-    # Precompute each selected entry's position in the full subtitle list and
-    # its Context HTML, both of which the Anki notes need later.
-    contexts: dict[int, str] = {}
+    # Set up Anki before cutting so each note can be created or updated as soon
+    # as its clip is processed. Existing notes are indexed by their ID field to
+    # decide between creating and updating.
+    entry_positions: dict[int, int] = {}
+    manager: LocalMediaClipsManager | None = None
+    existing_notes: dict[str, Any] = {}
     if args.anki_prefix:
         entry_positions = {id(entry): position for position, entry in enumerate(entries)}
-    else:
-        entry_positions = {}
-
-    for seq, entry in enumerate(selected, start=1):
-        filename_text = sanitize_filename_text(entry.text)
-        timestamp = format_filename_timestamp(entry.start)
-        output_path = output_dir / f"{entry.index:03d}. {filename_text} ({timestamp}){extension}"
-
-        start = max(0.0, entry.start - args.padding_start)
-        end = entry.end + args.padding_end
-        match_info = translations_by_index.get(entry.index)
-
-        record = {
-            "sequence": seq,
-            "subtitle_index": entry.index,
-            "filename": output_path.name,
-            "chinese": entry.text,
-            "translation": match_info["text"] if match_info else "",
-            "translation_count": match_info["count"] if match_info else 0,
-            "start": entry.start,
-            "end": entry.end,
-            "start_timestamp": format_timestamp(entry.start),
-            "end_timestamp": format_timestamp(entry.end),
-            "clip_start": format_timestamp(start),
-            "clip_end": format_timestamp(end),
-        }
-        if match_info and match_info["matches"]:
-            record["translation_matches"] = match_info["matches"]
-
-        if args.anki_prefix:
-            contexts[seq] = build_context_html(
-                entries, entry_positions[id(entry)], translation_entries, args.overlap_min
-            )
-
-        if output_path.exists():
-            record["status"] = "skipped_existing"
-            records.append(record)
-            skipped_existing += 1
-            continue
-
-        if end <= start:
-            record["status"] = "empty_interval"
-            records.append(record)
-            failed += 1
-            print(f"[{entry.index:03d}] Skipped: empty interval ({format_timestamp(entry.start)} -> {format_timestamp(entry.end)})")
-            continue
-
-        translation_note = f"  (translations: {match_info['count']})" if match_info else ""
-        print(f"[{entry.index:03d}] {format_timestamp(start)} -> {format_timestamp(end)}  {entry.text[:40]}{translation_note}")
-        try:
-            subprocess.run(
-                build_ffmpeg_command(
-                    video_path,
-                    start,
-                    end,
-                    output_path,
-                    audio_only=args.mp3,
-                    reencode=args.reencode or args.webm,
-                    webm=args.webm,
-                ),
-                check=True,
-            )
-            record["status"] = "cut"
-            cut_count += 1
-        except subprocess.CalledProcessError as e:
-            record["status"] = "failed"
-            failed += 1
-            print(f"  Error cutting entry {entry.index}: {e}")
-        records.append(record)
-
-    print(f"\nCut {cut_count} clip(s), skipped {skipped_existing} already present, {failed} failed")
-
-    if args.translation_subtitle is not None:
-        json_path = output_dir / f"{video_path.stem}_sentences.json"
-        with open(json_path, "w", encoding="utf-8") as json_file:
-            json.dump(records, json_file, ensure_ascii=False, indent=2)
-        print(f"Wrote sentence manifest to {json_path}")
-
-        distribution: dict[int, int] = {}
-        for record in records:
-            distribution[record["translation_count"]] = distribution.get(record["translation_count"], 0) + 1
-        distribution_summary = ", ".join(f"{count}: {num}" for count, num in sorted(distribution.items()))
-        print(f"Translation match counts per sentence: {distribution_summary}")
-        matched_sentences = sum(1 for record in records if record["translation_count"] > 0)
-        print(f"Sentences with at least one translation: {matched_sentences}/{len(records)}")
-
-    anki_errors = 0
-    if args.anki_prefix:
-        print("\n=== Upserting LocalMediaClips notes in Anki ===")
         manager = LocalMediaClipsManager()
         try:
             existing_notes = manager.get_existing_notes()
@@ -716,39 +630,99 @@ Examples:
             print("Make sure Anki is running with the AnkiConnect addon.")
             sys.exit(1)
 
-        created = 0
-        updated = 0
-        unchanged = 0
-        for record in records:
-            if record.get("status") not in ("cut", "skipped_existing"):
-                continue
+    cut_count = 0
+    skipped_existing = 0
+    failed = 0
+    anki_created = 0
+    anki_updated = 0
+    anki_unchanged = 0
+    anki_errors = 0
+    translation_counts: list[int] = []
 
-            seq = record["sequence"]
+    for seq, entry in enumerate(selected, start=1):
+        filename_text = sanitize_filename_text(entry.text)
+        timestamp = format_filename_timestamp(entry.start)
+        output_path = output_dir / f"{entry.index:03d}. {filename_text} ({timestamp}){extension}"
+
+        start = max(0.0, entry.start - args.padding_start)
+        end = entry.end + args.padding_end
+        match_info = translations_by_index.get(entry.index)
+        translation = match_info["text"] if match_info else ""
+        translation_count = match_info["count"] if match_info else 0
+        if args.translation_subtitle is not None:
+            translation_counts.append(translation_count)
+
+        status: str | None = None
+        if output_path.exists():
+            status = "skipped_existing"
+            skipped_existing += 1
+        elif end <= start:
+            status = "empty_interval"
+            failed += 1
+            print(f"[{entry.index:03d}] Skipped: empty interval ({format_timestamp(entry.start)} -> {format_timestamp(entry.end)})")
+        else:
+            translation_note = f"  (translations: {translation_count})" if match_info else ""
+            print(f"[{entry.index:03d}] {format_timestamp(start)} -> {format_timestamp(end)}  {entry.text[:40]}{translation_note}")
+            try:
+                subprocess.run(
+                    build_ffmpeg_command(
+                        video_path,
+                        start,
+                        end,
+                        output_path,
+                        audio_only=args.mp3,
+                        reencode=args.reencode or args.webm,
+                        webm=args.webm,
+                    ),
+                    check=True,
+                )
+                status = "cut"
+                cut_count += 1
+            except subprocess.CalledProcessError as e:
+                status = "failed"
+                failed += 1
+                print(f"  Error cutting entry {entry.index}: {e}")
+
+        if args.anki_prefix and status in ("cut", "skipped_existing"):
+            assert manager is not None
             note_id_str = f"{args.anki_prefix}{seq:03d}"
             fields = {
                 "ID": note_id_str,
-                "LocalFilePath": str((output_dir / record["filename"]).resolve()),
-                "RelativeFilePath": f"{output_dir.name}/{record['filename']}",
-                "Traditional": record["chinese"],
-                "Translation": record["translation"],
-                "Context": contexts.get(seq, ""),
+                "LocalFilePath": str(output_path.resolve()),
+                "RelativeFilePath": f"{output_dir.name}/{output_path.name}",
+                "Traditional": entry.text,
+                "Translation": translation,
+                "Context": build_context_html(
+                    entries, entry_positions[id(entry)], translation_entries, args.overlap_min
+                ),
             }
-
             try:
                 existing_note = existing_notes.get(note_id_str)
                 if existing_note is None:
                     manager.create_note(fields)
-                    created += 1
+                    anki_created += 1
                 elif note_fields_differ(existing_note, fields):
                     manager.update_note(existing_note["noteId"], fields)
-                    updated += 1
+                    anki_updated += 1
                 else:
-                    unchanged += 1
+                    anki_unchanged += 1
             except Exception as e:
                 anki_errors += 1
                 print(f"  Error upserting note '{note_id_str}': {e}")
 
-        print(f"Anki: {created} created, {updated} updated, {unchanged} unchanged, {anki_errors} errors")
+    print(f"\nCut {cut_count} clip(s), skipped {skipped_existing} already present, {failed} failed")
+
+    if args.translation_subtitle is not None:
+        distribution: dict[int, int] = {}
+        for count in translation_counts:
+            distribution[count] = distribution.get(count, 0) + 1
+        distribution_summary = ", ".join(f"{count}: {num}" for count, num in sorted(distribution.items()))
+        print(f"Translation match counts per sentence: {distribution_summary}")
+        matched_sentences = sum(1 for count in translation_counts if count > 0)
+        print(f"Sentences with at least one translation: {matched_sentences}/{len(translation_counts)}")
+
+    if args.anki_prefix:
+        print(f"\nAnki: {anki_created} created, {anki_updated} updated, {anki_unchanged} unchanged, {anki_errors} errors")
 
     if failed or anki_errors:
         sys.exit(1)
