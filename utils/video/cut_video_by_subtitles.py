@@ -23,7 +23,7 @@ for frame-accurate cuts (slower, re-encodes to H.264/AAC). Audio-only output
 
 Usage:
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --mp3 --padding 0.2
+    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --all --reencode
 
@@ -276,7 +276,7 @@ def main() -> None:
         epilog="""\
 Examples:
   %(prog)s movie.zh.srt movie.mkv
-  %(prog)s movie.zh.srt movie.mkv --mp3 --padding 0.2
+  %(prog)s movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
   %(prog)s movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
   %(prog)s movie.zh.srt movie.mkv --all --reencode
         """,
@@ -306,6 +306,9 @@ Examples:
         help="Extract every entry with Chinese text, not only entries whose characters you already know",
     )
     args = parser.parse_args()
+
+    if args.padding_start < 0 or args.padding_end < 0:
+        parser.error("padding values must be >= 0")
 
     subtitle_path = args.subtitle
     video_path = args.video
@@ -361,8 +364,8 @@ Examples:
             skipped_existing += 1
             continue
 
-        start = max(0.0, entry.start - args.padding)
-        end = entry.end + args.padding
+        start = max(0.0, entry.start - args.padding_start)
+        end = entry.end + args.padding_end
         if end <= start:
             print(f"[{entry.index:03d}] Skipped: empty interval ({format_timestamp(entry.start)} -> {format_timestamp(entry.end)})")
             failed += 1
