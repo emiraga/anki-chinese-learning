@@ -7,6 +7,8 @@ import {
 import { useLocalStorageState } from "~/utils/localStorage";
 import { type SegmentationAlgorithm } from "~/utils/text";
 import Textarea from "react-textarea-autosize";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -24,6 +26,14 @@ export default function TodoCharsSentenceInput() {
     "segmentationAlgorithm",
     "intl-tw"
   );
+  let [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const text = searchParams.get("text");
+    if (text) {
+      setSentence((prev) => (prev === text ? prev : text));
+    }
+  }, [searchParams, setSentence]);
 
   return (
     <MainFrame>

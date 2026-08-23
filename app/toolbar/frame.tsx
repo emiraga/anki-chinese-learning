@@ -46,6 +46,10 @@ const MainFrame: React.FC<{
           }
           if (traditional.length === 1) {
             navigate(`/char/${traditional}`);
+          } else if (traditional.length > 3) {
+            navigate(
+              `/chars_sentence_input?text=${encodeURIComponent(traditional)}`
+            );
           } else {
             navigate(`/phrase/${traditional}`);
           }
