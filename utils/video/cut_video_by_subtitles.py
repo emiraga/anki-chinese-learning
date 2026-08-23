@@ -6,7 +6,7 @@
 # ]
 # ///
 
-"""
+r"""
 Cut a video into one clip per subtitle entry.
 
 Given an SRT subtitle file and its video, this script produces an ordered set

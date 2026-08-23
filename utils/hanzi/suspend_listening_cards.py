@@ -22,6 +22,7 @@ listening review is no longer needed:
 
 import sys
 from pathlib import Path
+from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -43,7 +44,7 @@ IGNORED_TAG = "card-listening-ignored-on-purpose"
 MAX_TRADITIONAL_CHARS = 3
 
 
-def _is_short_traditional(note: dict) -> bool:
+def _is_short_traditional(note: dict[str, Any]) -> bool:
     """Return True if the note's Traditional field has fewer than 4 characters."""
     traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
     return len(traditional) < MAX_TRADITIONAL_CHARS + 1
