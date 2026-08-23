@@ -10,11 +10,11 @@
 Cut a video into one clip per subtitle entry.
 
 Given an SRT subtitle file and its video, this script produces an ordered set
-of clips named with the original subtitle numbering: "001. 你好.mp4",
-"002. 我喜欢你.mp4", and so on. By default only entries whose characters you
-already know in Anki are extracted (see extract_known_chars in
-utils/shared/character_discovery.py); pass --all to extract every entry that
-contains Chinese text.
+of clips named with the original subtitle numbering and the dialogue's start
+time: "001. 你好 (0:01).mp4", "002. 我喜欢你 (0:03).mp4", and so on. By
+default only entries whose characters you already know in Anki are extracted
+(see extract_known_chars in utils/shared/character_discovery.py); pass --all
+to extract every entry that contains Chinese text.
 
 The clips are cut with ffmpeg stream copy, so cutting is fast but the start
 may snap to the nearest keyframe before the subtitle time. Pass --reencode
@@ -103,6 +103,13 @@ def format_timestamp(seconds: float) -> str:
     minutes, remainder = divmod(remainder, 60_000)
     secs, ms = divmod(remainder, 1000)
     return f"{hours:02d}:{minutes:02d}:{secs:02d}.{ms:03d}"
+
+
+def format_filename_timestamp(seconds: float) -> str:
+    """Format a subtitle start time as 'M:SS' for filenames, e.g. 4:06."""
+    total_seconds = int(seconds)
+    minutes, secs = divmod(total_seconds, 60)
+    return f"{minutes}:{secs:02d}"
 
 
 def parse_srt(path: Path) -> list[SubtitleEntry]:
@@ -200,9 +207,13 @@ def select_entries(
         if not chars:
             skipped_no_cjk += 1
             continue
-        if not include_all and not chars.issubset(known_chars):
-            skipped_unknown += 1
-            continue
+        if not include_all:
+            # Keep the characters in the order they first appear in the sentence.
+            missing = list(dict.fromkeys(char for char in entry.text if char in chars and char not in known_chars))
+            if missing:
+                skipped_unknown += 1
+                print(f"  [{entry.index:03d}] {entry.text}  (missing: {' '.join(missing)})")
+                continue
         selected.append(entry)
 
     return selected, skipped_no_cjk, skipped_unknown
@@ -287,7 +298,8 @@ Examples:
         help="Re-encode clips for frame-accurate cuts instead of fast keyframe-snapped stream copy",
     )
     parser.add_argument("--limit", type=int, default=0, help="Only extract the first N matching entries (0 = all)")
-    parser.add_argument("--padding", type=float, default=0.0, help="Seconds added before and after each subtitle interval")
+    parser.add_argument("--padding-start", type=float, default=0.0, help="Seconds added before each subtitle interval")
+    parser.add_argument("--padding-end", type=float, default=0.0, help="Seconds added after each subtitle interval")
     parser.add_argument(
         "--all",
         action="store_true",
@@ -342,7 +354,8 @@ Examples:
 
     for entry in selected:
         filename_text = sanitize_filename_text(entry.text)
-        output_path = output_dir / f"{entry.index:03d}. {filename_text}{extension}"
+        timestamp = format_filename_timestamp(entry.start)
+        output_path = output_dir / f"{entry.index:03d}. {filename_text} ({timestamp}){extension}"
 
         if output_path.exists():
             skipped_existing += 1
