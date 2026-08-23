@@ -37,9 +37,9 @@ note in Anki per produced clip, keyed by a unique ID such as
 "apple_of_my_eye_001". The note fields are ID, LocalFilePath (absolute path
 to the clip), RelativeFilePath (the clip's movie folder plus filename),
 Traditional (the subtitle sentence), Translation (the same translation
-written to the JSON manifest), and Context (HTML with the previous and next
-subtitle sentences, interleaved with their overlapping translations by
-timestamp).
+written to the JSON manifest), and Context (HTML with the previous, current
+(bold), and next subtitle sentences, interleaved with the translations that
+fall anywhere in that window by timestamp).
 
 Usage:
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv
@@ -276,37 +276,54 @@ def build_context_html(
     """
     Build the Context HTML for one clip.
 
-    The context is the subtitle sentence immediately before and immediately
-    after the clip's sentence. Translations overlapping either context
-    sentence are interleaved with them by timestamp; each translation text is
-    included at most once.
+    The context spans the subtitle sentence immediately before the clip's
+    sentence through the sentence immediately after it. The clip's own
+    sentence is rendered bold. Translation entries that overlap this whole
+    window are interleaved with the Chinese sentences by timestamp; each
+    translation text is included at most once.
     """
+    current = entries[position]
     context_entries: list[SubtitleEntry] = []
     if position > 0:
         context_entries.append(entries[position - 1])
+    context_entries.append(current)
     if position + 1 < len(entries):
         context_entries.append(entries[position + 1])
 
-    # Items are (timestamp, kind, text) with kind "zh" or "en"; sorting by
-    # timestamp interleaves the Chinese context sentences with the English
-    # translations that overlap them.
-    items: list[tuple[float, str, str]] = []
+    # Match translations against the entire context window, from the start of
+    # the previous sentence to the end of the next one.
+    window = SubtitleEntry(
+        index=-1,
+        start=context_entries[0].start,
+        end=context_entries[-1].end,
+        text="",
+    )
+
+    # Items are (timestamp, kind, text, is_current) with kind "zh" or "en";
+    # sorting by timestamp interleaves the Chinese context sentences with the
+    # English translations that overlap the window.
+    items: list[tuple[float, str, str, bool]] = []
     seen_translations: set[str] = set()
 
     for context_entry in context_entries:
-        items.append((context_entry.start, "zh", context_entry.text))
-        for match in find_translation_matches(context_entry, translation_entries, overlap_min):
-            if match.text and match.text not in seen_translations:
-                seen_translations.add(match.text)
-                items.append((match.start, "en", match.text))
+        items.append((context_entry.start, "zh", context_entry.text, context_entry is current))
+    for match in find_translation_matches(window, translation_entries, overlap_min):
+        if match.text and match.text not in seen_translations:
+            seen_translations.add(match.text)
+            items.append((match.start, "en", match.text, False))
 
     items.sort(key=lambda item: (item[0], 0 if item[1] == "zh" else 1))
 
     lines: list[str] = []
-    for _, kind, text in items:
+    for _, kind, text, is_current in items:
         escaped = html.escape(text)
-        css_class = "zh" if kind == "zh" else "en"
-        lines.append(f'<div class="{css_class}">{escaped}</div>')
+        if kind == "zh":
+            if is_current:
+                lines.append(f'<div class="zh current"><strong>{escaped}</strong></div>')
+            else:
+                lines.append(f'<div class="zh">{escaped}</div>')
+        else:
+            lines.append(f'<div class="en">{escaped}</div>')
     return "".join(lines)
 
 
