@@ -57,6 +57,7 @@ import re
 import shutil
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -211,7 +212,7 @@ def sanitize_filename_text(text: str) -> str:
 
 def select_entries(
     entries: list[SubtitleEntry], known_chars: set[str], include_all: bool
-) -> tuple[list[SubtitleEntry], int, int]:
+) -> tuple[list[SubtitleEntry], int, int, Counter[str]]:
     """
     Keep entries to be extracted.
 
@@ -219,11 +220,13 @@ def select_entries(
     include_all is set, entries with unknown characters are skipped too.
 
     Returns:
-        (selected entries, skipped without Chinese, skipped with unknown characters)
+        (selected entries, skipped without Chinese, skipped with unknown characters,
+         frequency of each missing character across skipped entries)
     """
     selected: list[SubtitleEntry] = []
     skipped_no_cjk = 0
     skipped_unknown = 0
+    missing_freq: Counter[str] = Counter()
 
     for entry in entries:
         chars = extract_all_characters(entry.text)
@@ -235,11 +238,13 @@ def select_entries(
             missing = list(dict.fromkeys(char for char in entry.text if char in chars and char not in known_chars))
             if missing:
                 skipped_unknown += 1
+                missing_set = set(missing)
+                missing_freq.update(char for char in entry.text if char in missing_set)
                 print(f"  [{entry.index:03d}] {entry.text}  (missing: {' '.join(missing)})")
                 continue
         selected.append(entry)
 
-    return selected, skipped_no_cjk, skipped_unknown
+    return selected, skipped_no_cjk, skipped_unknown, missing_freq
 
 
 def _subtitle_start_key(entry: SubtitleEntry) -> float:
@@ -267,6 +272,11 @@ def find_translation_matches(
             matches.append(translation)
     matches.sort(key=_subtitle_start_key)
     return matches
+
+
+def _context_item_sort_key(item: tuple[float, str, str, bool]) -> tuple[float, int]:
+    """Sort context items by timestamp, with Chinese before English on ties."""
+    return (item[0], 0 if item[1] == "zh" else 1)
 
 
 def build_context_html(
@@ -316,7 +326,7 @@ def build_context_html(
             seen_translations.add(match.text)
             items.append((match.start, "en", match.text, False))
 
-    items.sort(key=lambda item: (item[0], 0 if item[1] == "zh" else 1))
+    items.sort(key=_context_item_sort_key)
 
     lines: list[str] = []
     for _, kind, text, is_current in items:
@@ -587,11 +597,19 @@ Examples:
             print("Make sure Anki is running with the AnkiConnect addon, or pass --all to skip the filter.")
             sys.exit(1)
 
-    selected, skipped_no_cjk, skipped_unknown = select_entries(entries, known_chars, include_all=args.all)
+    selected, skipped_no_cjk, skipped_unknown, missing_freq = select_entries(entries, known_chars, include_all=args.all)
 
     if not args.all:
         print(f"Skipped {skipped_no_cjk} entries without Chinese text and {skipped_unknown} with unknown characters")
     print(f"Kept {len(selected)} matching entries")
+
+    if not args.all:
+        if missing_freq:
+            print("Missing characters by frequency:")
+            for char, count in missing_freq.most_common():
+                print(f"  {char}: {count}")
+        else:
+            print("Missing characters: none")
 
     if args.limit > 0:
         selected = selected[: args.limit]
