@@ -68,6 +68,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -86,6 +87,12 @@ SUBTITLE_ENCODINGS = ("utf-8-sig", "big5", "gb18030", "utf-16")
 # Maximum number of characters kept from the subtitle text in the filename.
 MAX_FILENAME_TEXT_LENGTH = 80
 
+# Re-encoded clips are validated with ffprobe: their container duration must
+# match the requested interval within this many seconds or this fraction of the
+# expected duration, whichever is larger.
+MAX_CLIP_DURATION_TOLERANCE_SECONDS = 0.25
+MAX_CLIP_DURATION_TOLERANCE_RATIO = 0.05
+
 # Timestamp regex: "00:00:01,000 --> 00:00:04,000" (comma or dot for milliseconds).
 TIMING_PATTERN = re.compile(
     r"(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})"
@@ -100,6 +107,10 @@ class SubtitleEntry:
     start: float
     end: float
     text: str
+
+
+class ClipValidationError(Exception):
+    """Raised when a produced clip fails the ffprobe length/validity check."""
 
 
 def read_subtitle_text(path: Path) -> str:
@@ -360,7 +371,7 @@ def build_context_html(
 class LocalMediaClipsManager:
     """Create and update LocalMediaClips notes in Anki."""
 
-    DECK_NAME = "Chinese::z1Media"
+    DECK_NAME = "ChineseLocal::Media"
     NOTE_TYPE = "LocalMediaClips"
 
     def get_existing_notes(self) -> dict[str, Any]:
@@ -485,6 +496,95 @@ def build_ffmpeg_command(
     return command
 
 
+def validate_clip(path: Path, expected_duration: float | None = None) -> tuple[bool, str | None]:
+    """
+    Check a media file's readability and length with ffprobe.
+
+    With expected_duration set, the file's container duration must be close to
+    that value. With expected_duration None (the default), only readability and
+    a positive duration are checked.
+
+    Returns (True, None) when the file is valid, or when ffprobe is not
+    installed. Returns (False, reason) when the file cannot be read or fails
+    the requested checks.
+    """
+    if shutil.which("ffprobe") is None:
+        return True, None
+
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                str(path),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        return False, f"ffprobe could not read the file (exit status {e.returncode})"
+    except OSError as e:
+        return False, f"ffprobe could not run: {e}"
+
+    try:
+        duration = float(result.stdout.strip())
+    except ValueError:
+        return False, "ffprobe did not report a duration"
+
+    if duration <= 0:
+        return False, f"ffprobe reported a non-positive duration ({duration:.2f}s)"
+
+    if expected_duration is not None:
+        tolerance = max(
+            MAX_CLIP_DURATION_TOLERANCE_SECONDS,
+            expected_duration * MAX_CLIP_DURATION_TOLERANCE_RATIO,
+        )
+        if abs(duration - expected_duration) > tolerance:
+            return False, (
+                f"duration {duration:.2f}s differs from the requested "
+                f"{expected_duration:.2f}s by more than {tolerance:.2f}s"
+            )
+    return True, None
+
+
+CLIP_EXTENSIONS = {".mp4", ".webm", ".mp3"}
+
+
+def recheck_output_dir(output_dir: Path) -> tuple[int, int]:
+    """
+    Validate existing clip files in the output folder and delete damaged ones.
+
+    Only non-hidden files with a known clip extension are checked. Returns
+    (checked, deleted).
+    """
+    checked = 0
+    deleted = 0
+    for path in sorted(output_dir.iterdir()):
+        if not path.is_file() or path.name.startswith("."):
+            continue
+        if path.suffix.lower() not in CLIP_EXTENSIONS:
+            continue
+        checked += 1
+        valid, reason = validate_clip(path)
+        if valid:
+            continue
+        print(f"  Damaged: {path.name} ({reason})")
+        try:
+            path.unlink()
+        except OSError as e:
+            print(f"    Could not delete {path.name}: {e}")
+        else:
+            deleted += 1
+            print(f"    Deleted {path.name}")
+    return checked, deleted
+
+
 def main() -> None:
     """Cut one clip per subtitle entry from a video."""
     parser = argparse.ArgumentParser(
@@ -497,6 +597,7 @@ Examples:
   %(prog)s movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
   %(prog)s movie.zh.srt movie.mkv --all --reencode
   %(prog)s movie.zh.srt movie.mkv --all --webm
+  %(prog)s movie.zh.srt movie.mkv --recheck
   %(prog)s movie.zh.srt movie.mkv --translation movie.en.srt --overlap-min 0.2
   %(prog)s movie.zh.srt movie.mkv --translation movie.en.srt --anki-prefix apple_of_my_eye_
         """,
@@ -522,6 +623,12 @@ Examples:
         "--webm",
         action="store_true",
         help="Output .webm video clips with VP9 video and Opus audio instead of .mp4/H.264; implies --reencode",
+    )
+    parser.add_argument(
+        "--recheck",
+        action="store_true",
+        help="Before cutting, validate existing clips in the output folder with ffprobe and delete damaged ones "
+        "so they are cut again",
     )
     parser.add_argument("--limit", type=int, default=0, help="Only extract the first N matching entries (0 = all)")
     parser.add_argument("--padding-start", type=float, default=0.0, help="Seconds added before each subtitle interval")
@@ -576,6 +683,8 @@ Examples:
     if not shutil.which("ffmpeg"):
         print("Error: ffmpeg not found in PATH (brew install ffmpeg on macOS)")
         sys.exit(1)
+    if (args.reencode or args.webm) and shutil.which("ffprobe") is None:
+        print("Warning: ffprobe not found in PATH; re-encoded clips will not be validated")
 
     translation_entries: list[SubtitleEntry] = []
     if args.translation_subtitle is not None:
@@ -594,6 +703,14 @@ Examples:
         extension = ".mp4"
     output_dir = args.output if args.output is not None else video_path.with_name(video_path.stem + "_clips")
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.recheck:
+        if shutil.which("ffprobe") is None:
+            print("Error: --recheck requires ffprobe, which was not found in PATH")
+            sys.exit(1)
+        print(f"=== Rechecking existing clips in {output_dir} ===")
+        checked, deleted = recheck_output_dir(output_dir)
+        print(f"Recheck: {checked} clip(s) checked, {deleted} damaged clip(s) deleted\n")
 
     entries = parse_srt(subtitle_path)
     print(f"Parsed {len(entries)} subtitle entries from {subtitle_path.name}")
@@ -692,25 +809,50 @@ Examples:
         else:
             translation_note = f"  (translations: {translation_count})" if match_info else ""
             print(f"[{entry.index:03d}] {format_timestamp(start)} -> {format_timestamp(end)}  {entry.text[:40]}{translation_note}")
+            temp_path: Path | None = None
             try:
+                # Write to a hidden temporary file in the output folder first,
+                # then atomically rename it into place. An interrupted or failed
+                # run never leaves a truncated clip under the final filename.
+                with tempfile.NamedTemporaryFile(
+                    dir=output_dir, prefix=f".{entry.index:03d}.", suffix=extension, delete=False
+                ) as temp_file:
+                    temp_path = Path(temp_file.name)
+                temp_path.unlink()  # let ffmpeg create the file with normal permissions
                 subprocess.run(
                     build_ffmpeg_command(
                         video_path,
                         start,
                         end,
-                        output_path,
+                        temp_path,
                         audio_only=args.mp3,
                         reencode=args.reencode or args.webm,
                         webm=args.webm,
                     ),
                     check=True,
                 )
+                if args.reencode or args.webm:
+                    valid, reason = validate_clip(temp_path, expected_duration=end - start)
+                    if not valid:
+                        raise ClipValidationError(reason or "clip failed validation")
+                temp_path.replace(output_path)
+                temp_path = None
                 status = "cut"
                 cut_count += 1
             except subprocess.CalledProcessError as e:
                 status = "failed"
                 failed += 1
                 print(f"  Error cutting entry {entry.index}: {e}")
+            except ClipValidationError as e:
+                status = "failed"
+                failed += 1
+                print(f"  Rejected invalid clip for entry {entry.index}: {e}")
+            except KeyboardInterrupt:
+                print("\nInterrupted; removing incomplete clip...")
+                raise
+            finally:
+                if temp_path is not None:
+                    temp_path.unlink(missing_ok=True)
 
         if args.anki_prefix and status in ("cut", "skipped_existing"):
             assert manager is not None
