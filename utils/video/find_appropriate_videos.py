@@ -41,10 +41,7 @@ from pathlib import Path
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import find_notes_by_query, get_notes_info
-from shared.character_discovery import extract_all_characters
-
-KNOWN_CHARS_QUERY = "note:Hanzi -is:suspended card:1"
+from shared.character_discovery import extract_all_characters, extract_known_chars
 
 # Encodings to try when reading subtitle files, in order of likelihood. utf-16 is
 # tried last because it can "successfully" decode single-byte encoded files into
@@ -84,29 +81,6 @@ class SubtitleReport:
         if not self.unique_chars:
             return 1.0
         return (len(self.unique_chars) - self.missing_count) / len(self.unique_chars)
-
-
-def fetch_known_characters() -> set[str]:
-    """
-    Collect the traditional characters that are already being learned in Anki.
-
-    Returns:
-        Set of known traditional characters
-    """
-    note_ids = find_notes_by_query(KNOWN_CHARS_QUERY)
-    print(f"Found {len(note_ids)} unsuspended Hanzi notes")
-
-    known_chars: set[str] = set()
-    batch_size = 100
-
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i : i + batch_size]
-        for note_info in get_notes_info(batch_ids):
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            known_chars.update(extract_all_characters(traditional))
-
-    print(f"Known characters: {len(known_chars)}")
-    return known_chars
 
 
 def find_subtitle_files(root: Path, exclude: Path | None = None) -> list[Path]:
@@ -338,7 +312,7 @@ def main() -> None:
     if not subtitle_files:
         return
 
-    known_chars = fetch_known_characters()
+    known_chars = extract_known_chars()
 
     reports = [analyze_subtitle(path, known_chars) for path in subtitle_files]
     reports.sort(key=lambda report: (report.missing_count, len(report.unique_chars), report.path))

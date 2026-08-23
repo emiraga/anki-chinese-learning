@@ -12,7 +12,10 @@ import unicodedata
 from collections import Counter
 from pathlib import Path
 
-from .anki_utils import anki_connect_request, get_notes_info
+from .anki_utils import anki_connect_request, find_notes_by_query, get_notes_info
+
+
+KNOWN_CHARS_QUERY = "note:Hanzi -is:suspended card:1"
 
 
 def normalize_cjk_char(char: str) -> str:
@@ -45,6 +48,32 @@ def extract_all_characters(text: str, normalize: bool = False) -> set[str]:
         ):  # CJK Compatibility Ideographs Supplement
             chars.add(normalize_cjk_char(char) if normalize else char)
     return chars
+
+
+def extract_known_chars() -> set[str]:
+    """
+    Collect the traditional characters that are already being learned in Anki.
+
+    A character counts as known when it has an unsuspended first card in the
+    Hanzi note type (query: "note:Hanzi -is:suspended card:1").
+
+    Returns:
+        Set of known traditional characters
+    """
+    note_ids = find_notes_by_query(KNOWN_CHARS_QUERY)
+    print(f"Found {len(note_ids)} unsuspended Hanzi notes")
+
+    known_chars: set[str] = set()
+    batch_size = 100
+
+    for i in range(0, len(note_ids), batch_size):
+        batch_ids = note_ids[i : i + batch_size]
+        for note_info in get_notes_info(batch_ids):
+            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+            known_chars.update(extract_all_characters(traditional))
+
+    print(f"Known characters: {len(known_chars)}")
+    return known_chars
 
 
 def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> list[int]:
