@@ -49,6 +49,16 @@ Usage:
 
 Requirements:
     ffmpeg must be installed (brew install ffmpeg on macOS)
+
+Used commands:
+    ./utils/video/cut_video_by_subtitles.py \
+    /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.zh.srt \
+    /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.mkv \
+    --translation-subtitle \
+    /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.en.srt \
+    --padding-start 0.3 --padding-end 0.6 --reencode --overlap-min 0.1 --anki-prefix apple_of_my_eye_ --webm
+
+    cd "/Users/emirb/In Progress Temporary/you are the apple of my eye" && python3 -m http.server 8080
 """
 
 import argparse
