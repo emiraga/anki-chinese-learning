@@ -21,17 +21,28 @@ may snap to the nearest keyframe before the subtitle time. Pass --reencode
 for frame-accurate cuts (slower, re-encodes to H.264/AAC). Audio-only output
 (--mp3) re-encodes the audio track to MP3.
 
+Pass --translation movie.en.srt to attach a translation to each produced
+sentence. Translation entries are matched to the Chinese entries by how much
+their timestamps overlap in the movie (see --overlap-min). When a Chinese
+entry overlaps several translation entries, their texts are concatenated in
+timestamp order. The script then writes a "<video>_sentences.json" manifest
+into the output folder with one object per produced sentence: sequence
+number, clip filename, Chinese text, translation, translation match count,
+timestamps, and cut status.
+
 Usage:
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
     ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --all --reencode
+    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --translation movie.en.srt --overlap-min 0.2
 
 Requirements:
     ffmpeg must be installed (brew install ffmpeg on macOS)
 """
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -219,6 +230,28 @@ def select_entries(
     return selected, skipped_no_cjk, skipped_unknown
 
 
+def find_translation_matches(
+    entry: SubtitleEntry, translations: list[SubtitleEntry], overlap_min: float
+) -> list[SubtitleEntry]:
+    """
+    Find translation entries that overlap the given subtitle entry in time.
+
+    An overlap is measured in seconds as min(entry.end, translation.end) -
+    max(entry.start, translation.start). Entries whose overlap is at least
+    overlap_min seconds are returned, ordered by their start timestamp in the
+    movie. With the default overlap_min of 0.0, intervals that only touch at
+    a single point count as matching; pass a small positive value such as
+    0.001 to require a real overlap.
+    """
+    matches = []
+    for translation in translations:
+        overlap = min(entry.end, translation.end) - max(entry.start, translation.start)
+        if overlap >= overlap_min:
+            matches.append(translation)
+    matches.sort(key=lambda item: item.start)
+    return matches
+
+
 def build_ffmpeg_command(
     video: Path, start: float, end: float, output: Path, audio_only: bool, reencode: bool = False
 ) -> list[str]:
@@ -279,6 +312,7 @@ Examples:
   %(prog)s movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
   %(prog)s movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
   %(prog)s movie.zh.srt movie.mkv --all --reencode
+  %(prog)s movie.zh.srt movie.mkv --translation movie.en.srt --overlap-min 0.2
         """,
     )
     parser.add_argument("subtitle", type=Path, help="SRT subtitle file with the sentence timing")
@@ -305,10 +339,28 @@ Examples:
         action="store_true",
         help="Extract every entry with Chinese text, not only entries whose characters you already know",
     )
+    parser.add_argument(
+        "--translation",
+        "--translation-subtitle",
+        dest="translation_subtitle",
+        type=Path,
+        default=None,
+        metavar="SRT",
+        help="Translation subtitle file (e.g. movie.en.srt). Matched to each Chinese entry by time overlap; "
+        "writes a <video>_sentences.json manifest of the produced clips",
+    )
+    parser.add_argument(
+        "--overlap-min",
+        type=float,
+        default=0.0,
+        help="Minimum seconds of timestamp overlap required for a translation entry to match (default: 0.0)",
+    )
     args = parser.parse_args()
 
     if args.padding_start < 0 or args.padding_end < 0:
         parser.error("padding values must be >= 0")
+    if args.overlap_min < 0:
+        parser.error("--overlap-min must be >= 0")
 
     subtitle_path = args.subtitle
     video_path = args.video
@@ -321,6 +373,15 @@ Examples:
     if not shutil.which("ffmpeg"):
         print("Error: ffmpeg not found in PATH (brew install ffmpeg on macOS)")
         sys.exit(1)
+
+    translation_entries: list[SubtitleEntry] = []
+    if args.translation_subtitle is not None:
+        translation_path = args.translation_subtitle
+        if not translation_path.is_file():
+            print(f"Error: Translation subtitle file not found: {translation_path}")
+            sys.exit(1)
+        translation_entries = parse_srt(translation_path)
+        print(f"Parsed {len(translation_entries)} translation entries from {translation_path.name}")
 
     extension = ".mp3" if args.mp3 else ".mp4"
     output_dir = args.output if args.output is not None else video_path.with_name(video_path.stem + "_clips")
@@ -349,40 +410,97 @@ Examples:
         selected = selected[: args.limit]
         print(f"Limiting to the first {len(selected)} matching entries")
 
+    # Precompute translation matches for every entry that will be produced.
+    translations_by_index: dict[int, dict] = {}
+    if args.translation_subtitle is not None:
+        for entry in selected:
+            matches = find_translation_matches(entry, translation_entries, args.overlap_min)
+            translations_by_index[entry.index] = {
+                "text": " ".join(match.text for match in matches),
+                "count": len(matches),
+                "matches": [
+                    {"index": match.index, "start": match.start, "end": match.end, "text": match.text}
+                    for match in matches
+                ],
+            }
+
     print(f"=== Cutting {len(selected)} clip(s) into {output_dir} ===\n")
 
     cut_count = 0
     skipped_existing = 0
     failed = 0
+    records: list[dict] = []
 
-    for entry in selected:
+    for seq, entry in enumerate(selected, start=1):
         filename_text = sanitize_filename_text(entry.text)
         timestamp = format_filename_timestamp(entry.start)
         output_path = output_dir / f"{entry.index:03d}. {filename_text} ({timestamp}){extension}"
 
+        start = max(0.0, entry.start - args.padding_start)
+        end = entry.end + args.padding_end
+        match_info = translations_by_index.get(entry.index)
+
+        record = {
+            "sequence": seq,
+            "subtitle_index": entry.index,
+            "filename": output_path.name,
+            "chinese": entry.text,
+            "translation": match_info["text"] if match_info else "",
+            "translation_count": match_info["count"] if match_info else 0,
+            "start": entry.start,
+            "end": entry.end,
+            "start_timestamp": format_timestamp(entry.start),
+            "end_timestamp": format_timestamp(entry.end),
+            "clip_start": format_timestamp(start),
+            "clip_end": format_timestamp(end),
+        }
+        if match_info and match_info["matches"]:
+            record["translation_matches"] = match_info["matches"]
+
         if output_path.exists():
+            record["status"] = "skipped_existing"
+            records.append(record)
             skipped_existing += 1
             continue
 
-        start = max(0.0, entry.start - args.padding_start)
-        end = entry.end + args.padding_end
         if end <= start:
-            print(f"[{entry.index:03d}] Skipped: empty interval ({format_timestamp(entry.start)} -> {format_timestamp(entry.end)})")
+            record["status"] = "empty_interval"
+            records.append(record)
             failed += 1
+            print(f"[{entry.index:03d}] Skipped: empty interval ({format_timestamp(entry.start)} -> {format_timestamp(entry.end)})")
             continue
 
-        print(f"[{entry.index:03d}] {format_timestamp(start)} -> {format_timestamp(end)}  {entry.text[:40]}")
+        translation_note = f"  (translations: {match_info['count']})" if match_info else ""
+        print(f"[{entry.index:03d}] {format_timestamp(start)} -> {format_timestamp(end)}  {entry.text[:40]}{translation_note}")
         try:
             subprocess.run(
                 build_ffmpeg_command(video_path, start, end, output_path, audio_only=args.mp3, reencode=args.reencode),
                 check=True,
             )
+            record["status"] = "cut"
             cut_count += 1
         except subprocess.CalledProcessError as e:
+            record["status"] = "failed"
             failed += 1
             print(f"  Error cutting entry {entry.index}: {e}")
+        records.append(record)
 
     print(f"\nCut {cut_count} clip(s), skipped {skipped_existing} already present, {failed} failed")
+
+    if args.translation_subtitle is not None:
+        json_path = output_dir / f"{video_path.stem}_sentences.json"
+        with open(json_path, "w", encoding="utf-8") as json_file:
+            json.dump(records, json_file, ensure_ascii=False, indent=2)
+        print(f"Wrote sentence manifest to {json_path}")
+
+        distribution: dict[int, int] = {}
+        for record in records:
+            distribution[record["translation_count"]] = distribution.get(record["translation_count"], 0) + 1
+        distribution_summary = ", ".join(f"{count}: {num}" for count, num in sorted(distribution.items()))
+        print(f"Translation match counts per sentence: {distribution_summary}")
+        matched_sentences = sum(1 for record in records if record["translation_count"] > 0)
+        print(f"Sentences with at least one translation: {matched_sentences}/{len(records)}")
+
     if failed:
         sys.exit(1)
 
