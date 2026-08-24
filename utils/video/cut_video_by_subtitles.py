@@ -798,7 +798,7 @@ Examples:
     anki_errors = 0
     translation_counts: list[int] = []
 
-    for seq, entry in enumerate(selected, start=1):
+    for entry in selected:
         filename_text = sanitize_filename_text(entry.text)
         timestamp = format_filename_timestamp(entry.start)
         output_path = output_dir / f"{entry.index:03d}. {filename_text} ({timestamp}){extension}"
@@ -869,7 +869,7 @@ Examples:
 
         if args.anki_prefix and status in ("cut", "skipped_existing"):
             assert manager is not None
-            note_id_str = f"{args.anki_prefix}{seq:03d}"
+            note_id_str = f"{args.anki_prefix}{entry.index:03d}"
             fields = {
                 "ID": note_id_str,
                 "LocalFilePath": str(output_path.resolve()),
