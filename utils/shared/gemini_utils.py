@@ -119,7 +119,11 @@ def gemini_generate(
 
     for attempt in range(max_retries):
         try:
-            response = active_client.models.generate_content(model=model_name, contents=prompt)
+            # Use Chat.send_message instead of Models.generate_content:
+            # direct automatic function calling (AFC) on Models.generate_content
+            # is deprecated and the recommended entry point is the Chat API.
+            chat = active_client.chats.create(model=model_name)
+            response = chat.send_message(prompt)
             if response.text is None:
                 raise ValueError(f"Gemini returned empty response (possibly blocked by safety filters). Candidates: {response.candidates}")
             return response.text.strip()

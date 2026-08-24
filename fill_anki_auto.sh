@@ -34,4 +34,6 @@ set -e
 ./utils/hackchinese/fill_hackchinese_outlier.py
 ./utils/hackchinese/fill_example_sentences.py
 
+./utils/video/augment_translation.py
+
 ./utils/sync_ankiweb.py
