@@ -11,17 +11,14 @@ import argparse
 import json
 import os
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
-from google.cloud import translate_v2 as translate  # type: ignore[attr-defined]
 from pypinyin import Style, pinyin
 
-# In-memory cache for translations
-_translation_cache: dict[str, str] = {}
-# Lazy-initialized translation client
-_translation_client = None
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.translation_utils import cache_translation, get_translation_cache, translate_text_with_google
 
 
 def get_pinyin_from_library(char: str) -> list[Any]:
@@ -53,66 +50,6 @@ def get_pinyin_from_library(char: str) -> list[Any]:
         print(f"Warning: Failed to get pinyin for '{char}': {e}")
 
     return []
-
-
-def get_translation_client():
-    """
-    Get or initialize the Google Cloud Translation client lazily.
-
-    Returns:
-        Google Cloud Translation client
-    """
-    global _translation_client
-    if _translation_client is None:
-        print("Initializing Google Cloud Translation client...")
-        _translation_client = translate.Client()
-    return _translation_client
-
-
-def translate_text_with_google(text: str, max_retries: int = 3) -> str:
-    """
-    Translate Chinese text to English using Google Cloud Translation API.
-    Uses in-memory cache to avoid redundant API calls.
-
-    Args:
-        text: Chinese text to translate
-        max_retries: Maximum number of retry attempts
-
-    Returns:
-        Translated English text
-
-    Raises:
-        Exception: If translation fails after max retries
-    """
-    if not text or not text.strip():
-        return ""
-
-    # Check cache first
-    if text in _translation_cache:
-        return _translation_cache[text]
-
-    # Get client lazily
-    client = get_translation_client()
-
-    # Not in cache, translate it
-    for attempt in range(max_retries):
-        try:
-            result = client.translate(text, source_language="zh-CN", target_language="en")
-            translated_text = result["translatedText"]
-
-            # Store in cache
-            _translation_cache[text] = translated_text
-
-            return translated_text
-        except Exception as e:
-            if attempt < max_retries - 1:
-                print(f"Translation attempt {attempt + 1} failed: {e}. Retrying...")
-                time.sleep(2)
-            else:
-                raise Exception(f"Translation failed after {max_retries} attempts: {e}") from e
-
-    # Unreachable when max_retries >= 1; satisfies the type checker.
-    raise Exception("Translation failed: no attempts were made")
 
 
 def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True) -> dict[str, list[Any]]:
@@ -213,7 +150,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
                         raise
                 else:
                     # Populate cache with existing translation
-                    _translation_cache[char_obj["shuowen"]] = char_obj["shuowen_en_translation"]
+                    cache_translation(char_obj["shuowen"], char_obj["shuowen_en_translation"])
 
             # Translate comments.text field
             if "comments" in char_obj and isinstance(char_obj["comments"], list):
@@ -232,7 +169,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
                                 raise
                         else:
                             # Populate cache with existing translation
-                            _translation_cache[comment["text"]] = comment["text_en_translation"]
+                            cache_translation(comment["text"], comment["text_en_translation"])
 
     # Process componentIn array
     if "componentIn" in data and isinstance(data["componentIn"], list):
@@ -336,7 +273,7 @@ def main():
             sys.exit(1)
 
     print(f"\n{'Would modify' if args.dry_run else 'Modified'} {modified_count} file(s)")
-    print(f"Translation cache: {len(_translation_cache)} unique texts cached")
+    print(f"Translation cache: {len(get_translation_cache())} unique texts cached")
 
 
 if __name__ == "__main__":
