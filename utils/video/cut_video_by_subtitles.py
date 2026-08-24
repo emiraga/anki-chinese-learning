@@ -405,16 +405,27 @@ class LocalMediaClipsManager:
             raise Exception(f"Failed to create note for ID '{fields.get('ID')}'")
         print(f"  Created note {note_id} for ID '{fields.get('ID')}'")
 
-    def update_note(self, note_id: int, fields: dict[str, str]) -> None:
-        """Update an existing LocalMediaClips note."""
+    def update_note(
+        self, note_id: int, fields: dict[str, str], changes: dict[str, tuple[str, str]]
+    ) -> None:
+        """Update an existing LocalMediaClips note, printing each changed field."""
         update_note_fields(note_id, fields)
-        print(f"  Updated note {note_id} for ID '{fields.get('ID')}'")
+        print(
+            f"  Updated note {note_id} for ID '{fields.get('ID')}' "
+            f"({len(changes)} field(s) changed)"
+        )
+        for name, (old, new) in changes.items():
+            print(f"    {name}: {old!r} -> {new!r}")
 
 
-def note_fields_differ(existing_note: dict[str, Any], fields: dict[str, str]) -> bool:
-    """Return True when any of the given field values differ from the note's."""
+def note_field_changes(existing_note: dict[str, Any], fields: dict[str, str]) -> dict[str, tuple[str, str]]:
+    """Return the fields whose values differ, mapped to (old, new) values."""
     existing_fields = existing_note.get("fields", {})
-    return any(existing_fields.get(name, {}).get("value", "") != value for name, value in fields.items())
+    return {
+        name: (existing_fields.get(name, {}).get("value", ""), value)
+        for name, value in fields.items()
+        if existing_fields.get(name, {}).get("value", "") != value
+    }
 
 
 def build_ffmpeg_command(
@@ -430,16 +441,18 @@ def build_ffmpeg_command(
     Build the ffmpeg command for one clip.
 
     Video clips use stream copy for speed; audio-only clips re-encode the audio
-    track to MP3. With reencode, seeking happens on the output side and video is
-    re-encoded to H.264/AAC (or VP9/Opus with webm), which gives frame-accurate
-    cuts at the cost of speed.
+    track to MP3. With reencode, the video is re-encoded to H.264/AAC (or
+    VP9/Opus with webm) and seeking happens on the input side, which gives
+    frame-accurate cuts without decoding the whole movie first.
     """
-    command = ["ffmpeg", "-hide_banner", "-loglevel", "error"]
+    command = ["ffmpeg", "-hide_banner", "-loglevel", "info"]
 
     if reencode or webm:
-        # Output-side seeking decodes from the requested frame instead of
-        # snapping to the nearest keyframe. WebM output always re-encodes.
-        command += ["-i", str(video), "-ss", format_timestamp(start), "-to", format_timestamp(end)]
+        # Input-side seeking is fast and still frame-accurate when re-encoding:
+        # ffmpeg decodes from the previous keyframe up to the exact start frame.
+        # (Output-side seeking would decode the whole movie up to the start time
+        # before encoding a single frame.) WebM output always re-encodes.
+        command += ["-ss", format_timestamp(start), "-to", format_timestamp(end), "-i", str(video)]
         if audio_only:
             command += ["-vn", "-map", "0:a:0?", "-c:a", "libmp3lame", "-q:a", "2", "-ac", "2"]
         elif webm:
@@ -873,11 +886,13 @@ Examples:
                 if existing_note is None:
                     manager.create_note(fields)
                     anki_created += 1
-                elif note_fields_differ(existing_note, fields):
-                    manager.update_note(existing_note["noteId"], fields)
-                    anki_updated += 1
                 else:
-                    anki_unchanged += 1
+                    changes = note_field_changes(existing_note, fields)
+                    if changes:
+                        manager.update_note(existing_note["noteId"], fields, changes)
+                        anki_updated += 1
+                    else:
+                        anki_unchanged += 1
             except Exception as e:
                 anki_errors += 1
                 print(f"  Error upserting note '{note_id_str}': {e}")
