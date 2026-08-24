@@ -409,7 +409,9 @@ class LocalMediaClipsManager:
         self, note_id: int, fields: dict[str, str], changes: dict[str, tuple[str, str]]
     ) -> None:
         """Update an existing LocalMediaClips note, printing each changed field."""
-        update_note_fields(note_id, fields)
+        # Pass only the changed fields to Anki so the update (and any logging it
+        # does) reflects what actually changed, not the full note.
+        update_note_fields(note_id, {name: new for name, (_, new) in changes.items()})
         print(
             f"  Updated note {note_id} for ID '{fields.get('ID')}' "
             f"({len(changes)} field(s) changed)"
