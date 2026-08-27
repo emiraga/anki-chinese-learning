@@ -121,6 +121,8 @@ TAG_TRADITIONAL_MEANING = [
     "chinese::category::frequency-of-doing",
     "chinese::category::protect-care",
     "chinese::category::strength",
+    "chinese::category::conditional-modals",
+    "chinese::category::conditional-conjunctions",
 ]
 
 # Whitelist for two-character phrase generators (by common character)
