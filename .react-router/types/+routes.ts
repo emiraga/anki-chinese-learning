@@ -50,6 +50,9 @@ type Pages = {
   "/phrases": {
     params: {};
   };
+  "/overlapping_phrases": {
+    params: {};
+  };
   "/phrases_import": {
     params: {};
   };
@@ -176,7 +179,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -217,6 +220,10 @@ type RouteFiles = {
   "routes/phrases.tsx": {
     id: "routes/phrases";
     page: "/phrases";
+  };
+  "routes/overlapping_phrases.tsx": {
+    id: "routes/overlapping_phrases";
+    page: "/overlapping_phrases";
   };
   "routes/phrases_import.tsx": {
     id: "routes/phrases_import";
@@ -384,6 +391,7 @@ type RouteModules = {
   "routes/phrase/$phraseHanzi": typeof import("./app/routes/phrase/$phraseHanzi.tsx");
   "routes/phrase_conflicts": typeof import("./app/routes/phrase_conflicts.tsx");
   "routes/phrases": typeof import("./app/routes/phrases.tsx");
+  "routes/overlapping_phrases": typeof import("./app/routes/overlapping_phrases.tsx");
   "routes/phrases_import": typeof import("./app/routes/phrases_import.tsx");
   "routes/phrases_more": typeof import("./app/routes/phrases_more.tsx");
   "routes/phrases_process": typeof import("./app/routes/phrases_process.tsx");

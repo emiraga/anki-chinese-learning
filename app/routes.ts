@@ -11,6 +11,7 @@ export default [
   route("phrase/:phraseHanzi", "routes/phrase/$phraseHanzi.tsx"),
   route("phrase_conflicts", "routes/phrase_conflicts.tsx"),
   route("phrases", "routes/phrases.tsx"),
+  route("overlapping_phrases", "routes/overlapping_phrases.tsx"),
   route("phrases_import", "routes/phrases_import.tsx"),
   route("phrases_more", "routes/phrases_more.tsx"),
   route("phrases_process", "routes/phrases_process.tsx"),

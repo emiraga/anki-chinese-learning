@@ -146,6 +146,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/overlapping_phrases",
+          name: "Overlapping Phrases",
+          show: true,
+        },
+        {
           pathname: "/phrase_conflicts",
           name: "Conflicts",
           show: phraseConflicts > 0,
