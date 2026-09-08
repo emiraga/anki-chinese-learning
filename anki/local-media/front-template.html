@@ -1,0 +1,211 @@
+<video
+  id="ankivideo"
+  controls
+  autoplay
+  src="http://[::1]:8080/{{RelativeFilePath}}"
+  width="100%"
+  data-trim-start="{{trimDurationStart}}"
+  data-trim-end="{{trimDurationEnd}}"
+  onclick="this.paused ? this.play() : this.pause()"
+></video>
+
+<script>
+  (function () {
+    var video = document.getElementById("ankivideo");
+
+    var trimStart = parseFloat(video.dataset.trimStart);
+    var trimEnd = parseFloat(video.dataset.trimEnd);
+
+    if (isNaN(trimStart) || trimStart < 0) trimStart = 0;
+    if (isNaN(trimEnd) || trimEnd < 0) trimEnd = 0;
+
+    function seekToStart() {
+      if (trimStart > 0) {
+        video.currentTime = trimStart;
+      }
+    }
+
+    // Jump past the trimmed start as soon as we know the video's length
+    video.addEventListener("loadedmetadata", seekToStart);
+
+    // Cut off the trimmed end by restarting once we get close to it
+    video.addEventListener("timeupdate", function () {
+      if (
+        trimEnd > 0 &&
+        video.duration &&
+        video.currentTime >= video.duration - trimEnd
+      ) {
+        video.currentTime = trimStart;
+      }
+    });
+
+    // Manual loop (replaces the native `loop` attribute)
+    video.addEventListener("ended", function () {
+      video.currentTime = trimStart;
+      video.play();
+    });
+  })();
+</script>
+
+<div
+  style="
+    font-size: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 0px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  "
+>
+  <button type="button" onclick="adjustTrim('trimDurationStart', -0.1)">
+    -0.1s
+  </button>
+  <button type="button" onclick="adjustTrim('trimDurationStart', 0.1)">
+    +0.1s
+  </button>
+  <span id="val-start">{{trimDurationStart}}</span>s
+  <button
+    onclick="
+      var v = document.getElementById('ankivideo');
+      v.playbackRate = 0.5;
+      v.play();
+    "
+  >
+    0.5x
+  </button>
+  <button
+    onclick="
+      var v = document.getElementById('ankivideo');
+      v.playbackRate = 0.6;
+      v.play();
+    "
+  >
+    0.6x
+  </button>
+  <button
+    onclick="
+      var v = document.getElementById('ankivideo');
+      v.playbackRate = 0.7;
+      v.play();
+    "
+  >
+    0.7x
+  </button>
+  <button
+    onclick="
+      var v = document.getElementById('ankivideo');
+      v.playbackRate = 0.8;
+      v.play();
+    "
+  >
+    0.8x
+  </button>
+  <button
+    onclick="
+      var v = document.getElementById('ankivideo');
+      v.playbackRate = 0.9;
+      v.play();
+    "
+  >
+    0.9x
+  </button>
+  <button
+    onclick="
+      var v = document.getElementById('ankivideo');
+      v.playbackRate = 1.0;
+      v.play();
+    "
+  >
+    1.0x
+  </button>
+  <span id="val-end">{{trimDurationEnd}}</span>s
+  <button type="button" onclick="adjustTrim('trimDurationEnd', 0.1)">
+    +0.1s
+  </button>
+  <button type="button" onclick="adjustTrim('trimDurationEnd', -0.1)">
+    -0.1s
+  </button>
+</div>
+
+<!-- Hidden ID element storing your custom alphanumeric ID value -->
+<div id="note-id" style="display: none">{{ID}}</div>
+
+<script>
+  async function adjustTrim(fieldName, delta) {
+    // 1. Get custom alphanumeric ID from the template
+    const customIdElement = document.getElementById("note-id");
+    const customId = customIdElement ? customIdElement.innerText.trim() : "";
+
+    if (!customId) {
+      alert(
+        "Note ID could not be detected. Ensure {{ID}} is populated in the note.",
+      );
+      return;
+    }
+
+    // Identify target DOM display element
+    const valueSpanId =
+      fieldName === "trimDurationStart" ? "val-start" : "val-end";
+    const targetSpan = document.getElementById(valueSpanId);
+    const currentVal = parseFloat(targetSpan.innerText) || 0.0;
+
+    // Calculate new value rounded to 1 decimal place
+    const newVal = Math.max(0, parseFloat((currentVal + delta).toFixed(1)));
+
+    try {
+      // 2. Lookup numeric Note ID via AnkiConnect
+      const findResponse = await fetch("http://127.0.0.1:8765", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "findNotes",
+          version: 6,
+          params: { query: `ID:"${customId}"` },
+        }),
+      });
+
+      const findResult = await findResponse.json();
+      if (findResult.error || !findResult.result?.length) {
+        alert(
+          "Error finding note ID: " + (findResult.error || "Note not found"),
+        );
+        return;
+      }
+
+      const numericNoteId = findResult.result[0];
+
+      // 3. Persist update to Anki DB
+      const updateResponse = await fetch("http://127.0.0.1:8765", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "updateNoteFields",
+          version: 6,
+          params: {
+            note: {
+              id: numericNoteId,
+              fields: { [fieldName]: newVal.toString() },
+            },
+          },
+        }),
+      });
+
+      const updateResult = await updateResponse.json();
+      if (updateResult.error) {
+        alert("Failed to update field: " + updateResult.error);
+        return;
+      }
+
+      // 4. Update DOM instantly (No page reload = No blank screen)
+      // targetSpan.innerText = newVal.toFixed(1);
+
+      // Optional: If you need audio or HTML dependent on this field to re-evaluate,
+      // dispatch a custom event or update specific player elements directly here.
+    } catch (err) {
+      console.error("Connection Error:", err);
+      alert(
+        "Could not connect to AnkiConnect. Is Anki Desktop running with AnkiConnect installed?",
+      );
+    }
+  }
+</script>

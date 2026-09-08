@@ -98,6 +98,7 @@ CUSTOM_HANZI_TO_PINYIN_SETS = {
     "zhe-zhi": "這者折稚址質",
     "filler-sounds": "啦呵哦嗯阿呀喔哈耶",
     "top-hat-simple": "宜牢穴它宅",
+    "top-cover-or-roof": "軍冠冥宿寂它宅牢",
     "scarecrow-like": "辛幸辜",
     "people-standing": "來夾",
     "tree-like": "夫未末美失朱犬尖天",
