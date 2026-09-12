@@ -663,7 +663,7 @@ def fill_sentence_traditional_for_due_cards() -> int:
     """
     # is:due matches cards waiting to be reviewed now (due today or overdue),
     # and prop:due=1 matches cards due tomorrow.
-    query = "(is:due OR prop:due=1) -is:suspended"
+    query = "(is:due OR prop:due=2 OR is:new) -is:suspended"
     print(f"Query: {query}")
 
     response = anki_connect_request("findCards", {"query": query})
