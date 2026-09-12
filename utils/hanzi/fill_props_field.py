@@ -10,6 +10,7 @@
 
 import json
 import os
+import random
 import sys
 from pathlib import Path
 
@@ -612,6 +613,115 @@ def update_note_fields(note_id: int, fields_dict: dict[str, str]) -> bool:
     return True
 
 
+def pick_random_sentence(examples_json_str: str) -> str:
+    """
+    Pick one Traditional example sentence at random from an Examples JSON value.
+
+    Args:
+        examples_json_str (str): JSON string in the format
+            {"<POS_CODE>": [{"Traditional": <sentence>, "English": <translation>}]}
+
+    Returns:
+        str: A randomly chosen Traditional sentence, or "" if none are available
+    """
+    if not examples_json_str or not examples_json_str.strip():
+        return ""
+
+    try:
+        examples_dict = json.loads(examples_json_str)
+    except json.JSONDecodeError:
+        return ""
+
+    sentences: list[str] = []
+    if isinstance(examples_dict, dict):
+        for examples in examples_dict.values():
+            if not isinstance(examples, list):
+                continue
+            for example in examples:
+                if isinstance(example, dict):
+                    sentence = example.get("Traditional", "").strip()
+                    if sentence:
+                        sentences.append(sentence)
+
+    if not sentences:
+        return ""
+
+    return random.choice(sentences)
+
+
+def fill_sentence_traditional_for_due_cards() -> int:
+    """
+    Fill the Sentence Traditional field for cards due today whose Traditional
+    field has fewer than 4 characters and whose Sentence Traditional field is
+    empty.
+
+    For each matching note, one Traditional example sentence from Examples JSON
+    is picked at random and copied to Sentence Traditional.
+
+    Returns:
+        int: Number of notes updated
+    """
+    # is:due matches cards waiting to be reviewed now (due today or overdue),
+    # which is what appears in the review queue today.
+    query = "is:due -is:suspended"
+    print(f"Query: {query}")
+
+    response = anki_connect_request("findCards", {"query": query})
+    card_ids = response.get("result", []) if response else []
+    print(f"Found {len(card_ids)} due, non-suspended card(s)")
+
+    if not card_ids:
+        return 0
+
+    # Map cards to notes and deduplicate (multiple cards can belong to one note)
+    response = anki_connect_request("cardsToNotes", {"cards": card_ids})
+    note_ids = list(dict.fromkeys(response.get("result", [])))
+    print(f"Found {len(note_ids)} note(s) for those cards")
+
+    if not note_ids:
+        return 0
+
+    notes_info = get_notes_info(note_ids)
+
+    updated = 0
+    skipped_no_sentence = 0
+    skipped_traditional_too_long = 0
+    skipped_sentence_already_filled = 0
+
+    for note_info in notes_info:
+        note_id = note_info["noteId"]
+        fields = note_info.get("fields", {})
+
+        # Only notes that have both fields can be processed
+        if "Examples JSON" not in fields or "Sentence Traditional" not in fields:
+            continue
+
+        traditional = fields.get("Traditional", {}).get("value", "").strip()
+        if not traditional or len(traditional) >= 4:
+            skipped_traditional_too_long += 1
+            continue
+
+        # Only fill Sentence Traditional when it is empty
+        current_sentence = fields.get("Sentence Traditional", {}).get("value", "").strip()
+        if current_sentence:
+            skipped_sentence_already_filled += 1
+            continue
+
+        sentence = pick_random_sentence(fields.get("Examples JSON", {}).get("value", ""))
+        if not sentence:
+            skipped_no_sentence += 1
+            continue
+
+        update_note_fields(note_id, {"Sentence Traditional": sentence})
+        updated += 1
+
+    print(f"Updated {updated} note(s)")
+    print(f"Skipped {skipped_traditional_too_long} note(s) with empty/Traditional >= 4 chars")
+    print(f"Skipped {skipped_sentence_already_filled} note(s) with Sentence Traditional already filled")
+    print(f"Skipped {skipped_no_sentence} note(s) with no usable examples")
+    return updated
+
+
 def get_same_chars_field_value(traditional: str, key: str, char_mapping: dict[str, list[str]]) -> str:
     """
     Get the value for a "Same X Traditional" field by looking up other characters with the same key.
@@ -773,7 +883,8 @@ def update_fields_for_note(
 def main():
     """
     Main function to process all note types and update Props, Mnemonic pegs, Anki Tags,
-    POS, POS Description, Examples JSON, and Same Syllable Traditional fields
+    POS, POS Description, Examples JSON, Same Syllable Traditional, and
+    Sentence Traditional fields
     """
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
@@ -839,6 +950,11 @@ def main():
 
         print(f"\nCompleted processing {note_type}")
         print(f"Total processed: {total_processed}, Updated: {total_updated}")
+
+    # Fill Sentence Traditional for due cards with a short Traditional field
+    print("\n=== Filling Sentence Traditional for due cards ===")
+    sentences_updated = fill_sentence_traditional_for_due_cards()
+    print(f"Updated Sentence Traditional on {sentences_updated} note(s)")
 
     print("\n=== All done! ===")
 
