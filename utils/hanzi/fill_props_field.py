@@ -651,9 +651,9 @@ def pick_random_sentence(examples_json_str: str) -> str:
 
 def fill_sentence_traditional_for_due_cards() -> int:
     """
-    Fill the Sentence Traditional field for cards due today whose Traditional
-    field has fewer than 4 characters and whose Sentence Traditional field is
-    empty.
+    Fill the Sentence Traditional field for cards due today or tomorrow whose
+    Traditional field has fewer than 4 characters and whose Sentence
+    Traditional field is empty.
 
     For each matching note, one Traditional example sentence from Examples JSON
     is picked at random and copied to Sentence Traditional.
@@ -662,13 +662,13 @@ def fill_sentence_traditional_for_due_cards() -> int:
         int: Number of notes updated
     """
     # is:due matches cards waiting to be reviewed now (due today or overdue),
-    # which is what appears in the review queue today.
-    query = "is:due -is:suspended"
+    # and prop:due=1 matches cards due tomorrow.
+    query = "(is:due OR prop:due=1) -is:suspended"
     print(f"Query: {query}")
 
     response = anki_connect_request("findCards", {"query": query})
     card_ids = response.get("result", []) if response else []
-    print(f"Found {len(card_ids)} due, non-suspended card(s)")
+    print(f"Found {len(card_ids)} due today/tomorrow, non-suspended card(s)")
 
     if not card_ids:
         return 0
