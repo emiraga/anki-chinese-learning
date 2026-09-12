@@ -37,6 +37,22 @@ class NoteInfo(TypedDict):
 _MAX_TEXT_FILENAME_LEN = 50
 _MAX_PINYIN_FILENAME_LEN = 50
 
+
+def clean_text_for_filename(text: str, max_len: int = _MAX_TEXT_FILENAME_LEN) -> str:
+    """Clean a text snippet so it is safe to use inside an audio filename."""
+    clean_text = text.replace("?", "").replace("*", "")
+    if len(clean_text) > max_len:
+        clean_text = clean_text[:max_len]
+    return clean_text
+
+
+def clean_sentence_for_filename(sentence: str, max_len: int = _MAX_TEXT_FILENAME_LEN) -> str:
+    """Clean a sentence for filenames by keeping only word characters (CJK, letters, digits, underscores)."""
+    clean_text = re.sub(r"[^\w]", "", sentence)
+    if len(clean_text) > max_len:
+        clean_text = clean_text[:max_len]
+    return clean_text
+
 # Generate API key via https://console.cloud.google.com/apis/credentials
 
 
@@ -262,31 +278,32 @@ def store_media_file(filename: str, audio_data: bytes) -> bool:
     raise Exception(f"Failed to store audio file '{filename}'")
 
 
-def update_note_audio(note_id: int, audio_filename: str) -> bool:
+def update_note_audio(note_id: int, audio_filename: str, field_name: str = "Audio") -> bool:
     """
-    Update the Audio field of a note
+    Update an audio field of a note with a [sound:...] tag.
 
     Args:
         note_id (int): The note ID
         audio_filename (str): Name of the audio file
+        field_name (str): Name of the audio field to update (default "Audio")
 
     Returns:
         bool: True if successful, False otherwise
     """
-    # Update the Audio field with the new filename
+    # Update the audio field with the new filename
     audio_field_value = f"[sound:{audio_filename}]"
 
     # Prepare the update
-    fields = {"Audio": audio_field_value}
+    fields = {field_name: audio_field_value}
 
     response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
 
     print(response)
 
     if response and response.get("error") is None:  # anki-connect returns None on success
-        print(f"Updated Audio field for note {note_id}")
+        print(f"Updated {field_name} field for note {note_id}")
         return True
-    raise Exception(f"Failed to update Audio field for note {note_id}")
+    raise Exception(f"Failed to update {field_name} field for note {note_id}")
 
 
 def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:
@@ -330,10 +347,7 @@ def update_audio_for_note(
     print(f"Found note: {note_info['fields'].get('Traditional', {}).get('value', 'N/A')}")
 
     # Generate audio filename
-    clean_text = target_text.replace("?", "").replace("*", "")
-    # Truncate clean_text
-    if len(clean_text) > _MAX_TEXT_FILENAME_LEN:
-        clean_text = clean_text[:_MAX_TEXT_FILENAME_LEN]
+    clean_text = clean_text_for_filename(target_text)
 
     if pinyin_hint:
         # Convert pinyin to numbered format and clean for filename
@@ -380,6 +394,66 @@ def find_note_by_empty_audio(note_type: str) -> list[int]:
 
     print("No notes found with empty audio")
     return []
+
+
+def find_notes_with_empty_sentence_audio() -> list[int]:
+    """Find TOCFL notes where Sentence Traditional is filled but Sentence Audio is empty."""
+    search_query = 'note:TOCFL "Sentence Traditional:_*" "Sentence Audio:"'
+
+    response = anki_connect_request("findNotes", {"query": search_query})
+
+    if response and response.get("result"):
+        note_ids = response["result"]
+        if note_ids:
+            print(f"Found {len(note_ids)} TOCFL note(s) with Sentence Traditional but empty Sentence Audio")
+            return note_ids
+
+    print("No TOCFL notes found with empty sentence audio")
+    return []
+
+
+def process_sentence_audio(
+    note_id: int,
+    note_info: NoteInfo,
+    voice_name: str = "cmn-TW-Standard-C",
+    speaking_rate: float = 1.0,
+) -> bool:
+    """
+    Generate and store TTS audio for a note's Sentence Traditional field,
+    updating the Sentence Audio field.
+
+    Args:
+        note_id: The note ID
+        note_info: Note information from get_note_info
+        voice_name: Voice to use for TTS
+        speaking_rate: Speed of speech (0.25 to 4.0)
+
+    Returns:
+        bool: True if audio was generated, False otherwise
+    """
+    sentence = get_clean_field_value(note_info, "Sentence Traditional")
+    if not sentence:
+        print(f"No Sentence Traditional found for note {note_id}, skipping")
+        return False
+
+    clean_text = clean_sentence_for_filename(sentence)
+    audio_filename = f"emir_tts_sentence_{clean_text}_{note_id}.mp3"
+
+    print(f"Generating sentence TTS audio for: {sentence}")
+    audio_data = chinese_tts(
+        sentence,
+        output_file=audio_filename,
+        voice_name=voice_name,
+        pinyin_hint=None,
+        speaking_rate=speaking_rate,
+    )
+
+    if store_media_file(audio_filename, audio_data):
+        if update_note_audio(note_id, audio_filename, field_name="Sentence Audio"):
+            print("Successfully updated note with new sentence audio!")
+            return True
+        raise Exception("Failed to update note sentence audio field")
+    raise Exception("Failed to store sentence audio file")
 
 
 def find_notes_by_tag(note_type: str, tag: str) -> list[int]:
@@ -551,7 +625,15 @@ def main() -> None:
         # Then, process notes with empty audio
         for note_id in find_note_by_empty_audio(note_type)[0:100]:
             note_info = get_note_info(note_id)
-            process_note_audio(note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate)
+            process_note_audio(
+                note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate
+            )
+
+    # Finally, fill empty Sentence Audio on TOCFL notes that have a sentence
+    print("\n=== Filling Sentence Audio for TOCFL notes ===")
+    for note_id in find_notes_with_empty_sentence_audio():
+        note_info = get_note_info(note_id)
+        process_sentence_audio(note_id, note_info, voice_name=args.voice, speaking_rate=args.speaking_rate)
 
 
 if __name__ == "__main__":
