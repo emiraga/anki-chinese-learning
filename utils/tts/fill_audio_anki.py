@@ -11,14 +11,18 @@
 from __future__ import annotations
 
 import argparse
-import base64
 import os
 import re
+import sys
+from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import dragonmapper.transcriptions
-import requests
 from google.cloud import texttospeech
+
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import anki_connect_request, get_notes_info, store_media_file, update_note_audio_field
 
 
 class FieldValue(TypedDict):
@@ -188,31 +192,6 @@ def chinese_tts(
     return audio_content
 
 
-def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
-
-
 def find_note_by_traditional(note_type: str, traditional_text: str) -> int | None:
     """
     Find note with specific Traditional field value
@@ -248,62 +227,7 @@ def get_note_info(note_id: int) -> NoteInfo:
     Returns:
         dict: Note information
     """
-    response = anki_connect_request("notesInfo", {"notes": [note_id]})
-
-    if response and response.get("result"):
-        return response["result"][0]
-
-    raise Exception("No note found")
-
-
-def store_media_file(filename: str, audio_data: bytes) -> bool:
-    """
-    Store audio file in Anki media collection
-
-    Args:
-        filename (str): Name of the file
-        audio_data (bytes): Audio file data
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    # Convert audio data to base64
-    audio_b64 = base64.b64encode(audio_data).decode("utf-8")
-
-    response = anki_connect_request("storeMediaFile", {"filename": filename, "data": audio_b64})
-
-    if response and response.get("result"):
-        print(f"Audio file '{filename}' stored in Anki media collection")
-        return True
-    raise Exception(f"Failed to store audio file '{filename}'")
-
-
-def update_note_audio(note_id: int, audio_filename: str, field_name: str = "Audio") -> bool:
-    """
-    Update an audio field of a note with a [sound:...] tag.
-
-    Args:
-        note_id (int): The note ID
-        audio_filename (str): Name of the audio file
-        field_name (str): Name of the audio field to update (default "Audio")
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    # Update the audio field with the new filename
-    audio_field_value = f"[sound:{audio_filename}]"
-
-    # Prepare the update
-    fields = {field_name: audio_field_value}
-
-    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
-
-    print(response)
-
-    if response and response.get("error") is None:  # anki-connect returns None on success
-        print(f"Updated {field_name} field for note {note_id}")
-        return True
-    raise Exception(f"Failed to update {field_name} field for note {note_id}")
+    return cast(NoteInfo, get_notes_info([note_id])[0])
 
 
 def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:
@@ -369,15 +293,10 @@ def update_audio_for_note(
         target_text, output_file=audio_filename, voice_name=voice_name, pinyin_hint=pinyin_hint, speaking_rate=speaking_rate
     )
 
-    # Store audio file in Anki media collection
-    if store_media_file(audio_filename, audio_data):
-        # Update the note's Audio field
-        if update_note_audio(note_id, audio_filename):
-            print("Successfully updated note with new audio!")
-        else:
-            raise Exception("Failed to update note audio field")
-    else:
-        raise Exception("Failed to store audio file")
+    # Store audio file in Anki media collection and update the note's Audio field
+    store_media_file(audio_filename, audio_data)
+    update_note_audio_field(note_id, audio_filename)
+    print("Successfully updated note with new audio!")
 
 
 def find_note_by_empty_audio(note_type: str) -> list[int]:
@@ -448,12 +367,10 @@ def process_sentence_audio(
         speaking_rate=speaking_rate,
     )
 
-    if store_media_file(audio_filename, audio_data):
-        if update_note_audio(note_id, audio_filename, field_name="Sentence Audio"):
-            print("Successfully updated note with new sentence audio!")
-            return True
-        raise Exception("Failed to update note sentence audio field")
-    raise Exception("Failed to store sentence audio file")
+    store_media_file(audio_filename, audio_data)
+    update_note_audio_field(note_id, audio_filename, field_name="Sentence Audio")
+    print("Successfully updated note with new sentence audio!")
+    return True
 
 
 def find_notes_by_tag(note_type: str, tag: str) -> list[int]:

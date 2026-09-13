@@ -5,6 +5,7 @@ Shared utilities for Anki Connect API interactions.
 This module provides a common interface for communicating with the AnkiConnect addon.
 """
 
+import base64
 from typing import Any
 
 import requests
@@ -223,3 +224,43 @@ def update_note_fields(note_id: int, fields: dict[str, str]) -> None:
         Exception: If the update fails
     """
     anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
+
+
+def store_media_file(filename: str, data: bytes) -> str:
+    """
+    Store a file in Anki's media collection.
+
+    Args:
+        filename: Name of the file in Anki's media folder
+        data: Raw file contents
+
+    Returns:
+        The stored filename as reported by AnkiConnect
+
+    Raises:
+        Exception: If AnkiConnect fails or reports an error
+    """
+    encoded = base64.b64encode(data).decode("utf-8")
+    response = anki_connect_request("storeMediaFile", {"filename": filename, "data": encoded})
+
+    stored = response.get("result")
+    if not stored:
+        raise Exception(f"Failed to store media file '{filename}' in Anki")
+    print(f"Stored '{filename}' in Anki's media collection")
+    return stored
+
+
+def update_note_audio_field(note_id: int, audio_filename: str, field_name: str = "Audio") -> None:
+    """
+    Update an audio field of a note with a [sound:...] tag.
+
+    Args:
+        note_id: The note ID to update
+        audio_filename: Name of the audio file in Anki's media collection
+        field_name: Name of the audio field to update (default "Audio")
+
+    Raises:
+        Exception: If the update fails
+    """
+    update_note_fields(note_id, {field_name: f"[sound:{audio_filename}]"})
+    print(f"Updated {field_name} field for note {note_id}")
