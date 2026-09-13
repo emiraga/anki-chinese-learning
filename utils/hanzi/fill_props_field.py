@@ -15,11 +15,13 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from typing import Any
 
 from anki_utils import anki_connect_request
 from gemini_utils import create_gemini_client, gemini_generate
 from pinyin_utils import remove_tone_marks
+from shared.character_discovery import extract_all_characters
 
 
 def load_pos_mapping():
@@ -480,10 +482,12 @@ def load_prop_hanzi_mapping():
 
 def load_pinyin_mappings():
     """
-    Load all enabled Hanzi notes and create mappings from pinyin/syllable to traditional characters
+    Load all enabled Hanzi notes and create mappings from pinyin/syllable to traditional characters.
 
     Returns:
-        tuple: (pinyin_to_chars, syllable_to_chars) - dictionaries mapping to lists of traditional characters
+        tuple: (pinyin_to_chars, syllable_to_chars, known_characters) - dictionaries
+            mapping pinyin/syllables to lists of traditional characters, plus the set
+            of all known Traditional characters from those notes
     """
     # Search for all enabled (non-suspended) Hanzi notes
     response = anki_connect_request("findNotes", {"query": "note:Hanzi -is:suspended"})
@@ -497,13 +501,17 @@ def load_pinyin_mappings():
     # Get detailed information about all Hanzi notes
     notes_info = get_notes_info(note_ids)
 
-    # Create both mappings
+    # Create both mappings and collect the known characters
     pinyin_to_chars: dict[str, list[str]] = {}
     syllable_to_chars: dict[str, list[str]] = {}
+    known_characters: set[str] = set()
 
     for note_info in notes_info:
         traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
         pinyin_accented = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
+
+        if traditional:
+            known_characters.update(extract_all_characters(traditional))
 
         if not traditional or not pinyin_accented:
             continue
@@ -523,7 +531,8 @@ def load_pinyin_mappings():
 
     print(f"Created pinyin mapping for {len(pinyin_to_chars)} pinyin values")
     print(f"Created syllable mapping for {len(syllable_to_chars)} syllables")
-    return pinyin_to_chars, syllable_to_chars
+    print(f"Loaded {len(known_characters)} known characters")
+    return pinyin_to_chars, syllable_to_chars, known_characters
 
 
 def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, include_empty_examples: bool = False) -> list[int]:
@@ -613,16 +622,25 @@ def update_note_fields(note_id: int, fields_dict: dict[str, str]) -> bool:
     return True
 
 
-def pick_random_sentence(examples_json_str: str) -> str:
+def pick_random_sentence(examples_json_str: str, known_characters: set[str]) -> str:
     """
     Pick one Traditional example sentence at random from an Examples JSON value.
+
+    Only sentences whose Chinese characters are all present in known_characters
+    are eligible; everything else is filtered out first.
 
     Args:
         examples_json_str (str): JSON string in the format
             {"<POS_CODE>": [{"Traditional": <sentence>, "English": <translation>}]}
+        known_characters (set): Set of Chinese characters the learner already knows
 
     Returns:
-        str: A randomly chosen Traditional sentence, or "" if none are available
+        str: A randomly chosen Traditional sentence composed of known characters,
+            or "" if the Examples JSON contains no sentences at all
+
+    Raises:
+        Exception: If examples exist but none of them is composed entirely of
+            known characters
     """
     if not examples_json_str or not examples_json_str.strip():
         return ""
@@ -646,17 +664,31 @@ def pick_random_sentence(examples_json_str: str) -> str:
     if not sentences:
         return ""
 
-    return random.choice(sentences)
+    # Filter out sentences that contain characters the learner doesn't know yet
+    eligible_sentences = [
+        sentence
+        for sentence in sentences
+        if extract_all_characters(sentence).issubset(known_characters)
+    ]
+
+    if not eligible_sentences:
+        raise Exception("No example sentence is composed entirely of known characters")
+
+    return random.choice(eligible_sentences)
 
 
-def fill_sentence_traditional_for_due_cards() -> int:
+def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     """
     Fill the Sentence Traditional field for cards due today or tomorrow whose
     Traditional field has fewer than 4 characters and whose Sentence
     Traditional field is empty.
 
     For each matching note, one Traditional example sentence from Examples JSON
-    is picked at random and copied to Sentence Traditional.
+    whose characters are all known is picked at random and copied to Sentence
+    Traditional.
+
+    Args:
+        known_characters (set): Set of Chinese characters the learner already knows
 
     Returns:
         int: Number of notes updated
@@ -707,7 +739,11 @@ def fill_sentence_traditional_for_due_cards() -> int:
             skipped_sentence_already_filled += 1
             continue
 
-        sentence = pick_random_sentence(fields.get("Examples JSON", {}).get("value", ""))
+        try:
+            sentence = pick_random_sentence(fields.get("Examples JSON", {}).get("value", ""), known_characters)
+        except Exception as e:
+            raise Exception(f"Note {note_id} ('{traditional}'): {e}") from e
+
         if not sentence:
             skipped_no_sentence += 1
             continue
@@ -898,9 +934,9 @@ def main():
     pos_mapping = load_pos_mapping()
     print(f"Loaded {len(pos_mapping)} POS codes")
 
-    # Load the pinyin and syllable to characters mappings
+    # Load the pinyin/syllable mappings and the set of known characters
     print("=== Loading Pinyin mappings ===")
-    pinyin_to_chars, syllable_to_chars = load_pinyin_mappings()
+    pinyin_to_chars, syllable_to_chars, known_characters = load_pinyin_mappings()
 
     # Create Gemini client for AI-based POS suggestions
     print("=== Creating Gemini client ===")
@@ -953,7 +989,7 @@ def main():
 
     # Fill Sentence Traditional for due cards with a short Traditional field
     print("\n=== Filling Sentence Traditional for due cards ===")
-    sentences_updated = fill_sentence_traditional_for_due_cards()
+    sentences_updated = fill_sentence_traditional_for_due_cards(known_characters)
     print(f"Updated Sentence Traditional on {sentences_updated} note(s)")
 
     print("\n=== All done! ===")
