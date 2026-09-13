@@ -2,7 +2,7 @@ import { getNewCharacter, type CharactersType } from "~/data/characters";
 import { type PhraseType } from "~/data/phrases";
 import { CharCardDetails } from "./CharCard";
 import React from "react";
-import { getMissingPhraseChars } from "~/data/char_conflicts";
+import { getMissingPhraseChars, getMissingSentenceChars } from "~/data/char_conflicts";
 
 export const TodoCharsList: React.FC<{
   phrases: PhraseType[];
@@ -12,7 +12,12 @@ export const TodoCharsList: React.FC<{
   let somePropsIgnored = Object.values(characters).filter((c) =>
     c.tags.includes("chinese::some-props-ignored"),
   );
-  let missingChars = getMissingPhraseChars(phrases, characters);
+  let missingChars = [
+    ...new Set([
+      ...getMissingPhraseChars(phrases, characters),
+      ...getMissingSentenceChars(phrases, characters),
+    ]),
+  ];
 
   return (
     <>

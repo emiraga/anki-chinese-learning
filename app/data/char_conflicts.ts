@@ -194,17 +194,32 @@ export function getConflictingChars(
   return conflicts;
 }
 
+function getMissingCharsFromText(
+  text: string,
+  characters: CharactersType
+): string[] {
+  return [...removeDuplicateChars(text, IGNORE_PHRASE_CHARS)].filter(
+    (c) => characters[c] === undefined || characters[c].withSound === false
+  );
+}
+
 export function getMissingPhraseChars(
   phrases: PhraseType[],
   characters: CharactersType
 ) {
-  return [
-    ...removeDuplicateChars(
-      phrases.map((p) => p.traditional).join(""),
-      IGNORE_PHRASE_CHARS
-    ),
-  ].filter(
-    (c) => characters[c] === undefined || characters[c].withSound === false
+  return getMissingCharsFromText(
+    phrases.map((p) => p.traditional).join(""),
+    characters
+  );
+}
+
+export function getMissingSentenceChars(
+  phrases: PhraseType[],
+  characters: CharactersType
+) {
+  return getMissingCharsFromText(
+    phrases.map((p) => p.sentenceTraditional).join(""),
+    characters
   );
 }
 

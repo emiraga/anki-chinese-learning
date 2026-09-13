@@ -10,6 +10,7 @@ export type PhraseType = {
   noteId: number;
   source: string;
   traditional: string;
+  sentenceTraditional: string;
   meaning: string;
   partOfSpeech?: string;
   pinyin: string;
@@ -83,6 +84,7 @@ export function useAnkiPhrases() {
           noteId: note.noteId,
           source: note.modelName,
           traditional,
+          sentenceTraditional: note.fields["Sentence Traditional"]?.value ?? "",
           meaning: note.fields["Meaning"].value,
           partOfSpeech: note.fields["POS"]?.value,
           pinyin,

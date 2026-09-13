@@ -10,6 +10,7 @@ import { DarkModeToggle } from "~/components/DarkModeToggle";
 import {
   getConflictingChars,
   getMissingPhraseChars,
+  getMissingSentenceChars,
 } from "~/data/char_conflicts";
 import {
   getCharacterConflictsExtrasCount,
@@ -69,7 +70,12 @@ export const MainToolbarNoOutlet: React.FC<{
     getConflictingChars(knownProps, characters, charPhrasesPinyin).length +
     getCharacterConflictsExtrasCount(characters, props);
   const phraseConflicts = getPhraseConflictsCount(phrases);
-  const missingChars = getMissingPhraseChars(phrases, characters);
+  const missingChars = [
+    ...new Set([
+      ...getMissingPhraseChars(phrases, characters),
+      ...getMissingSentenceChars(phrases, characters),
+    ]),
+  ];
 
   var list: MenuItem[] = [
     { pathname: "/pinyin", name: "Pinyin", show: phrases.length > 0 },

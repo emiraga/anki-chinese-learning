@@ -5,9 +5,12 @@ import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import {
   getConflictingChars,
+  getMissingSentenceChars,
   type CharacterConflict,
 } from "~/data/char_conflicts";
 import { CharConflictSections } from "~/components/CharConflictSections";
+import { CharCardDetails } from "~/components/CharCard";
+import { getNewCharacter } from "~/data/characters";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -24,7 +27,7 @@ type GroupedConflicts = {
 };
 
 export default function Conflicts() {
-  const { knownProps, characters, charPhrasesPinyin } =
+  const { knownProps, characters, charPhrasesPinyin, phrases } =
     useOutletContext<OutletContext>();
 
   const conflicting = getConflictingChars(
@@ -32,6 +35,8 @@ export default function Conflicts() {
     characters,
     charPhrasesPinyin,
   );
+
+  const missingSentenceChars = getMissingSentenceChars(phrases, characters);
 
   // Group conflicts by reason
   const groupedConflicts: GroupedConflicts = {
@@ -83,6 +88,28 @@ export default function Conflicts() {
           conflicts={groupedConflicts.noPinyinFromPhrases}
           charPhrasesPinyin={charPhrasesPinyin}
         />
+
+        {missingSentenceChars.length > 0 && (
+          <section className="block m-4">
+            <h3 className="font-serif text-3xl m-4">
+              Missing Sentence Traditional Chars ({missingSentenceChars.length}):
+            </h3>
+            <div className="text-8xl mx-6 bg-red-100 w-full">
+              {missingSentenceChars.join("")}
+            </div>
+            {missingSentenceChars.map((c, i) => {
+              const char = characters[c] ?? getNewCharacter(c);
+              if (!char) {
+                return (
+                  <div key={i} className="text-8xl mx-6 bg-red-100 w-full">
+                    {c}
+                  </div>
+                );
+              }
+              return <CharCardDetails key={i} char={char} />;
+            })}
+          </section>
+        )}
 
         <CharConflictSections />
       </section>
