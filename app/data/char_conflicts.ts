@@ -196,10 +196,13 @@ export function getConflictingChars(
 
 function getMissingCharsFromText(
   text: string,
-  characters: CharactersType
+  characters: CharactersType,
+  includeNotLearningSoundYet: boolean = true
 ): string[] {
   return [...removeDuplicateChars(text, IGNORE_PHRASE_CHARS)].filter(
-    (c) => characters[c] === undefined || characters[c].withSound === false
+    (c) =>
+      characters[c] === undefined ||
+      (includeNotLearningSoundYet && characters[c].withSound === false)
   );
 }
 
@@ -217,9 +220,13 @@ export function getMissingSentenceChars(
   phrases: PhraseType[],
   characters: CharactersType
 ) {
+  // Characters tagged `chinese::not-learning-sound-yet` are only a problem when
+  // they show up in the phrase "Traditional" field. If they only appear in
+  // "Sentence Traditional" they are not considered missing.
   return getMissingCharsFromText(
     phrases.map((p) => p.sentenceTraditional).join(""),
-    characters
+    characters,
+    false
   );
 }
 
