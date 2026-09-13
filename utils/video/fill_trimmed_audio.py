@@ -46,6 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import find_notes_by_query, get_notes_info, store_media_file, update_note_audio_field
 
 NOTE_TYPE = "LocalMediaClips"
+ID_FIELD = "ID"
 AUDIO_FIELD = "Trimmed Audio"
 CLIP_FIELD = "LocalFilePath"
 TRIM_START_FIELD = "trimDurationStart"
@@ -170,6 +171,11 @@ def process_note(note_id: int, dry_run: bool) -> bool:
         print(f"Note {note_id}: {AUDIO_FIELD} already has content, skipping")
         return False
 
+    clip_id = get_field_value(note, ID_FIELD)
+    if not clip_id:
+        print(f"Note {note_id}: {ID_FIELD} field is empty, skipping")
+        return False
+
     clip_value = get_field_value(note, CLIP_FIELD)
     if not clip_value:
         print(f"Note {note_id}: {CLIP_FIELD} is empty, skipping")
@@ -189,7 +195,7 @@ def process_note(note_id: int, dry_run: bool) -> bool:
         print(f"Note {note_id}: trims leave no audio (duration {duration:.2f}s, start {trim_start:.2f}s, end {end:.2f}s), skipping")
         return False
 
-    audio_filename = f"emir_clip_{note_id}.mp3"
+    audio_filename = f"audio_clip_{clip_id}.mp3"
     print(f"Note {note_id}: {clip_path.name} [{format_ffmpeg_timestamp(trim_start)} -> {format_ffmpeg_timestamp(end)}] -> {audio_filename}")
 
     if dry_run:
