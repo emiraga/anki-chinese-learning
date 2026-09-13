@@ -161,6 +161,20 @@ def set_new_card_positions(positions: dict[int, int]) -> None:
                 raise Exception(f"Failed to set position {position} on card {card_id}: {result}")
 
 
+def move_cards_to_deck(card_ids: list[int], deck: str) -> None:
+    """
+    Move the given cards to the specified deck, creating it if needed.
+
+    Args:
+        card_ids: List of card IDs to move
+        deck: Name of the destination deck (e.g. "Chinese::MediaClips")
+    """
+    if not card_ids:
+        return
+    anki_connect_request("changeDeck", {"cards": card_ids, "deck": deck})
+    print(f"Moved {len(card_ids)} card(s) to deck '{deck}'")
+
+
 def add_tags(note_ids: list[int], tags: str) -> None:
     """Add the given space-separated tags to the notes."""
     if not note_ids:

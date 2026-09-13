@@ -13,8 +13,9 @@ This script finds every LocalMediaClips note whose review interval is at least
 10 days and whose "Trimmed Audio" field is empty. For each matching note it
 takes the clip at "LocalFilePath", cuts off the first "trimDurationStart"
 seconds and the last "trimDurationEnd" seconds, extracts the remaining audio to
-an MP3, uploads it to Anki's media collection, and points the "Trimmed Audio"
-field at it with a [sound:...] tag.
+an MP3, uploads it to Anki's media collection, points the "Trimmed Audio"
+field at it with a [sound:...] tag, and moves the note's cards to the
+"Chinese::MediaClips" deck.
 
 The Anki search used is:
 
@@ -43,7 +44,14 @@ from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import find_notes_by_query, get_notes_info, store_media_file, update_note_audio_field
+from shared.anki_utils import (
+    find_cards_by_query,
+    find_notes_by_query,
+    get_notes_info,
+    move_cards_to_deck,
+    store_media_file,
+    update_note_audio_field,
+)
 
 NOTE_TYPE = "LocalMediaClips"
 ID_FIELD = "ID"
@@ -51,6 +59,7 @@ AUDIO_FIELD = "Trimmed Audio"
 CLIP_FIELD = "LocalFilePath"
 TRIM_START_FIELD = "trimDurationStart"
 TRIM_END_FIELD = "trimDurationEnd"
+DESTINATION_DECK = "Chinese::MediaClips"
 
 # A field name followed by a bare ":" matches an empty field; quotes are needed
 # because the field name contains a space.
@@ -199,7 +208,7 @@ def process_note(note_id: int, dry_run: bool) -> bool:
     print(f"Note {note_id}: {clip_path.name} [{format_ffmpeg_timestamp(trim_start)} -> {format_ffmpeg_timestamp(end)}] -> {audio_filename}")
 
     if dry_run:
-        print(f"  [DRY RUN] Would store '{audio_filename}' and set {AUDIO_FIELD}")
+        print(f"  [DRY RUN] Would store '{audio_filename}', set {AUDIO_FIELD}, and move card(s) to '{DESTINATION_DECK}'")
         return True
 
     with tempfile.TemporaryDirectory(prefix="trimmed_audio_") as tmp_dir:
@@ -210,6 +219,13 @@ def process_note(note_id: int, dry_run: bool) -> bool:
 
     store_media_file(audio_filename, audio_data)
     update_note_audio_field(note_id, audio_filename, field_name=AUDIO_FIELD)
+
+    card_ids = find_cards_by_query(f"nid:{note_id}")
+    if not card_ids:
+        print(f"  Note {note_id}: no cards found to move to '{DESTINATION_DECK}'")
+    else:
+        move_cards_to_deck(card_ids, DESTINATION_DECK)
+
     return True
 
 
