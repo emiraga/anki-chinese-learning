@@ -35,5 +35,6 @@ set -e
 ./utils/hackchinese/fill_example_sentences.py
 
 ./utils/video/augment_translation.py
+./utils/video/fill_trimmed_audio.py
 
 ./utils/sync_ankiweb.py
