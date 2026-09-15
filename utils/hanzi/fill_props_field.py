@@ -281,7 +281,7 @@ Example response format:
         raise Exception(f"Error generating examples from Gemini: {e}") from e
 
 
-def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any]) -> str:
+def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any], english_only: bool = False) -> str:
     """
     Format Examples JSON as HTML with POS name as heading, Chinese sentence,
     and gray English translation.
@@ -289,6 +289,8 @@ def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any])
     Args:
         examples_json_str (str): JSON string with examples per POS
         pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+        english_only (bool): When True, emit only the English translations
+            (no Chinese sentences), for the "Examples English" field
 
     Returns:
         str: HTML formatted examples
@@ -321,7 +323,10 @@ def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any])
             if isinstance(example, dict) and "Traditional" in example and "English" in example:
                 chinese = example["Traditional"]
                 english = example["English"]
-                section_parts.append(f'{chinese}<br><span style="color: gray;">{english}</span>')
+                if english_only:
+                    section_parts.append(english)
+                else:
+                    section_parts.append(f'{chinese}<br><span style="color: gray;">{english}</span>')
 
         # Join examples within a POS with single line break
         pos_sections.append("<br>".join(section_parts))
@@ -544,7 +549,8 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
     Args:
         note_type (str): The note type to search
         include_empty_pos (bool): Whether to include notes with empty POS field
-        include_empty_examples (bool): Whether to include notes with empty Examples JSON field
+        include_empty_examples (bool): Whether to include notes with an empty
+            Examples JSON, Examples, or Examples English field
 
     Returns:
         list: List of note IDs
@@ -564,8 +570,8 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
             # Include unsuspended TOCFL notes with empty POS field for AI suggestion
             conditions.append('(-is:suspended "POS:")')
         if include_empty_examples:
-            # Include unsuspended TOCFL notes with empty Examples JSON/Examples field, due today or tomorrow
-            conditions.append('(-is:suspended ("Examples JSON:" OR "Examples:"))')
+            # Include unsuspended TOCFL notes with an empty Examples JSON/Examples/Examples English field
+            conditions.append('(-is:suspended ("Examples JSON:" OR "Examples:" OR "Examples English:"))')
         search_query = f"note:{note_type} ({' OR '.join(conditions)})"
     else:
         search_query = f"note:{note_type} {base_conditions}"
@@ -785,7 +791,8 @@ def update_fields_for_note(
 ) -> bool:
     """
     Update Props, Mnemonic pegs, Anki Tags, POS, POS Description, Examples JSON,
-    Same Pinyin Traditional, and Same Syllable Traditional fields for a single note
+    Examples, Examples English, Same Pinyin Traditional, and Same Syllable
+    Traditional fields for a single note
 
     Args:
         note_info (dict): Note information dictionary
@@ -860,15 +867,19 @@ def update_fields_for_note(
             if examples_dict:
                 fields_to_update["Examples JSON"] = json.dumps(examples_dict, ensure_ascii=False)
 
-        # Process Examples field (HTML formatted) if it exists
-        if "Examples" in note_info["fields"]:
-            current_examples_html = note_info["fields"].get("Examples", {}).get("value", "").strip()
-            # Use potentially updated Examples JSON or existing one
-            examples_json_str = fields_to_update.get("Examples JSON") or current_examples_json
-            new_examples_html = format_examples_as_html(examples_json_str, pos_mapping)
+        # Process the HTML formatted Examples fields if they exist.
+        # "Examples" holds Chinese + English, "Examples English" only the translations.
+        # Use potentially updated Examples JSON or existing one
+        examples_json_str = fields_to_update.get("Examples JSON") or current_examples_json
+        for field_name, english_only in (("Examples", False), ("Examples English", True)):
+            if field_name not in note_info["fields"]:
+                continue
+
+            current_examples_html = note_info["fields"].get(field_name, {}).get("value", "").strip()
+            new_examples_html = format_examples_as_html(examples_json_str, pos_mapping, english_only=english_only)
 
             if new_examples_html and current_examples_html != new_examples_html:
-                fields_to_update["Examples"] = new_examples_html
+                fields_to_update[field_name] = new_examples_html
 
     # Process ID field - only if empty, set to "my_" + Traditional
     if "ID" in note_info["fields"] and "Traditional" in note_info["fields"]:
