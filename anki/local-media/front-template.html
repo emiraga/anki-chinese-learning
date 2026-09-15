@@ -16,24 +16,8 @@
   id="trim-debug-wrap"
   style="font-family: monospace; font-size: 9px; text-align: left"
 >
-  <button
-    type="button"
-    onclick="
-      var d = document.getElementById('trim-debug');
-      d.style.display = d.style.display === 'none' ? 'block' : 'none';
-    "
-  >
-    debug
-  </button>
-  <button
-    type="button"
-    onclick="
-      var d = document.getElementById('trim-debug');
-      navigator.clipboard.writeText(d.textContent);
-    "
-  >
-    copy log
-  </button>
+  <button type="button" onclick="ankiTrimToggleDebug()">debug</button>
+  <button type="button" onclick="ankiTrimCopyLog()">copy log</button>
   <pre
     id="trim-debug"
     style="
@@ -52,13 +36,24 @@
 
 <script>
   (function () {
+    // Anki swaps the card HTML in place - the back template pulls the whole
+    // front template back in via {{FrontSide}}, and any reviewer redraw (a
+    // sync, for instance) re-renders the current side - without ever
+    // reloading the page. So several copies of this markup, and of this
+    // script, share one document: an id lookup has to mean "the newest one",
+    // never "the first one that happens to still be in the DOM".
+    function lastById(id) {
+      var found = document.querySelectorAll("#" + id);
+      return found.length ? found[found.length - 1] : null;
+    }
+    window.ankiLastById = lastById;
+
     // ---------------------------------------------------------------- debug
-    var debugBox = document.getElementById("trim-debug");
+    var debugBox = lastById("trim-debug");
     var debugLines = [];
     var t0 = Date.now();
-    // Distinguishes concurrent copies of this script: Anki re-injects the
-    // front template on the back side, and two instances fighting over the
-    // same element would look exactly like "the seek doesn't stick".
+    // Distinguishes concurrent copies of this script: two instances fighting
+    // over the same element would look exactly like "the seek doesn't stick".
     var instance = Math.random().toString(36).slice(2, 6);
 
     function log(msg) {
@@ -71,6 +66,16 @@
       }
       console.log(line);
     }
+
+    // Bound to this instance's panel, so the buttons never drive a stale one.
+    window.ankiTrimToggleDebug = function () {
+      debugBox.style.display =
+        debugBox.style.display === "none" ? "block" : "none";
+    };
+
+    window.ankiTrimCopyLog = function () {
+      navigator.clipboard.writeText(debugBox.textContent);
+    };
 
     function ranges(timeRanges) {
       var out = [];
@@ -108,8 +113,52 @@
     var videos = document.querySelectorAll("#ankivideo");
     var video = videos[videos.length - 1];
     if (!video) {
-      log("no #ankivideo element found");
-      return;
+      throw new Error("no #ankivideo element found");
+    }
+
+    // ------------------------------------------------------------- takeover
+    // Nothing tears the previous copy of this script down on its own: its
+    // listeners and its 100ms poll keep running, still holding the <video>
+    // element that was on screen a moment ago. A detached media element is
+    // not silent - it plays whenever something calls play() on it, which its
+    // `ended` handler dutifully does - so a leftover instance is heard as the
+    // clip playing twice, and one more time for every further redraw. Hand
+    // over explicitly instead: the outgoing instance stops listening, drops
+    // its timers and pauses its element before this one takes the stage.
+    var dead = false;
+    var listeners = [];
+    var startPoll = null;
+
+    function on(target, event, handler) {
+      function wrapped(event_) {
+        if (dead) return;
+        handler(event_);
+      }
+      listeners.push([target, event, wrapped]);
+      target.addEventListener(event, wrapped);
+    }
+
+    function destroy(why) {
+      if (dead) return;
+      dead = true;
+      clearInterval(startPoll);
+      listeners.forEach(function (entry) {
+        entry[0].removeEventListener(entry[1], entry[2]);
+      });
+      listeners = [];
+      video.pause();
+      log("destroyed: " + why);
+    }
+
+    if (window.ankiTrimPlayer) {
+      window.ankiTrimPlayer.destroy("superseded by instance " + instance);
+    }
+    // Belt and braces: an instance may have been lost without being destroyed
+    // (an older copy of this template, an error before it registered itself),
+    // leaving an element that only the DOM still knows about.
+    for (var i = 0; i < videos.length - 1; i++) {
+      log("pausing leftover #ankivideo " + i);
+      videos[i].pause();
     }
 
     var trimStart = parseFloat(video.dataset.trimStart);
@@ -175,6 +224,7 @@
     }
 
     function applyStart(reason) {
+      if (dead) return;
       if (startApplied) {
         // Covers trimStart === 0, where there is nothing to seek to and the
         // clip is good to play the moment it has metadata.
@@ -239,7 +289,7 @@
       "play",
       "playing",
     ].forEach(function (event) {
-      video.addEventListener(event, function () {
+      on(video, event, function () {
         log("event " + event + ": " + state());
         applyStart(event);
       });
@@ -248,7 +298,7 @@
     // Events that never trigger a seek, but explain a failing one.
     ["emptied", "abort", "error", "stalled", "suspend", "waiting"].forEach(
       function (event) {
-        video.addEventListener(event, function () {
+        on(video, event, function () {
           log(
             "event " +
               event +
@@ -260,7 +310,7 @@
       },
     );
 
-    video.addEventListener("seeked", function () {
+    on(video, "seeked", function () {
       selfSeeking = false;
     });
 
@@ -271,12 +321,14 @@
     // The events above are still not a guarantee: nothing is emitted at the
     // moment a streaming file first becomes seekable, so poll until the seek
     // sticks. This is the same seek the trim buttons perform by hand.
-    var startPoll = null;
-
     function pollUntilStartApplied() {
       clearInterval(startPoll);
       var polls = 0;
       startPoll = setInterval(function () {
+        if (dead) {
+          clearInterval(startPoll);
+          return;
+        }
         applyStart("poll");
         if (startApplied || ++polls > 200) {
           clearInterval(startPoll);
@@ -287,7 +339,7 @@
 
     pollUntilStartApplied();
 
-    video.addEventListener("seeking", function () {
+    on(video, "seeking", function () {
       log("event seeking (self=" + selfSeeking + "): " + state());
       // The user took over - stop enforcing the trimmed start.
       if (selfSeeking) return;
@@ -295,7 +347,7 @@
     });
 
     var lastTimeLog = 0;
-    video.addEventListener("timeupdate", function () {
+    on(video, "timeupdate", function () {
       // Last resort: if every seek above was dropped, retry while it plays.
       applyStart("timeupdate");
 
@@ -316,15 +368,15 @@
     });
 
     // Manual loop (replaces the native `loop` attribute)
-    video.addEventListener("ended", function () {
+    on(video, "ended", function () {
       log("event ended: " + state());
       video.currentTime = trimStart;
       video.play();
     });
 
     // Let the trim buttons below take effect without reloading the card.
-    window.ankiSetTrim = function (newStart, newEnd) {
-      log("ankiSetTrim(" + newStart + ", " + newEnd + "): " + state());
+    function setTrim(newStart, newEnd) {
+      log("setTrim(" + newStart + ", " + newEnd + "): " + state());
       trimStart = newStart;
       trimEnd = newEnd;
       video.dataset.trimStart = newStart;
@@ -334,8 +386,23 @@
       // even when playback is already past it.
       selfSeeking = true;
       video.currentTime = trimStart;
-      log("ankiSetTrim after seek: " + state());
+      log("setTrim after seek: " + state());
       pollUntilStartApplied();
+    }
+
+    function setRate(rate) {
+      video.playbackRate = rate;
+      video.play();
+    }
+
+    // The single handle the markup below reaches the player through, so that
+    // no button can end up driving an element this instance has replaced.
+    window.ankiTrimPlayer = {
+      instance: instance,
+      video: video,
+      destroy: destroy,
+      setTrim: setTrim,
+      setRate: setRate,
     };
   })();
 </script>
@@ -360,60 +427,12 @@
     +0.1s
   </button>
   <span id="val-start">{{trimDurationStart}}</span>s
-  <button
-    onclick="
-      var v = document.getElementById('ankivideo');
-      v.playbackRate = 0.5;
-      v.play();
-    "
-  >
-    0.5x
-  </button>
-  <button
-    onclick="
-      var v = document.getElementById('ankivideo');
-      v.playbackRate = 0.6;
-      v.play();
-    "
-  >
-    0.6x
-  </button>
-  <button
-    onclick="
-      var v = document.getElementById('ankivideo');
-      v.playbackRate = 0.7;
-      v.play();
-    "
-  >
-    0.7x
-  </button>
-  <button
-    onclick="
-      var v = document.getElementById('ankivideo');
-      v.playbackRate = 0.8;
-      v.play();
-    "
-  >
-    0.8x
-  </button>
-  <button
-    onclick="
-      var v = document.getElementById('ankivideo');
-      v.playbackRate = 0.9;
-      v.play();
-    "
-  >
-    0.9x
-  </button>
-  <button
-    onclick="
-      var v = document.getElementById('ankivideo');
-      v.playbackRate = 1.0;
-      v.play();
-    "
-  >
-    1.0x
-  </button>
+  <button type="button" onclick="ankiTrimPlayer.setRate(0.5)">0.5x</button>
+  <button type="button" onclick="ankiTrimPlayer.setRate(0.6)">0.6x</button>
+  <button type="button" onclick="ankiTrimPlayer.setRate(0.7)">0.7x</button>
+  <button type="button" onclick="ankiTrimPlayer.setRate(0.8)">0.8x</button>
+  <button type="button" onclick="ankiTrimPlayer.setRate(0.9)">0.9x</button>
+  <button type="button" onclick="ankiTrimPlayer.setRate(1.0)">1.0x</button>
   <span id="val-end">{{trimDurationEnd}}</span>s
   <button type="button" onclick="adjustTrim('trimDurationEnd', 0.1)">
     +0.1s
@@ -428,8 +447,11 @@
 
 <script>
   async function adjustTrim(fieldName, delta) {
-    // 1. Get custom alphanumeric ID from the template
-    const customIdElement = document.getElementById("note-id");
+    // 1. Get custom alphanumeric ID from the template. Every lookup here goes
+    // through ankiLastById for the same reason as in the player above: an
+    // older copy of this card's markup may still be in the document, and its
+    // fields would be the ones read and written.
+    const customIdElement = window.ankiLastById("note-id");
     const customId = customIdElement ? customIdElement.innerText.trim() : "";
 
     if (!customId) {
@@ -442,7 +464,7 @@
     // Identify target DOM display element
     const valueSpanId =
       fieldName === "trimDurationStart" ? "val-start" : "val-end";
-    const targetSpan = document.getElementById(valueSpanId);
+    const targetSpan = window.ankiLastById(valueSpanId);
     const currentVal = parseFloat(targetSpan.innerText) || 0.0;
 
     // Calculate new value rounded to 1 decimal place
@@ -497,9 +519,9 @@
 
       // 5. Push the new values into the player so playback reflects them right
       // away, instead of only after the card is reloaded.
-      window.ankiSetTrim(
-        parseFloat(document.getElementById("val-start").innerText) || 0,
-        parseFloat(document.getElementById("val-end").innerText) || 0,
+      window.ankiTrimPlayer.setTrim(
+        parseFloat(window.ankiLastById("val-start").innerText) || 0,
+        parseFloat(window.ankiLastById("val-end").innerText) || 0,
       );
     } catch (err) {
       console.error("Connection Error:", err);
