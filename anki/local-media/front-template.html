@@ -3,6 +3,7 @@
 <video
   id="ankivideo"
   controls
+  preload="auto"
   src="http://[::1]:8080/{{RelativeFilePath}}"
   width="100%"
   data-trim-start="{{trimDurationStart}}"
@@ -10,41 +11,304 @@
   onclick="this.paused ? this.play() : this.pause()"
 ></video>
 
+<!-- Debug panel: shows why the trimmed start is or isn't being applied. -->
+<div
+  id="trim-debug-wrap"
+  style="font-family: monospace; font-size: 9px; text-align: left"
+>
+  <button
+    type="button"
+    onclick="
+      var d = document.getElementById('trim-debug');
+      d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    "
+  >
+    debug
+  </button>
+  <button
+    type="button"
+    onclick="
+      var d = document.getElementById('trim-debug');
+      navigator.clipboard.writeText(d.textContent);
+    "
+  >
+    copy log
+  </button>
+  <pre
+    id="trim-debug"
+    style="
+      display: none;
+      max-height: 160px;
+      overflow: auto;
+      background: #111;
+      color: #0f0;
+      padding: 4px;
+      margin: 4px 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    "
+  ></pre>
+</div>
+
 <script>
   (function () {
-    var video = document.getElementById("ankivideo");
+    // ---------------------------------------------------------------- debug
+    var debugBox = document.getElementById("trim-debug");
+    var debugLines = [];
+    var t0 = Date.now();
+    // Distinguishes concurrent copies of this script: Anki re-injects the
+    // front template on the back side, and two instances fighting over the
+    // same element would look exactly like "the seek doesn't stick".
+    var instance = Math.random().toString(36).slice(2, 6);
+
+    function log(msg) {
+      var line = "+" + (Date.now() - t0) + "ms [" + instance + "] " + msg;
+      debugLines.push(line);
+      if (debugLines.length > 400) debugLines.shift();
+      if (debugBox) {
+        debugBox.textContent = debugLines.join("\n");
+        debugBox.scrollTop = debugBox.scrollHeight;
+      }
+      console.log(line);
+    }
+
+    function ranges(timeRanges) {
+      var out = [];
+      for (var i = 0; i < timeRanges.length; i++) {
+        out.push(
+          timeRanges.start(i).toFixed(2) + ".." + timeRanges.end(i).toFixed(2),
+        );
+      }
+      return out.length ? out.join(",") : "none";
+    }
+
+    function state() {
+      return (
+        "rs=" +
+        video.readyState +
+        " ns=" +
+        video.networkState +
+        " ct=" +
+        video.currentTime.toFixed(3) +
+        " dur=" +
+        video.duration +
+        " paused=" +
+        video.paused +
+        " seeking=" +
+        video.seeking +
+        " seekable=[" +
+        ranges(video.seekable) +
+        "] buffered=[" +
+        ranges(video.buffered) +
+        "]"
+      );
+    }
+
+    // ---------------------------------------------------------------- setup
+    var videos = document.querySelectorAll("#ankivideo");
+    var video = videos[videos.length - 1];
+    if (!video) {
+      log("no #ankivideo element found");
+      return;
+    }
 
     var trimStart = parseFloat(video.dataset.trimStart);
     var trimEnd = parseFloat(video.dataset.trimEnd);
 
+    log(
+      "init: #ankivideo count=" +
+        videos.length +
+        " raw trimStart=" +
+        JSON.stringify(video.dataset.trimStart) +
+        " raw trimEnd=" +
+        JSON.stringify(video.dataset.trimEnd) +
+        " src=..." +
+        video.currentSrc.slice(-40),
+    );
+
     if (isNaN(trimStart) || trimStart < 0) trimStart = 0;
     if (isNaN(trimEnd) || trimEnd < 0) trimEnd = 0;
 
-    function seekToStart() {
-      if (trimStart > 0) {
-        video.currentTime = trimStart;
-      }
+    log("init: parsed trimStart=" + trimStart + " trimEnd=" + trimEnd);
+    log("init: " + state());
+
+    // A seek is silently dropped while the video is still being fetched over
+    // the network, which is why a freshly loaded card used to ignore the
+    // trimmed start and only honour it once the file was cached. So keep
+    // re-applying the seek until we can see that it actually took effect.
+    var startApplied = trimStart === 0;
+    // Set while we are the ones seeking, so a manual seek by the user can be
+    // told apart from ours and stop us from yanking them back.
+    var selfSeeking = false;
+    var attempts = 0;
+    var unseekableChecks = 0;
+
+    function seekableEnd() {
+      var seekable = video.seekable;
+      return seekable.length ? seekable.end(seekable.length - 1) : 0;
     }
 
-    // Jump past the trimmed start as soon as we know the video's length
-    video.addEventListener("loadedmetadata", seekToStart);
+    function stopEnforcing(why) {
+      startApplied = true;
+      clearInterval(startPoll);
+      log(why);
+    }
 
-    // Cut off the trimmed end by restarting once we get close to it
+    function applyStart(reason) {
+      if (startApplied) return;
+      if (video.currentTime >= trimStart - 0.05) {
+        startApplied = true;
+        log("applyStart(" + reason + "): satisfied, " + state());
+        return;
+      }
+      // Deliberately not gated on `duration`: the local media server leaves it
+      // Infinity/NaN until the whole file has arrived, so requiring a finite
+      // duration here would suppress every attempt on a first, uncached load.
+      if (video.readyState < 1) {
+        if (attempts < 3) log("applyStart(" + reason + "): rs=0, skip");
+        return;
+      }
+      // A clip served without HTTP Range support is reported as non-seekable:
+      // `seekable` stays empty even once the whole file is buffered, and every
+      // write to currentTime is clamped straight back to 0. Seeking anyway
+      // would just spin - each attempt re-fires seeking/canplay, which would
+      // ask for another attempt - so wait for a usable range instead.
+      if (seekableEnd() < trimStart) {
+        unseekableChecks++;
+        if (video.readyState >= 3 && unseekableChecks > 10) {
+          stopEnforcing(
+            "GIVING UP: clip is not seekable (seekable=[" +
+              ranges(video.seekable) +
+              "], buffered=[" +
+              ranges(video.buffered) +
+              "]). The media server must support HTTP Range requests - run " +
+              "utils/video/serve_media.py instead of `python3 -m http.server`.",
+          );
+        }
+        return;
+      }
+      attempts++;
+      // Attempts repeat every 100ms, so only a sample of them is logged.
+      var verbose = attempts <= 12 || attempts % 10 === 0;
+      if (verbose) {
+        log("seek#" + attempts + " (" + reason + ") -> " + trimStart);
+        log("  before: " + state());
+      }
+      selfSeeking = true;
+      video.currentTime = trimStart;
+      if (verbose) log("  after:  " + state());
+    }
+
+    [
+      "loadstart",
+      "loadedmetadata",
+      "loadeddata",
+      "durationchange",
+      "progress",
+      "canplay",
+      "canplaythrough",
+      "seeked",
+      "play",
+      "playing",
+    ].forEach(function (event) {
+      video.addEventListener(event, function () {
+        log("event " + event + ": " + state());
+        applyStart(event);
+      });
+    });
+
+    // Events that never trigger a seek, but explain a failing one.
+    ["emptied", "abort", "error", "stalled", "suspend", "waiting"].forEach(
+      function (event) {
+        video.addEventListener(event, function () {
+          log(
+            "event " +
+              event +
+              ": " +
+              state() +
+              (video.error ? " err=" + video.error.code : ""),
+          );
+        });
+      },
+    );
+
+    video.addEventListener("seeked", function () {
+      selfSeeking = false;
+    });
+
+    // Anki injects card scripts after the markup, so the metadata may already
+    // have arrived (cached file) and no further event would be left to wait on.
+    applyStart("init");
+
+    // The events above are still not a guarantee: nothing is emitted at the
+    // moment a streaming file first becomes seekable, so poll until the seek
+    // sticks. This is the same seek the trim buttons perform by hand.
+    var startPoll = null;
+
+    function pollUntilStartApplied() {
+      clearInterval(startPoll);
+      var polls = 0;
+      startPoll = setInterval(function () {
+        applyStart("poll");
+        if (startApplied || ++polls > 200) {
+          clearInterval(startPoll);
+          log("poll stopped after " + polls + ", applied=" + startApplied);
+        }
+      }, 100);
+    }
+
+    pollUntilStartApplied();
+
+    video.addEventListener("seeking", function () {
+      log("event seeking (self=" + selfSeeking + "): " + state());
+      // The user took over - stop enforcing the trimmed start.
+      if (selfSeeking) return;
+      stopEnforcing("manual seek detected, stopped enforcing");
+    });
+
+    var lastTimeLog = 0;
     video.addEventListener("timeupdate", function () {
+      // Last resort: if every seek above was dropped, retry while it plays.
+      applyStart("timeupdate");
+
+      if (Date.now() - lastTimeLog > 500) {
+        lastTimeLog = Date.now();
+        log("timeupdate: " + state());
+      }
+
+      // Cut off the trimmed end by restarting once we get close to it
       if (
         trimEnd > 0 &&
         video.duration &&
         video.currentTime >= video.duration - trimEnd
       ) {
+        log("end trim reached, restarting at " + trimStart);
         video.currentTime = trimStart;
       }
     });
 
     // Manual loop (replaces the native `loop` attribute)
     video.addEventListener("ended", function () {
+      log("event ended: " + state());
       video.currentTime = trimStart;
       video.play();
     });
+
+    // Let the trim buttons below take effect without reloading the card.
+    window.ankiSetTrim = function (newStart, newEnd) {
+      log("ankiSetTrim(" + newStart + ", " + newEnd + "): " + state());
+      trimStart = newStart;
+      trimEnd = newEnd;
+      video.dataset.trimStart = newStart;
+      video.dataset.trimEnd = newEnd;
+      startApplied = false;
+      // Seek unconditionally so the new start can be previewed straight away,
+      // even when playback is already past it.
+      selfSeeking = true;
+      video.currentTime = trimStart;
+      log("ankiSetTrim after seek: " + state());
+      pollUntilStartApplied();
+    };
   })();
 </script>
 
@@ -201,10 +465,14 @@
       }
 
       // 4. Update DOM instantly (No page reload = No blank screen)
-      // targetSpan.innerText = newVal.toFixed(1);
+      targetSpan.innerText = newVal.toFixed(1);
 
-      // Optional: If you need audio or HTML dependent on this field to re-evaluate,
-      // dispatch a custom event or update specific player elements directly here.
+      // 5. Push the new values into the player so playback reflects them right
+      // away, instead of only after the card is reloaded.
+      window.ankiSetTrim(
+        parseFloat(document.getElementById("val-start").innerText) || 0,
+        parseFloat(document.getElementById("val-end").innerText) || 0,
+      );
     } catch (err) {
       console.error("Connection Error:", err);
       alert(
