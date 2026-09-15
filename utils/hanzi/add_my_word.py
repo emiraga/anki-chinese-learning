@@ -113,7 +113,7 @@ def check_traditional_exists(traditional: str) -> bool:
 
 
 def create_tocfl_note(
-    traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::Phrases", set_due_today: bool = True
+    traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::wPhrases", set_due_today: bool = True
 ) -> int:
     """
     Create a new TOCFL note
@@ -234,7 +234,7 @@ def main():
         help="Generate a random price phrase (default: 1-999). Use --price 9999 or --price 100-999",
     )
     parser.add_argument("--note", default="TOCFL", help="Note type to use (default: TOCFL)")
-    parser.add_argument("--deck", default="Chinese::Phrases", help="Deck name to add the note to (default: Chinese::Phrases)")
+    parser.add_argument("--deck", default="Chinese::wPhrases", help="Deck name to add the note to (default: Chinese::wPhrases)")
     parser.add_argument("--no-due-today", action="store_true", help="Don't set cards due today (will suspend them instead)")
     parser.add_argument("--pinyin", help="Manual pinyin (optional, will be auto-generated if not provided)")
     parser.add_argument("--meaning", help="Manual meaning/translation (optional, will be auto-generated if not provided)")

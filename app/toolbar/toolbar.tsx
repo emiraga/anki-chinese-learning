@@ -287,6 +287,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: phrases.length > 0,
         },
         {
+          pathname: "/media_clips",
+          name: "Media clips",
+          show: true,
+        },
+        {
           pathname: "/help",
           name: "Help",
           show: true,

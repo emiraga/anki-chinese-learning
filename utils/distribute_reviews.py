@@ -16,7 +16,7 @@ left untouched.
 Examples:
     ./distribute_reviews.py --days 7
     ./distribute_reviews.py --days 5 --dry-run
-    ./distribute_reviews.py --deck "Chinese::Phrases" --days 10
+    ./distribute_reviews.py --deck "Chinese::wPhrases" --days 10
 """
 
 import argparse

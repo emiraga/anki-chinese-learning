@@ -1,10 +1,10 @@
-import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
 import anki from "~/apis/anki";
 import { getAnkiNoteFilter } from "~/apis/anki";
 import type { Route } from "./+types/exam_level";
 import MainFrame from "~/toolbar/frame";
 import { LoadingProgressBar } from "~/components/LoadingProgressBar";
+import { CardStateBar } from "~/components/CardStateBar";
 
 // Configuration for continuous progress bar
 const PROGRESS_STAGE_CONFIG = {
@@ -22,86 +22,6 @@ type LevelStats = {
   inProgress: number;
   mature: number;
   total: number;
-};
-
-const LearningProgressBar: React.FC<{
-  level: string;
-  pending: number;
-  inProgress: number;
-  mature: number;
-  total: number;
-}> = ({ level, pending, inProgress, mature, total }) => {
-  if (total === 0) return null;
-
-  const pendingPercent = (pending / total) * 100;
-  const inProgressPercent = (inProgress / total) * 100;
-  const maturePercent = (mature / total) * 100;
-
-  return (
-    <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {level || "No Level"}
-        </h3>
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          {total} cards
-        </span>
-      </div>
-
-      <div className="w-full bg-gray-200 rounded-full h-6 mb-3 dark:bg-gray-700">
-        <div className="h-6 rounded-full flex">
-          {pending > 0 && (
-            <div
-              className="bg-gray-400 dark:bg-gray-500 rounded-l-full flex items-center justify-center text-xs text-white font-medium"
-              style={{ width: `${pendingPercent}%` }}
-              title={`Pending: ${pending}`}
-            >
-              {pendingPercent > 15 && pending}
-            </div>
-          )}
-          {inProgress > 0 && (
-            <div
-              className="bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-xs text-white font-medium"
-              style={{ width: `${inProgressPercent}%` }}
-              title={`In Progress: ${inProgress}`}
-            >
-              {inProgressPercent > 15 && inProgress}
-            </div>
-          )}
-          {mature > 0 && (
-            <div
-              className="bg-green-500 dark:bg-green-600 rounded-r-full flex items-center justify-center text-xs text-white font-medium"
-              style={{ width: `${maturePercent}%` }}
-              title={`Mature: ${mature}`}
-            >
-              {maturePercent > 15 && mature}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-2 text-sm">
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-gray-400 dark:bg-gray-500 rounded mr-2"></div>
-          <span className="text-gray-700 dark:text-gray-300">
-            Pending: {pending}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-500 dark:bg-blue-600 rounded mr-2"></div>
-          <span className="text-gray-700 dark:text-gray-300">
-            In Progress: {inProgress}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-green-500 dark:bg-green-600 rounded mr-2"></div>
-          <span className="text-gray-700 dark:text-gray-300">
-            Mature: {mature}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export function meta({}: Route.MetaArgs) {
@@ -233,13 +153,29 @@ function ExamLevelContent() {
           </p>
 
           {levelStats.map((stats) => (
-            <LearningProgressBar
+            <CardStateBar
               key={stats.level}
-              level={stats.level}
-              pending={stats.pending}
-              inProgress={stats.inProgress}
-              mature={stats.mature}
-              total={stats.total}
+              title={stats.level || "No Level"}
+              segments={[
+                {
+                  key: "pending",
+                  label: "Pending",
+                  count: stats.pending,
+                  colorClassName: "bg-gray-400 dark:bg-gray-500",
+                },
+                {
+                  key: "inProgress",
+                  label: "In Progress",
+                  count: stats.inProgress,
+                  colorClassName: "bg-blue-500 dark:bg-blue-600",
+                },
+                {
+                  key: "mature",
+                  label: "Mature",
+                  count: stats.mature,
+                  colorClassName: "bg-green-500 dark:bg-green-600",
+                },
+              ]}
             />
           ))}
         </div>

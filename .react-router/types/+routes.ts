@@ -145,6 +145,9 @@ type Pages = {
   "/help": {
     params: {};
   };
+  "/media_clips": {
+    params: {};
+  };
   "/homophones": {
     params: {};
   };
@@ -179,7 +182,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/media_clips" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -337,6 +340,10 @@ type RouteFiles = {
     id: "routes/help";
     page: "/help";
   };
+  "routes/media_clips.tsx": {
+    id: "routes/media_clips";
+    page: "/media_clips";
+  };
   "routes/homophones.tsx": {
     id: "routes/homophones";
     page: "/homophones";
@@ -420,6 +427,7 @@ type RouteModules = {
   "routes/chars_multiple_pronunciation": typeof import("./app/routes/chars_multiple_pronunciation.tsx");
   "routes/exam_level": typeof import("./app/routes/exam_level.tsx");
   "routes/help": typeof import("./app/routes/help.tsx");
+  "routes/media_clips": typeof import("./app/routes/media_clips.tsx");
   "routes/homophones": typeof import("./app/routes/homophones.tsx");
   "routes/migration": typeof import("./app/routes/migration.tsx");
   "routes/tone/$toneName": typeof import("./app/routes/tone/$toneName.tsx");

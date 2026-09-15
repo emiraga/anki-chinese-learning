@@ -43,6 +43,7 @@ export default [
   ),
   route("exam_level", "routes/exam_level.tsx"),
   route("help", "routes/help.tsx"),
+  route("media_clips", "routes/media_clips.tsx"),
   route("homophones", "routes/homophones.tsx"),
   route("migration", "routes/migration.tsx"),
   route("tone/:toneName", "routes/tone/$toneName.tsx"),

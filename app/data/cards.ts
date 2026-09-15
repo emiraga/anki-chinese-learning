@@ -1,8 +1,8 @@
 // TODO: migrate this to config
 export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
   TOCFL: [
-    // { name: "traditional", deck: "Chinese::Phrases" },
-    { name: "meaning", deck: "Chinese::Phrases" },
+    // { name: "traditional", deck: "Chinese::wPhrases" },
+    { name: "meaning", deck: "Chinese::wPhrases" },
     { name: "listening", deck: "Chinese::Listening" },
   ],
   Hanzi: [

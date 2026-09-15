@@ -154,11 +154,37 @@
       log(why);
     }
 
+    // Start playback as soon as the card opens, but only once the playhead is
+    // already at the trimmed start - autoplaying first would play back exactly
+    // the piece that trimDurationStart is meant to cut off.
+    var autoplayed = false;
+
+    function autoplay(reason) {
+      if (autoplayed) return;
+      autoplayed = true;
+      log("autoplay (" + reason + "): " + state());
+      var started = video.play();
+      if (started && started.catch) {
+        started.catch(function (error) {
+          // Don't fail silently: if the webview's autoplay policy blocks this,
+          // the card would just sit there with no hint as to why.
+          log("autoplay BLOCKED: " + error.name + " - " + error.message);
+          throw error;
+        });
+      }
+    }
+
     function applyStart(reason) {
-      if (startApplied) return;
+      if (startApplied) {
+        // Covers trimStart === 0, where there is nothing to seek to and the
+        // clip is good to play the moment it has metadata.
+        if (video.readyState >= 1) autoplay(reason);
+        return;
+      }
       if (video.currentTime >= trimStart - 0.05) {
         startApplied = true;
         log("applyStart(" + reason + "): satisfied, " + state());
+        autoplay("start applied");
         return;
       }
       // Deliberately not gated on `duration`: the local media server leaves it
@@ -184,6 +210,8 @@
               "]). The media server must support HTTP Range requests - run " +
               "utils/video/serve_media.py instead of `python3 -m http.server`.",
           );
+          // Untrimmed playback still beats a card that does nothing.
+          autoplay("not seekable");
         }
         return;
       }
