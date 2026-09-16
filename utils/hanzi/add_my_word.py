@@ -327,15 +327,16 @@ def main():
         print(f"Deck: {args.deck}")
         print(f"Due today: {not args.no_due_today}")
 
-        # Step 4: Fill audio for the new note
+        # Step 4.1: Fill props for the new note
+        fill_props = Path(__file__).resolve().parent.parent / "hanzi" / "fill_props_field.py"
+        subprocess.run([str(fill_props)], check=True)
+        print("✓ Props filled")
+
+        # Step 4.2: Fill audio for the new note
         fill_audio_script = Path(__file__).resolve().parent.parent / "tts" / "fill_audio_anki.py"
         print("\n⋯ Running fill_audio_anki.py...")
         subprocess.run([str(fill_audio_script), "--use-pinyin-hint"], check=True)
         print("✓ Audio filled")
-
-        fill_props = Path(__file__).resolve().parent.parent / "hanzi" / "fill_props_field.py"
-        subprocess.run([str(fill_props)], check=True)
-        print("✓ Props filled")
 
         # Step 5: Sync with AnkiWeb
         sync_script = Path(__file__).resolve().parent.parent / "sync_ankiweb.py"
