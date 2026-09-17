@@ -11,7 +11,8 @@ Fill empty Trimmed Audio fields on mature LocalMediaClips notes.
 
 This script finds every LocalMediaClips note whose review interval is at least
 10 days and whose "Trimmed Audio" field is empty. For each matching note it
-takes the clip at "LocalFilePath", cuts off the first "trimDurationStart"
+takes the clip at "RelativeFilePath" (resolved under MEDIA_DIR), cuts off the
+first "trimDurationStart"
 seconds and the last "trimDurationEnd" seconds, extracts the remaining audio to
 an MP3, uploads it to Anki's media collection, points the "Trimmed Audio"
 field at it with a [sound:...] tag, and moves the note's cards to the
@@ -52,11 +53,12 @@ from shared.anki_utils import (
     store_media_file,
     update_note_audio_field,
 )
+from shared.media_paths import resolve_clip_path
 
 NOTE_TYPE = "LocalMediaClips"
 ID_FIELD = "ID"
 AUDIO_FIELD = "Trimmed Audio"
-CLIP_FIELD = "LocalFilePath"
+CLIP_FIELD = "RelativeFilePath"
 TRIM_START_FIELD = "trimDurationStart"
 TRIM_END_FIELD = "trimDurationEnd"
 DESTINATION_DECK = "Chinese::MediaClips"
@@ -180,15 +182,7 @@ def process_note(note_id: int, dry_run: bool) -> bool:
         print(f"Note {note_id}: {ID_FIELD} field is empty, skipping")
         return False
 
-    clip_value = get_field_value(note, CLIP_FIELD)
-    if not clip_value:
-        print(f"Note {note_id}: {CLIP_FIELD} is empty, skipping")
-        return False
-
-    clip_path = Path(clip_value)
-    if not clip_path.is_file():
-        print(f"Note {note_id}: {CLIP_FIELD} not found: {clip_value}")
-        return False
+    clip_path = resolve_clip_path(get_field_value(note, CLIP_FIELD))
 
     trim_start = parse_trim_seconds(get_field_value(note, TRIM_START_FIELD))
     trim_end = parse_trim_seconds(get_field_value(note, TRIM_END_FIELD))

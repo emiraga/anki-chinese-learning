@@ -134,6 +134,11 @@ separate media server:
 - The directory is set with the `MEDIA_DIR` env var, inline
   (`MEDIA_DIR="~/clips" yarn dev`) or in `.env`. The default is in
   `vite.config.ts` (`DEFAULT_MEDIA_DIR`).
+- Python scripts resolve clips through `utils/shared/media_paths.py`, which
+  reads the same `MEDIA_DIR` env var (but not `.env`) and keeps its own copy of
+  the default in sync with `vite.config.ts`. A note locates its clip only by
+  `RelativeFilePath`; never store an absolute path on a note, since it goes
+  stale as soon as the media directory is moved or renamed.
 - A directory that does not exist is not an error: the dev server starts
   normally, logs `(missing, requests will 404)`, and those requests 404.
 - The middleware implements HTTP `Range`/`206`. This is required, not an

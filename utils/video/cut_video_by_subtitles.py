@@ -31,8 +31,8 @@ timestamp order.
 
 Pass --anki-prefix apple_of_my_eye_ to create or update one LocalMediaClips
 note in Anki as soon as each clip is processed, keyed by a unique ID such as
-"apple_of_my_eye_001". The note fields are ID, LocalFilePath (absolute path
-to the clip), RelativeFilePath (the clip's movie folder plus filename),
+"apple_of_my_eye_001". The note fields are ID, RelativeFilePath (the clip's
+movie folder plus filename, resolved against MEDIA_DIR),
 Timestamp (the dialogue's start time in the movie as HH:MM:SS.mmm),
 Traditional (the subtitle sentence), Translation (the matched translation),
 and Context (HTML with the previous, current (bold), and next subtitle
@@ -859,7 +859,6 @@ Examples:
             note_id_str = f"{args.anki_prefix}{entry.index:03d}"
             fields = {
                 "ID": note_id_str,
-                "LocalFilePath": str(output_path.resolve()),
                 "RelativeFilePath": f"{output_dir.name}/{output_path.name}",
                 "Timestamp": format_timestamp(entry.start),
                 "Traditional": entry.text,
