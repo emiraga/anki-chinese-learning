@@ -13,14 +13,14 @@ import os
 import random
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from typing import Any
-
 from anki_utils import anki_connect_request
 from gemini_utils import create_gemini_client, gemini_generate
 from pinyin_utils import remove_tone_marks
+
 from shared.character_discovery import extract_all_characters
 
 
@@ -705,7 +705,7 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     print(f"Query: {query}")
 
     response = anki_connect_request("findCards", {"query": query})
-    card_ids = response.get("result", []) if response else []
+    card_ids: list[int] = response.get("result", []) if response else []
     print(f"Found {len(card_ids)} due today/tomorrow, non-suspended card(s)")
 
     if not card_ids:
