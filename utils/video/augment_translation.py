@@ -25,11 +25,10 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import find_notes_by_query, get_notes_info, update_note_fields
+from shared.anki_utils import find_notes_by_query, get_field_value, get_notes_info, update_note_fields
 from shared.translation_utils import cache_translation, get_translation_cache, translate_text_with_google
 
 NOTE_TYPE = "LocalMediaClips"
@@ -54,11 +53,6 @@ def find_notes_with_empty_translation2() -> list[int]:
     else:
         print(f"No notes found with empty {DEST_FIELD} field in {NOTE_TYPE}")
     return note_ids
-
-
-def get_field_value(note: dict[str, Any], field_name: str) -> str:
-    """Return the stripped value of a field from a note dictionary."""
-    return note.get("fields", {}).get(field_name, {}).get("value", "").strip()
 
 
 def augment_translation_for_note(note_id: int, dry_run: bool = False) -> bool:

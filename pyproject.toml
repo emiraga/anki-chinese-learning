@@ -106,8 +106,8 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 # Pyrefly is used by the Zed editor for in-editor type checking. Keep its scope
-# in sync with the files checked by the `typecheck:python` npm script (and the
-# `typecheck:pyrefly` script) so the editor and CI report the same diagnostics.
+# in sync with the files checked by the `check:python` npm script (part of
+# `yarn check`) so the editor and the command line report the same diagnostics.
 [tool.pyrefly]
 project-includes = [
     "utils/**/*.py",

@@ -7,7 +7,38 @@ This module provides a common interface for working with the Google Gemini API.
 import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Protocol
+
+
+# The google-genai package ships no type information, so the parts of its client
+# that this module uses are described here instead of being imported as `Any`.
+class GeminiResponse(Protocol):
+    """Result of sending a message to a chat."""
+
+    @property
+    def text(self) -> str | None: ...
+
+    @property
+    def candidates(self) -> object: ...
+
+
+class GeminiChat(Protocol):
+    """A chat session created from `GeminiClient.chats`."""
+
+    def send_message(self, message: str) -> GeminiResponse: ...
+
+
+class GeminiChats(Protocol):
+    """The `chats` namespace of a Gemini client."""
+
+    def create(self, *, model: str) -> GeminiChat: ...
+
+
+class GeminiClient(Protocol):
+    """A `genai.Client`, narrowed to what this module needs."""
+
+    @property
+    def chats(self) -> GeminiChats: ...
 
 
 def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
@@ -69,7 +100,7 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
     )
 
 
-def create_gemini_client(api_key: str | None = None) -> Any:
+def create_gemini_client(api_key: str | None = None) -> GeminiClient:
     """
     Create a Google Gemini client.
 
@@ -92,7 +123,7 @@ def create_gemini_client(api_key: str | None = None) -> Any:
 
 
 def gemini_generate(
-    prompt: str, client: Any | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3, retry_delay: float = 2.0
+    prompt: str, client: GeminiClient | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3, retry_delay: float = 2.0
 ) -> str:
     """
     Generate content using Google Gemini API.
@@ -114,7 +145,7 @@ def gemini_generate(
     if not prompt or not prompt.strip():
         raise ValueError("Prompt cannot be empty")
 
-    active_client: Any = client if client is not None else create_gemini_client()
+    active_client: GeminiClient = client if client is not None else create_gemini_client()
 
     for attempt in range(max_retries):
         try:
@@ -138,7 +169,7 @@ def gemini_generate(
 
 
 def translate_with_gemini(
-    traditional_text: str, client: Any | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3
+    traditional_text: str, client: GeminiClient | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3
 ) -> str:
     """
     Use Google Gemini API to translate Chinese text to English.

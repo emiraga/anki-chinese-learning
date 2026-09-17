@@ -5,7 +5,14 @@ This module provides a common interface for looking up Chinese words/phrases
 in the chinese-english-lookup dictionary.
 """
 
+from typing import TYPE_CHECKING
+
 from chinese_english_lookup import Dictionary
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .phrase_utils import CharOccurrence
 
 # Module-level dictionary instance (lazy initialized)
 _dictionary: Dictionary | None = None
@@ -63,7 +70,7 @@ def lookup_meaning(text: str, max_definitions: int = 3) -> str | None:
 
 def lookup_character_meaning(
     char: str,
-    occurrences: list[tuple[str, str, str]] | None = None,
+    occurrences: "Sequence[CharOccurrence] | None" = None,
     max_definitions: int = 3,
 ) -> str:
     """
@@ -73,8 +80,9 @@ def lookup_character_meaning(
 
     Args:
         char: The single character to look up
-        occurrences: Optional list of (pinyin_syllable, phrase, meaning) tuples
-                    showing how the character is used in phrases
+        occurrences: Optional `CharOccurrence` list (as produced by
+                    `extract_characters_from_phrases`) showing how the character
+                    is used in phrases
         max_definitions: Maximum number of definitions to include
 
     Returns:

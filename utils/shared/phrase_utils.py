@@ -8,12 +8,28 @@ phrase, meaning).
 
 import json
 import re
+from typing import NamedTuple
 
-from .anki_utils import find_notes_by_query, get_notes_info
+from .anki_utils import find_notes_by_query, get_field_value, get_notes_info
 from .pinyin_utils import extract_pinyin_syllables
 
 
-def extract_characters_from_phrases(note_types: list[str], only_unsuspended: bool = False) -> dict[str, list[tuple[str, str, str]]]:
+class CharOccurrence(NamedTuple):
+    """
+    One appearance of a character inside a phrase.
+
+    It is a tuple subclass, so it unpacks as `(syllable, phrase, meaning)`.
+    """
+
+    syllable: str
+    """The character's pinyin syllable within this phrase (e.g. "hǎo")."""
+    phrase: str
+    """The traditional phrase the character appeared in (e.g. "你好")."""
+    meaning: str
+    """The phrase's English meaning, as stored on the note."""
+
+
+def extract_characters_from_phrases(note_types: list[str], only_unsuspended: bool = False) -> dict[str, list[CharOccurrence]]:
     """
     Extract all unique characters from TOCFL notes with their pinyin and meanings
 
@@ -26,7 +42,7 @@ def extract_characters_from_phrases(note_types: list[str], only_unsuspended: boo
         dict: Dictionary mapping characters to their occurrences with pinyin and meanings
     """
     print("\n=== Extracting characters from phrases ===")
-    char_data: dict[str, list[tuple[str, str, str]]] = {}  # {char: [(pinyin_syllable, phrase, meaning), ...]}
+    char_data: dict[str, list[CharOccurrence]] = {}
 
     for note_type in note_types:
         print(f"\nProcessing {note_type} notes...")
@@ -43,10 +59,10 @@ def extract_characters_from_phrases(note_types: list[str], only_unsuspended: boo
             notes_info = get_notes_info(batch_ids)
 
             for note_info in notes_info:
-                meaning = note_info["fields"].get("Meaning", {}).get("value", "").strip()
+                meaning = get_field_value(note_info, "Meaning")
 
                 # Check if Variants field exists and has content
-                variants_raw = note_info["fields"].get("Variants", {}).get("value", "").strip()
+                variants_raw = get_field_value(note_info, "Variants")
                 variants_list: list[dict[str, str]] = []
 
                 if variants_raw:
@@ -60,8 +76,8 @@ def extract_characters_from_phrases(note_types: list[str], only_unsuspended: boo
 
                 # If no variants, use the Traditional and Pinyin fields as a single variant
                 if not variants_list:
-                    traditional_raw = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-                    pinyin_raw = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
+                    traditional_raw = get_field_value(note_info, "Traditional")
+                    pinyin_raw = get_field_value(note_info, "Pinyin")
 
                     # Clean HTML tags from pinyin
                     pinyin_raw = pinyin_raw.replace("<div>", "").replace("</div>", "").strip()
@@ -129,7 +145,7 @@ def extract_characters_from_phrases(note_types: list[str], only_unsuspended: boo
                         for char, syllable in zip(traditional, pinyin_syllables, strict=False):
                             if char not in char_data:
                                 char_data[char] = []
-                            char_data[char].append((syllable, traditional, meaning))
+                            char_data[char].append(CharOccurrence(syllable, traditional, meaning))
 
     print(f"Extracted data for {len(char_data)} unique characters")
     return char_data

@@ -2,6 +2,7 @@
 import argparse
 import sys
 from collections import Counter
+from collections.abc import Sequence
 from pathlib import Path
 
 from pypinyin import Style
@@ -16,7 +17,7 @@ from shared.anki_utils import (
 )
 from shared.character_conversion import to_simplified, to_traditional
 from shared.dictionary_utils import lookup_character_meaning
-from shared.phrase_utils import extract_characters_from_phrases
+from shared.phrase_utils import CharOccurrence, extract_characters_from_phrases
 
 
 def find_notes_by_type(note_type: str) -> list[int]:
@@ -93,17 +94,17 @@ def extract_existing_hanzi_characters() -> set[str]:
     return existing_chars
 
 
-def infer_most_common_pinyin(char_occurrences: list[tuple[str, str, str]]) -> str:
+def infer_most_common_pinyin(char_occurrences: Sequence[CharOccurrence]) -> str:
     """
     Find the most common pinyin for a character based on its occurrences
 
     Args:
-        char_occurrences (list): List of (pinyin_syllable, phrase, meaning) tuples
+        char_occurrences (list): List of CharOccurrence entries for the character
 
     Returns:
         str: Most common pinyin syllable
     """
-    pinyin_counter = Counter([occ[0] for occ in char_occurrences])
+    pinyin_counter = Counter([occ.syllable for occ in char_occurrences])
     return pinyin_counter.most_common(1)[0][0]
 
 
@@ -161,7 +162,7 @@ def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = ""
     return False
 
 
-def process_single_character(char: str, char_data: dict[str, list[tuple[str, str, str]]] | None = None) -> bool:
+def process_single_character(char: str, char_data: dict[str, list[CharOccurrence]] | None = None) -> bool:
     """
     Process and create a note for a single character
 

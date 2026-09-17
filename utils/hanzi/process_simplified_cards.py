@@ -30,11 +30,14 @@ from typing import Any
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
+    AnkiCardInfo,
+    AnkiNoteInfo,
     add_tags,
     anki_connect_request,
     find_cards_by_query,
     find_notes_by_query,
     get_cards_info,
+    get_field_value,
     get_notes_info,
     remove_tags,
     set_new_card_positions,
@@ -84,24 +87,19 @@ def simplified_form(traditional: str) -> str:
     return EXTRA_TRADITIONAL_TO_SIMPLIFIED.get(traditional, to_simplified(traditional))
 
 
-def get_field(note: dict[str, Any], name: str) -> str:
-    """Return the trimmed value of a note field, or '' if missing."""
-    return note["fields"].get(name, {}).get("value", "").strip()
-
-
 # Sentinel used when a note has no usable FrequencyRank. A blank (or malformed)
 # rank means "we don't know how common this character is", which should sort
 # *after* every character that does have a rank, so we treat it as +infinity.
 NO_FREQUENCY_RANK = float("inf")
 
 
-def get_frequency_rank(note: dict[str, Any]) -> float:
+def get_frequency_rank(note: AnkiNoteInfo) -> float:
     """
     Return the FrequencyRank field as a number (smaller = more frequent = higher
     priority). Blank or non-numeric ranks become NO_FREQUENCY_RANK so they sort
     last.
     """
-    raw = get_field(note, "FrequencyRank")
+    raw = get_field_value(note, "FrequencyRank")
     if not raw:
         return NO_FREQUENCY_RANK
     try:
@@ -115,17 +113,17 @@ def format_frequency_rank(rank: float) -> str:
     return "—" if rank == NO_FREQUENCY_RANK else str(int(rank))
 
 
-def fetch_all_hanzi_notes() -> list[dict[str, Any]]:
+def fetch_all_hanzi_notes() -> list[AnkiNoteInfo]:
     """Fetch full note info for every Hanzi note."""
     note_ids = find_notes_by_query("note:Hanzi")
-    notes: list[dict[str, Any]] = []
+    notes: list[AnkiNoteInfo] = []
     for i in range(0, len(note_ids), 100):
         notes.extend(get_notes_info(note_ids[i : i + 100]))
     print(f"Fetched {len(notes)} Hanzi notes")
     return notes
 
 
-def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set[int]) -> None:
+def validate_unsuspended_notes(notes: list[AnkiNoteInfo], unsuspended_ids: set[int]) -> None:
     """
     Validate the Hanzi/Traditional fields of unsuspended single-character notes.
 
@@ -139,7 +137,7 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
         if note["noteId"] not in unsuspended_ids:
             continue
 
-        traditional = get_field(note, "Traditional")
+        traditional = get_field_value(note, "Traditional")
         if not traditional:
             problems.append(f"Hanzi note {note['noteId']} has an empty Traditional field")
             continue
@@ -148,7 +146,7 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
         if len(traditional) != 1:
             continue
 
-        hanzi = get_field(note, "Hanzi")
+        hanzi = get_field_value(note, "Hanzi")
         if not hanzi:
             problems.append(f"Hanzi note {note['noteId']} ('{traditional}') has an empty Hanzi field")
             continue
@@ -189,7 +187,7 @@ def validate_unsuspended_notes(notes: list[dict[str, Any]], unsuspended_ids: set
     print(f"Validated {checked} single-character unsuspended Hanzi notes (no problems found)")
 
 
-def tag_different_simplified(notes: list[dict[str, Any]], dry_run: bool) -> None:
+def tag_different_simplified(notes: list[AnkiNoteInfo], dry_run: bool) -> None:
     """
     Add DIFFERENT_SIMPLIFIED_TAG to notes whose Hanzi field differs from Traditional,
     and remove it from notes where the two are identical.
@@ -199,8 +197,8 @@ def tag_different_simplified(notes: list[dict[str, Any]], dry_run: bool) -> None
     to_remove: list[int] = []
 
     for note in notes:
-        traditional = get_field(note, "Traditional")
-        hanzi = get_field(note, "Hanzi")
+        traditional = get_field_value(note, "Traditional")
+        hanzi = get_field_value(note, "Hanzi")
         if len(traditional) != 1 or not hanzi:
             continue
 
@@ -233,16 +231,16 @@ def compute_character_frequency() -> Counter[str]:
     return freq
 
 
-def fetch_card2_by_note() -> dict[int, dict[str, Any]]:
+def fetch_card2_by_note() -> dict[int, AnkiCardInfo]:
     """Map every Hanzi note id to the card info of its second card (note:Hanzi card:2)."""
     card2_ids = find_cards_by_query("note:Hanzi card:2")
-    cards: list[dict[str, Any]] = []
+    cards: list[AnkiCardInfo] = []
     for i in range(0, len(card2_ids), 100):
         cards.extend(get_cards_info(card2_ids[i : i + 100]))
     return {card["note"]: card for card in cards}
 
 
-def build_priority_order(notes: list[dict[str, Any]], freq: Counter[str]) -> list[dict[str, Any]]:
+def build_priority_order(notes: list[AnkiNoteInfo], freq: Counter[str]) -> list[dict[str, Any]]:
     """
     Order the differing-simplified characters by learning priority.
 
@@ -267,7 +265,7 @@ def build_priority_order(notes: list[dict[str, Any]], freq: Counter[str]) -> lis
 
     entries: list[dict[str, Any]] = []
     for note in notes:
-        char = get_field(note, "Traditional")
+        char = get_field_value(note, "Traditional")
         if len(char) != 1:
             continue
         if simplified_form(char) == char:
@@ -300,7 +298,7 @@ def print_priority_order(priority: list[dict[str, Any]]) -> None:
     print(f"\nTotal: {len(priority)} characters")
 
 
-def print_stats(notes: list[dict[str, Any]], priority: list[dict[str, Any]]) -> None:
+def print_stats(notes: list[AnkiNoteInfo], priority: list[dict[str, Any]]) -> None:
     """
     Report how many differing-simplified second cards are still waiting to be
     enabled (i.e. how much of the backlog is left).
@@ -318,8 +316,8 @@ def print_stats(notes: list[dict[str, Any]], priority: list[dict[str, Any]]) -> 
 
     differing_notes = 0
     for note in notes:
-        traditional = get_field(note, "Traditional")
-        hanzi = get_field(note, "Hanzi")
+        traditional = get_field_value(note, "Traditional")
+        hanzi = get_field_value(note, "Hanzi")
         if len(traditional) != 1 or not hanzi or hanzi == traditional:
             continue
         differing_notes += 1

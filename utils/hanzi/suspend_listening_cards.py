@@ -22,14 +22,15 @@ listening review is no longer needed:
 
 import sys
 from pathlib import Path
-from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
+    AnkiNoteInfo,
     add_tags,
     find_cards_by_query,
     get_cards_info,
+    get_field_value,
     get_notes_info,
     suspend_cards,
 )
@@ -44,9 +45,9 @@ IGNORED_TAG = "card-listening-ignored-on-purpose"
 MAX_TRADITIONAL_CHARS = 3
 
 
-def _is_short_traditional(note: dict[str, Any]) -> bool:
+def _is_short_traditional(note: AnkiNoteInfo) -> bool:
     """Return True if the note's Traditional field has fewer than 4 characters."""
-    traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
+    traditional = get_field_value(note, "Traditional")
     return len(traditional) < MAX_TRADITIONAL_CHARS + 1
 
 

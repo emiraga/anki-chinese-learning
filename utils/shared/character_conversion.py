@@ -5,6 +5,20 @@ This module provides conversion functions that handle edge cases not covered by 
 particularly for radicals and rare characters.
 """
 
+from typing import Protocol
+
+
+class OpenCCConverter(Protocol):
+    """
+    The part of `opencc.OpenCC` this module uses (the package ships no stubs).
+
+    The argument is positional-only: `OpenCC.convert` names its parameter
+    `string`, so requiring a keyword name here would not match.
+    """
+
+    def convert(self, text: str, /) -> str: ...
+
+
 # Traditional -> simplified is performed by OpenCC (Open Chinese Convert), which
 # is more accurate than hanziconv for our goal (learning Mainland simplified):
 # hanziconv both misses simplifications (週, 託, 採, ...) and has outright bugs
@@ -23,7 +37,7 @@ _OPENCC_PRIMARY_CONFIG = "t2s"
 _OPENCC_CONFIGS = ("t2s", "tw2s", "tw2sp", "hk2s")
 # Mutable module-level state (lowercase so the type checker does not treat these
 # as immutable constants).
-_opencc_converters: dict[str, object] | None = None
+_opencc_converters: dict[str, OpenCCConverter] | None = None
 _opencc_disabled = False
 
 
@@ -35,15 +49,17 @@ def _opencc_simplified_all(char: str) -> dict[str, str] | None:
     global _opencc_converters, _opencc_disabled
     if _opencc_disabled:
         return None
-    if _opencc_converters is None:
+    converters: dict[str, OpenCCConverter] | None = _opencc_converters
+    if converters is None:
         try:
             from opencc import OpenCC
-
-            _opencc_converters = {cfg: OpenCC(cfg) for cfg in _OPENCC_CONFIGS}
         except ImportError:
             _opencc_disabled = True
             return None
-    return {cfg: conv.convert(char) for cfg, conv in _opencc_converters.items()}  # type: ignore[attr-defined]
+
+        converters = {cfg: OpenCC(cfg) for cfg in _OPENCC_CONFIGS}
+        _opencc_converters = converters
+    return {cfg: conv.convert(char) for cfg, conv in converters.items()}
 
 
 # Special cases where HanziConv doesn't recognize the simplified/traditional

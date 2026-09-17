@@ -40,13 +40,13 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
     find_cards_by_query,
     find_notes_by_query,
+    get_field_value,
     get_notes_info,
     move_cards_to_deck,
     store_media_file,
@@ -70,11 +70,6 @@ SEARCH_QUERY = f'note:{NOTE_TYPE} prop:ivl>=10 "{AUDIO_FIELD}:"'
 # duration, whichever is larger.
 MAX_AUDIO_DURATION_TOLERANCE_SECONDS = 0.25
 MAX_AUDIO_DURATION_TOLERANCE_RATIO = 0.05
-
-
-def get_field_value(note: dict[str, Any], field_name: str) -> str:
-    """Return the stripped value of a field from a note dictionary."""
-    return note.get("fields", {}).get(field_name, {}).get("value", "").strip()
 
 
 def parse_trim_seconds(value: str) -> float:

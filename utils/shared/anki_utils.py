@@ -5,9 +5,78 @@ This module provides a common interface for communicating with the AnkiConnect a
 """
 
 import base64
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 import requests
+
+
+class AnkiField(TypedDict):
+    """A single field of a note, as returned inside `notesInfo` / `cardsInfo`."""
+
+    value: str
+    order: int
+
+
+class AnkiNoteInfo(TypedDict):
+    """
+    One entry of AnkiConnect's `notesInfo` result.
+
+    Only the keys AnkiConnect always returns are required; `cards` and `profile`
+    depend on the AnkiConnect version, so they are optional.
+    """
+
+    noteId: int
+    modelName: str
+    tags: list[str]
+    fields: dict[str, AnkiField]
+    mod: NotRequired[int]
+    cards: NotRequired[list[int]]
+    profile: NotRequired[str]
+
+
+class AnkiCardInfo(TypedDict):
+    """
+    One entry of AnkiConnect's `cardsInfo` result.
+
+    `queue` and `type` use Anki's scheduler constants (e.g. queue -1 = suspended,
+    0 = new; type 0 = new). For a new card, `due` is its position in the
+    new-card queue rather than a timestamp.
+    """
+
+    cardId: int
+    note: int
+    deckName: str
+    modelName: str
+    fields: dict[str, AnkiField]
+    ord: int
+    type: int
+    queue: int
+    due: int
+    ivl: NotRequired[int]
+    interval: NotRequired[int]
+    factor: NotRequired[int]
+    reps: NotRequired[int]
+    lapses: NotRequired[int]
+    left: NotRequired[int]
+    mod: NotRequired[int]
+
+
+def get_field_value(note: AnkiNoteInfo, field_name: str, default: str = "") -> str:
+    """
+    Read a field's value off a note, stripped of surrounding whitespace.
+
+    Args:
+        note: Note dictionary as returned by `get_notes_info`
+        field_name: Name of the field to read (e.g. "Traditional")
+        default: Value to return when the field is absent or empty
+
+    Returns:
+        The field's stripped value, or `default` if the field is missing or blank
+    """
+    field = note["fields"].get(field_name)
+    if field is None:
+        return default
+    return field["value"].strip() or default
 
 
 def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -70,7 +139,7 @@ def find_cards_by_query(query: str) -> list[int]:
     return response.get("result", [])
 
 
-def get_cards_info(card_ids: list[int]) -> list[dict[str, Any]]:
+def get_cards_info(card_ids: list[int]) -> list[AnkiCardInfo]:
     """
     Get detailed information about multiple cards.
 
@@ -188,7 +257,7 @@ def remove_tags(note_ids: list[int], tags: str) -> None:
     anki_connect_request("removeTags", {"notes": note_ids, "tags": tags})
 
 
-def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
+def get_notes_info(note_ids: list[int]) -> list[AnkiNoteInfo]:
     """
     Get detailed information about multiple notes.
 
@@ -209,7 +278,7 @@ def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
     raise Exception("Failed to fetch notes")
 
 
-def get_meaning_field(note: dict[str, Any]) -> str:
+def get_meaning_field(note: AnkiNoteInfo) -> str:
     """
     Get the meaning from a note, preferring "Meaning 2" over "Meaning".
 
@@ -219,10 +288,7 @@ def get_meaning_field(note: dict[str, Any]) -> str:
     Returns:
         The meaning value, trying "Meaning 2" first, then "Meaning"
     """
-    meaning_2 = note["fields"].get("Meaning 2", {}).get("value", "").strip()
-    if meaning_2:
-        return meaning_2
-    return note["fields"].get("Meaning", {}).get("value", "").strip()
+    return get_field_value(note, "Meaning 2") or get_field_value(note, "Meaning")
 
 
 def update_note_fields(note_id: int, fields: dict[str, str]) -> None:

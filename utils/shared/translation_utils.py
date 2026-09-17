@@ -8,15 +8,27 @@ API calls.
 """
 
 import time
-from typing import Any
+from typing import Protocol
+
+
+class TranslationClient(Protocol):
+    """
+    The part of `google.cloud.translate_v2.Client` this module uses.
+
+    The package ships no type information for the v2 client, so the one call we
+    make is described here rather than typed as `Any`.
+    """
+
+    def translate(self, values: str, *, source_language: str, target_language: str) -> dict[str, str]: ...
+
 
 # In-memory cache for translations
 _translation_cache: dict[str, str] = {}
 # Lazy-initialized translation client
-_translation_client: Any = None
+_translation_client: TranslationClient | None = None
 
 
-def get_translation_client() -> Any:
+def get_translation_client() -> TranslationClient:
     """
     Get or initialize the Google Cloud Translation client lazily.
 

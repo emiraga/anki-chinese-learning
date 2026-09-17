@@ -10,10 +10,43 @@ import json
 import unicodedata
 from collections import Counter
 from pathlib import Path
+from typing import NotRequired, TypedDict
 
-from .anki_utils import anki_connect_request, find_notes_by_query, get_notes_info
+from .anki_utils import anki_connect_request, find_notes_by_query, get_field_value, get_notes_info
 
 KNOWN_CHARS_QUERY = "note:Hanzi -is:suspended card:1"
+
+
+class OutlierSeriesCharacter(TypedDict):
+    """One character listed inside an outlier series block."""
+
+    traditional: NotRequired[str]
+
+
+class OutlierSeries(TypedDict):
+    """A sound/semantic/component/radical series in an outlier series JSON file."""
+
+    characters: NotRequired[list[OutlierSeriesCharacter]]
+
+
+class OutlierReference(TypedDict):
+    """A cross-referenced character in an outlier series JSON file."""
+
+    char: NotRequired[str]
+
+
+class OutlierSeriesData(TypedDict):
+    """
+    The parts of a `public/data/pleco/outlier_series/*.json` file that hold
+    characters. Every key is optional: the files only carry the blocks that
+    apply to the character they describe.
+    """
+
+    references: NotRequired[list[OutlierReference]]
+    sound_series: NotRequired[OutlierSeries]
+    semantic_series: NotRequired[OutlierSeries]
+    empty_component: NotRequired[OutlierSeries]
+    radical: NotRequired[OutlierSeries]
 
 
 def normalize_cjk_char(char: str) -> str:
@@ -67,7 +100,7 @@ def extract_known_chars() -> set[str]:
     for i in range(0, len(note_ids), batch_size):
         batch_ids = note_ids[i : i + batch_size]
         for note_info in get_notes_info(batch_ids):
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+            traditional = get_field_value(note_info, "Traditional")
             known_chars.update(extract_all_characters(traditional))
 
     print(f"Known characters: {len(known_chars)}")
@@ -96,8 +129,8 @@ def _get_anki_characters(normalize: bool = False) -> tuple[set[str], Counter[str
         ("Hanzi", ""),
     ]
 
-    anki_chars = set()
-    char_frequency = Counter()
+    anki_chars: set[str] = set()
+    char_frequency: Counter[str] = Counter()
     batch_size = 100
 
     for note_type, extra_filter in note_types:
@@ -110,7 +143,7 @@ def _get_anki_characters(normalize: bool = False) -> tuple[set[str], Counter[str
                 notes_info = get_notes_info(batch)
 
                 for note_info in notes_info:
-                    traditional = note_info["fields"].get("Traditional", {}).get("value", "")
+                    traditional = get_field_value(note_info, "Traditional")
                     if traditional:
                         chars = extract_all_characters(traditional, normalize=normalize)
                         anki_chars.update(chars)
@@ -133,8 +166,8 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> tuple
         project_root / "public" / "data" / "pleco" / "outlier_series",
     ]
 
-    all_chars = set()
-    char_frequency = Counter()
+    all_chars: set[str] = set()
+    char_frequency: Counter[str] = Counter()
 
     for data_dir in data_dirs:
         if not data_dir.exists():
@@ -172,8 +205,8 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
     """
     outlier_dir = project_root / "public" / "data" / "pleco" / "outlier_series"
 
-    all_chars = set()
-    char_frequency = Counter()
+    all_chars: set[str] = set()
+    char_frequency: Counter[str] = Counter()
 
     if not outlier_dir.exists():
         print(f"Warning: Directory does not exist: {outlier_dir}")
@@ -185,49 +218,23 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
     for file_path in json_files:
         try:
             with file_path.open(encoding="utf-8") as f:
-                data = json.load(f)
+                data: OutlierSeriesData = json.load(f)
 
-            # Extract from references[].char
-            for ref in data.get("references", []):
-                char = ref.get("char", "")
-                if char:
-                    chars = extract_all_characters(char, normalize=normalize)
-                    all_chars.update(chars)
-                    char_frequency.update(chars)
+            # references[].char, then <series>.characters[].traditional for each
+            # series block that carries characters.
+            texts = [ref.get("char", "") for ref in data.get("references", [])]
+            for series in (
+                data.get("sound_series"),
+                data.get("semantic_series"),
+                data.get("empty_component"),
+                data.get("radical"),
+            ):
+                if series is not None:
+                    texts.extend(entry.get("traditional", "") for entry in series.get("characters", []))
 
-            # Extract from sound_series.characters[].traditional
-            sound_series = data.get("sound_series", {})
-            for char_entry in sound_series.get("characters", []):
-                trad = char_entry.get("traditional", "")
-                if trad:
-                    chars = extract_all_characters(trad, normalize=normalize)
-                    all_chars.update(chars)
-                    char_frequency.update(chars)
-
-            # Extract from semantic_series.characters[].traditional
-            semantic_series = data.get("semantic_series", {})
-            for char_entry in semantic_series.get("characters", []):
-                trad = char_entry.get("traditional", "")
-                if trad:
-                    chars = extract_all_characters(trad, normalize=normalize)
-                    all_chars.update(chars)
-                    char_frequency.update(chars)
-
-            # Extract from empty_component.characters[].traditional
-            empty_component = data.get("empty_component", {})
-            for char_entry in empty_component.get("characters", []):
-                trad = char_entry.get("traditional", "")
-                if trad:
-                    chars = extract_all_characters(trad, normalize=normalize)
-                    all_chars.update(chars)
-                    char_frequency.update(chars)
-
-            # Extract from radical.characters[].traditional
-            radical = data.get("radical", {})
-            for char_entry in radical.get("characters", []):
-                trad = char_entry.get("traditional", "")
-                if trad:
-                    chars = extract_all_characters(trad, normalize=normalize)
+            for text in texts:
+                if text:
+                    chars = extract_all_characters(text, normalize=normalize)
                     all_chars.update(chars)
                     char_frequency.update(chars)
 
@@ -262,8 +269,8 @@ def discover_all_characters(
     Returns:
         tuple: (set of all characters, Counter of character frequency)
     """
-    all_chars = set()
-    char_frequency = Counter()
+    all_chars: set[str] = set()
+    char_frequency: Counter[str] = Counter()
 
     # Get characters from Anki
     if include_anki:
