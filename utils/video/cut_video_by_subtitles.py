@@ -369,7 +369,7 @@ def build_context_html(
 class LocalMediaClipsManager:
     """Create and update LocalMediaClips notes in Anki."""
 
-    DECK_NAME = "ChineseLocal::Media"
+    DECK_NAME = "Chinese2::yLocalMedia"
     NOTE_TYPE = "LocalMediaClips"
 
     def get_existing_notes(self) -> dict[str, Any]:
