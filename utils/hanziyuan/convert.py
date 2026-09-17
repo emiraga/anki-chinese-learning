@@ -202,7 +202,7 @@ def convert_etymology_characters(etymology_html: str, image_map: dict[str, str])
         missing_images.extend((section_name, item["id"]) for item in section_data.get("items", []) if item["id"] and not item["image"])
 
     if missing_images:
-        missing_list = ", ".join(f"{section}:{id}" for section, id in missing_images)
+        missing_list = ", ".join(f"{section}:{etymology_id}" for section, etymology_id in missing_images)
         raise ValueError(
             f"Missing images for etymology IDs in etymologyStyles CSS: {missing_list}. "
             f"Found {len(missing_images)} etymology ID(s) in HTML that don't have corresponding "
@@ -248,7 +248,7 @@ def extract_etymology_images(etymology_styles: str, character: str, images_dir: 
         try:
             # Decode base64 and write to file
             svg_data = base64.b64decode(base64_data)
-            with open(file_path, "wb") as f:
+            with file_path.open("wb") as f:
                 f.write(svg_data)
 
             # Store the path relative to public/
@@ -781,8 +781,8 @@ def parse_character_decomposition(decomposition_text: str) -> dict[str, Any]:
                 elif comp_text.startswith("related phonetic "):
                     comp_text = comp_text[8:].strip()  # Remove "related "
 
-                # Parse the component text
-                # Pattern: "quantity description characters pronunciation"
+                # Parse the component text, which reads as
+                # quantity, description, characters, pronunciation
                 # e.g., "three tree 木 mù" or "two person-right 匕 bǐ"
 
                 # Split into parts
@@ -923,7 +923,7 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
     """
     try:
         # Read the file
-        with open(input_path, encoding="utf-8") as f:
+        with input_path.open(encoding="utf-8") as f:
             data = json.load(f)
 
         # Extract and convert characterInfo
@@ -989,7 +989,7 @@ def process_file(input_path: Path, output_path: Path, images_dir: Path) -> None:
 
         # Write output
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
+        with output_path.open("w", encoding="utf-8") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=2)
 
         print(f"✓ Converted {input_path.name} ({len(etymology_images)} images)")

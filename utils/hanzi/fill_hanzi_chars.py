@@ -204,7 +204,7 @@ def process_single_character(char: str, char_data: dict[str, list[tuple[str, str
 
     print(f"\nProcessing character '{char}':")
     print(f"  Pinyin: {pinyin}" + (f" (from {len(char_occurrences)} occurrences)" if char_occurrences else " (from dictionary)"))
-    print(f"  Meaning: {meaning if meaning else '(none)'}")
+    print(f"  Meaning: {meaning or '(none)'}")
     print(f"  Simplified: {simplified}")
 
     # Create the note

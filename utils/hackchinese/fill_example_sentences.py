@@ -236,7 +236,7 @@ def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tupl
 
     for json_file in sorted(words_dir.glob("*.json")):
         try:
-            with open(json_file, encoding="utf-8") as f:
+            with json_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             processed_files += 1

@@ -118,7 +118,7 @@ def load_rtega_mnemonic(character: str) -> str | None:
         return None
 
     try:
-        with open(json_file, encoding="utf-8") as f:
+        with json_file.open(encoding="utf-8") as f:
             data = json.load(f)
             html = data.get("mnemonic", {}).get("html")
             if html:
@@ -235,7 +235,6 @@ def update_mnemonics_for_note_types(
 
             # Check if this note should be processed based on note type rules
             if not should_process_note(note_type, traditional):
-                # print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
                 skipped_count += 1
                 continue
 
@@ -243,7 +242,6 @@ def update_mnemonics_for_note_types(
             mnemonic_html = load_rtega_mnemonic(traditional)
 
             if not mnemonic_html:
-                # print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {traditional}): No mnemonic found, skipping")
                 skipped_count += 1
                 continue
 

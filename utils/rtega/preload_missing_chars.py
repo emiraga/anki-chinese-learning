@@ -50,7 +50,7 @@ def get_component_chars_from_rtega_files(rtega_data_dir: Path):
 
     for json_file in json_files:
         try:
-            with open(json_file, encoding="utf-8") as f:
+            with json_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
                 # Extract referenced_characters array

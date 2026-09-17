@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Shared utilities for Chinese character conversion between traditional and simplified forms.
 
@@ -47,8 +46,8 @@ def _opencc_simplified_all(char: str) -> dict[str, str] | None:
     return {cfg: conv.convert(char) for cfg, conv in _opencc_converters.items()}  # type: ignore[attr-defined]
 
 
-# Special cases where HanziConv doesn't recognize the simplified/traditional relationship
-# Format: (simplified, traditional)
+# Special cases where HanziConv doesn't recognize the simplified/traditional
+# relationship. Each entry is a simplified character paired with its traditional form.
 SPECIAL_SIMPLIFIED_TRADITIONAL_PAIRS: list[tuple[str, str]] = [
     # Metal radical
     ("钅", "釒"),

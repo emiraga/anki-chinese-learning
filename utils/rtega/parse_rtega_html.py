@@ -68,7 +68,7 @@ def load_cache_metadata() -> dict[str, Any]:
     metadata_file = get_cache_metadata_file()
     if metadata_file.exists():
         try:
-            with open(metadata_file, encoding="utf-8") as f:
+            with metadata_file.open(encoding="utf-8") as f:
                 return json.load(f)
         except (OSError, json.JSONDecodeError) as e:
             print(f"  Warning: Failed to load cache metadata: {e}")
@@ -80,7 +80,7 @@ def save_cache_metadata(metadata: dict[str, Any]):
     """Save cache metadata to disk."""
     metadata_file = get_cache_metadata_file()
     try:
-        with open(metadata_file, "w", encoding="utf-8") as f:
+        with metadata_file.open("w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
     except OSError as e:
         print(f"  Warning: Failed to save cache metadata: {e}")
@@ -124,7 +124,7 @@ def load_from_cache(svg_name: str, metadata: dict[str, Any]) -> str | None:
 
     cache_file = get_cache_file_path(svg_name)
     try:
-        with open(cache_file, encoding="utf-8") as f:
+        with cache_file.open(encoding="utf-8") as f:
             return f.read()
     except OSError as e:
         print(f"  Warning: Failed to read cached SVG {svg_name}: {e}")
@@ -137,7 +137,7 @@ def save_to_cache(svg_name: str, svg_content: str, metadata: dict[str, Any]):
 
     try:
         # Save SVG content
-        with open(cache_file, "w", encoding="utf-8") as f:
+        with cache_file.open("w", encoding="utf-8") as f:
             f.write(svg_content)
 
         # Update metadata
@@ -374,7 +374,7 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
                         break
 
         # Use traditional as main character (prefer traditional over simplified)
-        main_char = traditional_char if traditional_char else simplified_char
+        main_char = traditional_char or simplified_char
 
         if not main_char:
             return None
@@ -432,7 +432,7 @@ def parse_character_row(row: Tag, abbreviation_definitions: dict[str, str]) -> d
             "mnemonic": {"text": mnemonic_text, "html": mnemonic_html},
             "referenced_characters": referenced_chars,
             "related_characters": related_chars,
-            "additional_related_characters": additional_related_chars if additional_related_chars else None,
+            "additional_related_characters": additional_related_chars or None,
         }
 
     except Exception as e:
@@ -445,7 +445,7 @@ def parse_html_file(file_path: Path, file_num: int, total_files: int) -> list[di
     progress_pct = (file_num / total_files) * 100
     print(f"[{progress_pct:5.1f}%] Parsing {file_path.name}...")
 
-    with open(file_path, encoding="utf-8") as f:
+    with file_path.open(encoding="utf-8") as f:
         html_content = f.read()
 
     soup = BeautifulSoup(html_content, "html.parser")
@@ -506,12 +506,12 @@ def save_character_json(char_data: dict[str, Any], output_dir: Path):
     # For special characters, use the uid or id
     try:
         filepath = output_dir / f"{char}.json"
-        with open(filepath, "w", encoding="utf-8") as f:
+        with filepath.open("w", encoding="utf-8") as f:
             json.dump(char_data, f, ensure_ascii=False, indent=2)
     except (OSError, ValueError):
         # Fallback for problematic filename characters
         filepath = output_dir / f"char_{char_data['id']}.json"
-        with open(filepath, "w", encoding="utf-8") as f:
+        with filepath.open("w", encoding="utf-8") as f:
             json.dump(char_data, f, ensure_ascii=False, indent=2)
 
 

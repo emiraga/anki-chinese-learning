@@ -95,7 +95,7 @@ def load_hackchinese_outlier_data(character: str) -> dict[str, Any] | None:
         return None
 
     try:
-        with open(json_file, encoding="utf-8") as f:
+        with json_file.open(encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading HackChinese Outlier data for {character}: {e}")

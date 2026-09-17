@@ -105,7 +105,7 @@ def get_all_referenced_chars(info_dir: Path) -> tuple[set[str], "Counter[str]"]:
 
     for file_path in json_files:
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             # Extract all referenced characters

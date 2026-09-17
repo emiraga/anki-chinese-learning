@@ -23,9 +23,7 @@ Requirements:
 """
 
 import argparse
-import glob
 import json
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,7 +41,7 @@ def load_cache() -> dict[str, dict[str, Any]]:
     if not CACHE_FILE.exists():
         return {}
     try:
-        with open(CACHE_FILE) as f:
+        with CACHE_FILE.open() as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return {}
@@ -52,7 +50,7 @@ def load_cache() -> dict[str, dict[str, Any]]:
 def save_cache(cache: dict[str, dict[str, Any]]) -> None:
     """Save the cache to disk."""
     try:
-        with open(CACHE_FILE, "w") as f:
+        with CACHE_FILE.open("w") as f:
             json.dump(cache, f)
     except OSError as e:
         print(f"Warning: Could not save cache: {e}")
@@ -60,8 +58,9 @@ def save_cache(cache: dict[str, dict[str, Any]]) -> None:
 
 def get_file_key(filepath: str) -> tuple[str, float, int]:
     """Get cache key components for a file: (filename, mtime, size)."""
-    stat = os.stat(filepath)
-    return (os.path.basename(filepath), stat.st_mtime, stat.st_size)
+    path = Path(filepath)
+    stat = path.stat()
+    return (path.name, stat.st_mtime, stat.st_size)
 
 
 def get_cached_dbfs(cache: dict[str, dict[str, Any]], filepath: str) -> float | None:
@@ -122,8 +121,7 @@ def get_matching_files(media_path: Path) -> list[tuple[str, str]]:
 
     files = []
     for pattern, name in patterns:
-        matching = glob.glob(str(media_path / pattern))
-        files.extend((f, name) for f in matching)
+        files.extend((str(match), name) for match in media_path.glob(pattern))
 
     return files
 
@@ -248,7 +246,7 @@ def print_loud_files(files: list[AudioFile], config: NormalizationConfig, limit:
 
     shown = loud_files[:limit]
     for f in shown:
-        filename = os.path.basename(f.path)
+        filename = Path(f.path).name
         adjustment = config.target_dbfs - f.dbfs
         print(f"  {f.dbfs:6.1f} dBFS ({adjustment:+.1f}dB needed): {filename[:50]}")
 

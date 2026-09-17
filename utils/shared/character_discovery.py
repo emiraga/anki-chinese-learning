@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Shared utilities for character discovery across dong, rtega, and yellowbridge scripts.
 
@@ -185,7 +184,7 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
 
     for file_path in json_files:
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             # Extract from references[].char

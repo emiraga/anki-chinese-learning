@@ -32,7 +32,7 @@ def main():
         processed_count += 1
 
         try:
-            with open(json_file, encoding="utf-8") as f:
+            with json_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             # Get traditional form
@@ -53,7 +53,7 @@ def main():
                         continue
 
                 # Save outlier data
-                with open(output_file, "w", encoding="utf-8") as f:
+                with output_file.open("w", encoding="utf-8") as f:
                     json.dump(outlier, f, ensure_ascii=False, indent=2)
                 outlier_count += 1
 

@@ -29,6 +29,14 @@ src = ["utils"]
 line-length = 140
 
 [tool.ruff.lint]
+# Rule coverage is widened one family at a time: enable a family, fix every
+# violation it reports, then commit. Nothing here is suppressed with a blanket
+# ignore just to make the family pass.
+#
+# Families still to be enabled, with the violation count at the time of the last
+# expansion (run `uv run ruff check --select <FAMILY> --statistics` to refresh):
+#   PL (221), TRY (193), S (164), ANN (134), EM (115), COM (81), FBT (80),
+#   BLE (56), C90 (49), D (1066)
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
@@ -46,11 +54,42 @@ select = [
     "PERF",   # perflint (performance anti-patterns)
     "FLY",    # flynt (str.format() → f-strings)
     "PIE",    # flake8-pie (miscellaneous bug-prevention lints)
+    # --- Families below were already clean when enabled; they only guard against
+    # --- regressions. Keep them passing rather than adding ignores.
+    "ASYNC",  # flake8-async (blocking calls in async code)
+    "FA",     # flake8-future-annotations
+    "G",      # flake8-logging-format
+    "ICN",    # flake8-import-conventions (import numpy as np, ...)
+    "INP",    # flake8-no-pep420 (missing __init__.py in a package)
+    "INT",    # flake8-gettext
+    "ISC",    # flake8-implicit-str-concat
+    "LOG",    # flake8-logging
+    "PGH",    # pygrep-hooks (blanket noqa / type: ignore)
+    "PT",     # flake8-pytest-style
+    "PYI",    # flake8-pyi (stub files)
+    "Q",      # flake8-quotes
+    "RSE",    # flake8-raise (unnecessary parens on raise)
+    "SLF",    # flake8-self (private member access)
+    "SLOT",   # flake8-slots
+    "T10",    # flake8-debugger (leftover breakpoint()/pdb)
+    "TID",    # flake8-tidy-imports
+    "YTT",    # flake8-2020 (sys.version misuse)
+    # --- Families below required fixes; see git history for the cleanup passes.
+    "A",      # flake8-builtins (shadowing builtins)
+    "DTZ",    # flake8-datetimez (naive datetimes)
+    "ERA",    # eradicate (commented-out code)
+    "EXE",    # flake8-executable (shebang / +x consistency)
+    "FURB",   # refurb (modernization)
+    "PTH",    # flake8-use-pathlib
+    "TC",     # flake8-type-checking
 ]
 extend-safe-fixes = ["F401", "F841", "I", "UP", "C4", "SIM", "FLY", "PTH"]
 ignore=[
     "T201", # print statement
     "ARG001", # Unused function argument
+    # Conflicts with the formatter, which already normalizes implicit string
+    # concatenation on a single line.
+    "ISC001",
 ]
 
 [tool.ruff.lint.isort]

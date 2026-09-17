@@ -56,9 +56,7 @@ def distribute(card_ids: list[int], days: int) -> list[list[int]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Distribute currently-due review cards evenly over the next N days."
-    )
+    parser = argparse.ArgumentParser(description="Distribute currently-due review cards evenly over the next N days.")
     parser.add_argument("--days", type=int, required=True, help="Number of days to distribute the cards over")
     parser.add_argument("--deck", default="Chinese", help="Deck name to pull cards from (default: Chinese)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would happen without changing any cards")

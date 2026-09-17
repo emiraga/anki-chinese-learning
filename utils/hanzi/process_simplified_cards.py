@@ -23,7 +23,7 @@ queue without disturbing cards already in learning or review.
 import argparse
 import sys
 from collections import Counter
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +44,12 @@ from shared.character_conversion import to_simplified
 
 # Reuse the phrase-scanning logic that already knows how to read TOCFL notes.
 from shared.phrase_utils import extract_characters_from_phrases
+
+
+def local_today() -> date:
+    """Today's date in the machine's local timezone, which is how Anki schedules."""
+    return datetime.now(UTC).astimezone().date()
+
 
 DIFFERENT_SIMPLIFIED_TAG = "chinese::different-simplified-form"
 PHRASE_NOTE_TYPES = ["TOCFL"]
@@ -350,7 +356,7 @@ def print_stats(notes: list[dict[str, Any]], priority: list[dict[str, Any]]) -> 
     per_day = get_new_cards_per_day()
     if per_day > 0 and enabled_new:
         days = -(-enabled_new // per_day)  # ceil
-        print(f"Queue of {enabled_new} new card(s) at {per_day}/day: ~{days} days (until {date.today() + timedelta(days=days)})")
+        print(f"Queue of {enabled_new} new card(s) at {per_day}/day: ~{days} days (until {local_today() + timedelta(days=days)})")
 
     if differing_notes:
         enabled_total = enabled_new + enabled_started
@@ -412,7 +418,7 @@ def schedule_eligible_cards(priority: list[dict[str, Any]], dry_run: bool) -> No
     per_day = get_new_cards_per_day()
     if per_day > 0:
         days = -(-position // per_day)  # ceil
-        finish = date.today() + timedelta(days=days)
+        finish = local_today() + timedelta(days=days)
         print(f"At the deck's current limit of {per_day} new card(s)/day, the queue lasts ~{days} days (until {finish}).")
     else:
         print(f"Deck '{SIMPLIFIED_DECK}' currently allows 0 new cards/day, so none of these will appear.")

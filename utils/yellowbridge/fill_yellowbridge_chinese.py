@@ -96,7 +96,7 @@ def load_yellowbridge_character(character: str) -> dict[str, Any] | None:
         return None
 
     try:
-        with open(json_file, encoding="utf-8") as f:
+        with json_file.open(encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading YellowBridge data for {character}: {e}")
@@ -168,7 +168,6 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
 
     # 2. Character Formation
     if yb_data.get("formationMethods") and len(yb_data["formationMethods"]) > 0:
-        # html_parts.append('<p><strong>Character Formation:</strong></p>')
         html_parts.append("<ul>")
 
         for method in yb_data["formationMethods"]:
@@ -193,7 +192,6 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
     has_semantic = functional_comps.get("semantic") and len(functional_comps["semantic"]) > 0
 
     if has_phonetic or has_semantic:
-        # html_parts.append('<p><strong>Functional Components:</strong></p>')
         html_parts.append("<ul>")
 
         if has_phonetic:
@@ -216,7 +214,6 @@ def generate_yellowbridge_etymology_html(yb_data: dict[str, Any]) -> str | None:
     has_primitive = functional_comps.get("primitive") and len(functional_comps["primitive"]) > 0
 
     if has_primitive:
-        # html_parts.append('<p><strong>Primitive Components:</strong></p>')
         html_parts.append("<ul>")
         html_parts.extend(f"<li>{format_component_info(comp)}</li>" for comp in functional_comps["primitive"])
         html_parts.append("</ul>")
@@ -309,7 +306,6 @@ def update_yellowbridge_etymology_for_note_types(
 
             # Check if this note should be processed based on note type rules
             if not should_process_note(note_type, traditional):
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
                 skipped_count += 1
                 continue
 
@@ -317,7 +313,6 @@ def update_yellowbridge_etymology_for_note_types(
             yb_data = load_yellowbridge_character(traditional)
 
             if not yb_data:
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No YellowBridge data found, skipping")
                 skipped_count += 1
                 continue
 

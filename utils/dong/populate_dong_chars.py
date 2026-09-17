@@ -10,7 +10,6 @@ Filters out invalid entries and creates one file per character in public/data/do
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -45,7 +44,7 @@ def populate_dong_chars(input_file_path: str) -> None:
     print(f"Reading input file: {input_file_path}")
 
     # Read the input JSON file
-    with open(input_file_path, encoding="utf-8") as f:
+    with Path(input_file_path).open(encoding="utf-8") as f:
         entries = json.load(f)
 
     print(f"Found {len(entries)} total entries")
@@ -90,7 +89,7 @@ def populate_dong_chars(input_file_path: str) -> None:
                 continue
 
             # Write the character data to file
-            with open(output_path, "w", encoding="utf-8") as f:
+            with output_path.open("w", encoding="utf-8") as f:
                 json.dump(char_data, f, ensure_ascii=False, indent=2)
                 f.write("\n")
 
@@ -121,7 +120,7 @@ def main():
 
     input_file_path = sys.argv[1]
 
-    if not os.path.exists(input_file_path):
+    if not Path(input_file_path).exists():
         print(f"Error: Input file not found: {input_file_path}")
         sys.exit(1)
 

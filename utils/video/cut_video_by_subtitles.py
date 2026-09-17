@@ -99,9 +99,7 @@ MAX_CLIP_DURATION_TOLERANCE_SECONDS = 0.25
 MAX_CLIP_DURATION_TOLERANCE_RATIO = 0.05
 
 # Timestamp regex: "00:00:01,000 --> 00:00:04,000" (comma or dot for milliseconds).
-TIMING_PATTERN = re.compile(
-    r"(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})"
-)
+TIMING_PATTERN = re.compile(r"(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})")
 
 
 @dataclass
@@ -279,9 +277,7 @@ def _subtitle_start_key(entry: SubtitleEntry) -> float:
     return entry.start
 
 
-def find_translation_matches(
-    entry: SubtitleEntry, translations: list[SubtitleEntry], overlap_min: float
-) -> list[SubtitleEntry]:
+def find_translation_matches(entry: SubtitleEntry, translations: list[SubtitleEntry], overlap_min: float) -> list[SubtitleEntry]:
     """
     Find translation entries that overlap the given subtitle entry in time.
 
@@ -344,10 +340,7 @@ def build_context_html(
     items: list[tuple[float, str, str, bool]] = []
     seen_translations: set[str] = set()
 
-    items += [
-        (context_entry.start, "zh", context_entry.text, context_entry is current)
-        for context_entry in context_entries
-    ]
+    items += [(context_entry.start, "zh", context_entry.text, context_entry is current) for context_entry in context_entries]
     for match in find_translation_matches(window, translation_entries, overlap_min):
         if match.text and match.text not in seen_translations:
             seen_translations.add(match.text)
@@ -410,17 +403,12 @@ class LocalMediaClipsManager:
             raise Exception(f"Failed to create note for ID '{fields.get('ID')}'")
         print(f"  Created note {note_id} for ID '{fields.get('ID')}'")
 
-    def update_note(
-        self, note_id: int, fields: dict[str, str], changes: dict[str, tuple[str, str]]
-    ) -> None:
+    def update_note(self, note_id: int, fields: dict[str, str], changes: dict[str, tuple[str, str]]) -> None:
         """Update an existing LocalMediaClips note, printing each changed field."""
         # Pass only the changed fields to Anki so the update (and any logging it
         # does) reflects what actually changed, not the full note.
         update_note_fields(note_id, {name: new for name, (_, new) in changes.items()})
-        print(
-            f"  Updated note {note_id} for ID '{fields.get('ID')}' "
-            f"({len(changes)} field(s) changed)"
-        )
+        print(f"  Updated note {note_id} for ID '{fields.get('ID')}' ({len(changes)} field(s) changed)")
         for name, (old, new) in changes.items():
             print(f"    {name}: {old!r} -> {new!r}")
 
@@ -566,10 +554,7 @@ def validate_clip(path: Path, expected_duration: float | None = None) -> tuple[b
             expected_duration * MAX_CLIP_DURATION_TOLERANCE_RATIO,
         )
         if abs(duration - expected_duration) > tolerance:
-            return False, (
-                f"duration {duration:.2f}s differs from the requested "
-                f"{expected_duration:.2f}s by more than {tolerance:.2f}s"
-            )
+            return False, (f"duration {duration:.2f}s differs from the requested {expected_duration:.2f}s by more than {tolerance:.2f}s")
     return True, None
 
 
@@ -636,8 +621,7 @@ Examples:
     parser.add_argument(
         "--reencode",
         action="store_true",
-        help="Re-encode clips for frame-accurate cuts instead of fast keyframe-snapped stream copy "
-        "(H.264/AAC stereo, browser-playable)",
+        help="Re-encode clips for frame-accurate cuts instead of fast keyframe-snapped stream copy (H.264/AAC stereo, browser-playable)",
     )
     parser.add_argument(
         "--webm",
@@ -647,8 +631,7 @@ Examples:
     parser.add_argument(
         "--recheck",
         action="store_true",
-        help="Before cutting, validate existing clips in the output folder with ffprobe and delete damaged ones "
-        "so they are cut again",
+        help="Before cutting, validate existing clips in the output folder with ffprobe and delete damaged ones so they are cut again",
     )
     parser.add_argument("--limit", type=int, default=0, help="Only extract the first N matching entries (0 = all)")
     parser.add_argument("--padding-start", type=float, default=0.0, help="Seconds added before each subtitle interval")
@@ -771,10 +754,7 @@ Examples:
             translations_by_index[entry.index] = {
                 "text": " ".join(match.text for match in matches),
                 "count": len(matches),
-                "matches": [
-                    {"index": match.index, "start": match.start, "end": match.end, "text": match.text}
-                    for match in matches
-                ],
+                "matches": [{"index": match.index, "start": match.start, "end": match.end, "text": match.text} for match in matches],
             }
 
     print(f"=== Cutting {len(selected)} clip(s) into {output_dir} ===\n")
@@ -884,9 +864,7 @@ Examples:
                 "Timestamp": format_timestamp(entry.start),
                 "Traditional": entry.text,
                 "Translation": translation,
-                "Context": build_context_html(
-                    entries, entry_positions[id(entry)], translation_entries, args.overlap_min
-                ),
+                "Context": build_context_html(entries, entry_positions[id(entry)], translation_entries, args.overlap_min),
             }
             try:
                 existing_note = existing_notes.get(note_id_str)

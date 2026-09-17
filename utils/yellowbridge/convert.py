@@ -364,7 +364,7 @@ def process_file(file_path: Path) -> dict[str, Any]:
     filename_char = file_path.stem  # Character from filename
 
     try:
-        with open(file_path, encoding="utf-8") as f:
+        with file_path.open(encoding="utf-8") as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in {file_path}: {e}") from e
@@ -499,7 +499,7 @@ def process_directory(
 
                         # Still need to load the existing data for the combined output
                         if output_file:
-                            with open(target_file, encoding="utf-8") as f:
+                            with target_file.open(encoding="utf-8") as f:
                                 result = json.load(f)
                                 results[filename_char] = result
                         continue
@@ -545,7 +545,7 @@ def process_directory(
         # Only output aggregated indexes, not individual character data
         output_data = {"soundsComponentIn": sounds_component_in}
 
-        with open(output_file, "w", encoding="utf-8") as f:
+        with output_file.open("w", encoding="utf-8") as f:
             json.dump(output_data, f, ensure_ascii=False, indent=2)
         print(f"\nIndexes written to: {output_file}")
 
@@ -564,14 +564,14 @@ def process_directory(
             # Check if file exists and compare content
             should_write = True
             if individual_file.exists():
-                with open(individual_file, encoding="utf-8") as f:
+                with individual_file.open(encoding="utf-8") as f:
                     existing_content = f.read()
                 if existing_content == new_content:
                     should_write = False
                     unchanged_count += 1
 
             if should_write:
-                with open(individual_file, "w", encoding="utf-8") as f:
+                with individual_file.open("w", encoding="utf-8") as f:
                     f.write(new_content)
                 written_count += 1
 

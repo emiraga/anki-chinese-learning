@@ -38,7 +38,7 @@ def load_word_files(directory: Path) -> list[dict[str, Any]]:
 
     for file_path in directory.glob("*.json"):
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 word_data = json.load(f)
                 words.append(word_data)
         except json.JSONDecodeError as e:
@@ -161,7 +161,7 @@ def load_list_files(directory: Path, file_paths: list[Path] | None = None) -> li
             continue
 
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 list_data = json.load(f)
                 lists.append(list_data)
                 list_name = list_data.get("name", file_path.stem)
@@ -185,7 +185,7 @@ def load_single_word_file(file_path: Path) -> dict[str, Any] | None:
         Parsed word dictionary or None if error
     """
     try:
-        with open(file_path, encoding="utf-8") as f:
+        with file_path.open(encoding="utf-8") as f:
             return json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error parsing {file_path}: {e}")

@@ -35,7 +35,7 @@ def load_frequency_data(csv_path: str | Path):
         dict: Mapping of character to frequency data (written_frequency, spoken_frequency)
     """
     frequency_data = {}
-    with open(csv_path, encoding="utf-8") as f:
+    with Path(csv_path).open(encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             traditional = row["traditional"]

@@ -83,8 +83,8 @@ HANZI_TO_PINYIN_TAGS = [
     "prop::ale-brother",
 ]
 
-# Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags
-# Format: (key_name, [full_tag1, full_tag2, ...])
+# Tag intersections for Hanzi-to-Pinyin notes - notes must have ALL listed tags.
+# Each entry pairs a key name with the list of full tags a note must carry.
 HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
     ("small-table+insect", ["prop::small-table", "prop::insect"]),
     ("square+walking-legs", ["prop-right::walking-legs", "prop::square"]),
@@ -432,7 +432,7 @@ class ConnectDotsNote:
 
     def get_sorted_tuples(self) -> list[tuple[str, str, str]]:
         """Get (left, right, explanation) tuples sorted by left element"""
-        explanations = self.explanation if self.explanation else [""] * len(self.left)
+        explanations = self.explanation or [""] * len(self.left)
         return sorted(zip(self.left, self.right, explanations, strict=False), key=lambda x: x[0])
 
     def left_str(self) -> str:
@@ -498,7 +498,7 @@ class ConnectDotsNote:
 
         # Sort by (right, left) to group by right value, then interleave
         # This maximizes diversity of right values in each split note
-        explanations = self.explanation if self.explanation else [""] * len(self.left)
+        explanations = self.explanation or [""] * len(self.left)
         sorted_tuples = sorted(
             zip(self.left, self.right, explanations, strict=False),
             key=lambda x: (x[1], x[0]),  # Sort by (right, left)
@@ -573,7 +573,7 @@ class ConnectDotsNote:
         if len(self.left) <= max_items:
             return [self]
 
-        explanations = self.explanation if self.explanation else [""] * len(self.left)
+        explanations = self.explanation or [""] * len(self.left)
 
         # Number of bins needed (ceiling division).
         num_notes = -(-len(self.left) // max_items)
@@ -997,7 +997,7 @@ class IntersectionGenerator(ConnectDotsGenerator):
             return []
 
         key = f"{self.generator_type}:{self.key_name}"
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation if explanation else [])]
+        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation or [])]
 
 
 class CustomHanziToPinyin(BaseHanziToPinyinGenerator):

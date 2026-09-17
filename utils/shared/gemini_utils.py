@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Shared utilities for Google Gemini API interactions.
 
@@ -39,7 +38,7 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
     # Try to get from API key file first
     api_key_path = project_root / "utils" / "tts" / "gcloud_api_key.txt"
     if api_key_path.exists():
-        with open(api_key_path) as f:
+        with api_key_path.open() as f:
             api_key = f.read().strip()
             if api_key:
                 return api_key
@@ -50,7 +49,7 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
     if credentials_path.exists():
         import json
 
-        with open(credentials_path) as f:
+        with credentials_path.open() as f:
             creds = json.load(f)
             api_key = creds.get("gemini_api_key")
             if api_key:

@@ -86,7 +86,7 @@ def download_image(url: str, local_path: Path) -> bool:
         # Download with user agent to avoid blocking
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
 
-        with urllib.request.urlopen(req, timeout=30) as response, open(local_path, "wb") as f:
+        with urllib.request.urlopen(req, timeout=30) as response, local_path.open("wb") as f:
             f.write(response.read())
 
         print(f"  ✓ Downloaded: {local_path.name}")
@@ -111,7 +111,7 @@ def process_json_file(json_path: Path) -> dict[str, Any]:
 
     try:
         # Read JSON
-        with open(json_path, encoding="utf-8") as f:
+        with json_path.open(encoding="utf-8") as f:
             data = json.load(f)
 
         # Check if images array exists
@@ -158,7 +158,7 @@ def process_json_file(json_path: Path) -> dict[str, Any]:
 
         # Save modified JSON if changes were made
         if modified:
-            with open(json_path, "w", encoding="utf-8") as f:
+            with json_path.open("w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             print(f"  ✓ Updated JSON: {json_path.name}")
 

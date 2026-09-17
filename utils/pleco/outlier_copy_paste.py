@@ -366,7 +366,6 @@ def parse_character_from_li(li_element: Any) -> Character | None:
         # Split on semicolon to separate explanation from meaning
         if ";" in after_colon:
             parts = after_colon.split(";", 1)
-            # explanation_part = parts[0].strip()
             meaning_part = parts[1].strip()
 
             # Check if explanation part matches red text
@@ -471,7 +470,7 @@ def save_image_to_disk(image_id: str, image_bytes: bytes, images_dir: Path) -> b
 
         image_path = images_dir / f"{image_id}.{ext}"
 
-        with open(image_path, "wb") as f:
+        with image_path.open("wb") as f:
             f.write(image_bytes)
 
         print(f"  Saved image: {image_path}")
@@ -727,7 +726,7 @@ def generate_preload_list():
 
     for json_file in dong_files:
         try:
-            with open(json_file, encoding="utf-8") as f:
+            with json_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             char = data.get("char")
@@ -817,7 +816,7 @@ def rebuild_from_html_files(html_dir: Path) -> None:
         print(f"\nProcessing: {html_file.name}")
 
         try:
-            with open(html_file, encoding="utf-8") as f:
+            with html_file.open(encoding="utf-8") as f:
                 html_content = f.read()
 
             outlier_data = parse_outlier_html(html_content)
@@ -826,7 +825,7 @@ def rebuild_from_html_files(html_dir: Path) -> None:
                 char = outlier_data["traditional"]
                 json_file = json_dir / f"{char}.json"
 
-                with open(json_file, "w", encoding="utf-8") as f:
+                with json_file.open("w", encoding="utf-8") as f:
                     json.dump(outlier_data, f, ensure_ascii=False, indent=2)
 
                 print(f"  ✓ Saved: {json_file}")
@@ -976,11 +975,11 @@ def main():
 
                 try:
                     # Save JSON to public/data
-                    with open(json_file, "w", encoding="utf-8") as f:
+                    with json_file.open("w", encoding="utf-8") as f:
                         json.dump(outlier_data, f, ensure_ascii=False, indent=2)
 
                     # Save HTML to data
-                    with open(html_file, "w", encoding="utf-8") as f:
+                    with html_file.open("w", encoding="utf-8") as f:
                         f.write(parsed_html)
 
                     print("=" * 80)
@@ -992,15 +991,6 @@ def main():
                     print(f"Error saving files: {e}", file=sys.stderr)
             else:
                 print("No character found in data, skipping file save", file=sys.stderr)
-
-    # Character analysis
-    # if plain_text:
-    #     print("CHARACTER ANALYSIS:")
-    #     print("-" * 80)
-    #     print("First 100 characters with Unicode points:")
-    #     for i, char in enumerate(plain_text[:100]):
-    #         print(f"  {i:3d}: '{char}' U+{ord(char):04X} ({ord(char)}) - {char.encode('unicode_escape').decode('ascii')}")
-    #     print()
 
 
 if __name__ == "__main__":

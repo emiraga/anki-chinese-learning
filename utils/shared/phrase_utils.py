@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Shared utilities for scanning phrase notes (e.g. TOCFL) in Anki.
 

@@ -7,9 +7,7 @@
 # ///
 
 import argparse
-import glob
 import json
-import os
 import subprocess
 import sys
 import time
@@ -50,7 +48,7 @@ def get_component_chars_from_dong_files(dong_data_dir: Path, top_words_share_thr
 
     for json_file in json_files:
         try:
-            with open(json_file, encoding="utf-8") as f:
+            with json_file.open(encoding="utf-8") as f:
                 data = json.load(f)
 
                 # Extract components array
@@ -218,10 +216,11 @@ def main():
     print(f"{'=' * 60}\n")
 
     populate_script = script_dir / "populate_dong_chars.py"
-    downloads_pattern = str(Path.home() / "Downloads" / "keyvaluepairs-*")
+    downloads_dir = Path.home() / "Downloads"
+    downloads_pattern = str(downloads_dir / "keyvaluepairs-*")
 
     # Expand the wildcard pattern to find actual files
-    matching_files = glob.glob(downloads_pattern)
+    matching_files = list(downloads_dir.glob("keyvaluepairs-*"))
 
     if not matching_files:
         print(f"ERROR: No files found matching pattern: {downloads_pattern}")
@@ -242,7 +241,7 @@ def main():
     try:
         # Run the populate script and stream output in real-time
         process = subprocess.Popen(
-            [str(populate_script), input_file], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+            [str(populate_script), str(input_file)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
         )
 
         # Stream output line by line
@@ -259,7 +258,7 @@ def main():
             # Remove all matching downloaded files
             for file_path in matching_files:
                 try:
-                    os.remove(file_path)
+                    file_path.unlink()
                     print(f"Removed: {file_path}")
                 except Exception as e:
                     print(f"Warning: Could not remove {file_path}: {e}")

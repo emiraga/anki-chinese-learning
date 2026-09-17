@@ -57,6 +57,7 @@ def clean_sentence_for_filename(sentence: str, max_len: int = _MAX_TEXT_FILENAME
         clean_text = clean_text[:max_len]
     return clean_text
 
+
 # Generate API key via https://console.cloud.google.com/apis/credentials
 
 
@@ -74,7 +75,7 @@ def convert_pinyin_to_numbered(pinyin_text: str) -> str:
     # If there are no numbers, assume it's accented and convert.
     numbered: str
     if not any(char.isdigit() for char in pinyin_text):
-        numbered = cast(str, dragonmapper.transcriptions.accented_to_numbered(pinyin_text))
+        numbered = cast("str", dragonmapper.transcriptions.accented_to_numbered(pinyin_text))
     else:
         # It's already numbered, just use it as is.
         numbered = pinyin_text
@@ -89,15 +90,15 @@ def setup_credentials() -> None:
     Set up Google Cloud credentials by locating gcloud_account.json
     relative to the script's path.
     """
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    credentials_path = os.path.join(script_dir, "gcloud_account.json")
+    script_dir = Path(__file__).resolve().parent
+    credentials_path = script_dir / "gcloud_account.json"
 
-    if not os.path.exists(credentials_path):
+    if not credentials_path.exists():
         raise FileNotFoundError(
             f"Credentials file not found at {credentials_path}. Please ensure 'gcloud_account.json' is in the same directory as the script."
         )
 
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
 
 
 def chinese_tts(
@@ -118,8 +119,8 @@ def chinese_tts(
         speaking_rate (float): Speed of speech (0.25 to 4.0, default 1.0). Slower rates may improve clarity.
     """
     # Get script directory and ensure output file is saved there
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    output_file = os.path.join(script_dir, os.path.basename(output_file))
+    script_dir = Path(__file__).resolve().parent
+    output_path = script_dir / Path(output_file).name
 
     # Initialize the client
     client: Any = texttospeech.TextToSpeechClient()
@@ -184,9 +185,9 @@ def chinese_tts(
     response: Any = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
 
     # Write the response to an audio file
-    with open(output_file, "wb") as out:
+    with output_path.open("wb") as out:
         out.write(response.audio_content)
-        print(f'Audio generated: "{output_file}"')
+        print(f'Audio generated: "{output_path}"')
 
     audio_content: bytes = response.audio_content
     return audio_content
@@ -227,7 +228,7 @@ def get_note_info(note_id: int) -> NoteInfo:
     Returns:
         dict: Note information
     """
-    return cast(NoteInfo, get_notes_info([note_id])[0])
+    return cast("NoteInfo", get_notes_info([note_id])[0])
 
 
 def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:
@@ -542,9 +543,7 @@ def main() -> None:
         # Then, process notes with empty audio
         for note_id in find_note_by_empty_audio(note_type)[0:100]:
             note_info = get_note_info(note_id)
-            process_note_audio(
-                note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate
-            )
+            process_note_audio(note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate)
 
     # Finally, fill empty Sentence Audio on TOCFL notes that have a sentence
     print("\n=== Filling Sentence Audio for TOCFL notes ===")

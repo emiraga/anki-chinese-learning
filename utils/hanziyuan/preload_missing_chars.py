@@ -52,7 +52,7 @@ def extract_components_from_json(json_file: Path) -> set[str]:
     components = set()
 
     try:
-        with open(json_file, encoding="utf-8") as f:
+        with json_file.open(encoding="utf-8") as f:
             data = json.load(f)
 
         # Extract components from characterDecomposition
@@ -136,7 +136,6 @@ def main():
     print(f"Total unique characters (combined): {len(all_chars)}")
     print(f"  - Component characters from converted files: {len(component_chars)}")
     print(f"Existing files: {len(existing_files)}")
-    # print(f"Referenced characters from YellowBridge: {len(ref_chars)}")
 
     # Find missing characters
     missing_chars = all_chars - existing_files

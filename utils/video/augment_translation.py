@@ -104,9 +104,7 @@ def augment_translation_for_note(note_id: int, dry_run: bool = False) -> bool:
 
 def main() -> None:
     """Find LocalMediaClips notes with empty Translation2 and fill them."""
-    parser = argparse.ArgumentParser(
-        description=f"Fill empty {DEST_FIELD} fields on {NOTE_TYPE} notes using Google Cloud Translation API"
-    )
+    parser = argparse.ArgumentParser(description=f"Fill empty {DEST_FIELD} fields on {NOTE_TYPE} notes using Google Cloud Translation API")
     parser.add_argument("--dry-run", action="store_true", help="Print what would be done without updating Anki")
     parser.add_argument(
         "--credentials",

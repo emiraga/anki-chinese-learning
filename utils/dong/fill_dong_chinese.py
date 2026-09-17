@@ -96,7 +96,7 @@ def load_dong_character(character: str) -> dict[str, Any] | None:
         return None
 
     try:
-        with open(json_file, encoding="utf-8") as f:
+        with json_file.open(encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading Dong Chinese data for {character}: {e}")
@@ -349,7 +349,6 @@ def update_dong_etymology_for_note_types(
 
             # Check if this note should be processed based on note type rules
             if not should_process_note(note_type, traditional):
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Skipping (multi-character for TOCFL)")
                 skipped_count += 1
                 continue
 
@@ -357,7 +356,6 @@ def update_dong_etymology_for_note_types(
             dong_data = load_dong_character(traditional)
 
             if not dong_data:
-                # print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No Dong Chinese data found, skipping")
                 skipped_count += 1
                 continue
 

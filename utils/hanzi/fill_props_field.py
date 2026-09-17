@@ -9,7 +9,6 @@
 # ///
 
 import json
-import os
 import random
 import sys
 from pathlib import Path
@@ -32,10 +31,10 @@ def load_pos_mapping():
         dict: Dictionary mapping POS codes to [name, chinese_name, examples]
     """
     # Get the path to pos.json relative to this script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    pos_json_path = os.path.join(script_dir, "..", "..", "app", "data", "pos.json")
+    script_dir = Path(__file__).resolve().parent
+    pos_json_path = script_dir.parent.parent / "app" / "data" / "pos.json"
 
-    with open(pos_json_path, encoding="utf-8") as f:
+    with pos_json_path.open(encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -671,11 +670,7 @@ def pick_random_sentence(examples_json_str: str, known_characters: set[str]) -> 
         return ""
 
     # Filter out sentences that contain characters the learner doesn't know yet
-    eligible_sentences = [
-        sentence
-        for sentence in sentences
-        if extract_all_characters(sentence).issubset(known_characters)
-    ]
+    eligible_sentences = [sentence for sentence in sentences if extract_all_characters(sentence).issubset(known_characters)]
 
     if not eligible_sentences:
         raise Exception("No example sentence is composed entirely of known characters")

@@ -67,13 +67,9 @@ def main():
 
         cards_info = get_cards_info(card_ids)
         note_ids = list({card["note"] for card in cards_info})
-        eligible_note_ids = {
-            note["noteId"] for note in get_notes_info(note_ids) if _is_short_traditional(note)
-        }
+        eligible_note_ids = {note["noteId"] for note in get_notes_info(note_ids) if _is_short_traditional(note)}
 
-        eligible_cards = [
-            card["cardId"] for card in cards_info if card["note"] in eligible_note_ids
-        ]
+        eligible_cards = [card["cardId"] for card in cards_info if card["note"] in eligible_note_ids]
 
         skipped = len(card_ids) - len(eligible_cards)
         if skipped:

@@ -2,6 +2,7 @@
 
 import csv
 import json
+from pathlib import Path
 
 
 def csv_to_2d_array(csv_filepath: str, output_filepath: str | None = None) -> list[list[str]]:
@@ -17,7 +18,7 @@ def csv_to_2d_array(csv_filepath: str, output_filepath: str | None = None) -> li
         list: 2D array of the CSV data (excluding header row and index column)
     """
     # Read the CSV file
-    with open(csv_filepath, newline="", encoding="utf-8") as csvfile:
+    with Path(csv_filepath).open(newline="", encoding="utf-8") as csvfile:
         csv_reader = csv.reader(csvfile)
 
         # Read all rows
@@ -40,7 +41,7 @@ def csv_to_2d_array(csv_filepath: str, output_filepath: str | None = None) -> li
 
         # Optionally save to JSON file
         if output_filepath:
-            with open(output_filepath, "w", encoding="utf-8") as jsonfile:
+            with Path(output_filepath).open("w", encoding="utf-8") as jsonfile:
                 json.dump(result, jsonfile, indent=2)
             print(f"Data saved to {output_filepath}")
 

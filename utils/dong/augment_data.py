@@ -70,7 +70,7 @@ def build_char_pinyin_mapping(dong_dir: Path, use_pypinyin_fallback: bool = True
     # First pass: collect all data from files
     for file_path in dong_dir.glob("*.json"):
         try:
-            with open(file_path, encoding="utf-8") as f:
+            with file_path.open(encoding="utf-8") as f:
                 data = json.load(f)
 
             # Get the character and its pinyinFrequencies from root level
@@ -124,7 +124,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
         True if file was modified, False otherwise
     """
     try:
-        with open(file_path, encoding="utf-8") as f:
+        with file_path.open(encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
         print(f"Error reading {file_path}: {e}")
@@ -193,7 +193,7 @@ def process_dong_file(file_path: Path, char_to_pinyin: dict[str, list[Any]], dry
     # Save the modified file
     if modified and not dry_run:
         try:
-            with open(file_path, "w", encoding="utf-8") as f:
+            with file_path.open("w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             print(f"✓ Saved {file_path}")
         except Exception as e:

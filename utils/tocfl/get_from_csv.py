@@ -27,7 +27,7 @@ def load_valid_pos() -> dict[str, str]:
 
     Returns a dict mapping lowercase POS to the canonical cased version.
     """
-    with open(POS_FILE, encoding="utf-8") as f:
+    with POS_FILE.open(encoding="utf-8") as f:
         pos_data = json.load(f)
     return {key.lower(): key for key in pos_data}
 
@@ -229,7 +229,7 @@ def load_csv(path: Path, valid_pos: dict[str, str]) -> list[TocflWord]:
     level = parse_level_from_filename(path.name)
     words: list[TocflWord] = []
 
-    with open(path, newline="", encoding="utf-8") as f:
+    with path.open(newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
         header = next(reader)
 

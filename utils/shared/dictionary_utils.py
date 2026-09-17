@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Shared utilities for Chinese-English dictionary lookups.
 
@@ -92,4 +91,4 @@ def lookup_character_meaning(
 
     # Fall back to dictionary lookup
     meaning = lookup_meaning(char, max_definitions)
-    return meaning if meaning else ""
+    return meaning or ""
