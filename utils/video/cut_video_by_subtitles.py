@@ -59,11 +59,12 @@ Used commands:
     /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.en.srt \
     --padding-start 0.3 --padding-end 0.6 --reencode --overlap-min 0.1 --anki-prefix apple_of_my_eye_ --webm
 
-    ./utils/video/serve_media.py --directory "/Users/emirb/In Progress Temporary/you are the apple of my eye"
+    MEDIA_DIR="~/InProgressTemporary/you are the apple of my eye" yarn dev
 
-    (Use serve_media.py rather than `python3 -m http.server`: the latter ignores
-    Range requests, which makes the clips non-seekable in the Anki card and
-    breaks the trimDurationStart seek.)
+    (The clips are served by the `yarn dev` server at
+    http://[::1]:5173/local-media/ - see vite_serve_media.ts. Don't use
+    `python3 -m http.server`: it ignores Range requests, which makes the clips
+    non-seekable in the Anki card and breaks the trimDurationStart seek.)
 """
 
 import argparse

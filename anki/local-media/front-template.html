@@ -4,7 +4,7 @@
   id="ankivideo"
   controls
   preload="auto"
-  src="http://[::1]:8080/{{RelativeFilePath}}"
+  src="http://[::1]:5173/local-media/{{RelativeFilePath}}"
   width="100%"
   data-trim-start="{{trimDurationStart}}"
   data-trim-end="{{trimDurationEnd}}"
@@ -257,8 +257,9 @@
               ranges(video.seekable) +
               "], buffered=[" +
               ranges(video.buffered) +
-              "]). The media server must support HTTP Range requests - run " +
-              "utils/video/serve_media.py instead of `python3 -m http.server`.",
+              "]). The clips must come from the `yarn dev` server at " +
+              "http://[::1]:5173/local-media/, which answers Range requests - " +
+              "not from `python3 -m http.server`, which ignores them.",
           );
           // Untrimmed playback still beats a card that does nothing.
           autoplay("not seekable");

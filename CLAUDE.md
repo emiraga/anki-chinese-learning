@@ -123,6 +123,26 @@ Uses React Router's file-based routing with comprehensive routes for:
 }
 ```
 
+### Local Media Clips
+
+The `LocalMediaClips` Anki note type (`anki/local-media/`) plays video/audio
+clips that live outside the repository. The dev server serves them - there is no
+separate media server:
+
+- Mounted at `http://[::1]:5173/local-media/<RelativeFilePath>` by
+  `vite_serve_media.ts` (dev server only).
+- The directory is set with the `MEDIA_DIR` env var, inline
+  (`MEDIA_DIR="~/clips" yarn dev`) or in `.env`. The default is in
+  `vite.config.ts` (`DEFAULT_MEDIA_DIR`).
+- A directory that does not exist is not an error: the dev server starts
+  normally, logs `(missing, requests will 404)`, and those requests 404.
+- The middleware implements HTTP `Range`/`206`. This is required, not an
+  optimization: Anki's Chromium webview treats a clip served without Range
+  support as non-seekable, which breaks the `trimDurationStart` seek in
+  `front-template.html`. Never replace it with `python3 -m http.server`.
+- After changing the templates, push them to Anki with
+  `./anki/local-media/deploy.py`.
+
 ### API Keys
 
 The application requires API keys for:

@@ -1,8 +1,18 @@
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import babel from "vite-plugin-babel";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { serveMedia } from "./vite_serve_media";
+
+// Directory of video/audio clips served to the Anki card templates (see
+// anki/local-media/front-template.html). Override with the MEDIA_DIR env var,
+// either inline (`MEDIA_DIR=~/clips yarn dev`) or in a .env file. A directory
+// that does not exist is not an error: those requests simply 404.
+const DEFAULT_MEDIA_DIR = "~/InProgressTemporary/you are the apple of my eye";
+
+// URL prefix the clips are mounted under on the dev server.
+const MEDIA_URL_PREFIX = "/local-media/";
 
 const external = [
   "open",
@@ -14,10 +24,17 @@ const external = [
   "run-applescript",
 ];
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     tailwindcss(),
     reactRouter(),
+    serveMedia({
+      urlPrefix: MEDIA_URL_PREFIX,
+      // "" as the prefix so plain MEDIA_DIR (not VITE_MEDIA_DIR) is picked up:
+      // this is a server-side path that must not be exposed to the client.
+      directory:
+        loadEnv(mode, process.cwd(), "").MEDIA_DIR || DEFAULT_MEDIA_DIR,
+    }),
     babel({
       filter: /\.tsx?$/,
       babelConfig: {
@@ -75,4 +92,4 @@ export default defineConfig({
       allow: [".."],
     },
   },
-});
+}));
