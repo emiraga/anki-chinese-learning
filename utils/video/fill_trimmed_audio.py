@@ -18,6 +18,12 @@ an MP3, uploads it to Anki's media collection, points the "Trimmed Audio"
 field at it with a [sound:...] tag, and moves the note's cards to the
 "Chinese::MediaClips" deck.
 
+By default the audio is extracted exactly as it is in the film. Passing
+`--audio-preset` instead cleans up the dialogue - denoising it, boosting the
+presence band, and normalizing it to a consistent loudness, none of which
+alters the pitch contour that carries Mandarin tone. See
+`shared/speech_audio.py` for the presets and what each one does.
+
 The Anki search used is:
 
     note:LocalMediaClips prop:ivl>=10 "Trimmed Audio:"
@@ -28,7 +34,15 @@ Usage:
     ./fill_trimmed_audio.py
     ./fill_trimmed_audio.py --dry-run
     ./fill_trimmed_audio.py --limit 10
+    ./fill_trimmed_audio.py --audio-preset speech
+    ./fill_trimmed_audio.py --audio-preset clarity
     ./fill_trimmed_audio.py --query 'note:LocalMediaClips prop:ivl>=21 "Trimmed Audio:"'
+
+To re-cut clips that already have audio - for instance after changing the
+preset - select them with a query and pass --overwrite, which replaces the
+stored MP3:
+
+    ./fill_trimmed_audio.py --overwrite --query 'note:LocalMediaClips prop:ivl>=10'
 
 Requirements:
     ffmpeg and ffprobe must be installed (brew install ffmpeg on macOS)
@@ -54,6 +68,16 @@ from shared.anki_utils import (
     update_note_audio_field,
 )
 from shared.media_paths import resolve_clip_path
+from shared.speech_audio import (
+    DEFAULT_MAX_GAIN_DB,
+    DEFAULT_PRESET,
+    DEFAULT_TARGET_LUFS,
+    PRESETS,
+    SpeechEnhancement,
+    build_audio_command,
+    format_ffmpeg_timestamp,
+    plan_enhancement,
+)
 
 NOTE_TYPE = "LocalMediaClips"
 ID_FIELD = "ID"
@@ -82,15 +106,6 @@ def parse_trim_seconds(value: str) -> float:
         return 0.0
 
 
-def format_ffmpeg_timestamp(seconds: float) -> str:
-    """Format seconds as an ffmpeg-friendly 'HH:MM:SS.mmm' timestamp."""
-    total_ms = round(seconds * 1000)
-    hours, remainder = divmod(total_ms, 3_600_000)
-    minutes, remainder = divmod(remainder, 60_000)
-    secs, ms = divmod(remainder, 1000)
-    return f"{hours:02d}:{minutes:02d}:{secs:02d}.{ms:03d}"
-
-
 def probe_duration(path: Path) -> float:
     """Return the media duration in seconds using ffprobe."""
     result = subprocess.run(
@@ -114,34 +129,20 @@ def probe_duration(path: Path) -> float:
         raise RuntimeError(f"ffprobe did not report a duration for {path}") from e
 
 
-def extract_audio_clip(video_path: Path, start: float, end: float, output_path: Path) -> None:
-    """Extract the audio between start and end (seconds) into an MP3 file."""
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-ss",
-            format_ffmpeg_timestamp(start),
-            "-to",
-            format_ffmpeg_timestamp(end),
-            "-i",
-            str(video_path),
-            "-vn",
-            "-map",
-            "0:a:0?",
-            "-c:a",
-            "libmp3lame",
-            "-q:a",
-            "2",
-            "-ac",
-            "2",
-            "-y",
-            str(output_path),
-        ],
-        check=True,
-    )
+def extract_audio_clip(video_path: Path, start: float, end: float, output_path: Path, enhancement: SpeechEnhancement) -> None:
+    """
+    Extract the audio between start and end (seconds) into an MP3 file.
+
+    The enhancement preset decides how much the dialogue is cleaned up on the
+    way out; `none` copies the audio through as-is.
+    """
+    plan = plan_enhancement(video_path, start, end, enhancement)
+    if plan is not None:
+        print(f"  Audio: {plan.describe()}")
+    elif enhancement.enabled:
+        print("  Audio: too quiet to normalize, extracting as-is")
+
+    subprocess.run(build_audio_command(video_path, start, end, output_path, plan), check=True)
 
 
 def validate_audio_clip(path: Path, expected_duration: float) -> None:
@@ -160,20 +161,22 @@ def validate_audio_clip(path: Path, expected_duration: float) -> None:
         )
 
 
-def process_note(note_id: int, dry_run: bool) -> bool:
+def process_note(note_id: int, dry_run: bool, enhancement: SpeechEnhancement, overwrite: bool) -> bool:
     """
     Extract and store trimmed audio for a single LocalMediaClips note.
 
     Args:
         note_id: The note ID to process
         dry_run: If True, only print what would be done without updating Anki
+        enhancement: How to process the extracted audio
+        overwrite: If True, redo notes whose audio field is already filled
 
     Returns:
         True if the note was (or would be) processed, False if it was skipped
     """
     note = get_notes_info([note_id])[0]
 
-    if get_field_value(note, AUDIO_FIELD):
+    if get_field_value(note, AUDIO_FIELD) and not overwrite:
         print(f"Note {note_id}: {AUDIO_FIELD} already has content, skipping")
         return False
 
@@ -202,7 +205,7 @@ def process_note(note_id: int, dry_run: bool) -> bool:
 
     with tempfile.TemporaryDirectory(prefix="trimmed_audio_") as tmp_dir:
         temp_path = Path(tmp_dir) / audio_filename
-        extract_audio_clip(clip_path, trim_start, end, temp_path)
+        extract_audio_clip(clip_path, trim_start, end, temp_path, enhancement)
         validate_audio_clip(temp_path, end - trim_start)
         audio_data = temp_path.read_bytes()
 
@@ -230,7 +233,44 @@ def main() -> None:
         metavar="QUERY",
         help="Anki search query for the notes to process (default: mature LocalMediaClips notes with empty Trimmed Audio)",
     )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=f"Redo notes whose {AUDIO_FIELD} is already filled, replacing the stored MP3 (use with a query that selects them)",
+    )
+    parser.add_argument(
+        "--audio-preset",
+        choices=sorted(PRESETS),
+        default=DEFAULT_PRESET,
+        help=f"How much to clean up the dialogue; 'speech' is the recommended one (default: {DEFAULT_PRESET}, the audio untouched)",
+    )
+    parser.add_argument(
+        "--target-lufs",
+        type=float,
+        default=DEFAULT_TARGET_LUFS,
+        help=f"Loudness every clip is normalized to (default: {DEFAULT_TARGET_LUFS})",
+    )
+    parser.add_argument(
+        "--max-gain-db",
+        type=float,
+        default=DEFAULT_MAX_GAIN_DB,
+        help=f"Most a clip may be boosted, so near-silent clips do not get a loud noise floor (default: {DEFAULT_MAX_GAIN_DB})",
+    )
+    parser.add_argument(
+        "--rnnoise-model",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Also run arnndn with this RNNoise model, which separates speech from music better than the built-in denoiser",
+    )
     args = parser.parse_args()
+
+    enhancement = SpeechEnhancement(
+        preset=args.audio_preset,
+        target_lufs=args.target_lufs,
+        max_gain_db=args.max_gain_db,
+        rnnoise_model=args.rnnoise_model,
+    )
 
     if shutil.which("ffmpeg") is None:
         print("Error: ffmpeg not found in PATH (brew install ffmpeg on macOS)")
@@ -243,6 +283,7 @@ def main() -> None:
         print("Running in DRY RUN mode - no media will be stored and no notes will be modified\n")
 
     print(f"Query: {args.query}")
+    print(f"Audio preset: {enhancement.preset}" + (f" -> {enhancement.target_lufs:.1f} LUFS" if enhancement.enabled else ""))
     note_ids = find_notes_by_query(args.query)
     if not note_ids:
         print("No matching notes found")
@@ -259,7 +300,7 @@ def main() -> None:
 
     for note_id in note_ids:
         try:
-            if process_note(note_id, dry_run=args.dry_run):
+            if process_note(note_id, dry_run=args.dry_run, enhancement=enhancement, overwrite=args.overwrite):
                 processed += 1
             else:
                 skipped += 1

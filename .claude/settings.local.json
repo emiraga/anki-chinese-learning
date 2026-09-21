@@ -24,7 +24,9 @@
       "Bash(./utils/tocfl/get_from_csv.py)",
       "Bash(uv run *)",
       "Bash(python3 -c ' *)",
-      "Bash(python3)"
+      "Bash(python3)",
+      "Read(//private/tmp/audiotest/**)",
+      "Bash(bash ablate.sh)"
     ],
     "deny": []
   }
