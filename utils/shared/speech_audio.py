@@ -26,9 +26,12 @@ The presets, weakest to strongest:
     clarity   Stronger denoising, plus a low-mid cut to pull the voice out from
               under music. Best SNR, most likely to sound processed.
 
-Measured on four sample clips, all normalized to the same loudness so the
-numbers are comparable, `speech` lowers the noise floor about 10 dB relative to
-the dialogue and `clarity` about 16 dB.
+The gain goes on at the front of the chain rather than the back. The denoiser's
+thresholds are absolute dBFS, so applying them to the film's own level - a ~29 dB
+spread across this collection - subtracted a different amount from every clip,
+and the ones that got too much came out sounding robotic. Normalizing first
+makes one setting mean one thing. loudnorm still runs last, so the output level
+and the true-peak ceiling are still guaranteed.
 """
 
 import json
@@ -72,6 +75,17 @@ SILENCE_LUFS = -69.0
 # including loudnorm in both its linear and dynamic modes.
 AFFTDN_LATENCY_SECONDS = 0.025
 
+# How much audio to decode ahead of the clip so the adaptive filters enter it
+# already converged, rather than settling during the dialogue. afftdn's noise
+# tracking needs a few hundred ms to estimate a floor, and speechnorm starts at
+# unity gain and ramps in - measured as a 3-5 dB gain step inside the first 20 ms
+# on clips that need expansion, audible as a thump at the head. Trimmed back off
+# after filtering, and limited by how much source actually precedes the clip.
+ADAPTIVE_PREROLL_SECONDS = 0.5
+
+# Filters that carry state across samples, and so need the run-up above.
+_ADAPTIVE_FILTERS = ("afftdn", "arnndn", "speechnorm")
+
 # arnndn works a frame at a time and so likely delays its output too, but the
 # amount is unverified here - it needs a model file to run at all. An optional,
 # opt-in filter being a frame late is not worth guessing a constant for.
@@ -79,12 +93,25 @@ ARNNDN_LATENCY_SECONDS = 0.0
 
 _HIGHPASS = "highpass=f=80:poles=2"
 
-# afftdn with noise tracking on. `nr` is the reduction in dB; 12 dB measurably
+# afftdn with noise tracking on. `nr` is the reduction in dB; 10 dB measurably
 # lowers the noise floor while leaving the 3-8 kHz band that carries Mandarin
 # fricatives and affricates (s, sh, x, c, ch, q) intact. Past ~20 dB it starts
 # eating those consonants along with the hiss.
-_DENOISE_GENTLE = "afftdn=nr=12:nf=-30:tn=1"
-_DENOISE_STRONG = "afftdn=nr=20:nf=-25:tn=1"
+#
+# `nf` and `rf` are absolute dBFS, not levels relative to the dialogue, so these
+# settings only mean the same thing on every clip because `plan_enhancement`
+# gains the clip to the working level before the denoiser sees it. They were
+# previously applied to the film's own level, which varies by ~29 dB across this
+# collection, so the same preset subtracted a different amount from every clip.
+#
+# `gs` is what keeps the result from sounding robotic. An FFT denoiser leaves
+# "musical noise": isolated bins that survive subtraction and ring as short
+# tones. `gs` smooths the gain across neighbouring bins, which suppresses them;
+# it is off by default. `rf` holds a floor of the clip's own noise in the output,
+# where it masks whatever ringing is left - subtracting all the way down to
+# silence between the words is the other half of what sounds artificial.
+_DENOISE_GENTLE = "afftdn=nr=10:nf=-40:tn=1:gs=6:rf=-30"
+_DENOISE_STRONG = "afftdn=nr=16:nf=-35:tn=1:gs=10:rf=-32"
 
 # A presence boost around 3 kHz, where consonant cues live. This changes the
 # relative level of the harmonics, not their frequencies, so tone is unaffected.
@@ -140,14 +167,22 @@ class SpeechEnhancement:
         """Whether this asks for any processing."""
         return self.preset != "none"
 
-    def pre_filters(self) -> list[str]:
-        """The filters applied before loudness normalization."""
+    def pre_filters(self, gain_db: float = 0.0) -> list[str]:
+        """
+        The filters applied before loudness normalization.
+
+        `gain_db` is applied ahead of everything else, so the denoiser and the
+        leveler see the clip at the working level rather than at whatever level
+        it had in the film.
+        """
         filters = list(PRESETS[self.preset])
         if self.rnnoise_model is not None:
             # arnndn is a speech-vs-everything-else model, so it goes after the
             # high-pass but ahead of the EQ that shapes what it leaves behind.
             insert_at = 1 if filters else 0
             filters.insert(insert_at, f"arnndn=m={_escape_filter_value(str(self.rnnoise_model))}")
+        if round(gain_db, 2) != 0.0:
+            filters.insert(0, f"volume={gain_db:.2f}dB")
         return filters
 
     def latency_seconds(self) -> float:
@@ -156,6 +191,12 @@ class SpeechEnhancement:
         if self.rnnoise_model is not None:
             latency += ARNNDN_LATENCY_SECONDS
         return latency
+
+    def preroll_seconds(self) -> float:
+        """How much run-up the stateful filters need, or 0 if this preset has none."""
+        if self.rnnoise_model is not None or any(f.startswith(_ADAPTIVE_FILTERS) for f in PRESETS[self.preset]):
+            return ADAPTIVE_PREROLL_SECONDS
+        return 0.0
 
 
 @dataclass(frozen=True)
@@ -186,6 +227,35 @@ def _trim_args(start: float, end: float) -> list[str]:
     return ["-ss", format_ffmpeg_timestamp(start), "-to", format_ffmpeg_timestamp(end)]
 
 
+@dataclass(frozen=True)
+class ReadWindow:
+    """
+    The region to decode from the source, and the trim that cuts it back to the clip.
+
+    Stateful filters need a run-up and delay their output, so the region read is
+    wider than the clip at both ends: `front_trim` drops the run-up and the delay
+    once filtering is done, leaving exactly the region the caller asked for.
+    Reading past the source's end is harmless - ffmpeg stops at EOF - but reading
+    before its start is not, so the run-up is whatever the source can supply.
+    """
+
+    start: float
+    end: float
+    front_trim: float
+
+    def trim_filters(self) -> list[str]:
+        """Filters that drop the leading run-up, or none if there is nothing to drop."""
+        if self.front_trim <= 0:
+            return []
+        return [f"atrim=start={self.front_trim:.6f}", "asetpts=N/SR/TB"]
+
+
+def _read_window(start: float, end: float, preroll: float, latency: float) -> ReadWindow:
+    """Widen [start, end) by the filters' run-up and delay, clamped at the source's start."""
+    read_start = max(0.0, start - preroll)
+    return ReadWindow(start=read_start, end=end + latency, front_trim=(start - read_start) + latency)
+
+
 def format_ffmpeg_timestamp(seconds: float) -> str:
     """Format seconds as an ffmpeg-friendly 'HH:MM:SS.mmm' timestamp."""
     total_ms = round(seconds * 1000)
@@ -197,18 +267,20 @@ def format_ffmpeg_timestamp(seconds: float) -> str:
 
 def measure_loudness(
     source: Path,
-    start: float,
-    end: float,
+    window: ReadWindow,
     enhancement: SpeechEnhancement,
     pre_filters: list[str] | None = None,
 ) -> LoudnessMeasurement:
     """
     Run loudnorm's analysis pass over a region of a clip.
 
+    The window's run-up is filtered and then trimmed off before measuring, the
+    same way the render does it, so the measurement describes the audio that
+    will actually be written rather than a differently-converged copy of it.
+
     Args:
         source: The video or audio file to measure
-        start: Offset of the region to measure, in seconds
-        end: End of the region to measure, in seconds
+        window: The region to measure, and the run-up to filter and discard
         enhancement: Supplies the loudness target the measurement is reported against
         pre_filters: Filters to apply before measuring; defaults to none, so the
             clip is measured as-is
@@ -220,6 +292,7 @@ def measure_loudness(
         LoudnessMeasurementError: If loudnorm prints no parsable JSON report
     """
     chain = list(pre_filters or [])
+    chain += window.trim_filters()
     chain.append(f"loudnorm=I={enhancement.target_lufs}:TP={enhancement.true_peak_dbtp}:LRA={TARGET_LRA}:print_format=json")
 
     result = subprocess.run(
@@ -227,7 +300,7 @@ def measure_loudness(
             "ffmpeg",
             "-hide_banner",
             "-nostats",
-            *_trim_args(start, end),
+            *_trim_args(window.start, window.end),
             "-i",
             str(source),
             "-vn",
@@ -275,11 +348,11 @@ class EnhancementPlan:
     """The filter chain for a clip, plus what it will do to the clip's loudness."""
 
     filters: list[str]
+    window: ReadWindow
     original_lufs: float
     output_lufs: float
     gain_db: float
     gain_was_capped: bool
-    latency_seconds: float
 
     def describe(self) -> str:
         """A one-line summary for the caller's progress output."""
@@ -291,8 +364,8 @@ def plan_enhancement(source: Path, start: float, end: float, enhancement: Speech
     """
     Measure a clip and build the filter chain that will normalize it.
 
-    This runs two analysis passes: one on the untouched clip, to know the total
-    gain the chain is about to apply, and one through the preset's filters,
+    This runs two analysis passes: one on the untouched clip, which sets the
+    gain the chain applies up front, and one through the preset's filters,
     which is what loudnorm's second pass needs to be accurate.
 
     Args:
@@ -310,19 +383,28 @@ def plan_enhancement(source: Path, start: float, end: float, enhancement: Speech
     if not enhancement.enabled:
         return None
 
-    original = measure_loudness(source, start, end, enhancement)
+    original = measure_loudness(source, ReadWindow(start, end, 0.0), enhancement)
     if original.is_silent:
-        return None
-
-    pre_filters = enhancement.pre_filters()
-    processed = measure_loudness(source, start, end, enhancement, pre_filters)
-    if processed.is_silent:
         return None
 
     # Cap the gain measured against the untouched clip, so the cap covers
     # whatever the leveler already added rather than only loudnorm's share.
     output_lufs = min(enhancement.target_lufs, original.input_i + enhancement.max_gain_db)
     gain_was_capped = output_lufs < enhancement.target_lufs
+
+    # Most of that gain is applied first, ahead of the denoiser, so its absolute
+    # thresholds land in the same place on a -25 LUFS clip as on a -54 LUFS one.
+    # loudnorm still runs last and still has the final say on the output level,
+    # but by then it is correcting what the EQ and the leveler added rather than
+    # lifting the clip on its own. A clip that hit the gain cap arrives under the
+    # working level, which is the best that can be done without amplifying its
+    # noise floor past the point of the cap.
+    pre_filters = enhancement.pre_filters(output_lufs - original.input_i)
+
+    window = _read_window(start, end, enhancement.preroll_seconds(), enhancement.latency_seconds())
+    processed = measure_loudness(source, window, enhancement, pre_filters)
+    if processed.is_silent:
+        return None
 
     loudnorm = (
         f"loudnorm=I={output_lufs:.2f}"
@@ -337,12 +419,12 @@ def plan_enhancement(source: Path, start: float, end: float, enhancement: Speech
     )
 
     return EnhancementPlan(
-        filters=[*pre_filters, loudnorm],
+        filters=[*pre_filters, *window.trim_filters(), loudnorm],
+        window=window,
         original_lufs=original.input_i,
         output_lufs=output_lufs,
         gain_db=output_lufs - original.input_i,
         gain_was_capped=gain_was_capped,
-        latency_seconds=enhancement.latency_seconds(),
     )
 
 
@@ -360,25 +442,17 @@ def build_audio_command(source: Path, start: float, end: float, output_path: Pat
     Returns:
         The ffmpeg argument list
     """
-    read_end: float = end
-    filters: list[str] = []
-    if plan is not None:
-        # Read past the requested end by the filters' latency, then drop that
-        # much from the front, so the clip holds exactly the region asked for
-        # rather than the filters' delayed copy of it. Reading past the end of
-        # the source is harmless - ffmpeg stops at EOF, leaving the clip short
-        # by up to the latency, which is well inside the caller's tolerance.
-        read_end = end + plan.latency_seconds
-        filters = list(plan.filters)
-        if plan.latency_seconds > 0:
-            filters += [f"atrim=start={plan.latency_seconds}", "asetpts=N/SR/TB"]
+    # The plan's window is wider than the clip at both ends, and its filters
+    # already carry the trim that cuts the extra back off - see `ReadWindow`.
+    window = plan.window if plan is not None else ReadWindow(start, end, 0.0)
+    filters: list[str] = list(plan.filters) if plan is not None else []
 
     command = [
         "ffmpeg",
         "-hide_banner",
         "-loglevel",
         "error",
-        *_trim_args(start, read_end),
+        *_trim_args(window.start, window.end),
         "-i",
         str(source),
         "-vn",
