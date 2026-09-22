@@ -41,6 +41,14 @@ class NoteInfo(TypedDict):
 _MAX_TEXT_FILENAME_LEN = 50
 _MAX_PINYIN_FILENAME_LEN = 50
 
+# Wavenet rather than Standard: the Standard voices do not compress the first
+# falling tone in a tone4+tone4 pair, so they fully realize both falls and reset
+# the pitch in between. In 請把錢放進錢包裡 that puts a +5.4 semitone jump between
+# 放 and 進, which is heard as a break mid-word. Wavenet-C keeps the same reset
+# down to +1.4 semitones. cmn-TW only offers Standard and Wavenet - the Chirp3-HD
+# and Neural2 voices are cmn-CN (Mainland) only.
+_DEFAULT_VOICE = "cmn-TW-Wavenet-C"
+
 
 def clean_text_for_filename(text: str, max_len: int = _MAX_TEXT_FILENAME_LEN) -> str:
     """Clean a text snippet so it is safe to use inside an audio filename."""
@@ -104,7 +112,7 @@ def setup_credentials() -> None:
 def chinese_tts(
     text: str,
     output_file: str = "output.mp3",
-    voice_name: str = "cmn-TW-Standard-A",
+    voice_name: str = _DEFAULT_VOICE,
     pinyin_hint: str | None = None,
     speaking_rate: float = 1.0,
 ) -> bytes:
@@ -166,11 +174,13 @@ def chinese_tts(
     # Determine language code from voice name (cmn-TW-* or cmn-CN-*)
     language_code = "cmn-CN" if voice_name.startswith("cmn-CN") else "cmn-TW"
 
-    # Build the voice request
+    # Build the voice request. No ssml_gender: it is only a hint used to pick a
+    # voice when none is named, and naming one (as we always do) makes the API
+    # ignore it. Setting it here just invited the reader to believe the default
+    # cmn-TW-Wavenet-C was female.
     voice: Any = texttospeech.VoiceSelectionParams(
         language_code=language_code,
         name=voice_name,
-        ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
     )
 
     # Select the type of audio file
@@ -254,7 +264,7 @@ def update_audio_for_note(
     note_info: NoteInfo,
     target_text: str,
     pinyin_hint: str | None = None,
-    voice_name: str = "cmn-TW-Standard-C",
+    voice_name: str = _DEFAULT_VOICE,
     speaking_rate: float = 1.0,
 ) -> None:
     """
@@ -335,7 +345,7 @@ def find_notes_with_empty_sentence_audio() -> list[int]:
 def process_sentence_audio(
     note_id: int,
     note_info: NoteInfo,
-    voice_name: str = "cmn-TW-Standard-C",
+    voice_name: str = _DEFAULT_VOICE,
     speaking_rate: float = 1.0,
 ) -> bool:
     """
@@ -443,7 +453,7 @@ def process_note_audio(
     note_info: NoteInfo,
     note_type: str,
     use_pinyin_hint: bool,
-    voice_name: str = "cmn-TW-Standard-C",
+    voice_name: str = _DEFAULT_VOICE,
     speaking_rate: float = 1.0,
 ) -> bool:
     """
@@ -489,13 +499,41 @@ def process_note_audio(
     return True
 
 
+def rebuild_note_audio(
+    note_id: int,
+    note_info: NoteInfo,
+    note_type: str,
+    use_pinyin_hint: bool,
+    voice_name: str = _DEFAULT_VOICE,
+    speaking_rate: float = 1.0,
+) -> bool:
+    """
+    Rebuild every audio field on a note tagged with _REBUILD_AUDIO_TAG.
+
+    Always rebuilds the Audio field, and additionally rebuilds Sentence Audio
+    when the note carries a sentence. Unlike the empty-field passes this
+    overwrites existing audio, which is the point of the tag.
+
+    Returns:
+        bool: True only if every applicable field was regenerated, so that a
+        partial rebuild keeps the tag and gets retried on the next run.
+    """
+    rebuilt = process_note_audio(note_id, note_info, note_type, use_pinyin_hint, voice_name=voice_name, speaking_rate=speaking_rate)
+
+    # Note types without a sentence (e.g. Hanzi) yield an empty value here and are skipped.
+    if get_clean_field_value(note_info, "Sentence Traditional"):
+        rebuilt = process_sentence_audio(note_id, note_info, voice_name=voice_name, speaking_rate=speaking_rate) and rebuilt
+
+    return rebuilt
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate TTS audio for Anki notes")
     parser.add_argument("--use-pinyin-hint", action="store_true", help="Use Pinyin field from notes as pronunciation hints")
     parser.add_argument(
         "--voice",
         type=str,
-        default="cmn-TW-Standard-C",
+        default=_DEFAULT_VOICE,
         choices=[
             # Taiwanese Mandarin voices
             "cmn-TW-Standard-A",
@@ -534,7 +572,7 @@ def main() -> None:
         for note_id in find_notes_by_tag(note_type, _REBUILD_AUDIO_TAG):
             note_info = get_note_info(note_id)
             print(f"Rebuilding audio for note {note_id} (tagged with {_REBUILD_AUDIO_TAG})")
-            if process_note_audio(
+            if rebuild_note_audio(
                 note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate
             ):
                 # Remove the rebuild tag after successful audio generation
