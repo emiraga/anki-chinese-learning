@@ -9,13 +9,15 @@
 """
 Fill empty Trimmed Audio fields on mature LocalMediaClips notes.
 
-This script finds every LocalMediaClips note whose review interval is at least
-10 days and whose "Trimmed Audio" field is empty. For each matching note it
-takes the clip at "RelativeFilePath" (resolved under MEDIA_DIR), cuts off the
-first "trimDurationStart"
-seconds and the last "trimDurationEnd" seconds, extracts the remaining audio to
-an MP3, uploads it to Anki's media collection, points the "Trimmed Audio"
-field at it with a [sound:...] tag, and moves the note's cards to the
+This script finds every LocalMediaClips note whose "Trimmed Audio" field is
+empty and that is either mature (review interval at least 10 days) or tagged
+"chinese::media-trimmed-audio", which is how a note is picked out by hand
+before it matures. For each matching note it takes the clip at
+"RelativeFilePath" (resolved under MEDIA_DIR), cuts off the first
+"trimDurationStart" seconds and the last "trimDurationEnd" seconds, extracts
+the remaining audio to an MP3, uploads it to Anki's media collection, points
+the "Trimmed Audio" field at it with a [sound:...] tag, tags the note
+"chinese::media-trimmed-audio", and moves the note's cards to the
 "Chinese::MediaClips" deck.
 
 By default the audio is extracted exactly as it is in the film. Passing
@@ -26,7 +28,7 @@ alters the pitch contour that carries Mandarin tone. See
 
 The Anki search used is:
 
-    note:LocalMediaClips prop:ivl>=10 "Trimmed Audio:"
+    note:LocalMediaClips (prop:ivl>=10 OR tag:chinese::media-trimmed-audio) "Trimmed Audio:"
 
 The quoted "Trimmed Audio:" matches an empty field whose name contains a space.
 
@@ -42,7 +44,7 @@ To re-cut clips that already have audio - for instance after changing the
 preset - select them with a query and pass --overwrite, which replaces the
 stored MP3:
 
-    ./fill_trimmed_audio.py --overwrite --query 'note:LocalMediaClips prop:ivl>=10'
+    ./fill_trimmed_audio.py --overwrite --query 'note:LocalMediaClips tag:chinese::media-trimmed-audio'
 
 Requirements:
     ffmpeg and ffprobe must be installed (brew install ffmpeg on macOS)
@@ -59,6 +61,7 @@ from pathlib import Path
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
+    add_tags,
     find_cards_by_query,
     find_notes_by_query,
     get_field_value,
@@ -86,10 +89,14 @@ CLIP_FIELD = "RelativeFilePath"
 TRIM_START_FIELD = "trimDurationStart"
 TRIM_END_FIELD = "trimDurationEnd"
 DESTINATION_DECK = "Chinese::MediaClips"
+# Added to every note this script fills, and also a way to hand-pick a note that
+# has not matured yet: the default search takes tagged notes as well as mature
+# ones.
+TAG = "chinese::media-trimmed-audio"
 
 # A field name followed by a bare ":" matches an empty field; quotes are needed
 # because the field name contains a space.
-SEARCH_QUERY = f'note:{NOTE_TYPE} prop:ivl>=10 "{AUDIO_FIELD}:"'
+SEARCH_QUERY = f'note:{NOTE_TYPE} (prop:ivl>=10 OR tag:{TAG}) "{AUDIO_FIELD}:"'
 
 # Produced audio clips are validated with ffprobe: their duration must match the
 # requested interval within this many seconds or this fraction of the expected
@@ -200,7 +207,7 @@ def process_note(note_id: int, dry_run: bool, enhancement: SpeechEnhancement, ov
     print(f"Note {note_id}: {clip_path.name} [{format_ffmpeg_timestamp(trim_start)} -> {format_ffmpeg_timestamp(end)}] -> {audio_filename}")
 
     if dry_run:
-        print(f"  [DRY RUN] Would store '{audio_filename}', set {AUDIO_FIELD}, and move card(s) to '{DESTINATION_DECK}'")
+        print(f"  [DRY RUN] Would store '{audio_filename}', set {AUDIO_FIELD}, add tag '{TAG}', and move card(s) to '{DESTINATION_DECK}'")
         return True
 
     with tempfile.TemporaryDirectory(prefix="trimmed_audio_") as tmp_dir:
@@ -211,6 +218,7 @@ def process_note(note_id: int, dry_run: bool, enhancement: SpeechEnhancement, ov
 
     store_media_file(audio_filename, audio_data)
     update_note_audio_field(note_id, audio_filename, field_name=AUDIO_FIELD)
+    add_tags([note_id], TAG)
 
     card_ids = find_cards_by_query(f"nid:{note_id}")
     if not card_ids:
@@ -231,7 +239,7 @@ def main() -> None:
         type=str,
         default=SEARCH_QUERY,
         metavar="QUERY",
-        help="Anki search query for the notes to process (default: mature LocalMediaClips notes with empty Trimmed Audio)",
+        help=f"Anki search query for the notes to process (default: mature or '{TAG}'-tagged {NOTE_TYPE} notes with empty {AUDIO_FIELD})",
     )
     parser.add_argument(
         "--overwrite",
