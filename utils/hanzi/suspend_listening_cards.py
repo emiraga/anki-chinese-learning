@@ -14,10 +14,7 @@ Each query is run sequentially and its matched cards are suspended before moving
 on to the next query. Only cards whose note's "Traditional" field contains fewer
 than 4 characters are suspended; longer phrases are kept in listening review.
 Cards are suspended once they are considered well-learned enough that continued
-listening review is no longer needed:
-
-1. deck:Chinese::Listening card:2 -is:suspended prop:reps>=5 prop:lapses=0
-2. deck:Chinese::Listening card:2 -is:suspended prop:reps>=5 prop:ivl>=50
+listening review is no longer needed. See: QUERIES
 """
 
 import sys
@@ -38,7 +35,7 @@ from shared.cli import parse_no_arguments
 
 QUERIES = [
     "deck:Chinese::Listening -is:suspended prop:reps>=5 prop:lapses=0",
-    "deck:Chinese::Listening -is:suspended prop:reps>=5 prop:ivl>=50",
+    "deck:Chinese::Listening -is:suspended prop:reps>=5 prop:ivl>=53",
 ]
 
 IGNORED_TAG = "card-listening-ignored-on-purpose"
