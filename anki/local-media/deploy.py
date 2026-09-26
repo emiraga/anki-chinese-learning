@@ -18,11 +18,14 @@ from pathlib import Path
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "utils"))
 from shared.anki_model_deploy import deploy_model_templates
+from shared.cli import parse_no_arguments
 
 MODEL_NAME = "LocalMediaClips"
 
 
 def main() -> None:
+    parse_no_arguments(__doc__)
+
     deploy_model_templates(MODEL_NAME, Path(__file__).resolve().parent)
 
 

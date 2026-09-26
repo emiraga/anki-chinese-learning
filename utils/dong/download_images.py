@@ -26,6 +26,7 @@ from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.cli import parse_no_arguments
 from shared.project_paths import DONG_DIR as JSON_DIR
 from shared.project_paths import DONG_IMAGES_DIR as IMAGES_DIR
 
@@ -171,6 +172,8 @@ def process_json_file(json_path: Path) -> dict[str, Any]:
 
 def main():
     """Main function to process all JSON files."""
+    parse_no_arguments(__doc__)
+
     print(f"Processing JSON files from: {JSON_DIR}")
     print(f"Downloading images to: {IMAGES_DIR}")
     print()

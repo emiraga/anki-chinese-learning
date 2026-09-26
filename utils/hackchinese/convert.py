@@ -15,10 +15,13 @@ from pathlib import Path
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.cli import parse_no_arguments
 from shared.project_paths import HACKCHINESE_OUTLIER_DIR, HACKCHINESE_WORDS_DIR
 
 
 def main():
+    parse_no_arguments(__doc__)
+
     words_dir = HACKCHINESE_WORDS_DIR
     outlier_dir = HACKCHINESE_OUTLIER_DIR
 

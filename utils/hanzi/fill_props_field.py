@@ -26,6 +26,7 @@ from shared.anki_utils import (
     update_note_fields,
 )
 from shared.character_discovery import extract_all_characters
+from shared.cli import parse_no_arguments
 from shared.gemini_utils import create_gemini_client, gemini_generate
 from shared.pinyin_utils import remove_tone_marks
 from shared.project_paths import load_pos_mapping
@@ -877,6 +878,8 @@ def main():
     POS, POS Description, Examples JSON, Same Syllable Traditional, and
     Sentence Traditional fields
     """
+    parse_no_arguments(__doc__)
+
     # Load the prop to Hanzi mapping first
     print("=== Loading Props mapping ===")
     prop_hanzi_map = load_prop_hanzi_mapping()

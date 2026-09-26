@@ -25,6 +25,7 @@ from bs4 import BeautifulSoup, Tag
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.cli import parse_no_arguments
 from shared.project_paths import RTEGA_DIR, RTEGA_HTML_DIR
 
 
@@ -522,6 +523,8 @@ def save_character_json(char_data: dict[str, Any], output_dir: Path):
 
 def main():
     """Main function to process all HTML files."""
+    parse_no_arguments(__doc__)
+
     # Input and output directories
     input_dir = RTEGA_HTML_DIR
     output_dir = RTEGA_DIR

@@ -19,6 +19,7 @@ from pathlib import Path
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from shared.anki_utils import anki_connect_request
+from shared.cli import parse_no_arguments
 
 
 def sync() -> None:
@@ -29,6 +30,7 @@ def sync() -> None:
 
 
 if __name__ == "__main__":
+    parse_no_arguments(__doc__)
     try:
         sync()
     except Exception as e:

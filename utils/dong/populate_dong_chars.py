@@ -9,10 +9,15 @@ Script to populate individual character JSON files from a bulk JSON input file.
 Filters out invalid entries and creates one file per character in public/data/dong/
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
 from typing import Any
+
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.project_paths import DONG_DIR
 
 
 def is_valid_char_data(data: dict[str, Any]) -> bool:
@@ -34,7 +39,7 @@ def sanitize_filename(char: str) -> str:
     return char.strip()
 
 
-def populate_dong_chars(input_file_path: str) -> None:
+def populate_dong_chars(input_file_path: Path) -> None:
     """
     Process the input JSON file and create individual character files.
 
@@ -44,13 +49,13 @@ def populate_dong_chars(input_file_path: str) -> None:
     print(f"Reading input file: {input_file_path}")
 
     # Read the input JSON file
-    with Path(input_file_path).open(encoding="utf-8") as f:
+    with input_file_path.open(encoding="utf-8") as f:
         entries = json.load(f)
 
     print(f"Found {len(entries)} total entries")
 
     # Create output directory if it doesn't exist
-    output_dir = Path("public/data/dong")
+    output_dir = DONG_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir.absolute()}")
 
@@ -113,14 +118,13 @@ def populate_dong_chars(input_file_path: str) -> None:
 
 def main():
     """Main entry point for the script."""
-    if len(sys.argv) < 2:
-        print("Usage: python utils/dong/populate_dong_chars.py <input-json-file>")
-        print("Example: python utils/dong/populate_dong_chars.py data.json")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("input_file", type=Path, help="Bulk JSON file to split into one file per character")
+    args = parser.parse_args()
 
-    input_file_path = sys.argv[1]
+    input_file_path: Path = args.input_file
 
-    if not Path(input_file_path).exists():
+    if not input_file_path.exists():
         print(f"Error: Input file not found: {input_file_path}")
         sys.exit(1)
 

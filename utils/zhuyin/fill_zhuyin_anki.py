@@ -17,6 +17,7 @@ from pathlib import Path
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import AnkiNoteInfo, find_notes_by_query, get_field_value, iter_notes_info, update_note_fields
+from shared.cli import parse_no_arguments
 from shared.pinyin_utils import pinyin_to_zhuyin
 
 NOTE_TYPES = ["TOCFL", "Hanzi"]
@@ -79,6 +80,8 @@ def main() -> None:
     """
     Main function to process all note types and update Zhuyin fields
     """
+    parse_no_arguments(__doc__)
+
     for note_type in NOTE_TYPES:
         print(f"\n=== Processing {note_type} ===")
         note_ids = find_notes_with_empty_zhuyin(note_type)

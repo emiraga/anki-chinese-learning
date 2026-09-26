@@ -6,6 +6,15 @@
 # ]
 # ///
 
+"""
+Compare the TOCFL word lists with the TOCFL notes in Anki.
+
+Reads the TOCFL CSV exports (one per level), aggregates every entry by its
+traditional form, and reports where the part-of-speech tags on the Anki notes
+disagree with the CSV. Notes with an empty Context field are filled in from the
+CSV.
+"""
+
 import csv
 import re
 import sys
@@ -16,6 +25,7 @@ from typing import TypedDict
 # Add shared utils to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import find_notes_by_query, get_field_value, get_notes_info, update_note_fields
+from shared.cli import parse_no_arguments
 from shared.project_paths import TOCFL_CSV_DIR, load_pos_mapping
 
 
@@ -469,7 +479,9 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
         print(f"Updated {len(context_updates)} Context fields")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    parse_no_arguments(__doc__)
+
     words = load_all()
     print(f"Loaded {len(words)} words across {len(LEVEL_ORDER)} levels")
     for level in LEVEL_ORDER:
@@ -481,3 +493,7 @@ if __name__ == "__main__":
 
     # Compare POS with Anki
     compare_pos_with_anki(mapping)
+
+
+if __name__ == "__main__":
+    main()

@@ -17,6 +17,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 # Raw downloads, kept out of `public/` because the app never serves them.
 RAW_DATA_DIR = PROJECT_ROOT / "data"
 FREQUENCY_CSV = RAW_DATA_DIR / "frequency.csv"
+PINYIN_TABLE_CSV = RAW_DATA_DIR / "table-initial-final.csv"
 HACKCHINESE_WORDS_DIR = RAW_DATA_DIR / "hackchinese" / "words"
 PLECO_OUTLIER_HTML_DIR = RAW_DATA_DIR / "pleco" / "outlier_series"
 PLECO_OUTLIER_HTML_TC_DIR = RAW_DATA_DIR / "pleco" / "outlier_series_tc"
@@ -39,6 +40,8 @@ YELLOWBRIDGE_PROCESSED_JSON = PUBLIC_DATA_DIR / "yellowbridge" / "processed.json
 
 DONG_IMAGES_DIR = PROJECT_ROOT / "public" / "images" / "dong"
 
+# Files the app imports directly from `app/data/`.
+PINYIN_TABLE_JSON = PROJECT_ROOT / "app" / "data" / "pinyin_table.json"
 POS_JSON = PROJECT_ROOT / "app" / "data" / "pos.json"
 
 

@@ -34,6 +34,7 @@ from shared.anki_utils import (
     iter_notes_info,
     update_note_fields,
 )
+from shared.cli import parse_no_arguments
 
 
 def clean_pinyin(pinyin_text: str) -> str:
@@ -169,6 +170,8 @@ def main():
     """
     Main function to clean up single-character phrase notes
     """
+    parse_no_arguments(__doc__)
+
     print("=== Starting phrase note cleanup ===")
 
     # Step 1: Extract all Hanzi notes

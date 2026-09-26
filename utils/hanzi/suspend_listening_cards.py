@@ -34,6 +34,7 @@ from shared.anki_utils import (
     get_notes_info,
     suspend_cards,
 )
+from shared.cli import parse_no_arguments
 
 QUERIES = [
     "deck:Chinese::Listening -is:suspended prop:reps>=5 prop:lapses=0",
@@ -53,6 +54,8 @@ def _is_short_traditional(note: AnkiNoteInfo) -> bool:
 
 def main():
     """Suspend cards matched by each query sequentially."""
+    parse_no_arguments(__doc__)
+
     print("=== Suspending listening cards ===")
 
     total_suspended = 0
