@@ -39,25 +39,16 @@ and Context (HTML with the previous, current (bold), and next subtitle
 sentences, interleaved with the translations that fall anywhere in that
 window by timestamp).
 
-Usage:
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --all --reencode
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --all --webm
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --translation movie.en.srt --overlap-min 0.2
-    ./cut_video_by_subtitles.py movie.zh.srt movie.mkv --translation movie.en.srt --anki-prefix apple_of_my_eye_
-
 Requirements:
     ffmpeg must be installed (brew install ffmpeg on macOS)
 
 Used commands:
     ./utils/video/cut_video_by_subtitles.py \
-    /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.zh.srt \
-    /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.mkv \
+        ./you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.zh.srt \
+        ./you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.mkv \
     --translation-subtitle \
-    /Users/emirb/In\ Progress\ Temporary/you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.en.srt \
-    --padding-start 0.3 --padding-end 0.6 --reencode --overlap-min 0.1 --anki-prefix apple_of_my_eye_ --webm
+        ./you\ are\ the\ apple\ of\ my\ eye/You\ are\ the\ Apple\ of\ My\ Eye\ 2011\ 1080p\ x264.en.srt \
+    --padding-start 0.4 --padding-end 1.0 --reencode --overlap-min 0.1 --anki-prefix apple_of_my_eye_ --webm
 
     MEDIA_DIR="~/InProgressTemporary/you are the apple of my eye" yarn dev
 
@@ -598,7 +589,7 @@ def main() -> None:
         epilog="""\
 Examples:
   %(prog)s movie.zh.srt movie.mkv
-  %(prog)s movie.zh.srt movie.mkv --mp3 --padding-start 0.2 --padding-end 0.2
+  %(prog)s movie.zh.srt movie.mkv --mp3 --padding-start 0.4 --padding-end 1.0
   %(prog)s movie.zh.srt movie.mkv --limit 10 --output /path/to/clips
   %(prog)s movie.zh.srt movie.mkv --all --reencode
   %(prog)s movie.zh.srt movie.mkv --all --webm
