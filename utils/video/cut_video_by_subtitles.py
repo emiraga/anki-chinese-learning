@@ -81,7 +81,7 @@ from typing import Any
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import anki_connect_request, find_notes_by_query, get_notes_info, update_note_fields
+from shared.anki_utils import anki_connect_request, find_notes_by_query, get_field_value, get_notes_info, update_note_fields
 from shared.character_discovery import extract_all_characters, extract_known_chars
 
 # Encodings to try when reading subtitle files, in order of likelihood. utf-16 is
@@ -380,7 +380,7 @@ class LocalMediaClipsManager:
 
         existing: dict[str, Any] = {}
         for note in get_notes_info(note_ids):
-            note_id_value = note["fields"].get("ID", {}).get("value", "").strip()
+            note_id_value = get_field_value(note, "ID")
             if note_id_value:
                 existing[note_id_value] = note
         return existing

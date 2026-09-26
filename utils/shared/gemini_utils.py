@@ -4,10 +4,13 @@ Shared utilities for Google Gemini API interactions.
 This module provides a common interface for working with the Google Gemini API.
 """
 
+import json
 import os
 import time
 from pathlib import Path
 from typing import Protocol
+
+from .google_credentials import GEMINI_API_KEY_PATH, GOOGLE_CREDENTIALS_PATH
 
 
 # The google-genai package ships no type information, so the parts of its client
@@ -62,24 +65,17 @@ def get_gemini_api_key(credentials_path: str | Path | None = None) -> str:
     """
     api_key = None
 
-    # Find project root (parent of utils/shared)
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parent.parent
-
     # Try to get from API key file first
-    api_key_path = project_root / "utils" / "tts" / "gcloud_api_key.txt"
-    if api_key_path.exists():
-        with api_key_path.open() as f:
+    if GEMINI_API_KEY_PATH.exists():
+        with GEMINI_API_KEY_PATH.open() as f:
             api_key = f.read().strip()
             if api_key:
                 return api_key
 
     # Try credentials JSON file
-    credentials_path = project_root / "utils" / "tts" / "gcloud_account.json" if credentials_path is None else Path(credentials_path)
+    credentials_path = GOOGLE_CREDENTIALS_PATH if credentials_path is None else Path(credentials_path)
 
     if credentials_path.exists():
-        import json
-
         with credentials_path.open() as f:
             creds = json.load(f)
             api_key = creds.get("gemini_api_key")

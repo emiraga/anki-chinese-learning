@@ -110,6 +110,24 @@ def syllable_with_tone(syllable: str, tone: int) -> str:
         return syllable
 
 
+def pinyin_to_zhuyin(pinyin: str) -> str:
+    """
+    Convert pinyin to its zhuyin (bopomofo) spelling.
+
+    Args:
+        pinyin: Pinyin with tone marks (e.g., "hǎo")
+
+    Returns:
+        The zhuyin spelling (e.g., "ㄏㄠˇ"), or an empty string for empty input
+
+    Raises:
+        Exception: If the pinyin cannot be converted
+    """
+    if not pinyin or not pinyin.strip():
+        return ""
+    return dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin)
+
+
 def pinyin_with_zhuyin(pinyin: str) -> str:
     """
     Convert pinyin to 'pinyin (zhuyin)' format.
@@ -121,8 +139,7 @@ def pinyin_with_zhuyin(pinyin: str) -> str:
         Pinyin with zhuyin appended (e.g., "hǎo (ㄏㄠˇ)")
     """
     try:
-        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin)
-        return f"{pinyin} ({zhuyin})"
+        return f"{pinyin} ({pinyin_to_zhuyin(pinyin)})"
     except Exception:
         return pinyin
 
@@ -142,8 +159,7 @@ def pinyin_to_zhuyin_toneless(pinyin: str) -> str:
         The first symbol is the bopomofo "initial".
     """
     try:
-        zhuyin = dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin)
-        return "".join(c for c in zhuyin if c not in ZHUYIN_TONE_MARKS)
+        return "".join(c for c in pinyin_to_zhuyin(pinyin) if c not in ZHUYIN_TONE_MARKS)
     except Exception:
         return ""
 

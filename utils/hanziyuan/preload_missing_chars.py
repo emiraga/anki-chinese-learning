@@ -110,14 +110,11 @@ def main():
         print(f"Error: Directory not found: {args.info_dir}")
         return 1
 
-    # Get the project root
-    project_root = Path.cwd()
-
     # Use shared utility to discover all characters from Anki and data directories
     # IMPORTANT: Use normalize=True to convert compatibility variants (like U+FA17)
     # to their canonical forms (like U+76CA)
     all_chars, char_frequency = discover_all_characters(
-        project_root, include_anki=not args.skip_anki, include_folders=not args.skip_folders, normalize=True
+        include_anki=not args.skip_anki, include_folders=not args.skip_folders, normalize=True
     )
 
     # Extract components from existing converted JSON files

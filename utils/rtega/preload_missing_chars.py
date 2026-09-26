@@ -22,6 +22,7 @@ from shared.character_discovery import (
     extract_all_characters,
     normalize_cjk_char,
 )
+from shared.project_paths import PROJECT_ROOT, RTEGA_DIR, RTEGA_HTML_DIR
 
 
 def get_component_chars_from_rtega_files(rtega_data_dir: Path):
@@ -39,7 +40,7 @@ def get_component_chars_from_rtega_files(rtega_data_dir: Path):
     component_frequency = Counter()
 
     # JSON files are in public/data/rtega, not data/rtega
-    json_dir = rtega_data_dir.parent.parent / "public" / "data" / "rtega"
+    json_dir = RTEGA_DIR
 
     if not json_dir.exists():
         print(f"Warning: RTEGA JSON directory does not exist: {json_dir}")
@@ -182,12 +183,8 @@ def main():
     parser.add_argument("--char", "-c", type=str, help="Download data for a single character instead of scanning for missing ones")
     args = parser.parse_args()
 
-    # Get the project root directory (two levels up from this script)
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent.parent
-    rtega_data_dir = project_root / "data" / "rtega"
+    rtega_data_dir = RTEGA_HTML_DIR
 
-    print(f"Project root: {project_root}")
     print(f"RTEGA data directory: {rtega_data_dir}")
 
     # Create rtega data directory if it doesn't exist
@@ -215,7 +212,7 @@ def main():
         return
 
     # Use shared utility to discover all characters from Anki and data directories
-    all_chars, char_frequency = discover_all_characters(project_root, include_anki=True, normalize=True)
+    all_chars, char_frequency = discover_all_characters(include_anki=True, normalize=True)
 
     # Get component characters from existing rtega files (script-specific)
     component_chars, component_frequency = get_component_chars_from_rtega_files(rtega_data_dir)
@@ -294,11 +291,11 @@ def main():
         print("Running parse_rtega_html.py to process downloaded files...")
         print(f"{'=' * 60}\n")
 
-        parse_script = script_dir / "parse_rtega_html.py"
+        parse_script = Path(__file__).resolve().parent / "parse_rtega_html.py"
 
         try:
             # Run the parse script with real-time output
-            result = subprocess.run([str(parse_script)], cwd=project_root, text=True)
+            result = subprocess.run([str(parse_script)], cwd=PROJECT_ROOT, text=True)
 
             print(f"\n{'=' * 60}")
             if result.returncode == 0:

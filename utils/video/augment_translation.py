@@ -22,13 +22,13 @@ Usage:
 """
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import find_notes_by_query, get_field_value, get_notes_info, update_note_fields
+from shared.google_credentials import setup_google_credentials
 from shared.translation_utils import cache_translation, get_translation_cache, translate_text_with_google
 
 NOTE_TYPE = "LocalMediaClips"
@@ -109,18 +109,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Get the project root directory
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parent.parent
-
-    # Set up credentials
-    credentials_path = Path(args.credentials) if args.credentials else project_root / "utils" / "tts" / "gcloud_account.json"
-
-    if not credentials_path.exists():
-        print(f"Error: Credentials file not found: {credentials_path}")
-        sys.exit(1)
-
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
+    setup_google_credentials(args.credentials)
 
     if args.dry_run:
         print("Running in DRY RUN mode - no notes will be modified\n")

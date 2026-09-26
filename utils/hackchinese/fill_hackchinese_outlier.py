@@ -6,100 +6,24 @@
 # ]
 # ///
 
-import argparse
-import json
+"""
+Fill the "HackChineseOutlier Etymology" field from HackChinese's Outlier data.
+
+The note walking, field writing and command-line handling are shared with the
+other fill scripts (see utils/shared/note_filler.py); what lives here is the
+content this field holds.
+"""
+
+import sys
 from pathlib import Path
 from typing import Any
 
-import requests
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.note_filler import build_arg_parser, fill_note_field
+from shared.project_paths import HACKCHINESE_OUTLIER_DIR, load_char_json
 
-
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
-
-
-def get_note_info(note_id: int) -> dict[str, Any]:
-    """
-    Get detailed information about a note
-
-    Args:
-        note_id (int): The note ID
-
-    Returns:
-        dict: Note information
-    """
-    response = anki_connect_request("notesInfo", {"notes": [note_id]})
-
-    if response and response.get("result"):
-        return response["result"][0]
-
-    raise Exception(f"No note found for ID {note_id}")
-
-
-def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
-    """
-    Update a specific field of a note
-
-    Args:
-        note_id (int): The note ID
-        field_name (str): Name of the field to update
-        field_value (str): Value to set
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    fields = {field_name: field_value}
-
-    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
-
-    if response and response.get("error") is None:
-        return True
-    raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
-
-
-def load_hackchinese_outlier_data(character: str) -> dict[str, Any] | None:
-    """
-    Load the HackChinese Outlier data for a given character
-
-    Args:
-        character (str): The Chinese character
-
-    Returns:
-        dict: Character data or None if not found
-    """
-    outlier_dir = Path(__file__).parent.parent.parent / "public" / "data" / "hackchinese" / "outlier"
-    json_file = outlier_dir / f"{character}.json"
-
-    if not json_file.exists():
-        return None
-
-    try:
-        with json_file.open(encoding="utf-8") as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading HackChinese Outlier data for {character}: {e}")
-        return None
+FIELD_NAME = "HackChineseOutlier Etymology"
 
 
 def process_explanation_text(text: str) -> str | None:
@@ -152,116 +76,17 @@ def generate_hackchinese_outlier_html(outlier_data: dict[str, Any]) -> str | Non
     return process_explanation_text(explanation)
 
 
-def update_hackchinese_outlier_for_note_types(
-    note_types: list[str], dry_run: bool = False, limit: int | None = None, overwrite: bool = False, character: str | None = None
-) -> None:
-    """
-    Update notes with HackChineseOutlier Etymology for specified note types
-
-    Args:
-        note_types (list): List of note type names to process (e.g., ["Hanzi", "TOCFL"])
-        dry_run (bool): If True, only print what would be updated without making changes
-        limit (int): If specified, only process this many notes total
-        overwrite (bool): If True, overwrite existing content in the field
-        character (str): If specified, only process this specific character
-    """
-    all_note_ids: list[int] = []
-
-    # Collect notes from all specified note types
-    for note_type in note_types:
-        # Build search query
-        search_query = f"note:{note_type}"
-        if character:
-            search_query += f" Traditional:{character}"
-        else:
-            search_query += " Traditional:_"
-
-        if not overwrite:
-            # Exclude notes that already have content in the HackChineseOutlier Etymology field
-            search_query += ' -"HackChineseOutlier Etymology:_*"'
-
-        response = anki_connect_request("findNotes", {"query": search_query})
-        if response and response.get("result"):
-            note_ids = response["result"]
-            char_info = f" for character '{character}'" if character else ""
-            print(f"Found {len(note_ids)} {note_type} notes{char_info}")
-            all_note_ids.extend(note_ids)
-        else:
-            char_info = f" for character '{character}'" if character else ""
-            print(f"No {note_type} notes found{char_info}")
-
-    if not all_note_ids:
-        print("No notes found to process")
-        return
-
-    print(f"\nTotal notes across all types: {len(all_note_ids)}")
-
-    if limit and not character:
-        all_note_ids = all_note_ids[:limit]
-        print(f"Processing limited to {limit} notes")
-
-    updated_count = 0
-    skipped_count = 0
-    error_count = 0
-
-    for i, note_id in enumerate(all_note_ids, 1):
-        try:
-            note_info = get_note_info(note_id)
-            note_type = note_info.get("modelName", "Unknown")
-
-            # Get the Traditional field (which contains the hanzi character)
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            traditional = traditional[0:1]
-
-            if not traditional:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}): No Traditional field, skipping")
-                skipped_count += 1
-                continue
-
-            # Load the HackChinese Outlier data from JSON file
-            outlier_data = load_hackchinese_outlier_data(traditional)
-
-            if not outlier_data:
-                skipped_count += 1
-                continue
-
-            # Generate the etymology HTML
-            etymology_html = generate_hackchinese_outlier_html(outlier_data)
-
-            if not etymology_html:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): No etymology data to generate, skipping")
-                skipped_count += 1
-                continue
-
-            if dry_run:
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Would update with etymology")
-                print(f"  Etymology HTML:\n{etymology_html}")
-                updated_count += 1
-            else:
-                # Update the note
-                update_note_field(note_id, "HackChineseOutlier Etymology", etymology_html)
-                print(f"[{i}/{len(all_note_ids)}] Note {note_id} ({note_type}, {traditional}): Updated successfully")
-                updated_count += 1
-
-        except Exception as e:
-            print(f"[{i}/{len(all_note_ids)}] Error processing note {note_id}: {e}")
-            error_count += 1
-            raise
-
-    print("\n" + "=" * 60)
-    print("Summary:")
-    print(f"  Total notes: {len(all_note_ids)}")
-    print(f"  Updated: {updated_count}")
-    print(f"  Skipped: {skipped_count}")
-    print(f"  Errors: {error_count}")
-    if dry_run:
-        print("  (DRY RUN - no changes were made)")
-    print("=" * 60)
+def render_hackchinese_outlier(character: str) -> str | None:
+    """Build the field's content for one character, or None when HackChinese has no data for it."""
+    outlier_data = load_char_json(HACKCHINESE_OUTLIER_DIR, character)
+    if not outlier_data:
+        return None
+    return generate_hackchinese_outlier_html(outlier_data)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Fill HackChineseOutlier Etymology field for notes in Anki",
+def main() -> None:
+    parser = build_arg_parser(
+        description=f"Fill {FIELD_NAME} field for notes in Anki",
         epilog="""
 Examples:
   %(prog)s --dry-run                           Preview changes without updating
@@ -269,33 +94,29 @@ Examples:
   %(prog)s                                     Update all Hanzi notes
   %(prog)s --note-types Hanzi TOCFL            Update both Hanzi and TOCFL notes
   %(prog)s --limit 100                         Update first 100 notes only
-  %(prog)s --character `                      Update specific character only
-  %(prog)s --character ` --overwrite          Rebuild specific character
+  %(prog)s --character 你                      Update specific character only
+  %(prog)s --character 你 --overwrite          Rebuild specific character
 
 This script generates content for the "HackChineseOutlier Etymology" field from
 HackChinese Outlier dictionary data. It uses form_explanation_trad and falls back
 to form_explanation_simp if not available.
 
+Only single-character notes are processed.
+
 The script only updates empty fields and skips notes that already have content.
 Requires Anki running with AnkiConnect addon installed.
         """,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument("--dry-run", action="store_true", help="Preview changes without actually updating notes")
-    parser.add_argument("--limit", type=int, metavar="N", help="Limit number of notes to process (useful for testing)")
-    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing content in the field (default: skip filled fields)")
-    parser.add_argument("--character", type=str, metavar="CHAR", help="Process only this specific character (e.g., `)")
-    parser.add_argument(
-        "--note-types",
-        nargs="+",
-        default=["Hanzi", "TOCFL"],
-        metavar="TYPE",
-        help="Note types to process (default: Hanzi, TOCFL). Examples: Hanzi, TOCFL",
     )
     args = parser.parse_args()
 
-    update_hackchinese_outlier_for_note_types(
-        note_types=args.note_types, dry_run=args.dry_run, limit=args.limit, overwrite=args.overwrite, character=args.character
+    fill_note_field(
+        field_name=FIELD_NAME,
+        render=render_hackchinese_outlier,
+        note_types=args.note_types,
+        dry_run=args.dry_run,
+        limit=args.limit,
+        overwrite=args.overwrite,
+        character=args.character,
     )
 
 

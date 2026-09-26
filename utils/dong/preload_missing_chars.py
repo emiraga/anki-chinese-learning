@@ -19,6 +19,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.character_discovery import discover_all_characters, extract_all_characters
+from shared.project_paths import DONG_DIR
 
 
 def get_component_chars_from_dong_files(dong_data_dir: Path, top_words_share_threshold: float = 0.02) -> tuple[set[str], "Counter[str]"]:
@@ -102,16 +103,12 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Limit the number of characters to preload (processes most frequent first)")
     args = parser.parse_args()
 
-    # Get the project root directory (two levels up from this script)
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent.parent
-    dong_data_dir = project_root / "public" / "data" / "dong"
+    dong_data_dir = DONG_DIR
 
-    print(f"Project root: {project_root}")
     print(f"Dong data directory: {dong_data_dir}")
 
     # Use shared utility to discover all characters from Anki and data directories
-    all_chars, char_frequency = discover_all_characters(project_root, include_anki=not args.no_anki, normalize=False)
+    all_chars, char_frequency = discover_all_characters(include_anki=not args.no_anki, normalize=False)
 
     # Get component and description characters from existing dong files (script-specific)
     ref_chars, ref_frequency = get_component_chars_from_dong_files(dong_data_dir)
@@ -215,7 +212,7 @@ def main():
     print("Running populate script...")
     print(f"{'=' * 60}\n")
 
-    populate_script = script_dir / "populate_dong_chars.py"
+    populate_script = Path(__file__).resolve().parent / "populate_dong_chars.py"
     downloads_dir = Path.home() / "Downloads"
     downloads_pattern = str(downloads_dir / "keyvaluepairs-*")
 

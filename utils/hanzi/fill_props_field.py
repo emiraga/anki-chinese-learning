@@ -14,28 +14,21 @@ import sys
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from anki_utils import anki_connect_request
-from gemini_utils import create_gemini_client, gemini_generate
-from pinyin_utils import remove_tone_marks
-
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import (
+    AnkiNoteInfo,
+    cards_to_notes,
+    find_cards_by_query,
+    find_notes_by_query,
+    get_field_value,
+    get_notes_info,
+    iter_notes_info,
+    update_note_fields,
+)
 from shared.character_discovery import extract_all_characters
-
-
-def load_pos_mapping():
-    """
-    Load POS mapping from pos.json file
-
-    Returns:
-        dict: Dictionary mapping POS codes to [name, chinese_name, examples]
-    """
-    # Get the path to pos.json relative to this script
-    script_dir = Path(__file__).resolve().parent
-    pos_json_path = script_dir.parent.parent / "app" / "data" / "pos.json"
-
-    with pos_json_path.open(encoding="utf-8") as f:
-        return json.load(f)
+from shared.gemini_utils import create_gemini_client, gemini_generate
+from shared.pinyin_utils import remove_tone_marks
+from shared.project_paths import load_pos_mapping
 
 
 def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple[str, list[str]]:
@@ -460,12 +453,11 @@ def load_prop_hanzi_mapping():
         dict: Dictionary mapping prop names to Hanzi characters
     """
     # Search for all Props notes
-    response = anki_connect_request("findNotes", {"query": "note:Props"})
+    note_ids = find_notes_by_query("note:Props")
 
-    if not response or not response.get("result"):
+    if not note_ids:
         raise Exception("No Props notes found")
 
-    note_ids = response["result"]
     print(f"Found {len(note_ids)} Props notes")
 
     # Get detailed information about all Props notes
@@ -474,8 +466,8 @@ def load_prop_hanzi_mapping():
     # Create the mapping
     prop_hanzi_map = {}
     for note_info in notes_info:
-        prop_name = note_info["fields"].get("Prop", {}).get("value", "").strip()
-        hanzi = note_info["fields"].get("Hanzi", {}).get("value", "").strip()
+        prop_name = get_field_value(note_info, "Prop")
+        hanzi = get_field_value(note_info, "Hanzi")
 
         if prop_name and hanzi:
             prop_hanzi_map[prop_name] = hanzi
@@ -494,12 +486,11 @@ def load_pinyin_mappings():
             of all known Traditional characters from those notes
     """
     # Search for all enabled (non-suspended) Hanzi notes
-    response = anki_connect_request("findNotes", {"query": "note:Hanzi -is:suspended"})
+    note_ids = find_notes_by_query("note:Hanzi -is:suspended")
 
-    if not response or not response.get("result"):
+    if not note_ids:
         raise Exception("No Hanzi notes found")
 
-    note_ids = response["result"]
     print(f"Found {len(note_ids)} enabled Hanzi notes")
 
     # Get detailed information about all Hanzi notes
@@ -511,8 +502,8 @@ def load_pinyin_mappings():
     known_characters: set[str] = set()
 
     for note_info in notes_info:
-        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-        pinyin_accented = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
+        traditional = get_field_value(note_info, "Traditional")
+        pinyin_accented = get_field_value(note_info, "Pinyin")
 
         if traditional:
             known_characters.update(extract_all_characters(traditional))
@@ -576,55 +567,13 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
         search_query = f"note:{note_type} {base_conditions}"
 
     print(search_query)
-    response = anki_connect_request("findNotes", {"query": search_query})
+    note_ids = find_notes_by_query(search_query)
 
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) with relevant tags in {note_type}")
-            return note_ids
-
-    print(f"No notes found with relevant tags in {note_type}")
-    return []
-
-
-def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
-    """
-    Get detailed information about multiple notes
-
-    Args:
-        note_ids (list): List of note IDs
-
-    Returns:
-        list: List of note information dictionaries
-    """
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise Exception(f"No notes found for IDs {note_ids}")
-
-
-def update_note_fields(note_id: int, fields_dict: dict[str, str]) -> bool:
-    """
-    Update multiple fields of a note
-
-    Args:
-        note_id (int): The note ID
-        fields_dict (dict): Dictionary of field names to values
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields_dict}})
-
-    if not response or response.get("error") is not None:
-        raise Exception(f"Failed to update note {note_id}: {response}")
-
-    fields_str = ", ".join(f"{k}='{v}'" for k, v in fields_dict.items())
-    print(f"Updated note {note_id} with: {fields_str}")
-    return True
+    if note_ids:
+        print(f"Found {len(note_ids)} note(s) with relevant tags in {note_type}")
+    else:
+        print(f"No notes found with relevant tags in {note_type}")
+    return note_ids
 
 
 def pick_random_sentence(examples_json_str: str, known_characters: set[str]) -> str:
@@ -699,16 +648,15 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     query = "(is:due OR prop:due=7 OR is:new) -is:suspended"
     print(f"Query: {query}")
 
-    response = anki_connect_request("findCards", {"query": query})
-    card_ids: list[int] = response.get("result", []) if response else []
+    card_ids = find_cards_by_query(query)
     print(f"Found {len(card_ids)} due today/tomorrow, non-suspended card(s)")
 
     if not card_ids:
         return 0
 
     # Map cards to notes and deduplicate (multiple cards can belong to one note)
-    response = anki_connect_request("cardsToNotes", {"cards": card_ids})
-    note_ids = list(dict.fromkeys(response.get("result", [])))
+    response = cards_to_notes(card_ids)
+    note_ids = list(dict.fromkeys(response))
     print(f"Found {len(note_ids)} note(s) for those cards")
 
     if not note_ids:
@@ -750,6 +698,7 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
             continue
 
         update_note_fields(note_id, {"Sentence Traditional": sentence})
+        print(f"Updated note {note_id} with Sentence Traditional: '{sentence}'")
         updated += 1
 
     print(f"Updated {updated} note(s)")
@@ -777,7 +726,7 @@ def get_same_chars_field_value(traditional: str, key: str, char_mapping: dict[st
 
 
 def update_fields_for_note(
-    note_info: dict[str, Any],
+    note_info: AnkiNoteInfo,
     prop_hanzi_map: dict[str, str],
     pos_mapping: dict[str, Any],
     pinyin_to_chars: dict[str, list[str]],
@@ -805,30 +754,30 @@ def update_fields_for_note(
     fields_to_update = {}
 
     # Process Props field
-    current_props = note_info["fields"].get("Props", {}).get("value", "").strip()
+    current_props = get_field_value(note_info, "Props")
     new_props = extract_props_from_tags(tags, prop_hanzi_map)
 
     if new_props and current_props != new_props:
         fields_to_update["Props"] = new_props
 
     # Process Mnemonic pegs field
-    current_pegs = note_info["fields"].get("Mnemonic pegs", {}).get("value", "").strip()
+    current_pegs = get_field_value(note_info, "Mnemonic pegs")
     new_pegs = extract_mnemonic_pegs(tags)
 
     if new_pegs and current_pegs != new_pegs:
         fields_to_update["Mnemonic pegs"] = new_pegs
 
     # Process Anki Tags field (remaining tags not matching special prefixes)
-    current_anki_tags = note_info["fields"].get("Anki Tags", {}).get("value", "").strip()
+    current_anki_tags = get_field_value(note_info, "Anki Tags")
     new_anki_tags = extract_anki_tags(tags)
     if current_anki_tags != new_anki_tags:
         fields_to_update["Anki Tags"] = new_anki_tags
 
     # Process POS field - suggest using AI if empty and Traditional ≤ 5 characters
     if "POS" in note_info["fields"] and "POS Description" in note_info["fields"]:
-        current_pos = note_info["fields"].get("POS", {}).get("value", "").strip()
-        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-        meaning = note_info["fields"].get("Meaning", {}).get("value", "").strip()
+        current_pos = get_field_value(note_info, "POS")
+        traditional = get_field_value(note_info, "Traditional")
+        meaning = get_field_value(note_info, "Meaning")
 
         # Use AI to suggest POS if empty, Traditional ≤ 5 chars, and Gemini client available
         if not current_pos and traditional and len(traditional) <= 5 and meaning and gemini_client:
@@ -838,11 +787,11 @@ def update_fields_for_note(
                 fields_to_update["POS"] = suggested_pos
                 current_pos = suggested_pos  # Use for POS Description processing below
 
-        current_pos_desc = note_info["fields"].get("POS Description", {}).get("value", "").strip()
+        current_pos_desc = get_field_value(note_info, "POS Description")
         new_pos_desc, unknown_codes = format_pos_description(current_pos, pos_mapping)
 
         if unknown_codes:
-            note_identifier = traditional or note_info["fields"].get("Hanzi", {}).get("value", "") or str(note_id)
+            note_identifier = traditional or get_field_value(note_info, "Hanzi") or str(note_id)
             raise ValueError(f"Unknown POS codes in note {note_identifier}: {unknown_codes}")
 
         if current_pos_desc != new_pos_desc:
@@ -850,10 +799,10 @@ def update_fields_for_note(
 
     # Process Examples JSON field - generate examples for each POS if empty and Traditional ≤ 3 chars
     if "Examples JSON" in note_info["fields"] and "POS" in note_info["fields"]:
-        current_examples_json = note_info["fields"].get("Examples JSON", {}).get("value", "").strip()
-        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+        current_examples_json = get_field_value(note_info, "Examples JSON")
+        traditional = get_field_value(note_info, "Traditional")
         # Use the potentially updated POS value
-        pos_value = fields_to_update.get("POS") or note_info["fields"].get("POS", {}).get("value", "").strip()
+        pos_value = fields_to_update.get("POS") or get_field_value(note_info, "POS")
 
         # Generate examples if empty, Traditional ≤ 3 chars, has POS, and Gemini client available
         if not current_examples_json and traditional and len(traditional) <= 6 and pos_value and gemini_client:
@@ -870,7 +819,7 @@ def update_fields_for_note(
             if field_name not in note_info["fields"]:
                 continue
 
-            current_examples_html = note_info["fields"].get(field_name, {}).get("value", "").strip()
+            current_examples_html = get_field_value(note_info, field_name)
             new_examples_html = format_examples_as_html(examples_json_str, pos_mapping, english_only=english_only)
 
             if new_examples_html and current_examples_html != new_examples_html:
@@ -878,16 +827,16 @@ def update_fields_for_note(
 
     # Process ID field - only if empty, set to "my_" + Traditional
     if "ID" in note_info["fields"] and "Traditional" in note_info["fields"]:
-        current_id = note_info["fields"].get("ID", {}).get("value", "").strip()
-        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+        current_id = get_field_value(note_info, "ID")
+        traditional = get_field_value(note_info, "Traditional")
 
         if not current_id and traditional:
             fields_to_update["ID"] = f"my_{traditional}"
 
     # Process Same Pinyin Traditional and Same Syllable Traditional fields - only for Hanzi notes
     if "Traditional" in note_info["fields"] and "Pinyin" in note_info["fields"]:
-        traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-        pinyin_accented = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
+        traditional = get_field_value(note_info, "Traditional")
+        pinyin_accented = get_field_value(note_info, "Pinyin")
 
         if traditional and pinyin_accented:
             pinyin_lower = pinyin_accented.lower()
@@ -895,14 +844,14 @@ def update_fields_for_note(
 
             # Process Same Pinyin Traditional field (exact pinyin match including tone)
             if "Same Pinyin Traditional" in note_info["fields"]:
-                current_value = note_info["fields"].get("Same Pinyin Traditional", {}).get("value", "").strip()
+                current_value = get_field_value(note_info, "Same Pinyin Traditional")
                 new_value = get_same_chars_field_value(traditional, pinyin_lower, pinyin_to_chars)
                 if current_value != new_value:
                     fields_to_update["Same Pinyin Traditional"] = new_value
 
             # Process Same Syllable Traditional field (syllable match without tone)
             if "Same Syllable Traditional" in note_info["fields"]:
-                current_value = note_info["fields"].get("Same Syllable Traditional", {}).get("value", "").strip()
+                current_value = get_field_value(note_info, "Same Syllable Traditional")
                 new_value = get_same_chars_field_value(traditional, syllable, syllable_to_chars)
                 if current_value != new_value:
                     fields_to_update["Same Syllable Traditional"] = new_value
@@ -913,7 +862,7 @@ def update_fields_for_note(
 
     print(f"Updating note {note_id}:")
     for field_name, new_value in fields_to_update.items():
-        current_value = note_info["fields"].get(field_name, {}).get("value", "").strip()
+        current_value = get_field_value(note_info, field_name)
         print(f"  {field_name}: '{current_value}' -> '{new_value}'")
 
     # Update the note's fields
@@ -950,7 +899,6 @@ def main():
     print("Gemini client created successfully")
 
     note_types = ["Hanzi", "TOCFL"]
-    batch_size = 100
 
     for note_type in note_types:
         print(f"\n=== Processing {note_type} ===")
@@ -962,33 +910,21 @@ def main():
         if not note_ids:
             continue
 
-        # Process notes in batches
+        # Notes are fetched in batches rather than all at once
         total_updated = 0
         total_processed = 0
 
-        for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i : i + batch_size]
-            batch_num = i // batch_size + 1
-
+        for note_info in iter_notes_info(note_ids):
             try:
-                notes_info = get_notes_info(batch_ids)
-
-                for note_info in notes_info:
-                    try:
-                        if update_fields_for_note(
-                            note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client
-                        ):
-                            total_updated += 1
-                        total_processed += 1
-                    except ValueError as e:
-                        # Skip notes with validation errors (e.g., unknown POS codes)
-                        note_id = note_info.get("noteId")
-                        traditional = note_info["fields"].get("Traditional", {}).get("value", "")
-                        print(f"  Skipping note {note_id} ({traditional}): {e}")
-                        total_processed += 1
-
-            except Exception as e:
-                raise Exception(f"Error processing batch {batch_num}: {e}") from e
+                if update_fields_for_note(note_info, prop_hanzi_map, pos_mapping, pinyin_to_chars, syllable_to_chars, gemini_client):
+                    total_updated += 1
+                total_processed += 1
+            except ValueError as e:
+                # Skip notes with validation errors (e.g., unknown POS codes)
+                note_id = note_info.get("noteId")
+                traditional = get_field_value(note_info, "Traditional")
+                print(f"  Skipping note {note_id} ({traditional}): {e}")
+                total_processed += 1
 
         print(f"\nCompleted processing {note_type}")
         print(f"Total processed: {total_processed}, Updated: {total_updated}")

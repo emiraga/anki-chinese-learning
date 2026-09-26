@@ -11,31 +11,26 @@
 from __future__ import annotations
 
 import argparse
-import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, cast
 
 import dragonmapper.transcriptions
 from google.cloud import texttospeech
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import anki_connect_request, get_notes_info, store_media_file, update_note_audio_field
-
-
-class FieldValue(TypedDict):
-    value: str
-    order: int
-
-
-class NoteInfo(TypedDict):
-    noteId: int
-    modelName: str
-    tags: list[str]
-    fields: dict[str, FieldValue]
-
+from shared.anki_utils import (
+    AnkiNoteInfo,
+    find_notes_by_query,
+    get_field_value,
+    get_note_info,
+    remove_tags,
+    store_media_file,
+    update_note_audio_field,
+)
+from shared.google_credentials import setup_google_credentials
 
 # Define maximum lengths for filename components to keep them reasonable
 _MAX_TEXT_FILENAME_LEN = 50
@@ -91,22 +86,6 @@ def convert_pinyin_to_numbered(pinyin_text: str) -> str:
     # Add spaces between syllables if they are not there.
     # This regex finds a number followed by a letter and inserts a space.
     return re.sub(r"(\d)([a-zA-Z])", r"\1 \2", numbered)
-
-
-def setup_credentials() -> None:
-    """
-    Set up Google Cloud credentials by locating gcloud_account.json
-    relative to the script's path.
-    """
-    script_dir = Path(__file__).resolve().parent
-    credentials_path = script_dir / "gcloud_account.json"
-
-    if not credentials_path.exists():
-        raise FileNotFoundError(
-            f"Credentials file not found at {credentials_path}. Please ensure 'gcloud_account.json' is in the same directory as the script."
-        )
-
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
 
 
 def chinese_tts(
@@ -214,31 +193,14 @@ def find_note_by_traditional(note_type: str, traditional_text: str) -> int | Non
         int: Note ID if found, None otherwise
     """
     # Search for notes with the specific Traditional field value
-    search_query = f'note:{note_type} Traditional:"{traditional_text}"'
+    note_ids = find_notes_by_query(f'note:{note_type} Traditional:"{traditional_text}"')
 
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) with Traditional field '{traditional_text}'")
-            return note_ids[0]  # Return the first matching note
+    if note_ids:
+        print(f"Found {len(note_ids)} note(s) with Traditional field '{traditional_text}'")
+        return note_ids[0]  # Return the first matching note
 
     print(f"No notes found with Traditional field '{traditional_text}'")
     return None
-
-
-def get_note_info(note_id: int) -> NoteInfo:
-    """
-    Get detailed information about a note
-
-    Args:
-        note_id (int): The note ID
-
-    Returns:
-        dict: Note information
-    """
-    return cast("NoteInfo", get_notes_info([note_id])[0])
 
 
 def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | None = None) -> None:
@@ -261,7 +223,7 @@ def update_audio_on_a_note(note_type: str, target_text: str, pinyin_hint: str | 
 
 def update_audio_for_note(
     note_id: int,
-    note_info: NoteInfo,
+    note_info: AnkiNoteInfo,
     target_text: str,
     pinyin_hint: str | None = None,
     voice_name: str = _DEFAULT_VOICE,
@@ -311,40 +273,30 @@ def update_audio_for_note(
 
 
 def find_note_by_empty_audio(note_type: str) -> list[int]:
-    # Search for notes with the specific Traditional field value
-    search_query = f"note:{note_type} Traditional:_* Audio: -is:suspended"
+    """Find unsuspended notes that have a Traditional field but no audio yet."""
+    note_ids = find_notes_by_query(f"note:{note_type} Traditional:_* Audio: -is:suspended")
 
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) with empty audio")
-            return note_ids
-
-    print("No notes found with empty audio")
-    return []
+    if note_ids:
+        print(f"Found {len(note_ids)} note(s) with empty audio")
+    else:
+        print("No notes found with empty audio")
+    return note_ids
 
 
 def find_notes_with_empty_sentence_audio() -> list[int]:
     """Find TOCFL notes where Sentence Traditional is filled but Sentence Audio is empty."""
-    search_query = 'note:TOCFL "Sentence Traditional:_*" "Sentence Audio:"'
+    note_ids = find_notes_by_query('note:TOCFL "Sentence Traditional:_*" "Sentence Audio:"')
 
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} TOCFL note(s) with Sentence Traditional but empty Sentence Audio")
-            return note_ids
-
-    print("No TOCFL notes found with empty sentence audio")
-    return []
+    if note_ids:
+        print(f"Found {len(note_ids)} TOCFL note(s) with Sentence Traditional but empty Sentence Audio")
+    else:
+        print("No TOCFL notes found with empty sentence audio")
+    return note_ids
 
 
 def process_sentence_audio(
     note_id: int,
-    note_info: NoteInfo,
+    note_info: AnkiNoteInfo,
     voice_name: str = _DEFAULT_VOICE,
     speaking_rate: float = 1.0,
 ) -> bool:
@@ -386,38 +338,27 @@ def process_sentence_audio(
 
 def find_notes_by_tag(note_type: str, tag: str) -> list[int]:
     """Find notes with a specific tag."""
-    search_query = f'note:{note_type} tag:"{tag}" -is:suspended'
+    note_ids = find_notes_by_query(f'note:{note_type} tag:"{tag}" -is:suspended')
 
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) with tag '{tag}'")
-            return note_ids
-
-    print(f"No notes found with tag '{tag}'")
-    return []
+    if note_ids:
+        print(f"Found {len(note_ids)} note(s) with tag '{tag}'")
+    else:
+        print(f"No notes found with tag '{tag}'")
+    return note_ids
 
 
-def remove_tag_from_note(note_id: int, tag: str) -> bool:
+def remove_tag_from_note(note_id: int, tag: str) -> None:
     """Remove a tag from a note."""
-    response = anki_connect_request("removeTags", {"notes": [note_id], "tags": tag})
-
-    if response and response.get("error") is None:
-        print(f"Removed tag '{tag}' from note {note_id}")
-        return True
-    raise Exception(f"Failed to remove tag '{tag}' from note {note_id}")
+    remove_tags([note_id], tag)
+    print(f"Removed tag '{tag}' from note {note_id}")
 
 
-def get_clean_field_value(note_info: NoteInfo, field_name: str) -> str:
-    """Extract and clean a field value from note info, stripping HTML tags."""
-    return (
-        note_info["fields"].get(field_name, {"value": "", "order": 0}).get("value", "").replace("<div>", "").replace("</div>", "").strip()
-    )
+def get_clean_field_value(note_info: AnkiNoteInfo, field_name: str) -> str:
+    """Read a field, stripping the divs Anki wraps a multi-line field's value in."""
+    return get_field_value(note_info, field_name).replace("<div>", "").replace("</div>", "").strip()
 
 
-def build_multi_pronunciation_audio(note_info: NoteInfo, traditional: str) -> tuple[str | None, str | None]:
+def build_multi_pronunciation_audio(note_info: AnkiNoteInfo, traditional: str) -> tuple[str | None, str | None]:
     """
     Build text and pinyin for notes with multiple pronunciations.
 
@@ -450,7 +391,7 @@ _MULTI_PRONUNCIATION_TAG = "chinese::multiple-pronounciation-character"
 
 def process_note_audio(
     note_id: int,
-    note_info: NoteInfo,
+    note_info: AnkiNoteInfo,
     note_type: str,
     use_pinyin_hint: bool,
     voice_name: str = _DEFAULT_VOICE,
@@ -470,7 +411,7 @@ def process_note_audio(
     Returns:
         bool: True if audio was generated, False otherwise
     """
-    traditional = note_info["fields"]["Traditional"]["value"]
+    traditional = get_field_value(note_info, "Traditional")
     if len(traditional) == 0:
         print("No traditional found", note_info)
         return False
@@ -501,7 +442,7 @@ def process_note_audio(
 
 def rebuild_note_audio(
     note_id: int,
-    note_info: NoteInfo,
+    note_info: AnkiNoteInfo,
     note_type: str,
     use_pinyin_hint: bool,
     voice_name: str = _DEFAULT_VOICE,
@@ -565,7 +506,7 @@ def main() -> None:
     print(f"Using voice: {args.voice}, speaking rate: {args.speaking_rate}")
 
     # Setup Google Cloud credentials
-    setup_credentials()
+    setup_google_credentials()
 
     for note_type in ["TOCFL", "Hanzi"]:
         # First, process notes tagged for audio rebuild

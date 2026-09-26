@@ -20,73 +20,20 @@ safely deleted since their content is preserved in the Hanzi notes.
 """
 
 import re
+import sys
 from collections import defaultdict
-from typing import Any
+from pathlib import Path
 
-import requests
-
-
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        raise RuntimeError(f"Error connecting to anki-connect: {e}") from e
-
-
-def find_notes_by_type(note_type: str) -> list[int]:
-    """
-    Find all notes of a specific type
-
-    Args:
-        note_type (str): The note type to search
-
-    Returns:
-        list: List of note IDs
-    """
-    response = anki_connect_request("findNotes", {"query": f"note:{note_type} -is:suspended"})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        print(f"Found {len(note_ids)} notes of type {note_type}")
-        return note_ids
-
-    print(f"No notes found of type {note_type}")
-    return []
-
-
-def get_notes_info(note_ids: list[int]) -> list[dict[str, Any]]:
-    """
-    Get detailed information about multiple notes
-
-    Args:
-        note_ids (list): List of note IDs
-
-    Returns:
-        list: List of note information dictionaries
-    """
-    response = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if response and response.get("result"):
-        return response["result"]
-
-    raise RuntimeError(f"No notes found for IDs {note_ids}")
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import (
+    AnkiNoteInfo,
+    add_tags,
+    find_notes_by_type,
+    get_field_value,
+    iter_notes_info,
+    update_note_fields,
+)
 
 
 def clean_pinyin(pinyin_text: str) -> str:
@@ -107,7 +54,7 @@ def clean_pinyin(pinyin_text: str) -> str:
     return pinyin.strip()
 
 
-def extract_hanzi_notes() -> dict[tuple[str, str], dict[str, Any]]:
+def extract_hanzi_notes() -> dict[tuple[str, str], AnkiNoteInfo]:
     """
     Extract all single-character Hanzi notes with their pinyin
 
@@ -115,33 +62,25 @@ def extract_hanzi_notes() -> dict[tuple[str, str], dict[str, Any]]:
         dict: Dictionary mapping (character, pinyin) -> note_info
     """
     print("\n=== Extracting Hanzi notes ===")
-    hanzi_note_ids = find_notes_by_type("Hanzi")
+    hanzi_note_ids = find_notes_by_type("Hanzi", "-is:suspended")
 
-    if not hanzi_note_ids:
-        return {}
+    hanzi_map: dict[tuple[str, str], AnkiNoteInfo] = {}
 
-    hanzi_map = {}  # {(char, pinyin): note_info}
-    batch_size = 100
+    for note_info in iter_notes_info(hanzi_note_ids):
+        traditional = get_field_value(note_info, "Traditional")
+        pinyin_raw = get_field_value(note_info, "Pinyin")
 
-    for i in range(0, len(hanzi_note_ids), batch_size):
-        batch_ids = hanzi_note_ids[i : i + batch_size]
-        notes_info = get_notes_info(batch_ids)
-
-        for note_info in notes_info:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            pinyin_raw = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
-
-            # Only consider single character notes
-            if len(traditional) == 1 and pinyin_raw:
-                pinyin = clean_pinyin(pinyin_raw)
-                key = (traditional, pinyin)
-                hanzi_map[key] = note_info
+        # Only consider single character notes
+        if len(traditional) == 1 and pinyin_raw:
+            pinyin = clean_pinyin(pinyin_raw)
+            key = (traditional, pinyin)
+            hanzi_map[key] = note_info
 
     print(f"Found {len(hanzi_map)} single-character Hanzi notes")
     return hanzi_map
 
 
-def extract_single_char_phrase_notes(note_types: list[str]) -> list[tuple[dict[str, Any], str, str]]:
+def extract_single_char_phrase_notes(note_types: list[str]) -> list[tuple[AnkiNoteInfo, str, str]]:
     """
     Extract phrase notes that have a single character in Traditional field
 
@@ -152,71 +91,27 @@ def extract_single_char_phrase_notes(note_types: list[str]) -> list[tuple[dict[s
         list: List of (note_info, character, pinyin) tuples
     """
     print("\n=== Extracting single-character phrase notes ===")
-    single_char_phrases = []
+    single_char_phrases: list[tuple[AnkiNoteInfo, str, str]] = []
 
     for note_type in note_types:
         print(f"\nProcessing {note_type} notes...")
-        note_ids = find_notes_by_type(note_type)
+        note_ids = find_notes_by_type(note_type, "-is:suspended")
 
-        if not note_ids:
-            continue
+        for note_info in iter_notes_info(note_ids):
+            traditional_raw = get_field_value(note_info, "Traditional")
+            pinyin_raw = get_field_value(note_info, "Pinyin")
 
-        batch_size = 100
-        for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i : i + batch_size]
-            notes_info = get_notes_info(batch_ids)
-
-            for note_info in notes_info:
-                traditional_raw = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-                pinyin_raw = note_info["fields"].get("Pinyin", {}).get("value", "").strip()
-
-                # Check if Traditional field has exactly one character
-                if len(traditional_raw) == 1 and pinyin_raw:
-                    pinyin = clean_pinyin(pinyin_raw)
-                    single_char_phrases.append((note_info, traditional_raw, pinyin))
+            # Check if Traditional field has exactly one character
+            if len(traditional_raw) == 1 and pinyin_raw:
+                pinyin = clean_pinyin(pinyin_raw)
+                single_char_phrases.append((note_info, traditional_raw, pinyin))
 
     print(f"Found {len(single_char_phrases)} single-character phrase notes", note_types)
     return single_char_phrases
 
 
-def update_hanzi_meaning2(note_id: int, meaning: str) -> bool:
-    """
-    Update the Meaning 2 field of a Hanzi note
-
-    Args:
-        note_id (int): The note ID
-        meaning (str): The meaning to set
-
-    Returns:
-        bool: True if successful
-    """
-    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": {"Meaning 2": meaning}}})
-
-    if response and response.get("error") is None:
-        return True
-    raise RuntimeError(f"Failed to update note {note_id}: {response}")
-
-
-def add_tag_to_note(note_id: int, tag: str) -> bool:
-    """
-    Add a tag to a note
-
-    Args:
-        note_id (int): The note ID
-        tag (str): The tag to add
-
-    Returns:
-        bool: True if successful
-    """
-    response = anki_connect_request("addTags", {"notes": [note_id], "tags": tag})
-
-    if response and response.get("error") is None:
-        return True
-    raise RuntimeError(f"Failed to add tag to note {note_id}: {response}")
-
-
 def process_phrase_note(
-    phrase_note_info: dict[str, Any], character: str, pinyin: str, hanzi_map: dict[tuple[str, str], dict[str, Any]], note_type: str
+    phrase_note_info: AnkiNoteInfo, character: str, pinyin: str, hanzi_map: dict[tuple[str, str], AnkiNoteInfo], note_type: str
 ) -> tuple[bool, str | None]:
     """
     Process a single-character phrase note and update corresponding Hanzi note
@@ -241,7 +136,7 @@ def process_phrase_note(
     hanzi_note_id = hanzi_note_info["noteId"]
 
     # Get the meaning from phrase note
-    phrase_meaning = phrase_note_info["fields"].get("Meaning", {}).get("value", "").strip()
+    phrase_meaning = get_field_value(phrase_note_info, "Meaning")
 
     if not phrase_meaning:
         return False, "no_meaning"
@@ -252,17 +147,16 @@ def process_phrase_note(
     # Skip the Meaning 2 update if it already matches, but still tag the phrase note
     meaning_already_matches = False
     if should_update_meaning:
-        hanzi_meaning2 = hanzi_note_info["fields"].get("Meaning 2", {}).get("value", "").strip()
-        meaning_already_matches = hanzi_meaning2 == phrase_meaning
+        meaning_already_matches = get_field_value(hanzi_note_info, "Meaning 2") == phrase_meaning
 
     try:
         # Update Hanzi note's Meaning 2 field (only for TOCFL, and only if it differs)
         if should_update_meaning and not meaning_already_matches:
-            update_hanzi_meaning2(hanzi_note_id, phrase_meaning)
+            update_note_fields(hanzi_note_id, {"Meaning 2": phrase_meaning})
             print(f"  ✓ Updated Hanzi note {hanzi_note_id} Meaning 2 with: {phrase_meaning[:50]}...")
 
         # Add tag to phrase note
-        add_tag_to_note(phrase_note_id, "ready-for-deletion")
+        add_tags([phrase_note_id], "ready-for-deletion")
         print(f"  ✓ Tagged phrase note {phrase_note_id} as 'ready-for-deletion'")
 
         return True, None

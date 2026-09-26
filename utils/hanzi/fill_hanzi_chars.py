@@ -11,31 +11,16 @@ from pypinyin import pinyin as get_pinyin
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
-    anki_connect_request,
-    find_notes_by_query,
-    get_notes_info,
+    add_note,
+    find_cards_by_query,
+    find_notes_by_type,
+    get_field_value,
+    iter_notes_info,
+    suspend_cards,
 )
 from shared.character_conversion import to_simplified, to_traditional
 from shared.dictionary_utils import lookup_character_meaning
 from shared.phrase_utils import CharOccurrence, extract_characters_from_phrases
-
-
-def find_notes_by_type(note_type: str) -> list[int]:
-    """
-    Find all notes of a specific type
-
-    Args:
-        note_type (str): The note type to search
-
-    Returns:
-        list: List of note IDs
-    """
-    note_ids = find_notes_by_query(f"note:{note_type}")
-    if note_ids:
-        print(f"Found {len(note_ids)} notes of type {note_type}")
-    else:
-        print(f"No notes found of type {note_type}")
-    return note_ids
 
 
 def extract_existing_hanzi_characters() -> set[str]:
@@ -52,43 +37,35 @@ def extract_existing_hanzi_characters() -> set[str]:
     print("\n=== Extracting existing Hanzi characters ===")
     hanzi_note_ids = find_notes_by_type("Hanzi")
 
-    if not hanzi_note_ids:
-        return set()
+    existing_chars: set[str] = set()
 
-    existing_chars = set()
-    batch_size = 100
+    for note_info in iter_notes_info(hanzi_note_ids):
+        traditional = get_field_value(note_info, "Traditional")
+        # Only consider single character notes
+        if len(traditional) == 1:
+            # Get the Hanzi (simplified) field for validation
+            hanzi_field = get_field_value(note_info, "Hanzi")
 
-    for i in range(0, len(hanzi_note_ids), batch_size):
-        batch_ids = hanzi_note_ids[i : i + batch_size]
-        notes_info = get_notes_info(batch_ids)
+            if hanzi_field and len(hanzi_field) == 1 and traditional != hanzi_field:
+                simplified_of_traditional = to_simplified(traditional)
 
-        for note_info in notes_info:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            # Only consider single character notes
-            if len(traditional) == 1:
-                # Get the Hanzi (simplified) field for validation
-                hanzi_field = note_info["fields"].get("Hanzi", {}).get("value", "").strip()
+                if simplified_of_traditional != hanzi_field:
+                    # Traditional doesn't simplify to Hanzi field value
+                    # This could mean Traditional field contains the simplified form
+                    # Check if Hanzi field is already in simplified form
+                    traditional_of_hanzi = to_traditional(hanzi_field)
 
-                if hanzi_field and len(hanzi_field) == 1 and traditional != hanzi_field:
-                    simplified_of_traditional = to_simplified(traditional)
+                    if traditional_of_hanzi != traditional and traditional == hanzi_field:
+                        # Traditional field equals Hanzi field, but there's a different traditional form
+                        note_id = note_info["noteId"]
+                        raise ValueError(
+                            f"Simplified character '{traditional}' found in Traditional field of Hanzi note {note_id}. "
+                            f"Traditional form should be '{traditional_of_hanzi}'. "
+                            f"Hanzi (simplified) field correctly contains: '{hanzi_field}'. "
+                            f"Please correct the Traditional field to use '{traditional_of_hanzi}'."
+                        )
 
-                    if simplified_of_traditional != hanzi_field:
-                        # Traditional doesn't simplify to Hanzi field value
-                        # This could mean Traditional field contains the simplified form
-                        # Check if Hanzi field is already in simplified form
-                        traditional_of_hanzi = to_traditional(hanzi_field)
-
-                        if traditional_of_hanzi != traditional and traditional == hanzi_field:
-                            # Traditional field equals Hanzi field, but there's a different traditional form
-                            note_id = note_info.get("noteId", "unknown")
-                            raise ValueError(
-                                f"Simplified character '{traditional}' found in Traditional field of Hanzi note {note_id}. "
-                                f"Traditional form should be '{traditional_of_hanzi}'. "
-                                f"Hanzi (simplified) field correctly contains: '{hanzi_field}'. "
-                                f"Please correct the Traditional field to use '{traditional_of_hanzi}'."
-                            )
-
-                existing_chars.add(traditional)
+            existing_chars.add(traditional)
 
     print(f"Found {len(existing_chars)} existing single-character Hanzi notes")
     return existing_chars
@@ -122,44 +99,28 @@ def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = ""
         bool: True if successful, False otherwise
     """
     # Create the note
-    response = anki_connect_request(
-        "addNote",
+    note_id = add_note(
+        "Chinese::CharsProps",  # Adjust deck name as needed
+        "Hanzi",
         {
-            "note": {
-                "deckName": "Chinese::CharsProps",  # Adjust deck name as needed
-                "modelName": "Hanzi",
-                "fields": {
-                    "Traditional": char,
-                    "Pinyin": pinyin,
-                    "Hanzi": simplified,
-                    "Meaning": meaning,
-                    # Leave other fields empty
-                    "Props": "",
-                    "Mnemonic pegs": "",
-                    "Audio": "",
-                    "Zhuyin": "",
-                },
-                "tags": ["auto-generated"],
-            }
+            "Traditional": char,
+            "Pinyin": pinyin,
+            "Hanzi": simplified,
+            "Meaning": meaning,
+            # Leave other fields empty
+            "Props": "",
+            "Mnemonic pegs": "",
+            "Audio": "",
+            "Zhuyin": "",
         },
+        ["auto-generated"],
     )
+    print(f"Created note {note_id} for character '{char}' with pinyin '{pinyin}'")
 
-    if response and response.get("result"):
-        note_id = response["result"]
-        print(f"Created note {note_id} for character '{char}' with pinyin '{pinyin}'")
-
-        # Suspend the note
-        suspend_response = anki_connect_request(
-            "suspend", {"cards": anki_connect_request("findCards", {"query": f"nid:{note_id}"})["result"]}
-        )
-
-        if suspend_response and suspend_response.get("error") is None:
-            print(f"Suspended note {note_id}")
-            return True
-        print(f"Failed to suspend note {note_id}")
-        return False
-    print(f"Failed to create note for character '{char}': {response}")
-    return False
+    # New characters start suspended: they are unsuspended when they come up for learning.
+    suspend_cards(find_cards_by_query(f"nid:{note_id}"))
+    print(f"Suspended note {note_id}")
+    return True
 
 
 def process_single_character(char: str, char_data: dict[str, list[CharOccurrence]] | None = None) -> bool:

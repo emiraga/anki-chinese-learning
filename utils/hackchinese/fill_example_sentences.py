@@ -8,93 +8,17 @@
 
 import argparse
 import json
+import sys
 import unicodedata
 from pathlib import Path
-from typing import Any
 
-import requests
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import find_notes_by_query, get_field_value, iter_notes_info, update_note_fields
+from shared.character_discovery import extract_known_chars
+from shared.project_paths import HACKCHINESE_WORDS_DIR
 
-
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
-
-
-def update_note_field(note_id: int, field_name: str, field_value: str) -> bool:
-    """
-    Update a specific field of a note
-
-    Args:
-        note_id (int): The note ID
-        field_name (str): Name of the field to update
-        field_value (str): Value to set
-
-    Returns:
-        bool: True if successful
-    """
-    fields = {field_name: field_value}
-
-    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
-
-    if response and response.get("error") is None:
-        return True
-    raise Exception(f"Failed to update field '{field_name}' for note {note_id}: {response.get('error')}")
-
-
-def get_learned_characters() -> set[str]:
-    """
-    Get all characters from Hanzi notes that are not new and not suspended
-
-    Returns:
-        Set[str]: Set of learned characters
-    """
-    # Query for Hanzi notes that are not new and not suspended
-    search_query = "note:Hanzi -is:suspended"
-
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if not response or not response.get("result"):
-        print("No learned Hanzi notes found")
-        return set()
-
-    note_ids = response["result"]
-    print(f"Found {len(note_ids)} learned Hanzi notes")
-
-    learned_chars = set()
-
-    # Get note info for all notes
-    notes_info = anki_connect_request("notesInfo", {"notes": note_ids})
-
-    if notes_info and notes_info.get("result"):
-        for note_info in notes_info["result"]:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            if traditional:
-                # Take only the first character
-                char = traditional[0]
-                learned_chars.add(char)
-
-    print(f"Total learned characters: {len(learned_chars)}")
-    return learned_chars
+LEARNED_CHARS_QUERY = "note:Hanzi -is:suspended"
 
 
 def is_punctuation(char: str) -> bool:
@@ -171,24 +95,17 @@ def load_anki_sentences(learned_chars: set[str]) -> dict[str, list[tuple[str, st
     total_sentences = 0
 
     for note_type in ANKI_SENTENCE_NOTE_TYPES:
-        search_query = f"note:{note_type} -is:suspended"
-        response = anki_connect_request("findNotes", {"query": search_query})
+        note_ids = find_notes_by_query(f"note:{note_type} -is:suspended")
 
-        if not response or not response.get("result"):
+        if not note_ids:
             print(f"No {note_type} notes found for sentences")
             continue
 
-        note_ids = response["result"]
         print(f"Found {len(note_ids)} {note_type} notes for sentences")
 
-        notes_info = anki_connect_request("notesInfo", {"notes": note_ids})
-
-        if not notes_info or not notes_info.get("result"):
-            continue
-
-        for note_info in notes_info["result"]:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            meaning = note_info["fields"].get("Meaning", {}).get("value", "").strip()
+        for note_info in iter_notes_info(note_ids):
+            traditional = get_field_value(note_info, "Traditional")
+            meaning = get_field_value(note_info, "Meaning")
 
             if not traditional or not meaning:
                 continue
@@ -223,7 +140,7 @@ def load_all_word_data(learned_chars: set[str]) -> dict[str, dict[str, list[tupl
         Dict[str, Dict[str, List[Tuple[str, str]]]]: Dictionary mapping character to dict with 'sentences' and 'compounds' keys,
         each containing list of (traditional, english) tuples
     """
-    words_dir = Path(__file__).parent.parent.parent / "data" / "hackchinese" / "words"
+    words_dir = HACKCHINESE_WORDS_DIR
 
     if not words_dir.exists():
         raise Exception(f"Words directory not found: {words_dir}")
@@ -355,7 +272,7 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
     """
     # Get learned characters
     print("Getting learned characters...")
-    learned_chars = get_learned_characters()
+    learned_chars = extract_known_chars(LEARNED_CHARS_QUERY)
 
     if not learned_chars:
         print("No learned characters found. Cannot proceed.")
@@ -372,26 +289,19 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
     # Get notes to update
     all_note_ids: list[int] = []
 
+    character_suffix = f" for character '{character}'" if character else ""
+
     for note_type in note_types:
-        # Build search query
-        search_query = f"note:{note_type}"
-        if character:
-            search_query += f" Traditional:{character}"
-        else:
-            search_query += " Traditional:_"
+        # Build search query: a single character, or the requested one, and only
+        # notes that are not suspended.
+        traditional_term = f"Traditional:{character}" if character else "Traditional:_"
+        note_ids = find_notes_by_query(f"note:{note_type} {traditional_term} -is:suspended")
 
-        # Only get non-suspended notes
-        search_query += " -is:suspended"
-
-        response = anki_connect_request("findNotes", {"query": search_query})
-        if response and response.get("result"):
-            note_ids = response["result"]
-            char_info = f" for character '{character}'" if character else ""
-            print(f"Found {len(note_ids)} {note_type} notes{char_info}")
+        if note_ids:
+            print(f"Found {len(note_ids)} {note_type} notes{character_suffix}")
             all_note_ids.extend(note_ids)
         else:
-            char_info = f" for character '{character}'" if character else ""
-            print(f"No {note_type} notes found{char_info}")
+            print(f"No {note_type} notes found{character_suffix}")
 
     if not all_note_ids:
         print("No notes found to process")
@@ -405,12 +315,7 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
 
     # Batch fetch all note info at once for speed
     print("Fetching note data...")
-    notes_response = anki_connect_request("notesInfo", {"notes": all_note_ids})
-    if not notes_response or not notes_response.get("result"):
-        print("Failed to fetch note information")
-        return
-
-    all_notes_info = notes_response["result"]
+    all_notes_info = list(iter_notes_info(all_note_ids))
     print(f"Fetched {len(all_notes_info)} notes")
 
     updated_count = 0
@@ -420,11 +325,11 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
 
     for i, note_info in enumerate(all_notes_info, 1):
         try:
-            note_id = note_info.get("noteId")
+            note_id = note_info["noteId"]
             note_type = note_info.get("modelName", "Unknown")
 
             # Get the Traditional field
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+            traditional = get_field_value(note_info, "Traditional")
             if not traditional:
                 print(f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}): No Traditional field, skipping")
                 skipped_count += 1
@@ -433,7 +338,7 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
             char = traditional[0]
 
             # Get current field value
-            current_value = note_info["fields"].get("Example sentences", {}).get("value", "").strip()
+            current_value = get_field_value(note_info, "Example sentences")
 
             # Get Anki sentences for this character (highest priority)
             char_anki_sentences = anki_sentences.get(char, [])
@@ -466,7 +371,7 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
                 updated_count += 1
             else:
                 # Update the note
-                update_note_field(note_id, "Example sentences", new_html)
+                update_note_fields(note_id, {"Example sentences": new_html})
                 print(
                     f"[{i}/{len(all_notes_info)}] Note {note_id} ({note_type}, {char}): "
                     f"Updated with {len(char_anki_sentences)} Anki, {len(sentences)} HackChinese, "
@@ -475,8 +380,7 @@ def update_example_sentences(note_types: list[str], dry_run: bool = False, limit
                 updated_count += 1
 
         except Exception as e:
-            note_id = note_info.get("noteId", "unknown")
-            print(f"[{i}/{len(all_notes_info)}] Error processing note {note_id}: {e}")
+            print(f"[{i}/{len(all_notes_info)}] Error processing note {note_info['noteId']}: {e}")
             raise
 
     print("\n" + "=" * 60)

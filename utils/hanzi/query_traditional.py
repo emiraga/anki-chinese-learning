@@ -14,35 +14,12 @@ Allows filtering by note type and Level field value.
 
 import argparse
 import re
-from typing import Any
+import sys
+from pathlib import Path
 
-import requests
-
-
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    response = requests.post("http://localhost:8765", json=request_data)
-    response.raise_for_status()
-    result = response.json()
-
-    if result.get("error"):
-        raise Exception(f"AnkiConnect error: {result['error']}")
-
-    return result
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import find_notes_by_query, get_field_value, iter_notes_info
 
 
 def query_traditional_field(note_type: str, level: str | None = None) -> list[str]:
@@ -64,28 +41,16 @@ def query_traditional_field(note_type: str, level: str | None = None) -> list[st
     print(f"Query: {query}")
 
     # Find matching notes
-    response = anki_connect_request("findNotes", {"query": query})
-    note_ids = response.get("result", [])
+    note_ids = find_notes_by_query(query)
     print(f"Found {len(note_ids)} notes")
 
-    if not note_ids:
-        return []
+    traditional_values: list[str] = []
 
-    # Get note info in batches
-    traditional_values = []
-    batch_size = 100
-
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i : i + batch_size]
-        notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
-        notes_info = notes_response.get("result", [])
-
-        for note_info in notes_info:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            if traditional:
-                # Clean HTML tags if present
-                traditional = re.sub(r"<[^>]+>", "", traditional)
-                traditional_values.append(traditional)
+    for note_info in iter_notes_info(note_ids):
+        traditional = get_field_value(note_info, "Traditional")
+        if traditional:
+            # Clean HTML tags if present
+            traditional_values.append(re.sub(r"<[^>]+>", "", traditional))
 
     return traditional_values
 

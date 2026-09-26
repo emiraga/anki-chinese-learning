@@ -22,6 +22,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.project_paths import YELLOWBRIDGE_INFO_DIR, YELLOWBRIDGE_PROCESSED_JSON, YELLOWBRIDGE_RAW_DIR
+
 
 class YellowBridgeHTMLParser(HTMLParser):
     """Parse HTML content to extract character information."""
@@ -588,16 +592,12 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Extract useful data from YellowBridge raw JSON files")
-    parser.add_argument(
-        "--input", type=Path, default=Path("public/data/yellowbridge/raw"), help="Input directory containing raw JSON files"
-    )
-    parser.add_argument(
-        "--output", type=Path, default=Path("public/data/yellowbridge/processed.json"), help="Output JSON file for processed data"
-    )
+    parser.add_argument("--input", type=Path, default=YELLOWBRIDGE_RAW_DIR, help="Input directory containing raw JSON files")
+    parser.add_argument("--output", type=Path, default=YELLOWBRIDGE_PROCESSED_JSON, help="Output JSON file for processed data")
     parser.add_argument(
         "--individual-dir",
         type=Path,
-        default=Path("public/data/yellowbridge/info"),
+        default=YELLOWBRIDGE_INFO_DIR,
         help="Directory to write individual character JSON files",
     )
     parser.add_argument("--single", type=Path, help="Process a single file instead of a directory")

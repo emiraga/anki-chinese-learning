@@ -9,7 +9,6 @@
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,6 +17,8 @@ from pypinyin import Style, pinyin
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.google_credentials import setup_google_credentials
+from shared.project_paths import DONG_DIR
 from shared.translation_utils import cache_translation, get_translation_cache, translate_text_with_google
 
 
@@ -218,22 +219,9 @@ def main():
 
     args = parser.parse_args()
 
-    # Get the project root directory
-    script_dir = Path(__file__).resolve().parent
-    project_root = script_dir.parent.parent
+    setup_google_credentials(args.credentials)
 
-    # Set up credentials
-    credentials_path = args.credentials
-    credentials_path = project_root / "utils" / "tts" / "gcloud_account.json" if not credentials_path else Path(credentials_path)
-
-    if not credentials_path.exists():
-        print(f"Error: Credentials file not found: {credentials_path}")
-        sys.exit(1)
-
-    # Set environment variable for Google Cloud credentials
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
-
-    dong_dir = project_root / "public" / "data" / "dong"
+    dong_dir = DONG_DIR
 
     if not dong_dir.exists():
         print(f"Error: Directory not found: {dong_dir}")

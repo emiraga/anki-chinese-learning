@@ -152,11 +152,8 @@ def main():
         print(f"Error: Directory not found: {args.info_dir}")
         return 1
 
-    # Get the project root
-    project_root = Path.cwd()
-
     # Use shared utility to discover all characters from Anki and data directories
-    all_chars, char_frequency = discover_all_characters(project_root, include_anki=not args.skip_anki, normalize=False)
+    all_chars, char_frequency = discover_all_characters(include_anki=not args.skip_anki, normalize=False)
 
     # Get referenced characters from YellowBridge JSON files (script-specific)
     ref_chars, ref_frequency = get_all_referenced_chars(args.info_dir)

@@ -17,17 +17,17 @@ This script processes all JSON files in public/data/dong/ directory:
 """
 
 import json
+import sys
 import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
 
-# Base directories
-SCRIPT_DIR = Path(__file__).parent
-PROJECT_ROOT = SCRIPT_DIR.parent.parent
-JSON_DIR = PROJECT_ROOT / "public" / "data" / "dong"
-IMAGES_DIR = PROJECT_ROOT / "public" / "images" / "dong"
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.project_paths import DONG_DIR as JSON_DIR
+from shared.project_paths import DONG_IMAGES_DIR as IMAGES_DIR
 
 # Ensure images directory exists
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)

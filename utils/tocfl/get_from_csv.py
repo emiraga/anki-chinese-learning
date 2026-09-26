@@ -7,7 +7,6 @@
 # ///
 
 import csv
-import json
 import re
 import sys
 from dataclasses import dataclass
@@ -15,11 +14,9 @@ from pathlib import Path
 from typing import TypedDict
 
 # Add shared utils to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
-from anki_utils import find_notes_by_query, get_notes_info, update_note_fields
-
-DATA_DIR = Path(__file__).parent.parent.parent / "data" / "tocfl" / "20240923"
-POS_FILE = Path(__file__).parent.parent.parent / "app" / "data" / "pos.json"
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import find_notes_by_query, get_field_value, get_notes_info, update_note_fields
+from shared.project_paths import TOCFL_CSV_DIR, load_pos_mapping
 
 
 def load_valid_pos() -> dict[str, str]:
@@ -27,9 +24,7 @@ def load_valid_pos() -> dict[str, str]:
 
     Returns a dict mapping lowercase POS to the canonical cased version.
     """
-    with POS_FILE.open(encoding="utf-8") as f:
-        pos_data = json.load(f)
-    return {key.lower(): key for key in pos_data}
+    return {key.lower(): key for key in load_pos_mapping()}
 
 
 LEVEL_ORDER = [
@@ -284,7 +279,7 @@ def load_csv(path: Path, valid_pos: dict[str, str]) -> list[TocflWord]:
 def load_all() -> list[TocflWord]:
     valid_pos = load_valid_pos()
     all_words: list[TocflWord] = []
-    for csv_path in sorted(DATA_DIR.glob("*.csv")):
+    for csv_path in sorted(TOCFL_CSV_DIR.glob("*.csv")):
         all_words.extend(load_csv(csv_path, valid_pos))
 
     # Sort by level order
@@ -388,9 +383,9 @@ def compare_pos_with_anki(mapping: dict[str, TocflEntry]) -> None:
     context_updates: list[ContextUpdate] = []
 
     for note in notes:
-        traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
-        anki_pos_raw = note["fields"].get("POS", {}).get("value", "").strip()
-        anki_context = note["fields"].get("Context", {}).get("value", "").strip()
+        traditional = get_field_value(note, "Traditional")
+        anki_pos_raw = get_field_value(note, "POS")
+        anki_context = get_field_value(note, "Context")
 
         if not traditional:
             continue

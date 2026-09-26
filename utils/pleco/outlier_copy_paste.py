@@ -28,6 +28,16 @@ import time
 from pathlib import Path
 from typing import Any, TypedDict
 
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.project_paths import (
+    DONG_DIR,
+    PLECO_IMAGES_DIR,
+    PLECO_OUTLIER_HTML_DIR,
+    PLECO_OUTLIER_HTML_TC_DIR,
+    PLECO_OUTLIER_SERIES_DIR,
+)
+
 try:
     from bs4 import BeautifulSoup
 
@@ -499,9 +509,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
             image_id, image_bytes = extract_image_id_from_img_tag(img_tag)
             if image_id and image_bytes is not None:
                 # Save the image
-                script_dir = Path(__file__).parent.parent.parent
-                images_dir = script_dir / "public" / "data" / "pleco" / "images"
-                save_image_to_disk(image_id, image_bytes, images_dir)
+                save_image_to_disk(image_id, image_bytes, PLECO_IMAGES_DIR)
 
                 # Use the image ID as the "traditional" character
                 data["traditional"] = f"img_{image_id}"
@@ -542,9 +550,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                             # Extract and save the image, use its ID as the reference
                             image_id, image_bytes = extract_image_id_from_img_tag(img)
                             if image_id and image_bytes:
-                                script_dir = Path(__file__).parent.parent.parent
-                                images_dir = script_dir / "public" / "data" / "pleco" / "images"
-                                save_image_to_disk(image_id, image_bytes, images_dir)
+                                save_image_to_disk(image_id, image_bytes, PLECO_IMAGES_DIR)
                                 link_text = f"img_{image_id}"
                             else:
                                 continue
@@ -604,9 +610,7 @@ def parse_outlier_html(html_str: str) -> OutlierData:
                         # Extract and save the image, use its ID as the reference
                         image_id, image_bytes = extract_image_id_from_img_tag(img)
                         if image_id and image_bytes:
-                            script_dir = Path(__file__).parent.parent.parent
-                            images_dir = script_dir / "public" / "data" / "pleco" / "images"
-                            save_image_to_disk(image_id, image_bytes, images_dir)
+                            save_image_to_disk(image_id, image_bytes, PLECO_IMAGES_DIR)
                             link_text = f"img_{image_id}"
                         else:
                             continue
@@ -698,9 +702,8 @@ def generate_preload_list():
     Skip characters that already have Outlier data.
     For each sound component, include one sample character that uses it.
     """
-    script_dir = Path(__file__).parent.parent.parent
-    dong_dir = script_dir / "public" / "data" / "dong"
-    outlier_dir = script_dir / "public" / "data" / "pleco" / "outlier_series"
+    dong_dir = DONG_DIR
+    outlier_dir = PLECO_OUTLIER_SERIES_DIR
 
     if not dong_dir.exists():
         raise FileNotFoundError(f"Dong Chinese directory not found: {dong_dir}")
@@ -793,8 +796,7 @@ def generate_preload_list():
 
 def rebuild_from_html_files(html_dir: Path) -> None:
     """Rebuild JSON files from saved HTML files"""
-    script_dir = Path(__file__).parent.parent.parent
-    json_dir = script_dir / "public" / "data" / "pleco" / "outlier_series"
+    json_dir = PLECO_OUTLIER_SERIES_DIR
 
     if not html_dir.exists():
         print(f"Directory not found: {html_dir}", file=sys.stderr)
@@ -850,9 +852,7 @@ def main():
     args = parser.parse_args()
 
     if args.rebuild:
-        script_dir = Path(__file__).parent.parent.parent
-        html_dir = script_dir / "data" / "pleco" / "outlier_series_tc"
-        rebuild_from_html_files(html_dir)
+        rebuild_from_html_files(PLECO_OUTLIER_HTML_TC_DIR)
         return
 
     if args.preload_list:
@@ -961,10 +961,8 @@ def main():
             if outlier_data.get("traditional"):
                 char = outlier_data["traditional"]
 
-                # Get script directory and construct paths
-                script_dir = Path(__file__).parent.parent.parent
-                json_dir = script_dir / "public" / "data" / "pleco" / "outlier_series"
-                html_dir = script_dir / "data" / "pleco" / "outlier_series"
+                json_dir = PLECO_OUTLIER_SERIES_DIR
+                html_dir = PLECO_OUTLIER_HTML_DIR
 
                 # Ensure directories exist
                 json_dir.mkdir(parents=True, exist_ok=True)

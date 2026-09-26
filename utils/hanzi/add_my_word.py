@@ -17,53 +17,13 @@ from pathlib import Path
 from typing import Any
 
 import dragonmapper.hanzi
-import dragonmapper.transcriptions
-import requests
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import add_note, find_cards_by_query, find_notes_by_query, set_new_card_positions, suspend_cards
 from shared.dictionary_utils import lookup_meaning
 from shared.gemini_utils import create_gemini_client, gemini_generate, translate_with_gemini
-
-
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Error connecting to anki-connect: {e}") from e
-
-
-def pinyin_to_zhuyin(pinyin_text: str) -> str:
-    """
-    Convert pinyin to zhuyin (bopomofo)
-
-    Args:
-        pinyin_text (str): Pinyin text with tone marks
-
-    Returns:
-        str: Zhuyin representation
-    """
-    try:
-        return dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
-    except Exception as e:
-        raise ValueError(f"Failed to convert pinyin '{pinyin_text}' to zhuyin: {e}") from e
+from shared.pinyin_utils import pinyin_to_zhuyin
 
 
 def get_pinyin_and_zhuyin(traditional_text: str) -> tuple[str, str]:
@@ -103,13 +63,7 @@ def check_traditional_exists(traditional: str) -> bool:
     """
     # Search for notes with this exact Traditional field value
     # Using quotes for exact match
-    response = anki_connect_request("findNotes", {"query": f'note:TOCFL Traditional:"{traditional}"'})
-
-    if response and response.get("result") is not None:
-        note_ids = response["result"]
-        return len(note_ids) > 0
-    error = response.get("error", "Unknown error") if response else "No response"
-    raise Exception(f"Failed to check if Traditional field exists: {error}")
+    return len(find_notes_by_query(f'note:TOCFL Traditional:"{traditional}"')) > 0
 
 
 def create_tocfl_note(
@@ -136,57 +90,35 @@ def create_tocfl_note(
     if check_traditional_exists(traditional):
         raise Exception(f"A note with Traditional field '{traditional}' already exists")
 
-    response = anki_connect_request(
-        "addNote",
+    note_id = add_note(
+        deck_name,
+        "TOCFL",
         {
-            "note": {
-                "deckName": deck_name,
-                "modelName": "TOCFL",
-                "fields": {
-                    "ID": "my_" + traditional,
-                    "Traditional": traditional,
-                    "Pinyin": pinyin,
-                    "Zhuyin": zhuyin,
-                    "Meaning": meaning,
-                    "Mnemonic": "",
-                    "Audio": "",
-                },
-                "tags": ["auto-generated"],
-            }
+            "ID": "my_" + traditional,
+            "Traditional": traditional,
+            "Pinyin": pinyin,
+            "Zhuyin": zhuyin,
+            "Meaning": meaning,
+            "Mnemonic": "",
+            "Audio": "",
         },
+        ["auto-generated"],
     )
+    print(f"✓ Created note {note_id} for '{traditional}'")
 
-    if response and response.get("result"):
-        note_id = response["result"]
-        print(f"✓ Created note {note_id} for '{traditional}'")
+    card_ids = find_cards_by_query(f"nid:{note_id}")
 
-        # Get cards for this note
-        cards_response = anki_connect_request("findCards", {"query": f"nid:{note_id}"})
+    if card_ids:
+        if set_due_today:
+            # A new card's queue position lives in its `due` column; position 0
+            # puts these cards at the front of the new-card queue.
+            set_new_card_positions(dict.fromkeys(card_ids, 0))
+            print(f"✓ Set {len(card_ids)} card(s) to the front of the new queue")
+        else:
+            suspend_cards(card_ids)
+            print(f"✓ Suspended {len(card_ids)} card(s) for note {note_id}")
 
-        if cards_response and cards_response.get("result"):
-            card_ids = cards_response["result"]
-
-            if set_due_today:
-                # Set cards due today (due = 0 means due today)
-                for card_id in card_ids:
-                    set_due_response = anki_connect_request("setSpecificValueOfCard", {"card": card_id, "keys": ["due"], "newValues": [0]})
-
-                    if set_due_response and set_due_response.get("error") is None:
-                        print(f"✓ Set card {card_id} due today")
-                    else:
-                        print(f"⚠ Warning: Failed to set card {card_id} due today")
-            else:
-                # Suspend the cards
-                suspend_response = anki_connect_request("suspend", {"cards": card_ids})
-
-                if suspend_response and suspend_response.get("error") is None:
-                    print(f"✓ Suspended {len(card_ids)} card(s) for note {note_id}")
-                else:
-                    print(f"⚠ Warning: Failed to suspend cards for note {note_id}")
-
-        return note_id
-    error = response.get("error", "Unknown error") if response else "No response"
-    raise Exception(f"Failed to create note for '{traditional}': {error}")
+    return note_id
 
 
 def generate_price_phrase(price: int, client: Any | None = None) -> str:

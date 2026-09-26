@@ -7,43 +7,19 @@
 # ]
 # ///
 
-from typing import Any
+"""
+Fill the Zhuyin field of notes that have a Pinyin field but no Zhuyin yet.
+"""
 
-import dragonmapper
-import dragonmapper.transcriptions
-import requests
+import sys
+from pathlib import Path
 
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import AnkiNoteInfo, find_notes_by_query, get_field_value, iter_notes_info, update_note_fields
+from shared.pinyin_utils import pinyin_to_zhuyin
 
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
-    """
-    Send a request to anki-connect
-
-    Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
-
-    Returns:
-        dict: Response from anki-connect
-    """
-    if params is None:
-        params = {}
-
-    request_data = {"action": action, "params": params, "version": 6}
-
-    try:
-        response = requests.post("http://localhost:8765", json=request_data)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to anki-connect: {e}")
-        raise
-
-
-def pinyin_to_bopomofo(pinyin_text: str) -> str:
-    if not pinyin_text or pinyin_text.strip() == "":
-        return ""
-
-    return dragonmapper.transcriptions.pinyin_to_zhuyin(pinyin_text)
+NOTE_TYPES = ["TOCFL", "Hanzi"]
 
 
 def find_notes_with_empty_zhuyin(note_type: str) -> list[int]:
@@ -57,84 +33,29 @@ def find_notes_with_empty_zhuyin(note_type: str) -> list[int]:
         list: List of note IDs
     """
     # Search for notes with non-empty Traditional but empty Zhuyin field
-    search_query = f"note:{note_type} Traditional:_* Zhuyin:"
+    note_ids = find_notes_by_query(f"note:{note_type} Traditional:_* Zhuyin:")
 
-    response = anki_connect_request("findNotes", {"query": search_query})
-
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) with empty Zhuyin field in {note_type}")
-            return note_ids
-
-    print(f"No notes found with empty Zhuyin field in {note_type}")
-    return []
+    if note_ids:
+        print(f"Found {len(note_ids)} note(s) with empty Zhuyin field in {note_type}")
+    else:
+        print(f"No notes found with empty Zhuyin field in {note_type}")
+    return note_ids
 
 
-def get_note_info(note_id: int) -> dict[str, Any]:
+def update_zhuyin_for_note(note_info: AnkiNoteInfo) -> None:
     """
-    Get detailed information about a note
+    Update the Zhuyin field of a single note based on its Pinyin field
 
     Args:
-        note_id (int): The note ID
-
-    Returns:
-        dict: Note information
+        note_info: The note to update
     """
-    response = anki_connect_request("notesInfo", {"notes": [note_id]})
+    note_id = note_info["noteId"]
 
-    if response and response.get("result"):
-        return response["result"][0]
+    # Anki wraps a multi-line Pinyin field in divs; they are not part of the pinyin.
+    current_pinyin = get_field_value(note_info, "Pinyin").replace("<div>", "").replace("</div>", "").strip()
+    current_zhuyin = get_field_value(note_info, "Zhuyin")
 
-    raise Exception("No note found")
-
-
-def update_note_zhuyin(note_id: int, zhuyin_text: str) -> bool:
-    """
-    Update the Zhuyin field of a note
-
-    Args:
-        note_id (int): The note ID
-        zhuyin_text (str): The zhuyin text to set
-
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    # Prepare the update
-    fields = {"Zhuyin": zhuyin_text}
-
-    response = anki_connect_request("updateNoteFields", {"note": {"id": note_id, "fields": fields}})
-
-    if response and response.get("error") is None:  # anki-connect returns None on success
-        print(f"Updated Zhuyin field for note {note_id} with: {zhuyin_text}")
-        return True
-    print(f"Failed to update Zhuyin field for note {note_id}: {response}")
-    return False
-
-
-def update_zhuyin_for_note(note_type: str, note_id: int) -> None:
-    """
-    Update Zhuyin field for a single note based on its Traditional field
-
-    Args:
-        note_type (str): The note type
-        note_id (int): The note ID
-    """
-    # Get note information
-    note_info = get_note_info(note_id)
-    if not note_info:
-        return
-
-    # Get the Traditional field value (Chinese characters)
-    pinyin_field = note_info["fields"].get("Pinyin", {})
-    print(pinyin_field)
-    current_pinyin = pinyin_field.get("value", "").strip().replace("<div>", "").replace("</div>", "")
-
-    # Get the current Zhuyin field value
-    zhuyin_field = note_info["fields"].get("Zhuyin", {})
-    current_zhuyin = zhuyin_field.get("value", "").strip()
-
-    # Only update if Zhuyin is empty and Traditional has content
+    # Only update if Zhuyin is empty and there is pinyin to convert
     if current_zhuyin:
         print(f"Skipping note {note_id}: Zhuyin field already has content: '{current_zhuyin}'")
         return
@@ -145,31 +66,25 @@ def update_zhuyin_for_note(note_type: str, note_id: int) -> None:
 
     print(f"Processing note {note_id}: Pinyin='{current_pinyin}'")
 
-    # Convert Chinese characters to Bopomofo
-    zhuyin_text = pinyin_to_bopomofo(current_pinyin)
+    zhuyin_text = pinyin_to_zhuyin(current_pinyin)
 
-    if zhuyin_text:
-        # Update the note's Zhuyin field
-        if update_note_zhuyin(note_id, zhuyin_text):
-            print(f"Successfully updated note {note_id} with Zhuyin: {zhuyin_text}")
-        else:
-            print(f"Failed to update note {note_id}")
-    else:
-        print(f"Failed to convert Traditional to Zhuyin for note {note_id}")
+    if not zhuyin_text:
+        raise ValueError(f"Could not convert pinyin '{current_pinyin}' of note {note_id} to zhuyin")
+
+    update_note_fields(note_id, {"Zhuyin": zhuyin_text})
+    print(f"Successfully updated note {note_id} with Zhuyin: {zhuyin_text}")
 
 
-def main():
+def main() -> None:
     """
     Main function to process all note types and update Zhuyin fields
     """
-    note_types = ["TOCFL", "Hanzi"]
-
-    for note_type in note_types:
+    for note_type in NOTE_TYPES:
         print(f"\n=== Processing {note_type} ===")
         note_ids = find_notes_with_empty_zhuyin(note_type)
 
-        for note_id in note_ids:
-            update_zhuyin_for_note(note_type, note_id)
+        for note_info in iter_notes_info(note_ids):
+            update_zhuyin_for_note(note_info)
 
         print(f"Completed processing {note_type}")
 

@@ -28,10 +28,15 @@ from typing import TypedDict
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.anki_utils import (
-    anki_connect_request,
+    add_note,
+    find_cards_by_query,
     find_notes_by_query,
+    get_field_value,
     get_meaning_field,
     get_notes_info,
+    iter_notes_info,
+    set_due_date,
+    update_note_fields,
 )
 from shared.character_discovery import normalize_cjk_char
 from shared.pinyin_utils import (
@@ -298,65 +303,40 @@ def load_all_data() -> HanziDataStore:
     print("Loading all Hanzi notes from Anki...")
 
     # Fetch all unsuspended Hanzi notes
-    hanzi_query = "note:Hanzi -is:suspended"
-    response = anki_connect_request("findNotes", {"query": hanzi_query})
-    hanzi_ids = response.get("result", [])
+    hanzi_ids = find_notes_by_query("note:Hanzi -is:suspended")
 
     print(f"  Found {len(hanzi_ids)} Hanzi notes, fetching details...")
 
     # Fetch note details in batches
-    hanzi_notes: list[HanziNote] = []
     batch_size = 500
-    for i in range(0, len(hanzi_ids), batch_size):
-        batch_ids = hanzi_ids[i : i + batch_size]
-        response = anki_connect_request("notesInfo", {"notes": batch_ids})
-        notes_info = response.get("result", [])
-
-        for note in notes_info:
-            traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
-            pinyin = note["fields"].get("Pinyin", {}).get("value", "").strip()
-            meaning = get_meaning_field(note)
-            sound_component = note["fields"].get("Sound component character", {}).get("value", "").strip()
-            tags = set(note.get("tags", []))
-
-            hanzi_notes.append(
-                HanziNote(
-                    note_id=note["noteId"],
-                    traditional=traditional,
-                    pinyin=pinyin,
-                    meaning=meaning,
-                    sound_component=sound_component,
-                    tags=tags,
-                )
-            )
+    hanzi_notes: list[HanziNote] = [
+        HanziNote(
+            note_id=note["noteId"],
+            traditional=get_field_value(note, "Traditional"),
+            pinyin=get_field_value(note, "Pinyin"),
+            meaning=get_meaning_field(note),
+            sound_component=get_field_value(note, "Sound component character"),
+            tags=set(note.get("tags", [])),
+        )
+        for note in iter_notes_info(hanzi_ids, batch_size)
+    ]
 
     print(f"  Loaded {len(hanzi_notes)} Hanzi notes")
 
     # Fetch all unsuspended TOCFL notes
     print("Loading all TOCFL notes from Anki...")
-    tocfl_query = "note:TOCFL -is:suspended"
-    response = anki_connect_request("findNotes", {"query": tocfl_query})
-    tocfl_ids = response.get("result", [])
+    tocfl_ids = find_notes_by_query("note:TOCFL -is:suspended")
 
     print(f"  Found {len(tocfl_ids)} TOCFL notes, fetching details...")
 
-    tocfl_notes: list[TOCFLNote] = []
-    for i in range(0, len(tocfl_ids), batch_size):
-        batch_ids = tocfl_ids[i : i + batch_size]
-        response = anki_connect_request("notesInfo", {"notes": batch_ids})
-        notes_info = response.get("result", [])
-
-        for note in notes_info:
-            traditional = note["fields"].get("Traditional", {}).get("value", "").strip()
-            meaning = get_meaning_field(note)
-
-            tocfl_notes.append(
-                TOCFLNote(
-                    note_id=note["noteId"],
-                    traditional=traditional,
-                    meaning=meaning,
-                )
-            )
+    tocfl_notes: list[TOCFLNote] = [
+        TOCFLNote(
+            note_id=note["noteId"],
+            traditional=get_field_value(note, "Traditional"),
+            meaning=get_meaning_field(note),
+        )
+        for note in iter_notes_info(tocfl_ids, batch_size)
+    ]
 
     print(f"  Loaded {len(tocfl_notes)} TOCFL notes")
 
@@ -895,12 +875,10 @@ class TagTraditionalToMeaning(ConnectDotsGenerator):
 
         for note in notes_info:
             # Try different field names for traditional
-            traditional = (
-                note["fields"].get("Traditional", {}).get("value", "").strip() or note["fields"].get("Hanzi", {}).get("value", "").strip()
-            )
+            traditional = get_field_value(note, "Traditional") or get_field_value(note, "Hanzi")
 
             # Try different field names for meaning (Meaning 2 > Meaning > English)
-            meaning = get_meaning_field(note) or note["fields"].get("English", {}).get("value", "").strip()
+            meaning = get_meaning_field(note) or get_field_value(note, "English")
 
             if traditional and meaning:
                 left.append(traditional)
@@ -1070,8 +1048,7 @@ class ConnectDotsManager:
         Returns:
             List of card IDs for this note
         """
-        response = anki_connect_request("findCards", {"query": f"nid:{note_id}"})
-        return response.get("result", [])
+        return find_cards_by_query(f"nid:{note_id}")
 
     def get_existing_notes(self) -> dict[str, ExistingNoteInfo]:
         """
@@ -1090,15 +1067,15 @@ class ConnectDotsManager:
         existing: dict[str, ExistingNoteInfo] = {}
 
         for note in notes_info:
-            key = note["fields"].get("Key", {}).get("value", "").strip()
+            key = get_field_value(note, "Key")
             if key:
                 existing[key] = {
                     "noteId": note["noteId"],
-                    "left": note["fields"].get("Left", {}).get("value", "").strip(),
-                    "right": note["fields"].get("Right", {}).get("value", "").strip(),
-                    "explanation": note["fields"].get("Explanation", {}).get("value", "").strip(),
-                    "fake_right": note["fields"].get("Fake Right", {}).get("value", "").strip(),
-                    "right_is_pronunciation": note["fields"].get("Right Is Pronunciation", {}).get("value", "").strip(),
+                    "left": get_field_value(note, "Left"),
+                    "right": get_field_value(note, "Right"),
+                    "explanation": get_field_value(note, "Explanation"),
+                    "fake_right": get_field_value(note, "Fake Right"),
+                    "right_is_pronunciation": get_field_value(note, "Right Is Pronunciation"),
                 }
 
         return existing
@@ -1124,28 +1101,19 @@ class ConnectDotsManager:
             print(f"    Right Is Pronunciation: {note.right_is_pronunciation_str()}")
             return 0
 
-        response = anki_connect_request(
-            "addNote",
+        note_id = add_note(
+            self.DECK_NAME,
+            self.NOTE_TYPE,
             {
-                "note": {
-                    "deckName": self.DECK_NAME,
-                    "modelName": self.NOTE_TYPE,
-                    "fields": {
-                        "Key": note.key,
-                        "Left": note.left_str(),
-                        "Right": note.right_str(),
-                        "Explanation": note.explanation_str(),
-                        "Fake Right": note.fake_right_str(),
-                        "Right Is Pronunciation": note.right_is_pronunciation_str(),
-                    },
-                    "tags": ["auto-generated", "connect-dots"],
-                }
+                "Key": note.key,
+                "Left": note.left_str(),
+                "Right": note.right_str(),
+                "Explanation": note.explanation_str(),
+                "Fake Right": note.fake_right_str(),
+                "Right Is Pronunciation": note.right_is_pronunciation_str(),
             },
+            ["auto-generated", "connect-dots"],
         )
-
-        note_id = response.get("result")
-        if not note_id:
-            raise Exception(f"Failed to create note for key '{note.key}'")
 
         print(f"  Created note {note_id} for key '{note.key}'")
         return note_id
@@ -1198,20 +1166,15 @@ class ConnectDotsManager:
                 print(f"    Right Is Pronunciation: {new_right_is_pronunciation}")
             return
 
-        anki_connect_request(
-            "updateNoteFields",
+        update_note_fields(
+            note_id,
             {
-                "note": {
-                    "id": note_id,
-                    "fields": {
-                        "Key": note.key,
-                        "Left": note.left_str(),
-                        "Right": note.right_str(),
-                        "Explanation": note.explanation_str(),
-                        "Fake Right": note.fake_right_str(),
-                        "Right Is Pronunciation": note.right_is_pronunciation_str(),
-                    },
-                }
+                "Key": note.key,
+                "Left": note.left_str(),
+                "Right": note.right_str(),
+                "Explanation": note.explanation_str(),
+                "Fake Right": note.fake_right_str(),
+                "Right Is Pronunciation": note.right_is_pronunciation_str(),
             },
         )
 
@@ -1219,8 +1182,8 @@ class ConnectDotsManager:
         if not self.skip_reschedule:
             card_ids = self._get_card_ids_for_note(note_id)
             if card_ids:
-                anki_connect_request("setDueDate", {"cards": card_ids, "days": "1!"})
-                anki_connect_request("setDueDate", {"cards": card_ids, "days": "0"})
+                set_due_date(card_ids, "1!")
+                set_due_date(card_ids, "0")
 
         print(f"  Updated note {note_id} for key '{note.key}'")
 

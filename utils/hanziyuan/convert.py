@@ -33,9 +33,10 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
-# Add parent directories to path for importing shared utilities
-sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
-from character_conversion import is_simplified
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.character_conversion import is_simplified
+from shared.project_paths import HANZIYUAN_CONVERTED_DIR, HANZIYUAN_IMAGES_DIR, HANZIYUAN_RAW_DIR
 
 
 def html_to_text(html_string: str) -> str:
@@ -1009,11 +1010,9 @@ def main():
     args = parser.parse_args()
 
     # Set up paths
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent.parent
-    raw_dir = project_root / "public" / "data" / "hanziyuan" / "raw"
-    output_dir = project_root / "public" / "data" / "hanziyuan" / "converted"
-    images_dir = project_root / "public" / "data" / "hanziyuan" / "images" / "etymology"
+    raw_dir = HANZIYUAN_RAW_DIR
+    output_dir = HANZIYUAN_CONVERTED_DIR
+    images_dir = HANZIYUAN_IMAGES_DIR
 
     if not raw_dir.exists():
         print(f"Error: Raw directory not found: {raw_dir}", file=sys.stderr)

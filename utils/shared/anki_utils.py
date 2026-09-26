@@ -5,6 +5,7 @@ This module provides a common interface for communicating with the AnkiConnect a
 """
 
 import base64
+from collections.abc import Iterator
 from typing import Any, NotRequired, TypedDict
 
 import requests
@@ -125,6 +126,27 @@ def find_notes_by_query(query: str) -> list[int]:
     return response.get("result", [])
 
 
+def find_notes_by_type(note_type: str, extra_filter: str = "") -> list[int]:
+    """
+    Find all notes of a note type, reporting how many were found.
+
+    Args:
+        note_type: The note type to search (e.g. "Hanzi")
+        extra_filter: Extra Anki search terms (e.g. "-is:suspended")
+
+    Returns:
+        List of note IDs
+    """
+    query = f"note:{note_type} {extra_filter}".strip()
+    note_ids = find_notes_by_query(query)
+
+    if note_ids:
+        print(f"Found {len(note_ids)} notes of type {note_type}")
+    else:
+        print(f"No notes found of type {note_type}")
+    return note_ids
+
+
 def find_cards_by_query(query: str) -> list[int]:
     """
     Find cards matching a query.
@@ -136,6 +158,23 @@ def find_cards_by_query(query: str) -> list[int]:
         List of card IDs
     """
     response = anki_connect_request("findCards", {"query": query})
+    return response.get("result", [])
+
+
+def cards_to_notes(card_ids: list[int]) -> list[int]:
+    """
+    Map cards to the notes they belong to.
+
+    Args:
+        card_ids: List of card IDs
+
+    Returns:
+        List of note IDs, deduplicated by AnkiConnect
+    """
+    if not card_ids:
+        return []
+
+    response = anki_connect_request("cardsToNotes", {"cards": card_ids})
     return response.get("result", [])
 
 
@@ -276,6 +315,71 @@ def get_notes_info(note_ids: list[int]) -> list[AnkiNoteInfo]:
         return response["result"]
 
     raise Exception("Failed to fetch notes")
+
+
+def add_note(deck: str, model: str, fields: dict[str, str], tags: list[str] | None = None) -> int:
+    """
+    Create a new note.
+
+    Args:
+        deck: Deck the note's cards go into (e.g. "Chinese::CharsProps")
+        model: Note type to use (e.g. "Hanzi")
+        fields: Field values for the new note
+        tags: Tags to put on the note
+
+    Returns:
+        The new note's id
+
+    Raises:
+        Exception: If AnkiConnect refuses to create the note (e.g. a duplicate)
+    """
+    response = anki_connect_request(
+        "addNote",
+        {"note": {"deckName": deck, "modelName": model, "fields": fields, "tags": tags or []}},
+    )
+
+    note_id = response.get("result")
+    if not note_id:
+        raise Exception(f"Failed to create {model} note in deck '{deck}': {response}")
+    return note_id
+
+
+def get_note_info(note_id: int) -> AnkiNoteInfo:
+    """
+    Get detailed information about a single note.
+
+    Args:
+        note_id: The note ID
+
+    Returns:
+        The note's information
+
+    Raises:
+        Exception: If no note has that id
+    """
+    notes = get_notes_info([note_id])
+    if not notes:
+        raise Exception(f"No note found for ID {note_id}")
+    return notes[0]
+
+
+def iter_notes_info(note_ids: list[int], batch_size: int = 100) -> Iterator[AnkiNoteInfo]:
+    """
+    Fetch notes in batches, yielding each one.
+
+    AnkiConnect handles a bounded number of notes per `notesInfo` call
+    comfortably, so callers that hold thousands of note ids fetch them in
+    batches rather than in one request.
+
+    Args:
+        note_ids: List of note IDs
+        batch_size: How many notes to fetch per request
+
+    Yields:
+        Each note's information, in the order the ids were given
+    """
+    for i in range(0, len(note_ids), batch_size):
+        yield from get_notes_info(note_ids[i : i + batch_size])
 
 
 def get_meaning_field(note: AnkiNoteInfo) -> str:

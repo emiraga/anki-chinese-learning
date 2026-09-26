@@ -3,16 +3,23 @@ Shared utilities for character discovery across dong, rtega, and yellowbridge sc
 
 This module provides a simple interface to discover all characters from:
 - Anki notes
-- Three standard data directories: dong, yellowbridge/raw, rtega
+- the standard per-character data directories (see `discover_all_characters`),
+  whose locations come from `project_paths`
 """
 
 import json
 import unicodedata
 from collections import Counter
-from pathlib import Path
 from typing import NotRequired, TypedDict
 
-from .anki_utils import anki_connect_request, find_notes_by_query, get_field_value, get_notes_info
+from .anki_utils import find_notes_by_query, get_field_value, iter_notes_info
+from .project_paths import (
+    DONG_DIR,
+    HACKCHINESE_OUTLIER_DIR,
+    HANZIYUAN_CONVERTED_DIR,
+    PLECO_OUTLIER_SERIES_DIR,
+    YELLOWBRIDGE_RAW_DIR,
+)
 
 KNOWN_CHARS_QUERY = "note:Hanzi -is:suspended card:1"
 
@@ -81,27 +88,27 @@ def extract_all_characters(text: str, normalize: bool = False) -> set[str]:
     return chars
 
 
-def extract_known_chars() -> set[str]:
+def extract_known_chars(query: str = KNOWN_CHARS_QUERY) -> set[str]:
     """
     Collect the traditional characters that are already being learned in Anki.
 
-    A character counts as known when it has an unsuspended first card in the
-    Hanzi note type (query: "note:Hanzi -is:suspended card:1").
+    By default a character counts as known when it has an unsuspended first card
+    in the Hanzi note type (query: "note:Hanzi -is:suspended card:1").
+
+    Args:
+        query: Anki search selecting the notes to read Traditional fields from
 
     Returns:
         Set of known traditional characters
     """
-    note_ids = find_notes_by_query(KNOWN_CHARS_QUERY)
-    print(f"Found {len(note_ids)} unsuspended Hanzi notes")
+    note_ids = find_notes_by_query(query)
+    print(f"Found {len(note_ids)} notes matching '{query}'")
 
     known_chars: set[str] = set()
-    batch_size = 100
 
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i : i + batch_size]
-        for note_info in get_notes_info(batch_ids):
-            traditional = get_field_value(note_info, "Traditional")
-            known_chars.update(extract_all_characters(traditional))
+    for note_info in iter_notes_info(note_ids):
+        traditional = get_field_value(note_info, "Traditional")
+        known_chars.update(extract_all_characters(traditional))
 
     print(f"Known characters: {len(known_chars)}")
     return known_chars
@@ -109,17 +116,13 @@ def extract_known_chars() -> set[str]:
 
 def find_all_notes_with_traditional(note_type: str, extra_filter: str = "") -> list[int]:
     """Find all notes with Traditional field."""
-    search_query = f"note:{note_type} Traditional:_* {extra_filter}"
-    response = anki_connect_request("findNotes", {"query": search_query})
+    note_ids = find_notes_by_query(f"note:{note_type} Traditional:_* {extra_filter}")
 
-    if response and response.get("result"):
-        note_ids = response["result"]
-        if note_ids:
-            print(f"Found {len(note_ids)} note(s) in {note_type}")
-            return note_ids
-
-    print(f"No notes found in {note_type}")
-    return []
+    if note_ids:
+        print(f"Found {len(note_ids)} note(s) in {note_type}")
+    else:
+        print(f"No notes found in {note_type}")
+    return note_ids
 
 
 def _get_anki_characters(normalize: bool = False) -> tuple[set[str], Counter[str]]:
@@ -131,39 +134,31 @@ def _get_anki_characters(normalize: bool = False) -> tuple[set[str], Counter[str
 
     anki_chars: set[str] = set()
     char_frequency: Counter[str] = Counter()
-    batch_size = 100
 
     for note_type, extra_filter in note_types:
         print(f"\nProcessing note type: {note_type}")
         note_ids = find_all_notes_with_traditional(note_type, extra_filter)
 
-        for i in range(0, len(note_ids), batch_size):
-            batch = note_ids[i : i + batch_size]
-            try:
-                notes_info = get_notes_info(batch)
-
-                for note_info in notes_info:
-                    traditional = get_field_value(note_info, "Traditional")
-                    if traditional:
-                        chars = extract_all_characters(traditional, normalize=normalize)
-                        anki_chars.update(chars)
-                        char_frequency.update(chars)
-            except Exception as e:
-                print(f"  Error processing batch starting at note {i}: {e}")
+        for note_info in iter_notes_info(note_ids):
+            traditional = get_field_value(note_info, "Traditional")
+            if traditional:
+                chars = extract_all_characters(traditional, normalize=normalize)
+                anki_chars.update(chars)
+                char_frequency.update(chars)
 
     print(f"\nTotal unique characters from Anki: {len(anki_chars)}")
     return anki_chars, char_frequency
 
 
-def _scan_data_directories(project_root: Path, normalize: bool = False) -> tuple[set[str], Counter[str]]:
-    """Scan the three standard data directories for existing character files."""
+def _scan_data_directories(normalize: bool = False) -> tuple[set[str], Counter[str]]:
+    """Scan the standard data directories for existing character files."""
     data_dirs = [
-        project_root / "public" / "data" / "dong",
-        project_root / "public" / "data" / "yellowbridge" / "raw",
-        # project_root / "data" / "rtega"
-        project_root / "public" / "data" / "hanziyuan" / "converted",
-        project_root / "public" / "data" / "hackchinese" / "outlier",
-        project_root / "public" / "data" / "pleco" / "outlier_series",
+        DONG_DIR,
+        YELLOWBRIDGE_RAW_DIR,
+        # RTEGA_DIR
+        HANZIYUAN_CONVERTED_DIR,
+        HACKCHINESE_OUTLIER_DIR,
+        PLECO_OUTLIER_SERIES_DIR,
     ]
 
     all_chars: set[str] = set()
@@ -193,7 +188,7 @@ def _scan_data_directories(project_root: Path, normalize: bool = False) -> tuple
     return all_chars, char_frequency
 
 
-def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tuple[set[str], Counter[str]]:
+def _scan_outlier_series_json(normalize: bool = False) -> tuple[set[str], Counter[str]]:
     """Scan outlier series JSON files for characters in specific fields.
 
     Extracts characters from:
@@ -203,7 +198,7 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
     - empty_component.characters[].traditional
     - radical.characters[].traditional
     """
-    outlier_dir = project_root / "public" / "data" / "pleco" / "outlier_series"
+    outlier_dir = PLECO_OUTLIER_SERIES_DIR
 
     all_chars: set[str] = set()
     char_frequency: Counter[str] = Counter()
@@ -246,7 +241,7 @@ def _scan_outlier_series_json(project_root: Path, normalize: bool = False) -> tu
 
 
 def discover_all_characters(
-    project_root: Path, include_anki: bool = True, include_folders: bool = True, normalize: bool = False
+    include_anki: bool = True, include_folders: bool = True, normalize: bool = False
 ) -> tuple[set[str], Counter[str]]:
     """
     Discover all characters from Anki and the standard data directories.
@@ -261,7 +256,6 @@ def discover_all_characters(
     7. public/data/pleco/outlier_series JSON files (referenced characters)
 
     Args:
-        project_root (Path): Project root directory
         include_anki (bool): Whether to include Anki characters (default: True)
         include_folders (bool): Whether to include data directory characters (default: True)
         normalize (bool): Whether to normalize characters (default: False)
@@ -292,7 +286,7 @@ def discover_all_characters(
         print(f"\n{'=' * 60}")
         print("SCANNING DATA DIRECTORIES")
         print(f"{'=' * 60}")
-        dir_chars, dir_freq = _scan_data_directories(project_root, normalize=normalize)
+        dir_chars, dir_freq = _scan_data_directories(normalize=normalize)
         all_chars.update(dir_chars)
         char_frequency.update(dir_freq)
 
@@ -300,7 +294,7 @@ def discover_all_characters(
         print(f"\n{'=' * 60}")
         print("SCANNING OUTLIER SERIES JSON FILES")
         print(f"{'=' * 60}")
-        outlier_chars, outlier_freq = _scan_outlier_series_json(project_root, normalize=normalize)
+        outlier_chars, outlier_freq = _scan_outlier_series_json(normalize=normalize)
         all_chars.update(outlier_chars)
         char_frequency.update(outlier_freq)
     else:

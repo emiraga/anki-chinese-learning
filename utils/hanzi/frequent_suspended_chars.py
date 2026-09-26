@@ -17,11 +17,14 @@ they appear in the phrases you're studying.
 import argparse
 import csv
 import re
+import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
 
-import requests
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.anki_utils import find_notes_by_query, get_field_value, iter_notes_info
+from shared.project_paths import FREQUENCY_CSV
 
 
 def load_frequency_data(csv_path: str | Path):
@@ -58,104 +61,26 @@ def load_frequency_data(csv_path: str | Path):
     return frequency_data
 
 
-def anki_connect_request(action: str, params: dict[str, Any] | None = None):
+def get_single_char_hanzi_notes(suspended: bool) -> set[str]:
     """
-    Send a request to anki-connect
+    Get all single characters from suspended, or from active, Hanzi notes
 
     Args:
-        action (str): The action to perform
-        params (dict): Parameters for the action
+        suspended (bool): True for suspended notes, False for active ones
 
     Returns:
-        dict: Response from anki-connect
+        set: Set of characters held by those Hanzi notes
     """
-    if params is None:
-        params = {}
+    label = "suspended" if suspended else "active"
+    print(f"\n=== Finding {label} Hanzi characters ===")
 
-    request_data = {"action": action, "params": params, "version": 6}
+    note_ids = find_notes_by_query(f"note:Hanzi {'is:suspended' if suspended else '-is:suspended'}")
+    print(f"Found {len(note_ids)} {label} Hanzi notes")
 
-    response = requests.post("http://localhost:8765", json=request_data)
-    response.raise_for_status()
-    result = response.json()
+    chars = {traditional for note_info in iter_notes_info(note_ids) if len(traditional := get_field_value(note_info, "Traditional")) == 1}
 
-    if result.get("error"):
-        raise Exception(f"AnkiConnect error: {result['error']}")
-
-    return result
-
-
-def get_suspended_hanzi_characters():
-    """
-    Get all single characters from suspended Hanzi notes
-
-    Returns:
-        set: Set of characters that are suspended in Hanzi notes
-    """
-    print("=== Finding suspended Hanzi characters ===")
-
-    # Find suspended Hanzi notes
-    response = anki_connect_request("findNotes", {"query": "note:Hanzi is:suspended"})
-
-    note_ids = response.get("result", [])
-    print(f"Found {len(note_ids)} suspended Hanzi notes")
-
-    if not note_ids:
-        return set()
-
-    # Get note info in batches
-    suspended_chars = set()
-    batch_size = 100
-
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i : i + batch_size]
-        notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
-        notes_info = notes_response.get("result", [])
-
-        for note_info in notes_info:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            # Only consider single character notes
-            if len(traditional) == 1:
-                suspended_chars.add(traditional)
-
-    print(f"Found {len(suspended_chars)} suspended single-character Hanzi notes")
-    return suspended_chars
-
-
-def get_active_hanzi_characters():
-    """
-    Get all single characters from active (non-suspended) Hanzi notes
-
-    Returns:
-        set: Set of characters that are active in Hanzi notes
-    """
-    print("\n=== Finding active Hanzi characters ===")
-
-    # Find non-suspended Hanzi notes
-    response = anki_connect_request("findNotes", {"query": "note:Hanzi -is:suspended"})
-
-    note_ids = response.get("result", [])
-    print(f"Found {len(note_ids)} active Hanzi notes")
-
-    if not note_ids:
-        return set()
-
-    # Get note info in batches
-    active_chars = set()
-    batch_size = 100
-
-    for i in range(0, len(note_ids), batch_size):
-        batch_ids = note_ids[i : i + batch_size]
-        notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
-        notes_info = notes_response.get("result", [])
-
-        for note_info in notes_info:
-            traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
-            # Only consider single character notes
-            if len(traditional) == 1:
-                active_chars.add(traditional)
-
-    print(f"Found {len(active_chars)} active single-character Hanzi notes")
-    return active_chars
+    print(f"Found {len(chars)} {label} single-character Hanzi notes")
+    return chars
 
 
 def count_characters_in_phrases(note_types: list[str], target_chars: set[str]):
@@ -175,36 +100,25 @@ def count_characters_in_phrases(note_types: list[str], target_chars: set[str]):
     for note_type in note_types:
         print(f"\nProcessing {note_type} notes...")
 
-        response = anki_connect_request("findNotes", {"query": f"note:{note_type}"})
-
-        note_ids = response.get("result", [])
+        note_ids = find_notes_by_query(f"note:{note_type}")
         print(f"  Found {len(note_ids)} notes")
 
-        if not note_ids:
-            continue
+        for note_info in iter_notes_info(note_ids):
+            traditional = get_field_value(note_info, "Traditional")
 
-        batch_size = 100
-        for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i : i + batch_size]
-            notes_response = anki_connect_request("notesInfo", {"notes": batch_ids})
-            notes_info = notes_response.get("result", [])
+            if not traditional:
+                continue
 
-            for note_info in notes_info:
-                traditional = note_info["fields"].get("Traditional", {}).get("value", "").strip()
+            # Clean the traditional text
+            # Remove HTML tags
+            traditional = re.sub(r"<[^>]+>", "", traditional)
+            # Remove punctuation and non-Chinese characters
+            traditional = re.sub(r"[^\u4e00-\u9fff]", "", traditional)
 
-                if not traditional:
-                    continue
-
-                # Clean the traditional text
-                # Remove HTML tags
-                traditional = re.sub(r"<[^>]+>", "", traditional)
-                # Remove punctuation and non-Chinese characters
-                traditional = re.sub(r"[^\u4e00-\u9fff]", "", traditional)
-
-                # Count each character that's in our target set
-                for char in traditional:
-                    if char in target_chars:
-                        char_counter[char] += 1
+            # Count each character that's in our target set
+            for char in traditional:
+                if char in target_chars:
+                    char_counter[char] += 1
 
     return char_counter
 
@@ -241,14 +155,14 @@ def main():
     print("=" * 60)
 
     # Step 1: Get suspended Hanzi characters
-    suspended_chars = get_suspended_hanzi_characters()
+    suspended_chars = get_single_char_hanzi_notes(suspended=True)
 
     if not suspended_chars:
         print("\nNo suspended Hanzi characters found. Nothing to do.")
         return
 
     # Step 2: Get active Hanzi characters (for summary)
-    active_chars = get_active_hanzi_characters()
+    active_chars = get_single_char_hanzi_notes(suspended=False)
 
     # Step 3: Get character frequencies based on source mode
     if source_mode == "phrases":
@@ -259,8 +173,7 @@ def main():
         sorted_chars = char_counts.most_common(args.top)
     else:
         # Load frequency data from CSV
-        script_dir = Path(__file__).parent
-        csv_path = script_dir.parent.parent / "data" / "frequency.csv"
+        csv_path = FREQUENCY_CSV
         if not csv_path.exists():
             raise FileNotFoundError(f"Frequency CSV not found at {csv_path}")
 

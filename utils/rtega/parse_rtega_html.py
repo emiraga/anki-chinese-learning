@@ -15,12 +15,17 @@ Extracts character data and generates JSON files for each character.
 import hashlib
 import json
 import re
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
 import requests
 from bs4 import BeautifulSoup, Tag
+
+# Add shared utilities to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from shared.project_paths import RTEGA_DIR, RTEGA_HTML_DIR
 
 
 def extract_text_from_html(element: Tag) -> str:
@@ -517,13 +522,9 @@ def save_character_json(char_data: dict[str, Any], output_dir: Path):
 
 def main():
     """Main function to process all HTML files."""
-    # Get project root
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent.parent
-
     # Input and output directories
-    input_dir = project_root / "data" / "rtega"
-    output_dir = project_root / "public" / "data" / "rtega"
+    input_dir = RTEGA_HTML_DIR
+    output_dir = RTEGA_DIR
 
     if not input_dir.exists():
         raise FileNotFoundError(f"Input directory not found: {input_dir}")
