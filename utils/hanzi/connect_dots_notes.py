@@ -99,7 +99,7 @@ HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
 # Tag unions for Hanzi-to-Pinyin notes - notes must have AT LEAST ONE of the listed tags.
 # Each entry pairs a key name with the list of full tags to combine.
 HANZI_TO_PINYIN_UNIONS: list[tuple[str, list[str]]] = [
-    ("saloon-doors+sword-fight", ["prop-top::saloon-doors", "prop-top::sword-fight"]),
+    ("saloon-doors+sword-fight", ["prop-top::saloon-doors", "prop::sword-fight"]),
 ]
 
 # Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)
