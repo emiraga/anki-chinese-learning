@@ -12,9 +12,13 @@
 Unit tests for ConnectDotsNote splitting functionality.
 """
 
+import connect_dots_notes
 import pytest
 from connect_dots_notes import (
     ConnectDotsNote,
+    HanziDataStore,
+    HanziNote,
+    TagUnionHanziToPinyin,
     get_tone_number,
     pinyin_with_zhuyin,
     stable_bin,
@@ -584,6 +588,39 @@ class TestSplitStably:
         assert len(result) == 3
         for n in result:
             assert len(n.left) <= 20  # generous upper bound on hash imbalance
+
+
+class TestTagUnionHanziToPinyin:
+    """Tests for TagUnionHanziToPinyin generator"""
+
+    @pytest.fixture
+    def _data_store(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        store = HanziDataStore(
+            hanzi_notes=[
+                HanziNote(1, "兌", "duì", "exchange", "", {"prop-top::saloon-doors"}),
+                HanziNote(2, "並", "bìng", "and", "", {"prop-top::sword-fight"}),
+                HanziNote(3, "半", "bàn", "half", "", {"prop-top::saloon-doors", "prop-top::sword-fight"}),
+                HanziNote(4, "好", "hǎo", "good", "", {"prop::other"}),
+            ]
+        )
+        store.build_indexes()
+        monkeypatch.setattr(connect_dots_notes, "_data_store", store)
+
+    @pytest.mark.usefixtures("_data_store")
+    def test_combines_tags_without_duplicates(self):
+        generator = TagUnionHanziToPinyin("a+b", ["prop-top::saloon-doors", "prop-top::sword-fight"])
+        notes = generator.generate_notes()
+        assert len(notes) == 1
+        assert notes[0].key == "union:a+b"
+        assert sorted(notes[0].left) == ["並", "兌", "半"]
+
+    def test_requires_at_least_two_tags(self):
+        with pytest.raises(ValueError, match="at least 2 tags"):
+            TagUnionHanziToPinyin("a", ["prop-top::saloon-doors"])
+
+    def test_requires_prefixed_tags(self):
+        with pytest.raises(ValueError, match="prefix::name"):
+            TagUnionHanziToPinyin("a+b", ["prop-top::saloon-doors", "sword-fight"])
 
 
 if __name__ == "__main__":

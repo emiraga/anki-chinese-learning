@@ -96,6 +96,12 @@ HANZI_TO_PINYIN_INTERSECTIONS: list[tuple[str, list[str]]] = [
     ("left-moon-mean", ["prop-left::narrow-meat", "prop-left::moon"]),
 ]
 
+# Tag unions for Hanzi-to-Pinyin notes - notes must have AT LEAST ONE of the listed tags.
+# Each entry pairs a key name with the list of full tags to combine.
+HANZI_TO_PINYIN_UNIONS: list[tuple[str, list[str]]] = [
+    ("saloon-doors+sword-fight", ["prop-top::saloon-doors", "prop-top::sword-fight"]),
+]
+
 # Custom hanzi sets - manually curated character groups (using CustomHanziToPinyin generator)
 # Format: 'key_name': 'characters_as_string'
 CUSTOM_HANZI_TO_PINYIN_SETS = {
@@ -843,6 +849,48 @@ class TagHanziToPinyin(BaseHanziToPinyinGenerator):
 
     def get_notes(self) -> list[HanziNote]:
         return get_data_store().get_by_tag(self.tag)
+
+
+class TagUnionHanziToPinyin(BaseHanziToPinyinGenerator):
+    """
+    Generate notes mapping Hanzi that have at least one of several tags to their pinyin.
+
+    Uses pre-fetched data from HanziDataStore. Characters carrying more than one
+    of the tags are included only once.
+    Left = Traditional characters, Right = Pinyin pronunciations
+    """
+
+    def __init__(self, key_name: str, tags: list[str]):
+        """
+        Args:
+            key_name: Suffix for the note key (e.g., "saloon-doors+sword-fight")
+            tags: Full tag names in format "prefix::name" (e.g., "prop-top::saloon-doors")
+        """
+        if len(tags) < 2:
+            raise ValueError(f"Tag union '{key_name}' needs at least 2 tags, got: {tags}")
+        for tag in tags:
+            if "::" not in tag:
+                raise ValueError(f"Tag must be in format 'prefix::name', got: {tag}")
+        self.key_name = key_name
+        self.tags = tags
+
+    @property
+    def generator_type(self) -> str:
+        return "union"
+
+    def get_key_suffix(self) -> str:
+        return self.key_name
+
+    def get_notes(self) -> list[HanziNote]:
+        data_store = get_data_store()
+        notes: list[HanziNote] = []
+        seen_ids: set[int] = set()
+        for tag in self.tags:
+            for note in data_store.get_by_tag(tag):
+                if note.note_id not in seen_ids:
+                    notes.append(note)
+                    seen_ids.add(note.note_id)
+        return notes
 
 
 class TagTraditionalToMeaning(ConnectDotsGenerator):
@@ -1719,6 +1767,9 @@ def main():
                 additional_gen = TagHanziToPinyin(additional_tag)
                 result_gen = IntersectionGenerator(key_name, result_gen, additional_gen)
             generators.append(result_gen)
+
+    # Tag union generators
+    generators.extend(TagUnionHanziToPinyin(key_name, tags) for key_name, tags in HANZI_TO_PINYIN_UNIONS)
 
     # Two-character phrase generators (by common character)
     print(f"Finding whitelisted characters with {TWO_CHAR_PHRASE_MIN_COUNT}+ two-char phrases...")
