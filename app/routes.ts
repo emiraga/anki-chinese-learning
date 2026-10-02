@@ -5,6 +5,7 @@ export default [
   route("actors", "routes/actors.tsx"),
   route("char/:charHanzi", "routes/char/$charHanzi.tsx"),
   route("chars", "routes/chars.tsx"),
+  route("characters_more", "routes/characters_more.tsx"),
   route("conflicts", "routes/conflicts.tsx"),
   route("invalid_data", "routes/invalid_data.tsx"),
   route("integrity", "routes/integrity.tsx"),

@@ -30,6 +30,9 @@ type Pages = {
   "/chars": {
     params: {};
   };
+  "/characters_more": {
+    params: {};
+  };
   "/conflicts": {
     params: {};
   };
@@ -182,7 +185,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/media_clips" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/characters_more" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/media_clips" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -199,6 +202,10 @@ type RouteFiles = {
   "routes/chars.tsx": {
     id: "routes/chars";
     page: "/chars";
+  };
+  "routes/characters_more.tsx": {
+    id: "routes/characters_more";
+    page: "/characters_more";
   };
   "routes/conflicts.tsx": {
     id: "routes/conflicts";
@@ -392,6 +399,7 @@ type RouteModules = {
   "routes/actors": typeof import("./app/routes/actors.tsx");
   "routes/char/$charHanzi": typeof import("./app/routes/char/$charHanzi.tsx");
   "routes/chars": typeof import("./app/routes/chars.tsx");
+  "routes/characters_more": typeof import("./app/routes/characters_more.tsx");
   "routes/conflicts": typeof import("./app/routes/conflicts.tsx");
   "routes/invalid_data": typeof import("./app/routes/invalid_data.tsx");
   "routes/integrity": typeof import("./app/routes/integrity.tsx");

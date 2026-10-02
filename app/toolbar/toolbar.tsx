@@ -119,6 +119,11 @@ export const MainToolbarNoOutlet: React.FC<{
         },
         { pathname: "/chars", name: "All Chars", show: true },
         {
+          pathname: "/characters_more",
+          name: "Discover More",
+          show: phrases.some((p) => p.examples !== undefined),
+        },
+        {
           pathname: "/chars_multiple_pronunciation",
           name: "Heteronyms",
           show: true,
