@@ -577,33 +577,24 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
     return note_ids
 
 
-def pick_random_sentence(examples_json_str: str, known_characters: set[str]) -> str:
+def extract_example_sentences(examples_json_str: str) -> list[str]:
     """
-    Pick one Traditional example sentence at random from an Examples JSON value.
-
-    Only sentences whose Chinese characters are all present in known_characters
-    are eligible; everything else is filtered out first.
+    Extract all Traditional example sentences from an Examples JSON value.
 
     Args:
         examples_json_str (str): JSON string in the format
             {"<POS_CODE>": [{"Traditional": <sentence>, "English": <translation>}]}
-        known_characters (set): Set of Chinese characters the learner already knows
 
     Returns:
-        str: A randomly chosen Traditional sentence composed of known characters,
-            or "" if the Examples JSON contains no sentences at all
-
-    Raises:
-        Exception: If examples exist but none of them is composed entirely of
-            known characters
+        list: All non-empty Traditional sentences, or [] if there are none
     """
     if not examples_json_str or not examples_json_str.strip():
-        return ""
+        return []
 
     try:
         examples_dict = json.loads(examples_json_str)
     except json.JSONDecodeError:
-        return ""
+        return []
 
     sentences: list[str] = []
     if isinstance(examples_dict, dict):
@@ -616,33 +607,54 @@ def pick_random_sentence(examples_json_str: str, known_characters: set[str]) -> 
                     if sentence:
                         sentences.append(sentence)
 
-    if not sentences:
-        return ""
+    return sentences
 
-    # Filter out sentences that contain characters the learner doesn't know yet
-    eligible_sentences = [sentence for sentence in sentences if extract_all_characters(sentence).issubset(known_characters)]
+
+def pick_random_sentence(sentences: list[str], known_characters: set[str], exclude: set[str]) -> str:
+    """
+    Pick one example sentence at random.
+
+    Only sentences whose Chinese characters are all present in known_characters
+    and which are not in exclude are eligible; everything else is filtered out first.
+
+    Args:
+        sentences (list): Candidate Traditional sentences
+        known_characters (set): Set of Chinese characters the learner already knows
+        exclude (set): Sentences that must not be picked (e.g. already used ones)
+
+    Returns:
+        str: A randomly chosen eligible sentence, or "" if none is eligible
+    """
+    eligible_sentences = [
+        sentence for sentence in sentences if sentence not in exclude and extract_all_characters(sentence).issubset(known_characters)
+    ]
 
     if not eligible_sentences:
-        raise Exception("No example sentence is composed entirely of known characters")
+        return ""
 
     return random.choice(eligible_sentences)
 
 
 def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     """
-    Fill the Sentence Traditional field for cards due today or tomorrow whose
-    Traditional field has fewer than 4 characters and whose Sentence
-    Traditional field is empty.
+    Fill the Sentence Traditional and Sentence 2 Traditional fields for cards
+    due today or tomorrow whose Traditional field has fewer than 4 characters.
 
-    For each matching note, one Traditional example sentence from Examples JSON
-    whose characters are all known is picked at random and copied to Sentence
-    Traditional.
+    For each matching note, every empty field of the two gets a Traditional
+    example sentence from Examples JSON whose characters are all known, picked
+    at random. The two fields always hold different sentences. Non-empty values
+    are never changed.
 
     Args:
         known_characters (set): Set of Chinese characters the learner already knows
 
     Returns:
         int: Number of notes updated
+
+    Raises:
+        Exception: If a non-empty Sentence Traditional does not appear in
+            Examples JSON (it was modified manually), or if Sentence Traditional
+            is empty and no eligible sentence exists for it
     """
     # is:due matches cards waiting to be reviewed now (due today or overdue),
     # and prop:due=1 matches cards due tomorrow.
@@ -669,6 +681,7 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     skipped_no_sentence = 0
     skipped_traditional_too_long = 0
     skipped_sentence_already_filled = 0
+    missing_sentence_2 = 0
 
     for note_info in notes_info:
         note_id = note_info["noteId"]
@@ -683,29 +696,65 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
             skipped_traditional_too_long += 1
             continue
 
-        # Only fill Sentence Traditional when it is empty
+        sentences = extract_example_sentences(fields.get("Examples JSON", {}).get("value", ""))
+
+        # Sentence Traditional is always picked from Examples JSON, so a value
+        # that is not there anymore must have been edited by hand
         current_sentence = fields.get("Sentence Traditional", {}).get("value", "").strip()
-        if current_sentence:
+        if current_sentence and current_sentence not in sentences:
+            raise Exception(
+                f"Note {note_id} ('{traditional}'): Sentence Traditional '{current_sentence}' does not appear in Examples JSON"
+                " (was it modified manually?)"
+            )
+
+        # Only fill the sentence fields that are empty
+        current_sentence_2 = fields.get("Sentence 2 Traditional", {}).get("value", "").strip()
+        needs_sentence = not current_sentence
+        needs_sentence_2 = "Sentence 2 Traditional" in fields and not current_sentence_2
+        if not needs_sentence and not needs_sentence_2:
             skipped_sentence_already_filled += 1
             continue
 
-        try:
-            sentence = pick_random_sentence(fields.get("Examples JSON", {}).get("value", ""), known_characters)
-        except Exception as e:
-            raise Exception(f"Note {note_id} ('{traditional}'): {e}") from e
-
-        if not sentence:
+        if not sentences:
             skipped_no_sentence += 1
             continue
 
-        update_note_fields(note_id, {"Sentence Traditional": sentence})
-        print(f"Updated note {note_id} with Sentence Traditional: '{sentence}'")
+        fields_to_update: dict[str, str] = {}
+
+        sentence = current_sentence
+        if needs_sentence:
+            sentence = pick_random_sentence(sentences, known_characters, exclude={current_sentence_2})
+            if not sentence:
+                raise Exception(
+                    f"Note {note_id} ('{traditional}'): No example sentence for Sentence Traditional"
+                    " is composed entirely of known characters"
+                )
+            fields_to_update["Sentence Traditional"] = sentence
+
+        if needs_sentence_2:
+            sentence_2 = pick_random_sentence(sentences, known_characters, exclude={sentence})
+            if sentence_2:
+                fields_to_update["Sentence 2 Traditional"] = sentence_2
+            else:
+                print(
+                    f"Warning: Note {note_id} ('{traditional}'): No example sentence for Sentence 2 Traditional"
+                    " is different from Sentence Traditional and composed entirely of known characters"
+                )
+                missing_sentence_2 += 1
+
+        if not fields_to_update:
+            continue
+
+        update_note_fields(note_id, fields_to_update)
+        for field_name, value in fields_to_update.items():
+            print(f"Updated note {note_id} with {field_name}: '{value}'")
         updated += 1
 
     print(f"Updated {updated} note(s)")
     print(f"Skipped {skipped_traditional_too_long} note(s) with empty/Traditional >= 4 chars")
-    print(f"Skipped {skipped_sentence_already_filled} note(s) with Sentence Traditional already filled")
+    print(f"Skipped {skipped_sentence_already_filled} note(s) with Sentence Traditional and Sentence 2 Traditional already filled")
     print(f"Skipped {skipped_no_sentence} note(s) with no usable examples")
+    print(f"Warning: {missing_sentence_2} note(s) without a suitable Sentence 2 Traditional")
     return updated
 
 
@@ -875,8 +924,8 @@ def update_fields_for_note(
 def main():
     """
     Main function to process all note types and update Props, Mnemonic pegs, Anki Tags,
-    POS, POS Description, Examples JSON, Same Syllable Traditional, and
-    Sentence Traditional fields
+    POS, POS Description, Examples JSON, Same Syllable Traditional,
+    Sentence Traditional, and Sentence 2 Traditional fields
     """
     parse_no_arguments(__doc__)
 
@@ -932,10 +981,10 @@ def main():
         print(f"\nCompleted processing {note_type}")
         print(f"Total processed: {total_processed}, Updated: {total_updated}")
 
-    # Fill Sentence Traditional for due cards with a short Traditional field
-    print("\n=== Filling Sentence Traditional for due cards ===")
+    # Fill Sentence Traditional / Sentence 2 Traditional for due cards with a short Traditional field
+    print("\n=== Filling Sentence Traditional and Sentence 2 Traditional for due cards ===")
     sentences_updated = fill_sentence_traditional_for_due_cards(known_characters)
-    print(f"Updated Sentence Traditional on {sentences_updated} note(s)")
+    print(f"Updated Sentence Traditional / Sentence 2 Traditional on {sentences_updated} note(s)")
 
     print("\n=== All done! ===")
 
