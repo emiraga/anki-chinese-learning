@@ -3,7 +3,58 @@ import { YankiConnect } from "yanki-connect";
 import { CARDS_INFO } from "~/data/cards";
 import { sleep } from "~/utils/text";
 
-const anki: YankiConnect = new YankiConnect();
+// AnkiConnect is a single-threaded server polled on a Qt timer with a small
+// listen backlog (`webBacklog`, default 5). When many components fetch at once
+// on page load, the extra connections are dropped and the browser reports them
+// as CORS / NetworkError failures. So all requests share this queue, which
+// caps the in-flight count and retries connection-level failures.
+const MAX_CONCURRENT_REQUESTS = 2;
+const NETWORK_RETRIES = 3;
+const NETWORK_RETRY_DELAY_MS = 200;
+
+let activeRequests = 0;
+const waitingRequests: (() => void)[] = [];
+
+const acquireSlot = async (): Promise<void> => {
+  if (activeRequests < MAX_CONCURRENT_REQUESTS) {
+    activeRequests++;
+    return;
+  }
+  // The slot is handed over directly by releaseSlot, so activeRequests stays
+  // unchanged.
+  await new Promise<void>((resolve) => waitingRequests.push(resolve));
+};
+
+const releaseSlot = () => {
+  const next = waitingRequests.shift();
+  if (next) {
+    next();
+  } else {
+    activeRequests--;
+  }
+};
+
+const queuedFetch: typeof fetch = async (input, init) => {
+  await acquireSlot();
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await fetch(input, init);
+      } catch (err) {
+        // fetch rejects with TypeError only for network-level failures (the
+        // connection was refused or dropped), never for HTTP error statuses.
+        if (!(err instanceof TypeError) || attempt >= NETWORK_RETRIES) {
+          throw err;
+        }
+        await sleep(NETWORK_RETRY_DELAY_MS * 2 ** attempt);
+      }
+    }
+  } finally {
+    releaseSlot();
+  }
+};
+
+const anki: YankiConnect = new YankiConnect({ fetchAdapter: queuedFetch });
 export type CardInfo = Awaited<ReturnType<typeof anki.card.cardsInfo>>[number];
 
 export type NoteInfo = Awaited<ReturnType<typeof anki.note.notesInfo>>[number];
