@@ -6,12 +6,14 @@
 # ]
 # ///
 """
-Distribute the currently-due review cards of a deck evenly over the next N days.
+Distribute the currently-due review cards and new cards of a deck evenly over
+the next N days.
 
-This takes all cards that are due now (due date is today or any previous day)
-and are not suspended, then reschedules their due dates so they are spread out
-evenly across the next N days. Only the due date is moved; card intervals are
-left untouched.
+This takes all non-suspended cards that are either due now (due date is today or
+any previous day) or still new, then reschedules their due dates so they are
+spread out evenly across the next N days. For review cards only the due date is
+moved; card intervals are left untouched. New cards are converted into review
+cards by Anki when a due date is set on them.
 
 Examples:
     ./distribute_reviews.py --days 7
@@ -29,10 +31,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from shared.anki_utils import find_cards_by_query, set_due_date
 
 
-def build_query(deck: str) -> str:
+def build_due_query(deck: str) -> str:
     """Build the Anki search query for due, non-suspended review cards in a deck."""
     # prop:due<=0 matches review cards whose due date is today (0) or earlier.
     return f'deck:"{deck}" -is:suspended prop:due<=0'
+
+
+def build_new_query(deck: str) -> str:
+    """Build the Anki search query for new, non-suspended cards in a deck."""
+    return f'deck:"{deck}" -is:suspended is:new'
 
 
 def distribute(card_ids: list[int], days: int) -> list[list[int]]:
@@ -56,7 +63,7 @@ def distribute(card_ids: list[int], days: int) -> list[list[int]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Distribute currently-due review cards evenly over the next N days.")
+    parser = argparse.ArgumentParser(description="Distribute currently-due review cards and new cards evenly over the next N days.")
     parser.add_argument("--days", type=int, required=True, help="Number of days to distribute the cards over")
     parser.add_argument("--deck", default="Chinese", help="Deck name to pull cards from (default: Chinese)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would happen without changing any cards")
@@ -65,13 +72,17 @@ def main() -> None:
     if args.days < 1:
         parser.error("--days must be at least 1")
 
-    query = build_query(args.deck)
+    due_query = build_due_query(args.deck)
+    new_query = build_new_query(args.deck)
     print(f"=== Distribute reviews over {args.days} day(s) ===")
     print(f"Deck: {args.deck}")
-    print(f"Query: {query}")
+    print(f"Due query: {due_query}")
+    print(f"New query: {new_query}")
 
-    card_ids = find_cards_by_query(query)
-    print(f"Found {len(card_ids)} due, non-suspended card(s)")
+    due_card_ids = find_cards_by_query(due_query)
+    new_card_ids = find_cards_by_query(new_query)
+    card_ids = sorted(set(due_card_ids) | set(new_card_ids))
+    print(f"Found {len(due_card_ids)} due and {len(new_card_ids)} new non-suspended card(s), {len(card_ids)} total")
 
     if not card_ids:
         print("Nothing to distribute.")

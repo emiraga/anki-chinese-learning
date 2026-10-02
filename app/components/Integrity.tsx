@@ -1,4 +1,5 @@
 import anki, {
+  ankiMulti,
   ankiOpenBrowse,
   useAnkiCards,
   type NoteWithCards,
@@ -208,24 +209,21 @@ function IntegrityFilteredDecks() {
     const load = async () => {
       try {
         const deckNames = await anki.deck.deckNames();
-        const deckConfigs = await Promise.all(
-          deckNames.map(async (name) => {
-            try {
-              const config = (await anki.deck.getDeckConfig({
-                deck: name,
-              })) as {
-                dyn: boolean | number;
-                terms?: [string, number, number][];
-              };
-              return { name, config };
-            } catch {
-              return { name, config: null };
-            }
-          }),
+        // Batch into single `multi` requests: firing one request per deck in
+        // parallel overwhelms AnkiConnect and the connections get dropped.
+        const configs = await ankiMulti<{
+          dyn: boolean | number;
+          terms?: [string, number, number][];
+        }>(
+          deckNames.map((name) => ({
+            action: "getDeckConfig",
+            params: { deck: name },
+          })),
         );
 
-        const targetFilteredDecks = deckConfigs.filter(({ config }) => {
-          if (!config || !config.dyn) return false;
+        const targetFilteredDecks = deckNames.filter((_, i) => {
+          const config = configs[i];
+          if (!config.dyn) return false;
           // Check if any of the terms (queries) target Chinese
           const terms = config.terms || [];
           return terms.some((term) => {
@@ -234,14 +232,16 @@ function IntegrityFilteredDecks() {
           });
         });
 
-        const decksWithCards = await Promise.all(
-          targetFilteredDecks.map(async ({ name }) => {
-            const cards = await anki.card.findCards({
-              query: `deck:"${name}"`,
-            });
-            return { name, cardCount: cards.length };
-          }),
+        const cardsPerDeck = await ankiMulti<number[]>(
+          targetFilteredDecks.map((name) => ({
+            action: "findCards",
+            params: { query: `deck:"${name}"` },
+          })),
         );
+        const decksWithCards = targetFilteredDecks.map((name, i) => ({
+          name,
+          cardCount: cardsPerDeck[i].length,
+        }));
 
         setFilteredDecks(decksWithCards.filter((d) => d.cardCount > 0));
       } catch (e) {

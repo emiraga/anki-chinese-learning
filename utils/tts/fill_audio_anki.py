@@ -15,6 +15,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, cast
+from xml.sax.saxutils import escape as xml_escape
 
 import dragonmapper.transcriptions
 from google.cloud import texttospeech
@@ -43,6 +44,14 @@ _MAX_PINYIN_FILENAME_LEN = 50
 # down to +1.4 semitones. cmn-TW only offers Standard and Wavenet - the Chirp3-HD
 # and Neural2 voices are cmn-CN (Mainland) only.
 _DEFAULT_VOICE = "cmn-TW-Wavenet-C"
+
+# Words the voice misreads when it is given plain text, most often in sentences,
+# which have no pinyin field to pass as a hint. Each entry has one numbered pinyin
+# per character; None leaves that character to the voice's own reading.
+_PRONUNCIATION_OVERRIDES: dict[str, tuple[str | None, ...]] = {
+    # The voice reads 了 as le, but as a potential complement it is liǎo.
+    "受得了": (None, None, "liao3"),
+}
 
 
 def clean_text_for_filename(text: str, max_len: int = _MAX_TEXT_FILENAME_LEN) -> str:
@@ -86,6 +95,31 @@ def convert_pinyin_to_numbered(pinyin_text: str) -> str:
     # Add spaces between syllables if they are not there.
     # This regex finds a number followed by a letter and inserts a space.
     return re.sub(r"(\d)([a-zA-Z])", r"\1 \2", numbered)
+
+
+def build_pronunciation_override_ssml(text: str) -> str | None:
+    """
+    Build SSML that pins the reading of every _PRONUNCIATION_OVERRIDES word in text.
+
+    Returns:
+        str | None: The SSML, or None if text contains no override word.
+    """
+    # Longest first, so a longer override wins over one it contains.
+    words = sorted(_PRONUNCIATION_OVERRIDES, key=len, reverse=True)
+    pattern = re.compile("|".join(map(re.escape, words)))
+    if not pattern.search(text):
+        return None
+
+    ssml_parts = ["<speak>"]
+    pos = 0
+    for match in pattern.finditer(text):
+        ssml_parts.append(xml_escape(text[pos : match.start()]))
+        for char, pinyin in zip(match.group(), _PRONUNCIATION_OVERRIDES[match.group()], strict=True):
+            ssml_parts.append(f'<phoneme alphabet="pinyin" ph="{pinyin}">{char}</phoneme>' if pinyin else char)
+        pos = match.end()
+    ssml_parts.append(xml_escape(text[pos:]))
+    ssml_parts.append("</speak>")
+    return "".join(ssml_parts)
 
 
 def chinese_tts(
@@ -147,6 +181,9 @@ def chinese_tts(
         print(f"Original pinyin: {pinyin_hint}")
         print(f"Converted to numbered: {numbered_pinyin}")
         print(f"SSML: {ssml_text}")
+    elif override_ssml := build_pronunciation_override_ssml(text):
+        synthesis_input = texttospeech.SynthesisInput(ssml=override_ssml)
+        print(f"SSML (pronunciation overrides): {override_ssml}")
     else:
         synthesis_input = texttospeech.SynthesisInput(text=text)
 

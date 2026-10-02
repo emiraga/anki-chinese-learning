@@ -150,6 +150,33 @@ export const useAnkiCards = (filter: string) => {
   };
 };
 
+type MultiActions = Parameters<typeof anki.miscellaneous.multi>[0]["actions"];
+
+/**
+ * Runs several AnkiConnect actions in a single HTTP request. Prefer this over
+ * `Promise.all` of many individual calls, which floods AnkiConnect and makes
+ * the browser report the dropped connections as CORS failures.
+ * Throws if any of the actions fails.
+ */
+export const ankiMulti = async <T>(
+  actions: { action: MultiActions[number]["action"]; params?: object }[],
+): Promise<T[]> => {
+  if (actions.length === 0) {
+    return [];
+  }
+  const responses = (await anki.miscellaneous.multi({
+    actions: actions.map((a) => ({ ...a, version: 6 })) as MultiActions,
+  })) as { error: string | null; result: T }[];
+  return responses.map((response, i) => {
+    if (response.error) {
+      throw new Error(
+        `Anki action ${actions[i].action} failed: ${response.error}`,
+      );
+    }
+    return response.result;
+  });
+};
+
 export const ankiOpenBrowse = async (query: string) => {
   for (let i = 0; i < 1; i++) {
     if (!document.hasFocus()) {

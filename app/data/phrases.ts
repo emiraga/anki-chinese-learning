@@ -6,6 +6,14 @@ import { useSettings } from "~/settings/SettingsContext";
 import type { PinyinType } from "~/utils/pinyin";
 import type { InvalidDataRecord } from "./types";
 
+export type PhraseExample = {
+  traditional: string;
+  english: string;
+};
+
+// Example sentences grouped by part of speech (e.g. "N", "V").
+export type PhraseExamplesByPos = Record<string, PhraseExample[]>;
+
 export type PhraseType = {
   noteId: number;
   source: string;
@@ -13,11 +21,47 @@ export type PhraseType = {
   sentenceTraditional: string;
   meaning: string;
   partOfSpeech?: string;
+  examples?: PhraseExamplesByPos;
   pinyin: string;
   zhuyin?: string;
   tags: string[];
   audio: string;
 };
+
+function parseExamplesJson(
+  raw: string | undefined,
+  noteId: number,
+): PhraseExamplesByPos | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error(
+      `Note ${noteId}: "Examples JSON" must be an object keyed by POS`,
+    );
+  }
+  const result: PhraseExamplesByPos = {};
+  for (const [pos, list] of Object.entries(parsed)) {
+    if (!Array.isArray(list)) {
+      throw new Error(
+        `Note ${noteId}: "Examples JSON" value for POS "${pos}" must be an array`,
+      );
+    }
+    result[pos] = list.map((example: unknown) => {
+      const e = example as Record<string, unknown> | null;
+      const traditional = e?.["Traditional"];
+      const english = e?.["English"];
+      if (typeof traditional !== "string" || typeof english !== "string") {
+        throw new Error(
+          `Note ${noteId}: "Examples JSON" entry for POS "${pos}" must have string "Traditional" and "English"`,
+        );
+      }
+      return { traditional, english };
+    });
+  }
+  return result;
+}
 
 export type CharsToPhrasesPinyin = {
   [key: string]: {
@@ -87,6 +131,10 @@ export function useAnkiPhrases() {
           sentenceTraditional: note.fields["Sentence Traditional"]?.value ?? "",
           meaning: note.fields["Meaning"].value,
           partOfSpeech: note.fields["POS"]?.value,
+          examples: parseExamplesJson(
+            note.fields["Examples JSON"]?.value,
+            note.noteId,
+          ),
           pinyin,
           zhuyin: note.fields["Zhuyin"]?.value,
           tags: note.tags,

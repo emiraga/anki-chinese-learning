@@ -34,8 +34,8 @@ from shared.anki_utils import (
 from shared.cli import parse_no_arguments
 
 QUERIES = [
-    "deck:Chinese::Listening -is:suspended prop:reps>=5 prop:lapses=0",
-    "deck:Chinese::Listening -is:suspended prop:reps>=5 prop:ivl>=53",
+    "deck:Chinese::Listening -is:suspended prop:reps>=10 prop:lapses=0",
+    "deck:Chinese::Listening -is:suspended prop:reps>=10 prop:ivl>=100",
 ]
 
 IGNORED_TAG = "card-listening-ignored-on-purpose"
@@ -95,4 +95,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main() disabled because I don't want to disable listening cards
+    pass
