@@ -51,6 +51,12 @@ _DEFAULT_VOICE = "cmn-TW-Wavenet-C"
 _PRONUNCIATION_OVERRIDES: dict[str, tuple[str | None, ...]] = {
     # The voice reads 了 as le, but as a potential complement it is liǎo.
     "受得了": (None, None, "liao3"),
+    # 都會 meaning "metropolis" is dūhuì, but the voice reads it as dōu huì
+    # ("all will"). Keyed on 都會生活 because bare 都會 is usually dōu huì.
+    "都會生活": ("du1", "hui4", None, None),
+    # The voice reads 個 as de in sentences such as 這是一個很大的負擔. Keyed on
+    # 個 alone so that 這個, 那個, 幾個 etc. are covered too; Taiwan reads it gè.
+    "個": ("ge4",),
 }
 
 
