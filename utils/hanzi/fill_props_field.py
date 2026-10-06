@@ -658,7 +658,7 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     """
     # is:due matches cards waiting to be reviewed now (due today or overdue),
     # and prop:due=1 matches cards due tomorrow.
-    query = "(is:due OR prop:due=7 OR is:new) -is:suspended"
+    query = "(is:due OR prop:due<=7 OR is:new) -is:suspended"
     print(f"Query: {query}")
 
     card_ids = find_cards_by_query(query)
