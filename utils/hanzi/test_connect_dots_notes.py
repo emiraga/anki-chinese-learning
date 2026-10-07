@@ -18,7 +18,9 @@ from connect_dots_notes import (
     ConnectDotsNote,
     HanziDataStore,
     HanziNote,
+    SyllableInitialHanziToPinyin,
     TagUnionHanziToPinyin,
+    calculate_coverage_from_notes,
     get_tone_number,
     pinyin_with_zhuyin,
     stable_bin,
@@ -26,203 +28,6 @@ from connect_dots_notes import (
 )
 
 from shared.pinyin_utils import pinyin_to_zhuyin_toneless
-
-
-class TestConnectDotsNoteSplitting:
-    """Tests for ConnectDotsNote.split_if_needed method"""
-
-    def test_no_split_when_10_or_fewer_items(self):
-        """Notes with 10 or fewer items should not be split"""
-        for count in [1, 5, 10]:
-            left = [f"char{i}" for i in range(count)]
-            right = [f"pinyin{i}" for i in range(count)]
-            note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-            result = note.split_if_needed(max_items=10)
-
-            assert len(result) == 1
-            assert result[0] is note  # Should return the same object
-
-    def test_split_11_items_into_two_notes(self):
-        """11 items should split into 6 and 5"""
-        left = [f"char{i}" for i in range(11)]
-        right = [f"pinyin{i}" for i in range(11)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 2
-        assert len(result[0].left) == 6
-        assert len(result[1].left) == 5
-
-    def test_split_12_items_into_two_equal_notes(self):
-        """12 items should split into 6 and 6"""
-        left = [f"char{i}" for i in range(12)]
-        right = [f"pinyin{i}" for i in range(12)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 2
-        assert len(result[0].left) == 6
-        assert len(result[1].left) == 6
-
-    def test_split_21_items_into_three_notes(self):
-        """21 items should split into 7, 7, 7"""
-        left = [f"char{i}" for i in range(21)]
-        right = [f"pinyin{i}" for i in range(21)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 3
-        assert len(result[0].left) == 7
-        assert len(result[1].left) == 7
-        assert len(result[2].left) == 7
-
-    def test_split_25_items_into_three_notes(self):
-        """25 items should split into 9, 8, 8"""
-        left = [f"char{i}" for i in range(25)]
-        right = [f"pinyin{i}" for i in range(25)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 3
-        assert len(result[0].left) == 9
-        assert len(result[1].left) == 8
-        assert len(result[2].left) == 8
-
-    def test_key_naming_convention(self):
-        """First note keeps original key, others get :2, :3, etc."""
-        left = [f"char{i}" for i in range(25)]
-        right = [f"pinyin{i}" for i in range(25)]
-        note = ConnectDotsNote(key="sound_component:青", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert result[0].key == "sound_component:青"
-        assert result[1].key == "sound_component:青:2"
-        assert result[2].key == "sound_component:青:3"
-
-    def test_all_items_preserved_exactly_once(self):
-        """All original items should appear exactly once across all split notes"""
-        left = [f"char{i}" for i in range(37)]
-        right = [f"pinyin{i}" for i in range(37)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        # Collect all items from split notes
-        all_left: list[str] = []
-        all_right: list[str] = []
-        for split_note in result:
-            all_left.extend(split_note.left)
-            all_right.extend(split_note.right)
-
-        # Original note sorts pairs, so we need to compare sorted versions
-        original_pairs = set(zip(left, right, strict=False))
-        result_pairs = set(zip(all_left, all_right, strict=False))
-
-        assert original_pairs == result_pairs
-        assert len(all_left) == len(left)  # No duplicates
-
-    def test_left_right_correspondence_preserved(self):
-        """Left-right pairs should remain matched after splitting"""
-        # Use distinct mappings to verify correspondence
-        left = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
-        right = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-        original_pairs = dict(zip(left, right, strict=False))
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        # Verify each pair in split notes matches original mapping
-        for split_note in result:
-            for left, right in zip(split_note.left, split_note.right, strict=False):
-                assert original_pairs[left] == right
-
-    def test_interleaved_distribution_maximizes_diversity(self):
-        """Items should be distributed to maximize right value diversity in each note"""
-        # 20 items with 4 distinct right values (5 each)
-        left = [f"T1_{i}" for i in range(5)] + [f"T2_{i}" for i in range(5)] + [f"T3_{i}" for i in range(5)] + [f"T4_{i}" for i in range(5)]
-        right = ["mā"] * 5 + ["má"] * 5 + ["mǎ"] * 5 + ["mà"] * 5
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 2
-        # Both notes should have all 4 tones represented
-        for split_note in result:
-            unique_tones = set(split_note.right)
-            assert len(unique_tones) == 4, f"Expected 4 tones, got {unique_tones}"
-
-    def test_sorted_by_right_then_left(self):
-        """Items should be sorted by (right, left) before interleaving"""
-        left = ["B", "A", "D", "C"]
-        right = ["2", "1", "2", "1"]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=2)
-
-        # Sorted by (right, left): (1,A), (1,C), (2,B), (2,D)
-        # Interleaved: note0 gets (1,A), (2,B); note1 gets (1,C), (2,D)
-        assert len(result) == 2
-        # Both notes should have both right values
-        assert set(result[0].right) == {"1", "2"}
-        assert set(result[1].right) == {"1", "2"}
-
-    def test_custom_max_items(self):
-        """split_if_needed should respect custom max_items parameter"""
-        left = [f"char{i}" for i in range(10)]
-        right = [f"pinyin{i}" for i in range(10)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        # With max_items=5, should split 10 items into 5 and 5
-        result = note.split_if_needed(max_items=5)
-
-        assert len(result) == 2
-        assert len(result[0].left) == 5
-        assert len(result[1].left) == 5
-
-    def test_single_item_no_split(self):
-        """Single item notes should not be split"""
-        note = ConnectDotsNote(key="test:key", left=["A"], right=["1"])
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 1
-        assert result[0] is note
-
-    def test_empty_note_no_split(self):
-        """Empty notes should not be split (edge case)"""
-        note = ConnectDotsNote(key="test:key", left=[], right=[])
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 1
-        assert result[0] is note
-
-    def test_exact_boundary_no_split(self):
-        """Exactly max_items should not trigger a split"""
-        left = [f"char{i}" for i in range(10)]
-        right = [f"pinyin{i}" for i in range(10)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 1
-        assert result[0] is note
-
-    def test_one_over_boundary_splits(self):
-        """max_items + 1 should trigger a split"""
-        left = [f"char{i}" for i in range(11)]
-        right = [f"pinyin{i}" for i in range(11)]
-        note = ConnectDotsNote(key="test:key", left=left, right=right)
-
-        result = note.split_if_needed(max_items=10)
-
-        assert len(result) == 2
 
 
 class TestConnectDotsNoteValidation:
@@ -282,7 +87,7 @@ class TestConnectDotsNoteFakeRight:
         """Notes that don't split should have empty fake_right"""
         note = ConnectDotsNote(key="test:key", left=["A", "B"], right=["1", "2"])
 
-        result = note.split_if_needed(max_items=10)
+        result = note.split_stably(max_items=10)
 
         assert len(result) == 1
         assert result[0].fake_right == []
@@ -296,7 +101,7 @@ class TestConnectDotsNoteFakeRight:
         right = ["mā"] * 10 + ["má"] * 6 + ["mǎ"] * 4 + ["mà"] * 2
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
-        result = note.split_if_needed(max_items=8)
+        result = note.split_stably(max_items=8)
 
         # With interleaving, some notes may not have all 4 tones
         # fake_right should contain the missing tones
@@ -316,12 +121,13 @@ class TestConnectDotsNoteFakeRight:
         right = ["mā"] * 5 + ["má"] * 5 + ["mǎ"] * 5 + ["mà"] * 5
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
-        result = note.split_if_needed(max_items=10)
+        result = note.split_stably(max_items=10)
 
-        # Both notes should have all 4 tones, so fake_right should be empty
+        # Hash bins don't guarantee every tone per note; fake_right is empty exactly when a note has all 4
+        assert len(result) == 2
+        assert any(len(set(n.right)) == 4 for n in result)
         for split_note in result:
-            assert len(set(split_note.right)) == 4
-            assert split_note.fake_right == []
+            assert (split_note.fake_right == []) == (len(set(split_note.right)) == 4)
 
     def test_fake_right_does_not_include_own_values(self):
         """fake_right should never include values already in right"""
@@ -329,7 +135,7 @@ class TestConnectDotsNoteFakeRight:
         right = ["a"] * 5 + ["b"] * 5 + ["c"] * 5
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
-        result = note.split_if_needed(max_items=8)
+        result = note.split_stably(max_items=8)
 
         for split_note in result:
             own_values = set(split_note.right)
@@ -345,7 +151,7 @@ class TestConnectDotsNoteFakeRight:
         right = ["a"] * 6 + ["b"] * 6
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
-        result = note.split_if_needed(max_items=6)
+        result = note.split_stably(max_items=6)
 
         for split_note in result:
             unique_right_count = len(set(split_note.right))
@@ -368,7 +174,7 @@ class TestConnectDotsNoteFakeRight:
         fake_right = ["yū (ㄩ)", "yu (ㄩ˙)"]
         note = ConnectDotsNote(key="syllable:yu", left=left, right=right, fake_right=fake_right)
 
-        result = note.split_if_needed(max_items=6)
+        result = note.split_stably(max_items=6)
 
         assert len(result) == 2
         # Each split note should have the original fake_right tones available
@@ -389,7 +195,7 @@ class TestConnectDotsNoteFakeRight:
         right = [f"tone{i % 10}" for i in range(20)]  # 10 unique values
         note = ConnectDotsNote(key="test:key", left=left, right=right)
 
-        result = note.split_if_needed(max_items=10)
+        result = note.split_stably(max_items=10)
 
         for split_note in result:
             unique_right_count = len(set(split_note.right))
@@ -504,6 +310,24 @@ class TestStableBin:
         assert stable_bin("張", 2) == stable_bin("張", 2)
         assert stable_bin("張", 3) != stable_bin("張", 2) or True  # may coincide; just no error
 
+    def test_growing_bins_only_moves_items_into_new_bin(self):
+        """Jump consistent hash: going from n to n + 1 bins only moves items into bin n."""
+        chars = [chr(0x4E00 + i) for i in range(2000)]
+        for n in range(1, 6):
+            moved = 0
+            for ch in chars:
+                before, after = stable_bin(ch, n), stable_bin(ch, n + 1)
+                if before != after:
+                    assert after == n
+                    moved += 1
+            # Roughly 1/(n + 1) of items move.
+            expected = len(chars) / (n + 1)
+            assert 0.8 * expected < moved < 1.2 * expected
+
+    def test_rejects_zero_bins(self):
+        with pytest.raises(ValueError, match="num_bins"):
+            stable_bin("豬", 0)
+
 
 def _chars(n: int) -> list[str]:
     # Distinct CJK characters for deterministic-but-varied hashing.
@@ -551,13 +375,29 @@ class TestSplitStably:
                 assert mapping[left_val] == right_val
 
     def test_key_naming_convention(self):
+        """Bin 0 keeps the original key, bin i gets ":<i + 1>"."""
         left = _chars(25)
         right = [f"r{i}" for i in range(25)]
         note = ConnectDotsNote(key="syllable_initial:ㄋ", left=left, right=right)
         result = note.split_stably(max_items=10)
-        assert result[0].key == "syllable_initial:ㄋ"
-        for i, n in enumerate(result[1:], start=2):
-            assert n.key == f"syllable_initial:ㄋ:{i}"
+        for n in result:
+            expected_bin = stable_bin(n.left[0], 3)
+            expected_key = "syllable_initial:ㄋ" if expected_bin == 0 else f"syllable_initial:ㄋ:{expected_bin + 1}"
+            assert n.key == expected_key
+        assert len({n.key for n in result}) == len(result)
+
+    def test_filling_empty_bin_does_not_rename_siblings(self):
+        """Keys are tied to bin index, so a previously empty bin filling up never shifts other keys."""
+        # 11 items -> 2 bins; pick items so that bin 0 is empty, then add one that lands in bin 0.
+        bin1_chars = [c for c in _chars(500) if stable_bin(c, 2) == 1][:11]
+        bin0_char = next(c for c in _chars(500) if stable_bin(c, 2) == 0)
+        before = ConnectDotsNote(key="k", left=bin1_chars, right=[f"r{i}" for i in range(11)]).split_stably(max_items=10)
+        assert [n.key for n in before] == ["k:2"]
+
+        after = ConnectDotsNote(key="k", left=[*bin1_chars, bin0_char], right=[f"r{i}" for i in range(12)]).split_stably(max_items=10)
+        by_key = {n.key: n for n in after}
+        assert by_key["k"].left == [bin0_char]
+        assert sorted(by_key["k:2"].left) == sorted(bin1_chars)
 
     def test_stability_adding_item_keeps_others_in_place(self):
         """Adding an item (without changing bin count) must not move other items."""
@@ -621,6 +461,45 @@ class TestTagUnionHanziToPinyin:
     def test_requires_prefixed_tags(self):
         with pytest.raises(ValueError, match="prefix::name"):
             TagUnionHanziToPinyin("a+b", ["prop-top::saloon-doors", "sword-fight"])
+
+
+class TestSyllableInitialHanziToPinyin:
+    """Tests for SyllableInitialHanziToPinyin generator"""
+
+    def test_single_pronunciation_gets_other_tones_as_fake_right(self):
+        """A lone character (e.g. 選) must not be a trivially skipped note."""
+        notes = SyllableInitialHanziToPinyin("ㄒ", [HanziNote(1, "選", "xuǎn", "choose", "", set())]).generate_notes()
+        assert len(notes) == 1
+        assert notes[0].fake_right == [pinyin_with_zhuyin(syllable_with_tone("xuan", t)) for t in (1, 2, 4, 5)]
+        assert not notes[0].has_single_right_value()
+
+    def test_shared_pronunciation_gets_other_tones_as_fake_right(self):
+        notes = SyllableInitialHanziToPinyin(
+            "ㄚ", [HanziNote(1, "阿", "ā", "prefix", "", set()), HanziNote(2, "啊", "ā", "ah", "", set())]
+        ).generate_notes()
+        assert notes[0].fake_right == [pinyin_with_zhuyin(syllable_with_tone("a", t)) for t in (2, 3, 4, 5)]
+
+    def test_mixed_pronunciations_have_no_fake_right(self):
+        notes = SyllableInitialHanziToPinyin(
+            "ㄋ", [HanziNote(1, "那", "nà", "that", "", set()), HanziNote(2, "你", "nǐ", "you", "", set())]
+        ).generate_notes()
+        assert notes[0].fake_right == []
+
+
+class TestCalculateCoverage:
+    """Tests for calculate_coverage_from_notes"""
+
+    def test_only_hanzi_count_towards_coverage(self):
+        """Non-Hanzi lefts (e.g. two-char phrases) are reported by type but don't inflate coverage."""
+        notes_by_type = {
+            "syllable": [ConnectDotsNote(key="syllable:ma", left=["媽", "馬"], right=["mā", "mǎ"])],
+            "two_char_phrase": [ConnectDotsNote(key="two_char_phrase:媽", left=["媽媽", "媽的"], right=["a", "b"])],
+        }
+        coverage = calculate_coverage_from_notes(notes_by_type, {"媽", "馬", "選"})
+        assert coverage.covered_hanzi == 2
+        assert coverage.uncovered_characters == {"選"}
+        assert coverage.coverage_percentage <= 100
+        assert len(coverage.coverage_by_type["two_char_phrase"]) == 2
 
 
 if __name__ == "__main__":

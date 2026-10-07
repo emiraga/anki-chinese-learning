@@ -382,12 +382,15 @@ def contains_zhuyin(text: str) -> bool:
 
 def stable_bin(value: str, num_bins: int) -> int:
     """
-    Deterministically map a string to one of num_bins bins via a content hash.
+    Deterministically map a string to one of num_bins bins via jump consistent hash.
 
     The assignment depends only on `value` and `num_bins`, never on insertion
-    order or surrounding items. This is the basis for ConnectDotsNote.split_stably:
-    adding new items leaves every existing item's bin unchanged as long as
-    num_bins is unchanged.
+    order or surrounding items, so adding new items leaves every existing item's
+    bin unchanged as long as num_bins is unchanged. When num_bins grows from n to
+    n + 1, only ~1/(n + 1) of items move (all into the new bin), instead of
+    nearly all items as with a plain `hash % num_bins`.
+
+    See Lamping & Veach, "A Fast, Minimal Memory, Consistent Hash Algorithm".
 
     Args:
         value: The string to hash (e.g. a traditional character).
@@ -396,8 +399,15 @@ def stable_bin(value: str, num_bins: int) -> int:
     Returns:
         A bin index in [0, num_bins).
     """
-    digest = hashlib.md5(value.encode("utf-8")).digest()
-    return int.from_bytes(digest[:8], "big") % num_bins
+    if num_bins < 1:
+        raise ValueError(f"num_bins must be >= 1, got {num_bins}")
+    key = int.from_bytes(hashlib.md5(value.encode("utf-8")).digest()[:8], "big")
+    bucket, candidate = -1, 0
+    while candidate < num_bins:
+        bucket = candidate
+        key = (key * 2862933555777941757 + 1) & 0xFFFFFFFFFFFFFFFF
+        candidate = int((bucket + 1) * ((1 << 31) / ((key >> 33) + 1)))
+    return bucket
 
 
 @dataclass
@@ -461,100 +471,27 @@ class ConnectDotsNote:
         """Get the "Right Is Pronunciation" field value as "1" or "0"."""
         return "1" if self.right_is_pronunciation() else "0"
 
-    def split_if_needed(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list["ConnectDotsNote"]:
-        """
-        Split into multiple notes if there are more than max_items.
-
-        Uses interleaved distribution by right value to maximize diversity:
-        items are sorted by (right, left), then distributed round-robin across
-        notes. This ensures each split note contains items from all available
-        right values when possible.
-
-        Each split note also gets a 'fake_right' field containing right values
-        from sibling notes (other notes in the same series).
-
-        Args:
-            max_items: Maximum items per note before splitting
-
-        Returns:
-            List of ConnectDotsNote objects (may be just [self] if no split needed)
-        """
-        if len(self.left) <= max_items:
-            return [self]
-
-        # Sort by (right, left) to group by right value, then interleave
-        # This maximizes diversity of right values in each split note
-        explanations = self.explanation or [""] * len(self.left)
-        sorted_tuples = sorted(
-            zip(self.left, self.right, explanations, strict=False),
-            key=lambda x: (x[1], x[0]),  # Sort by (right, left)
-        )
-
-        # Calculate number of notes needed (ceiling division)
-        num_notes = -(-len(sorted_tuples) // max_items)
-
-        # Initialize buckets for each note
-        notes_data: list[tuple[str, list[str], list[str], list[str]]] = []
-        for i in range(num_notes):
-            # Determine key: first note keeps original, others get :2, :3, etc.
-            key = self.key if i == 0 else f"{self.key}:{i + 1}"
-            notes_data.append((key, [], [], []))
-
-        # Interleaved distribution: item i goes to note (i % num_notes)
-        for i, (left, right, expl) in enumerate(sorted_tuples):
-            note_idx = i % num_notes
-            key, left_list, right_list, expl_list = notes_data[note_idx]
-            left_list.append(left)
-            right_list.append(right)
-            expl_list.append(expl)
-
-        # Calculate fake_right for each note
-        # Collect all unique right values across all notes, including original fake_right
-        # (e.g., syllable generators add fake_right for missing tones)
-        all_right_values = {right for _, right, _ in sorted_tuples} | set(self.fake_right)
-
-        notes: list[ConnectDotsNote] = []
-        for key, left_slice, right_slice, explanation_slice in notes_data:
-            # fake_right = all right values minus this note's right values
-            this_note_right = set(right_slice)
-            fake_right_candidates = sorted(all_right_values - this_note_right)
-
-            # Limit fake_right so that: len(left) >= len(unique_right) + len(fake_right)
-            # This ensures there aren't more options than items to match
-            max_fake_right = len(left_slice) - len(this_note_right)
-            fake_right = fake_right_candidates[: max(0, max_fake_right)]
-
-            notes.append(
-                ConnectDotsNote(
-                    key=key,
-                    left=left_slice,
-                    right=right_slice,
-                    explanation=explanation_slice if self.explanation else [],
-                    fake_right=fake_right,
-                )
-            )
-
-        return notes
-
     def split_stably(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list["ConnectDotsNote"]:
         """
         Split into notes of at most ~max_items using a content-stable assignment.
 
-        Unlike split_if_needed (which round-robins by sorted index and therefore
-        reshuffles whenever an item is inserted), each item here is assigned to a
-        bin by stable_bin(left, num_notes). An item's bin depends only on its own
-        left value and the bin count, so adding new items leaves existing items in
-        place; bins only reshuffle when num_notes changes (i.e. the total crosses
-        a multiple of max_items). This trades exact balance for stability and is
-        intended for groups (e.g. by zhuyin initial) that grow over time.
+        Each item is assigned to a bin by stable_bin(left, num_notes). An item's
+        bin depends only on its own left value and the bin count, so adding a new
+        item only changes the note it lands in (plus siblings' fake_right if it
+        introduces a new right value). When the total crosses a multiple of
+        max_items, num_notes grows and ~1/num_notes of items move into the new
+        bin. This avoids rescheduling every card of a group (e.g. syllable "shi")
+        whenever one character is added to it.
 
         Bin sizes are approximately balanced but, because hashing is not perfectly
-        even, an individual note may slightly exceed max_items. Empty bins are
-        dropped. Keys follow the same convention as split_if_needed: the first
-        non-empty bin keeps the original key, the rest get ":2", ":3", etc.
+        even, an individual note may slightly exceed max_items. Bin i gets key
+        "<key>" for i == 0 and "<key>:<i + 1>" otherwise; keys are tied to the bin
+        index (not to the count of non-empty bins) so a previously empty bin
+        filling up never renames its siblings. Empty bins are dropped.
 
         Each split note also gets a 'fake_right' field with right values drawn from
-        sibling notes, matching split_if_needed.
+        sibling notes (and the original fake_right), limited so options don't
+        outnumber items.
         """
         if len(self.left) <= max_items:
             return [self]
@@ -574,16 +511,14 @@ class ConnectDotsNote:
         all_right_values = set(self.right) | set(self.fake_right)
 
         notes: list[ConnectDotsNote] = []
-        key_index = 0
-        for left_slice, right_slice, explanation_slice in bins:
+        for bin_index, (left_slice, right_slice, explanation_slice) in enumerate(bins):
             if not left_slice:
                 continue  # drop empty bins
 
-            key = self.key if key_index == 0 else f"{self.key}:{key_index + 1}"
-            key_index += 1
+            key = self.key if bin_index == 0 else f"{self.key}:{bin_index + 1}"
 
             # fake_right = all right values minus this note's right values,
-            # limited so options don't outnumber items (matches split_if_needed).
+            # limited so options don't outnumber items.
             this_note_right = set(right_slice)
             fake_right_candidates = sorted(all_right_values - this_note_right)
             max_fake_right = len(left_slice) - len(this_note_right)
@@ -600,6 +535,17 @@ class ConnectDotsNote:
             )
 
         return notes
+
+
+def missing_tone_fake_right(syllable: str, notes: list[HanziNote]) -> list[str]:
+    """
+    Get pinyin (with zhuyin) for every tone of `syllable` not used by `notes`.
+
+    Used as fake_right so a note always offers all 5 tones of its syllable, even
+    when its characters only cover some of them.
+    """
+    present_tones = {note.tone for note in notes if note.traditional and note.pinyin and note.tone}
+    return [pinyin_with_zhuyin(syllable_with_tone(syllable, tone)) for tone in sorted({1, 2, 3, 4, 5} - present_tones)]
 
 
 class ConnectDotsGenerator(ABC):
@@ -757,21 +703,7 @@ class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
         return get_data_store().get_by_syllable(self.syllable)
 
     def get_fake_right(self, notes: list[HanziNote]) -> list[str]:
-        # Track which tones are present
-        present_tones: set[int] = set()
-        for note in notes:
-            if note.traditional and note.pinyin and note.tone:
-                present_tones.add(note.tone)
-
-        # Generate fake_right for missing tones (all 5 tones should be represented)
-        all_tones = {1, 2, 3, 4, 5}
-        missing_tones = all_tones - present_tones
-        fake_right: list[str] = []
-        for tone in sorted(missing_tones):
-            pinyin_with_tone = syllable_with_tone(self.syllable, tone)
-            fake_right.append(pinyin_with_zhuyin(pinyin_with_tone))
-
-        return fake_right
+        return missing_tone_fake_right(self.syllable, notes)
 
 
 class SyllableInitialHanziToPinyin(ConnectDotsGenerator):
@@ -781,45 +713,40 @@ class SyllableInitialHanziToPinyin(ConnectDotsGenerator):
     note) by their zhuyin initial, mapping Hanzi to pinyin.
 
     An initial with <= MAX_ITEMS_PER_NOTE characters becomes a single note keyed
-    "syllable_initial:ㄋ". Larger initials are split by ConnectDotsNote.split_stably
-    into "syllable_initial:ㄋ", "syllable_initial:ㄋ:2", ... Each character's bin is
-    chosen by a stable hash, so adding new characters only affects the bin they
-    land in; bins reshuffle only when the initial's size crosses a multiple of
-    MAX_ITEMS_PER_NOTE, and never across initials.
+    "syllable_initial:ㄋ". Larger initials are split (like every generator's
+    notes) by ConnectDotsNote.split_stably in process_generators.
+
+    If every character in the group shares one pronunciation (e.g. a lone 選),
+    the other tones of that syllable are added as fake_right so the note isn't
+    skipped as trivial and its characters still get a card.
 
     Left = Traditional characters, Right = Pinyin pronunciations.
     """
 
-    def __init__(self, initial: str, notes: list[HanziNote], max_items: int = MAX_ITEMS_PER_NOTE):
+    def __init__(self, initial: str, notes: list[HanziNote]):
         self.initial = initial
         self.notes = notes
-        self.max_items = max_items
 
     @property
     def generator_type(self) -> str:
         return "syllable_initial"
 
     def generate_notes(self) -> list[ConnectDotsNote]:
-        left: list[str] = []
-        right: list[str] = []
-        explanation: list[str] = []
-        for note in self.notes:
-            if not (note.traditional and note.pinyin):
-                continue
-            left.append(note.traditional)
-            right.append(pinyin_with_zhuyin(note.pinyin))
-            explanation.append(note.meaning)
-
-        if not left:
+        notes = [note for note in self.notes if note.traditional and note.pinyin]
+        if not notes:
             return []
 
-        note = ConnectDotsNote(
-            key=f"{self.generator_type}:{self.initial}",
-            left=left,
-            right=right,
-            explanation=explanation,
-        )
-        return note.split_stably(max_items=self.max_items)
+        right = [pinyin_with_zhuyin(note.pinyin) for note in notes]
+        fake_right = missing_tone_fake_right(notes[0].syllable, notes) if len(set(right)) == 1 else []
+        return [
+            ConnectDotsNote(
+                key=f"{self.generator_type}:{self.initial}",
+                left=[note.traditional for note in notes],
+                right=right,
+                explanation=[note.meaning for note in notes],
+                fake_right=fake_right,
+            )
+        ]
 
 
 class TagHanziToPinyin(BaseHanziToPinyinGenerator):
@@ -1273,11 +1200,8 @@ class ConnectDotsManager:
                 continue
 
             for note in notes:
-                # Collect pre-split notes for coverage stats
-                notes_by_type[gen_type].append(note)
-
                 # Split notes that exceed the maximum items threshold
-                split_notes = note.split_if_needed(max_items=MAX_ITEMS_PER_NOTE)
+                split_notes = note.split_stably(max_items=MAX_ITEMS_PER_NOTE)
 
                 for split_note in split_notes:
                     # Skip notes where all right elements are the same (trivial matching)
@@ -1285,6 +1209,9 @@ class ConnectDotsManager:
                         print(f"  Skipped (single right value): {split_note.key}")
                         stats["skipped_single_right"] += 1
                         continue
+
+                    # Collect notes that are actually emitted (post-split, not skipped) for coverage stats
+                    notes_by_type[gen_type].append(split_note)
 
                     processed_keys.add(split_note.key)
                     try:
@@ -1559,8 +1486,10 @@ def calculate_coverage_from_notes(notes_by_type: dict[str, list[ConnectDotsNote]
         for note in notes:
             for char in note.left:
                 normalized = normalize_cjk_char(char)
-                covered_characters.add(normalized)
                 coverage_by_type[gen_type].add(normalized)
+                # Only Hanzi count towards coverage (e.g. two-char phrases are not Hanzi notes)
+                if normalized in all_hanzi_characters:
+                    covered_characters.add(normalized)
 
     return CoverageStats(
         total_hanzi=len(all_hanzi_characters),
