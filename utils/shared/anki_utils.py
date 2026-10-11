@@ -195,6 +195,42 @@ def get_cards_info(card_ids: list[int]) -> list[AnkiCardInfo]:
     return response.get("result", [])
 
 
+class AnkiReview(TypedDict):
+    """
+    One review-log entry of AnkiConnect's `getReviewsOfCards` result.
+
+    `id` is the review time in epoch milliseconds. `type` is 0 = learn,
+    1 = review, 2 = relearn, 3 = filtered, 4 = manual (e.g. set due date,
+    forget). `ivl` is in days when positive and in seconds when negative.
+    """
+
+    id: int
+    usn: int
+    ease: int
+    ivl: int
+    lastIvl: int
+    factor: int
+    time: int
+    type: int
+
+
+def get_reviews_of_cards(card_ids: list[int]) -> dict[int, list[AnkiReview]]:
+    """
+    Get the review log of each card, oldest entry first.
+
+    Args:
+        card_ids: List of card IDs
+
+    Returns:
+        Mapping of card id -> its review-log entries
+    """
+    if not card_ids:
+        return {}
+
+    response = anki_connect_request("getReviewsOfCards", {"cards": card_ids})
+    return {int(card_id): sorted(entries, key=lambda e: e["id"]) for card_id, entries in response["result"].items()}
+
+
 def suspend_cards(card_ids: list[int]) -> None:
     """Suspend the given cards."""
     if not card_ids:
@@ -246,26 +282,45 @@ def set_new_card_positions(positions: dict[int, int]) -> None:
     Raises:
         Exception: If AnkiConnect rejects any of the writes.
     """
-    if not positions:
-        return
+    set_card_values({card_id: {"due": position} for card_id, position in positions.items()})
 
-    items = list(positions.items())
+
+def set_card_values(values: dict[int, dict[str, int]], allow_protected_keys: bool = False) -> None:
+    """
+    Write raw columns of cards (e.g. `due`, `ivl`), bypassing the scheduler.
+
+    Args:
+        values: Mapping of card id -> {column name: new value}.
+        allow_protected_keys: Allow writing columns AnkiConnect guards because a
+            bad value can corrupt the card (e.g. `ivl`, `queue`, `type`). Without
+            it, AnkiConnect rejects any write that touches one of them.
+
+    Raises:
+        Exception: If AnkiConnect rejects any of the writes.
+    """
+    items = list(values.items())
     for i in range(0, len(items), 100):
         chunk = items[i : i + 100]
         actions = [
             {
                 "action": "setSpecificValueOfCard",
-                "params": {"card": card_id, "keys": ["due"], "newValues": [position]},
+                "params": {
+                    "card": card_id,
+                    "keys": list(columns),
+                    "newValues": list(columns.values()),
+                    "warning_check": allow_protected_keys,
+                },
             }
-            for card_id, position in chunk
+            for card_id, columns in chunk
         ]
         results = anki_connect_request("multi", {"actions": actions})["result"]
-        for (card_id, position), result in zip(chunk, results, strict=True):
-            # setSpecificValueOfCard returns one entry per key: True on success,
-            # [False, message] otherwise. `multi` reports a failed action as a
-            # dict holding the error message.
-            if isinstance(result, dict) or any(entry is not True for entry in result):
-                raise Exception(f"Failed to set position {position} on card {card_id}: {result}")
+        for (card_id, columns), result in zip(chunk, results, strict=True):
+            # setSpecificValueOfCard returns [True] on success, [[False, message]]
+            # if the write raised, and a bare False if the request was refused
+            # (e.g. a protected key without warning_check). `multi` reports a
+            # failed action as a dict holding the error message.
+            if not isinstance(result, list) or any(entry is not True for entry in result):
+                raise Exception(f"Failed to set {columns} on card {card_id}: {result}")
 
 
 def move_cards_to_deck(card_ids: list[int], deck: str) -> None:

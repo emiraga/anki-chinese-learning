@@ -5,11 +5,13 @@
 #   "requests",
 #   "dragonmapper",
 #   "google-genai",
+#   "google-cloud-translate>=3.15.0",
 # ]
 # ///
 
 import json
 import random
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -28,8 +30,14 @@ from shared.anki_utils import (
 from shared.character_discovery import extract_all_characters
 from shared.cli import parse_no_arguments
 from shared.gemini_utils import create_gemini_client, gemini_generate
+from shared.google_credentials import setup_google_credentials
 from shared.pinyin_utils import remove_tone_marks
 from shared.project_paths import load_pos_mapping
+from shared.translation_utils import translate_text_with_google
+
+# Matches an Anki cloze deletion such as "{{c1::原因}}" or "{{c1::原因::reason}}",
+# capturing the answer text (without the optional hint)
+CLOZE_PATTERN = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
 
 
 def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple[str, list[str]]:
@@ -766,6 +774,48 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     return updated
 
 
+def strip_cloze_markup(text: str) -> str:
+    """
+    Replace every Anki cloze deletion with its answer text.
+
+    Args:
+        text (str): Text that may contain cloze markup, e.g. "{{c1::原因::reason}}"
+
+    Returns:
+        str: The text with each cloze replaced by its answer, e.g. "原因"
+    """
+    return CLOZE_PATTERN.sub(r"\1", text)
+
+
+def fill_sentence_cloze_english() -> int:
+    """
+    Fill an empty Sentence Cloze English field with the Google Translate
+    translation of Sentence Cloze Traditional (with the cloze markup removed).
+
+    Returns:
+        int: Number of notes updated
+    """
+    query = '"Sentence Cloze Traditional:_*" "Sentence Cloze English:"'
+    print(f"Query: {query}")
+
+    note_ids = find_notes_by_query(query)
+    print(f"Found {len(note_ids)} note(s) with Sentence Cloze Traditional but empty Sentence Cloze English")
+
+    updated = 0
+    for note_info in iter_notes_info(note_ids):
+        note_id = note_info["noteId"]
+        sentence = strip_cloze_markup(get_field_value(note_info, "Sentence Cloze Traditional")).strip()
+        if not sentence or get_field_value(note_info, "Sentence Cloze English"):
+            continue
+
+        translation = translate_text_with_google(sentence)
+        update_note_fields(note_id, {"Sentence Cloze English": translation})
+        print(f"Updated note {note_id} with Sentence Cloze English: '{sentence}' -> '{translation}'")
+        updated += 1
+
+    return updated
+
+
 def get_same_chars_field_value(traditional: str, key: str, char_mapping: dict[str, list[str]]) -> str:
     """
     Get the value for a "Same X Traditional" field by looking up other characters with the same key.
@@ -933,8 +983,8 @@ def main():
     """
     Main function to process all note types and update Props, Mnemonic pegs, Anki Tags,
     POS, POS Description, Examples JSON, Same Syllable Traditional,
-    Sentence Traditional, Sentence English, Sentence 2 Traditional, and
-    Sentence 2 English fields
+    Sentence Traditional, Sentence English, Sentence 2 Traditional,
+    Sentence 2 English, and Sentence Cloze English fields
     """
     parse_no_arguments(__doc__)
 
@@ -994,6 +1044,12 @@ def main():
     print("\n=== Filling Sentence Traditional and Sentence 2 Traditional for due cards ===")
     sentences_updated = fill_sentence_traditional_for_due_cards(known_characters)
     print(f"Updated Sentence Traditional / Sentence 2 Traditional on {sentences_updated} note(s)")
+
+    # Translate Sentence Cloze Traditional into an empty Sentence Cloze English
+    print("\n=== Filling Sentence Cloze English with Google Translate ===")
+    setup_google_credentials()
+    cloze_updated = fill_sentence_cloze_english()
+    print(f"Updated Sentence Cloze English on {cloze_updated} note(s)")
 
     print("\n=== All done! ===")
 
