@@ -14,7 +14,7 @@ This script:
      in priority order.
 
 The pace at which they arrive is deliberately not managed here: it is the
-new-cards/day limit of the Chinese::Simplified deck, which you can change in
+new-cards/day limit of the Chinese::jSimplified deck, which you can change in
 Anki at any time. Re-running the script re-applies the current ranking to every
 card that has not been studied yet, so changing the ranking reshuffles the
 queue without disturbing cards already in learning or review.
@@ -59,7 +59,7 @@ PHRASE_NOTE_TYPES = ["TOCFL"]
 
 # Deck holding the second (simplified-form) cards. Its new-cards/day limit is
 # what actually paces the schedule; the script only reads it for reporting.
-SIMPLIFIED_DECK = "Chinese::Simplified"
+SIMPLIFIED_DECK = "Chinese::jSimplified"
 
 # Anki card queue values (see https://docs.ankiweb.net)
 QUEUE_NEW = 0

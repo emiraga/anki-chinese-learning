@@ -100,7 +100,7 @@ def create_hanzi_note(char: str, pinyin: str, simplified: str, meaning: str = ""
     """
     # Create the note
     note_id = add_note(
-        "Chinese::CharsProps",  # Adjust deck name as needed
+        "Chinese::wCharsProps",  # Adjust deck name as needed
         "Hanzi",
         {
             "Traditional": char,

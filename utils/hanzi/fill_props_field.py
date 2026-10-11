@@ -577,26 +577,28 @@ def find_notes_with_tags(note_type: str, include_empty_pos: bool = False, includ
     return note_ids
 
 
-def extract_example_sentences(examples_json_str: str) -> list[str]:
+def extract_example_sentences(examples_json_str: str) -> dict[str, str]:
     """
-    Extract all Traditional example sentences from an Examples JSON value.
+    Extract all Traditional example sentences and their English translations
+    from an Examples JSON value.
 
     Args:
         examples_json_str (str): JSON string in the format
             {"<POS_CODE>": [{"Traditional": <sentence>, "English": <translation>}]}
 
     Returns:
-        list: All non-empty Traditional sentences, or [] if there are none
+        dict: Every non-empty Traditional sentence mapped to its English
+            translation (in order of appearance), or {} if there are none
     """
     if not examples_json_str or not examples_json_str.strip():
-        return []
+        return {}
 
     try:
         examples_dict = json.loads(examples_json_str)
     except json.JSONDecodeError:
-        return []
+        return {}
 
-    sentences: list[str] = []
+    sentences: dict[str, str] = {}
     if isinstance(examples_dict, dict):
         for examples in examples_dict.values():
             if not isinstance(examples, list):
@@ -604,8 +606,8 @@ def extract_example_sentences(examples_json_str: str) -> list[str]:
             for example in examples:
                 if isinstance(example, dict):
                     sentence = example.get("Traditional", "").strip()
-                    if sentence:
-                        sentences.append(sentence)
+                    if sentence and sentence not in sentences:
+                        sentences[sentence] = example.get("English", "").strip()
 
     return sentences
 
@@ -643,7 +645,9 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     For each matching note, every empty field of the two gets a Traditional
     example sentence from Examples JSON whose characters are all known, picked
     at random. The two fields always hold different sentences. Non-empty values
-    are never changed.
+    are never changed. Sentence English and Sentence 2 English are set to the
+    translations of the sentences picked for Sentence Traditional and
+    Sentence 2 Traditional.
 
     Args:
         known_characters (set): Set of Chinese characters the learner already knows
@@ -723,18 +727,22 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
 
         sentence = current_sentence
         if needs_sentence:
-            sentence = pick_random_sentence(sentences, known_characters, exclude={current_sentence_2})
+            sentence = pick_random_sentence(list(sentences), known_characters, exclude={current_sentence_2})
             if not sentence:
                 raise Exception(
                     f"Note {note_id} ('{traditional}'): No example sentence for Sentence Traditional"
                     " is composed entirely of known characters"
                 )
             fields_to_update["Sentence Traditional"] = sentence
+            if "Sentence English" in fields:
+                fields_to_update["Sentence English"] = sentences[sentence]
 
         if needs_sentence_2:
-            sentence_2 = pick_random_sentence(sentences, known_characters, exclude={sentence})
+            sentence_2 = pick_random_sentence(list(sentences), known_characters, exclude={sentence})
             if sentence_2:
                 fields_to_update["Sentence 2 Traditional"] = sentence_2
+                if "Sentence 2 English" in fields:
+                    fields_to_update["Sentence 2 English"] = sentences[sentence_2]
             else:
                 print(
                     f"Warning: Note {note_id} ('{traditional}'): No example sentence for Sentence 2 Traditional"
@@ -925,7 +933,8 @@ def main():
     """
     Main function to process all note types and update Props, Mnemonic pegs, Anki Tags,
     POS, POS Description, Examples JSON, Same Syllable Traditional,
-    Sentence Traditional, and Sentence 2 Traditional fields
+    Sentence Traditional, Sentence English, Sentence 2 Traditional, and
+    Sentence 2 English fields
     """
     parse_no_arguments(__doc__)
 

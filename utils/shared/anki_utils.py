@@ -322,7 +322,7 @@ def add_note(deck: str, model: str, fields: dict[str, str], tags: list[str] | No
     Create a new note.
 
     Args:
-        deck: Deck the note's cards go into (e.g. "Chinese::CharsProps")
+        deck: Deck the note's cards go into (e.g. "Chinese::wCharsProps")
         model: Note type to use (e.g. "Hanzi")
         fields: Field values for the new note
         tags: Tags to put on the note

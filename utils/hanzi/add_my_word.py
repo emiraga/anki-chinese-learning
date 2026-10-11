@@ -20,7 +20,7 @@ import dragonmapper.hanzi
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import add_note, find_cards_by_query, find_notes_by_query, set_new_card_positions, suspend_cards
+from shared.anki_utils import add_note, find_cards_by_query, find_notes_by_query, set_due_date, suspend_cards
 from shared.dictionary_utils import lookup_meaning
 from shared.gemini_utils import create_gemini_client, gemini_generate, translate_with_gemini
 from shared.pinyin_utils import pinyin_to_zhuyin
@@ -67,7 +67,7 @@ def check_traditional_exists(traditional: str) -> bool:
 
 
 def create_tocfl_note(
-    traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::wPhrases", set_due_today: bool = True
+    traditional: str, pinyin: str, zhuyin: str, meaning: str, deck_name: str = "Chinese::dPhrases", set_due_today: bool = True
 ) -> int:
     """
     Create a new TOCFL note
@@ -110,10 +110,8 @@ def create_tocfl_note(
 
     if card_ids:
         if set_due_today:
-            # A new card's queue position lives in its `due` column; position 0
-            # puts these cards at the front of the new-card queue.
-            set_new_card_positions(dict.fromkeys(card_ids, 0))
-            print(f"✓ Set {len(card_ids)} card(s) to the front of the new queue")
+            set_due_date(card_ids, "0")
+            print(f"✓ Set {len(card_ids)} card(s) due today")
         else:
             suspend_cards(card_ids)
             print(f"✓ Suspended {len(card_ids)} card(s) for note {note_id}")
@@ -166,7 +164,7 @@ def main():
         help="Generate a random price phrase (default: 1-999). Use --price 9999 or --price 100-999",
     )
     parser.add_argument("--note", default="TOCFL", help="Note type to use (default: TOCFL)")
-    parser.add_argument("--deck", default="Chinese::wPhrases", help="Deck name to add the note to (default: Chinese::wPhrases)")
+    parser.add_argument("--deck", default="Chinese::dPhrases", help="Deck name to add the note to (default: Chinese::dPhrases)")
     parser.add_argument("--no-due-today", action="store_true", help="Don't set cards due today (will suspend them instead)")
     parser.add_argument("--pinyin", help="Manual pinyin (optional, will be auto-generated if not provided)")
     parser.add_argument("--meaning", help="Manual meaning/translation (optional, will be auto-generated if not provided)")

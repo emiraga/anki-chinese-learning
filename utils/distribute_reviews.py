@@ -18,7 +18,7 @@ cards by Anki when a due date is set on them.
 Examples:
     ./distribute_reviews.py --days 7
     ./distribute_reviews.py --days 5 --dry-run
-    ./distribute_reviews.py --deck "Chinese::wPhrases" --days 10
+    ./distribute_reviews.py --deck "Chinese::dPhrases" --days 10
 """
 
 import argparse

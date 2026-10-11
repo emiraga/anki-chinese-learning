@@ -7,7 +7,7 @@
 # ///
 
 """
-Suspend well-learned listening cards in the Chinese::Listening deck.
+Suspend well-learned listening cards in the Chinese::sListening deck.
 
 This script suspends cards (not notes) matched by a set of Anki search queries.
 Each query is run sequentially and its matched cards are suspended before moving
@@ -34,8 +34,8 @@ from shared.anki_utils import (
 from shared.cli import parse_no_arguments
 
 QUERIES = [
-    "deck:Chinese::Listening -is:suspended prop:reps>=10 prop:lapses=0",
-    "deck:Chinese::Listening -is:suspended prop:reps>=10 prop:ivl>=100",
+    "deck:Chinese::sListening -is:suspended prop:reps>=10 prop:lapses=0",
+    "deck:Chinese::sListening -is:suspended prop:reps>=10 prop:ivl>=100",
 ]
 
 IGNORED_TAG = "card-listening-ignored-on-purpose"
