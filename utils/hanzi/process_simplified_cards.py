@@ -9,15 +9,13 @@ This script:
      form with "chinese::different-simplified-form" (and removes the tag from
      notes where the two forms are identical).
   3. Ranks the differing-simplified characters by learning priority, then
-     un-suspends every eligible second card (note:Hanzi card:2) and writes that
-     ranking into Anki's new-card queue positions, so the cards are introduced
-     in priority order.
+     un-suspends every eligible second card (note:Hanzi card:2). Cards that
+     have already been studied (learning or review) are left untouched.
 
-The pace at which they arrive is deliberately not managed here: it is the
+The new-card queue order is not managed here: AnkiConnect no longer allows
+writing a new card's queue position. The pace at which they arrive is the
 new-cards/day limit of the Chinese::jSimplified deck, which you can change in
-Anki at any time. Re-running the script re-applies the current ranking to every
-card that has not been studied yet, so changing the ranking reshuffles the
-queue without disturbing cards already in learning or review.
+Anki at any time.
 """
 
 import argparse
@@ -40,7 +38,6 @@ from shared.anki_utils import (
     get_field_value,
     get_notes_info,
     remove_tags,
-    set_new_card_positions,
     unsuspend_cards,
 )
 from shared.character_conversion import to_simplified
@@ -370,26 +367,20 @@ def get_new_cards_per_day() -> int:
 
 def schedule_eligible_cards(priority: list[dict[str, Any]], dry_run: bool) -> None:
     """
-    Un-suspend every eligible second card and order the new queue by priority.
+    Un-suspend every eligible second card that is still new.
 
-    Each still-new card:2 gets its rank as its new-queue position, so Anki
-    introduces them in exactly the order computed by build_priority_order().
     Cards that have already left the new queue (learning or review) are left
-    completely alone, and they do not consume a position.
-
-    Because positions are rewritten from scratch on every run, changing the
-    ranking simply reshuffles everything that has not been studied yet.
+    completely alone.
     """
     print("\n=== Scheduling eligible card:2 cards by priority ===")
 
     note_to_card2 = fetch_card2_by_note()
 
     to_unsuspend: list[int] = []
-    positions: dict[int, int] = {}
     already_studied = 0
     missing = 0
 
-    position = 0
+    queued = 0
     for entry in priority:
         card = note_to_card2.get(entry["note_id"])
         if card is None:
@@ -399,35 +390,31 @@ def schedule_eligible_cards(priority: list[dict[str, Any]], dry_run: bool) -> No
             already_studied += 1
             continue
 
-        position += 1
+        queued += 1
         if card["queue"] == QUEUE_SUSPENDED:
             to_unsuspend.append(card["cardId"])
-        if card["due"] != position:
-            positions[card["cardId"]] = position
 
     print(f"Eligible characters:                 {len(priority)}")
     print(f"  already studied (left untouched):  {already_studied}")
-    print(f"  queued as new cards:               {position}")
+    print(f"  queued as new cards:               {queued}")
     print(f"    of which need un-suspending:     {len(to_unsuspend)}")
-    print(f"    of which need repositioning:     {len(positions)}")
     if missing:
         print(f"  without a card:2 (skipped):        {missing}")
 
     per_day = get_new_cards_per_day()
     if per_day > 0:
-        days = -(-position // per_day)  # ceil
+        days = -(-queued // per_day)  # ceil
         finish = local_today() + timedelta(days=days)
         print(f"At the deck's current limit of {per_day} new card(s)/day, the queue lasts ~{days} days (until {finish}).")
     else:
         print(f"Deck '{SIMPLIFIED_DECK}' currently allows 0 new cards/day, so none of these will appear.")
 
     if dry_run:
-        print("(dry-run) Skipping un-suspend / reposition")
+        print("(dry-run) Skipping un-suspend")
         return
 
     unsuspend_cards(to_unsuspend)
-    set_new_card_positions(positions)
-    print(f"Un-suspended {len(to_unsuspend)} card(s) and repositioned {len(positions)} card(s)")
+    print(f"Un-suspended {len(to_unsuspend)} card(s)")
 
 
 def main() -> None:

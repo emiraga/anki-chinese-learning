@@ -267,24 +267,6 @@ def set_due_date(card_ids: list[int], days: str) -> None:
     anki_connect_request("setDueDate", {"cards": card_ids, "days": days})
 
 
-def set_new_card_positions(positions: dict[int, int]) -> None:
-    """
-    Set the position of cards in the new-card queue.
-
-    For a card that is still new, Anki stores its queue position in the `due`
-    column, so repositioning is just a matter of writing that column. Cards are
-    then introduced in ascending position order (subject to the deck's
-    new-cards/day limit).
-
-    Args:
-        positions: Mapping of card id -> new queue position.
-
-    Raises:
-        Exception: If AnkiConnect rejects any of the writes.
-    """
-    set_card_values({card_id: {"due": position} for card_id, position in positions.items()})
-
-
 def set_card_values(values: dict[int, dict[str, int]], allow_protected_keys: bool = False) -> None:
     """
     Write raw columns of cards (e.g. `due`, `ivl`), bypassing the scheduler.
@@ -329,7 +311,7 @@ def move_cards_to_deck(card_ids: list[int], deck: str) -> None:
 
     Args:
         card_ids: List of card IDs to move
-        deck: Name of the destination deck (e.g. "Chinese::MediaClips")
+        deck: Name of the destination deck (e.g. "Chinese::gMediaClips")
     """
     if not card_ids:
         return

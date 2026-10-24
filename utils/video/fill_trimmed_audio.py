@@ -18,7 +18,7 @@ before it matures. For each matching note it takes the clip at
 the remaining audio to an MP3, uploads it to Anki's media collection, points
 the "Trimmed Audio" field at it with a [sound:...] tag, tags the note
 "chinese::media-trimmed-audio", and moves the note's cards to the
-"Chinese::MediaClips" deck.
+"Chinese::gMediaClips" deck.
 
 By default the audio is extracted exactly as it is in the film. Passing
 `--audio-preset` instead cleans up the dialogue - denoising it, boosting the
@@ -88,7 +88,7 @@ AUDIO_FIELD = "Trimmed Audio"
 CLIP_FIELD = "RelativeFilePath"
 TRIM_START_FIELD = "trimDurationStart"
 TRIM_END_FIELD = "trimDurationEnd"
-DESTINATION_DECK = "Chinese::MediaClips"
+DESTINATION_DECK = "Chinese::gMediaClips"
 # Added to every note this script fills, and also a way to hand-pick a note that
 # has not matured yet: the default search takes tagged notes as well as mature
 # ones.
