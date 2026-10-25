@@ -174,68 +174,66 @@ export const PhraseConnectionsSection: React.FC<{
     <section>
       <h3 className="text-xl font-semibold mb-2">Connections</h3>
 
-      {connections.hint && (
-        <div className="mb-4 px-3 py-2 border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-100 italic">
-          {connections.hint}
-        </div>
-      )}
+      <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-3">
+        {connections.hint && (
+          <Section title="Hint">
+            <div className="pt-0.5">{connections.hint}</div>
+          </Section>
+        )}
 
-      {hasSections && (
-        <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-3">
-          {synonyms.length > 0 && (
-            <Section title="Similar words">
-              <WordDiffList words={synonyms} phrasesByForm={phrasesByForm} />
-            </Section>
-          )}
+        {synonyms.length > 0 && (
+          <Section title="Similar words">
+            <WordDiffList words={synonyms} phrasesByForm={phrasesByForm} />
+          </Section>
+        )}
 
-          {antonyms.length > 0 && (
-            <Section title="Opposites">
-              <WordDiffList words={antonyms} phrasesByForm={phrasesByForm} />
-            </Section>
-          )}
+        {antonyms.length > 0 && (
+          <Section title="Opposites">
+            <WordDiffList words={antonyms} phrasesByForm={phrasesByForm} />
+          </Section>
+        )}
 
-          {connections.pairsWith.length > 0 && (
-            <Section title="Pairs with">
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-serif text-lg">
-                {connections.pairsWith.map((p) => (
-                  <span key={p.pattern}>{p.pattern}</span>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {connections.measureWords.length > 0 && (
-            <Section title="Measure words">
-              <RelatedWordList
-                words={connections.measureWords}
-                phrasesByForm={phrasesByForm}
-              />
-            </Section>
-          )}
-
-          {/* Only shown with an equivalent word: "Mainly used in Taiwan" alone
-              tells a learner of Taiwan Mandarin nothing */}
-          {equivalents.length > 0 && (
-            <Section title="Region">
-              {region.usage !== "both" && (
-                <div>Mainly used in {CONNECTIONS_REGIONS[region.usage]}</div>
-              )}
-              {equivalents.map((e) => (
-                <div key={e.w}>
-                  {CONNECTIONS_REGIONS[e.region]}:{" "}
-                  <RelatedWord word={e.w} phrasesByForm={phrasesByForm} />
-                </div>
+        {connections.pairsWith.length > 0 && (
+          <Section title="Pairs with">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 font-serif text-lg">
+              {connections.pairsWith.map((p) => (
+                <span key={p.pattern}>{p.pattern}</span>
               ))}
-            </Section>
-          )}
+            </div>
+          </Section>
+        )}
 
-          {connections.register !== "neutral" && (
-            <Section title="Register">
-              <span className="capitalize">{connections.register}</span>
-            </Section>
-          )}
-        </dl>
-      )}
+        {connections.measureWords.length > 0 && (
+          <Section title="Measure words">
+            <RelatedWordList
+              words={connections.measureWords}
+              phrasesByForm={phrasesByForm}
+            />
+          </Section>
+        )}
+
+        {/* Only shown with an equivalent word: "Mainly used in Taiwan" alone
+              tells a learner of Taiwan Mandarin nothing */}
+        {equivalents.length > 0 && (
+          <Section title="Region">
+            {region.usage !== "both" && (
+              <div>Mainly used in {CONNECTIONS_REGIONS[region.usage]}</div>
+            )}
+            {equivalents.map((e) => (
+              <div key={e.w}>
+                {CONNECTIONS_REGIONS[e.region]}:{" "}
+                <RelatedWord word={e.w} phrasesByForm={phrasesByForm} />
+              </div>
+            ))}
+          </Section>
+        )}
+
+        {connections.register !== "neutral" && (
+          <Section title="Register">
+            <span className="capitalize">{connections.register}</span>
+          </Section>
+        )}
+      </dl>
     </section>
   );
 };

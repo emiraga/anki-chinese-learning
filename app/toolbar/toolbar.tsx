@@ -388,7 +388,26 @@ export const MainToolbarNoOutlet: React.FC<{
             onClick={reload}
             disabled={loading}
           >
-            {loading ? "loading..." : (<><span className="text-2xl leading-none">⟳</span> reload</>)}
+            {loading ? (
+              "loading..."
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                  <path d="M21 3v6h-6" />
+                </svg>
+                reload
+              </>
+            )}
           </button>
         </span>
         <span className="self-center whitespace-nowrap mr-auto">

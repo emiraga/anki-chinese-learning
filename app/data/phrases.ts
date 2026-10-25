@@ -57,13 +57,42 @@ export type SentenceCloze = {
   english: string;
 };
 
+// One entry of the "Variants" field: an alternative written form of the phrase.
+export type PhraseVariant = {
+  traditional: string;
+  pinyin: string;
+};
+
+// The TOCFL topic categories used in the "Context" field.
+export const TOCFL_CONTEXTS: Record<string, string> = {
+  "個人資料": "Personal information",
+  "健康及身體照護": "Health and body care",
+  "其他": "Other",
+  "工作": "Work",
+  "房屋與家庭、環境": "House and home, environment",
+  "教育": "Education",
+  "旅行": "Travel",
+  "日常生活": "Daily life",
+  "與他人的關係": "Relationships with others",
+  "購物": "Shopping",
+  "閒暇時間、娛樂": "Free time, entertainment",
+  "飲食": "Food and drink",
+};
+
 export type PhraseType = {
   noteId: number;
   source: string;
   traditional: string;
   sentenceTraditional: string;
+  sentenceAudio?: string;
   sentenceCloze?: SentenceCloze;
   meaning: string;
+  meaning2?: string;
+  explanation?: string;
+  // TOCFL topic categories, keys of TOCFL_CONTEXTS
+  context?: string[];
+  level?: string;
+  variants?: PhraseVariant[];
   partOfSpeech?: string;
   examples?: PhraseExamplesByPos;
   connections?: PhraseConnections;
@@ -108,6 +137,53 @@ function parseSentenceCloze(
     return undefined;
   }
   return { parts: parseCloze(traditional.trim()), english: english ?? "" };
+}
+
+/** An optional text field, or undefined when it is empty. */
+function nonEmptyField(raw: string | undefined): string | undefined {
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function parseContext(
+  raw: string | undefined,
+  noteId: number,
+): string[] | undefined {
+  const value = nonEmptyField(raw);
+  if (!value) {
+    return undefined;
+  }
+  return value.split(",").map((context) => {
+    const trimmed = context.trim();
+    if (!(trimmed in TOCFL_CONTEXTS)) {
+      throw new Error(`Note ${noteId}: unknown "Context" value "${trimmed}"`);
+    }
+    return trimmed;
+  });
+}
+
+function parseVariants(
+  raw: string | undefined,
+  noteId: number,
+): PhraseVariant[] | undefined {
+  if (!raw || raw.trim().length === 0) {
+    return undefined;
+  }
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Note ${noteId}: "Variants" must be an array`);
+  }
+  return parsed.map((variant: unknown, i) => {
+    const v = variant as Record<string, unknown> | null;
+    const traditional = v?.["Traditional"];
+    const pinyin = v?.["Pinyin"];
+    if (typeof traditional !== "string" || typeof pinyin !== "string") {
+      throw new Error(
+        `Note ${noteId}: "Variants" entry ${i} must have string "Traditional" and "Pinyin"`,
+      );
+    }
+    return { traditional, pinyin };
+  });
 }
 
 function parseExamplesJson(
@@ -304,11 +380,17 @@ export function useAnkiPhrases() {
           source: note.modelName,
           traditional,
           sentenceTraditional: note.fields["Sentence Traditional"]?.value ?? "",
+          sentenceAudio: nonEmptyField(note.fields["Sentence Audio"]?.value),
           sentenceCloze: parseSentenceCloze(
             note.fields["Sentence Cloze Traditional"]?.value,
             note.fields["Sentence Cloze English"]?.value,
           ),
           meaning: note.fields["Meaning"].value,
+          meaning2: nonEmptyField(note.fields["Meaning 2"]?.value),
+          explanation: nonEmptyField(note.fields["Explanation"]?.value),
+          context: parseContext(note.fields["Context"]?.value, note.noteId),
+          level: nonEmptyField(note.fields["Level"]?.value),
+          variants: parseVariants(note.fields["Variants"]?.value, note.noteId),
           partOfSpeech: note.fields["POS"]?.value,
           examples: parseExamplesJson(
             note.fields["Examples JSON"]?.value,
@@ -370,14 +452,9 @@ export function useAnkiPhrases() {
           }
         };
 
-        const variants = note.fields["Variants"]?.value || "";
-
-        if (variants.length > 0) {
-          for (const variant of JSON.parse(variants)) {
-            processPinyin(
-              variant["Pinyin"].toLowerCase(),
-              variant["Traditional"],
-            );
+        if (info.variants) {
+          for (const variant of info.variants) {
+            processPinyin(variant.pinyin.toLowerCase(), variant.traditional);
           }
         } else {
           processPinyin(
