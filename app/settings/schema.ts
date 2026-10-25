@@ -54,7 +54,7 @@ const dummySettings: DeepRequired<AppSettings> = {
   features: { showZhuyin: true },
 };
 
-export const DEFAULT_GEN_AI_MODEL = "gemini-2.5-flash";
+export const DEFAULT_GEN_AI_MODEL = "gemini-3.5-flash-lite";
 
 export const settingsJsonSchema: JSONSchema7 = {
   title: "Application Settings",

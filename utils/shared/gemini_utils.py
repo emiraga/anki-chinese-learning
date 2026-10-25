@@ -12,6 +12,18 @@ from typing import Protocol
 
 from .google_credentials import GEMINI_API_KEY_PATH, GOOGLE_CREDENTIALS_PATH
 
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"
+"""Fast, cheap model used by default (POS tagging, example sentences, translation)."""
+
+STRONG_GEMINI_MODEL = "gemini-3.8-flash"
+"""
+Slower reasoning model, for the tasks where the default's quality falls short.
+
+Contrasting near-synonyms is one: in a side-by-side trial the default model
+skipped the words a learner actually confuses (學習 vs 讀書) in favour of rare
+ones, while this model contrasted them.
+"""
+
 
 # The google-genai package ships no type information, so the parts of its client
 # that this module uses are described here instead of being imported as `Any`.
@@ -34,7 +46,7 @@ class GeminiChat(Protocol):
 class GeminiChats(Protocol):
     """The `chats` namespace of a Gemini client."""
 
-    def create(self, *, model: str) -> GeminiChat: ...
+    def create(self, *, model: str, config: dict[str, str] | None = None) -> GeminiChat: ...
 
 
 class GeminiClient(Protocol):
@@ -119,7 +131,12 @@ def create_gemini_client(api_key: str | None = None) -> GeminiClient:
 
 
 def gemini_generate(
-    prompt: str, client: GeminiClient | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3, retry_delay: float = 2.0
+    prompt: str,
+    client: GeminiClient | None = None,
+    model_name: str = DEFAULT_GEMINI_MODEL,
+    max_retries: int = 3,
+    retry_delay: float = 2.0,
+    json_output: bool = False,
 ) -> str:
     """
     Generate content using Google Gemini API.
@@ -127,9 +144,10 @@ def gemini_generate(
     Args:
         prompt: The prompt to send to the model
         client: Optional genai.Client instance. If not provided, one will be created.
-        model_name: Model name to use (default: gemini-2.5-flash)
+        model_name: Model name to use (default: DEFAULT_GEMINI_MODEL)
         max_retries: Maximum number of retry attempts
         retry_delay: Delay in seconds between retries
+        json_output: Ask the model to reply with JSON only (no markdown fences)
 
     Returns:
         Generated text response
@@ -142,13 +160,14 @@ def gemini_generate(
         raise ValueError("Prompt cannot be empty")
 
     active_client: GeminiClient = client if client is not None else create_gemini_client()
+    config = {"response_mime_type": "application/json"} if json_output else None
 
     for attempt in range(max_retries):
         try:
             # Use Chat.send_message instead of Models.generate_content:
             # direct automatic function calling (AFC) on Models.generate_content
             # is deprecated and the recommended entry point is the Chat API.
-            chat = active_client.chats.create(model=model_name)
+            chat = active_client.chats.create(model=model_name, config=config)
             response = chat.send_message(prompt)
             if response.text is None:
                 raise ValueError(f"Gemini returned empty response (possibly blocked by safety filters). Candidates: {response.candidates}")
@@ -164,8 +183,31 @@ def gemini_generate(
     raise Exception("Unexpected error in gemini_generate")
 
 
+def gemini_generate_json(prompt: str, client: GeminiClient | None = None, model_name: str = DEFAULT_GEMINI_MODEL) -> object:
+    """
+    Generate a JSON reply with Google Gemini and parse it.
+
+    Args:
+        prompt: The prompt to send to the model; it should describe the JSON shape
+        client: Optional genai.Client instance. If not provided, one will be created.
+        model_name: Model name to use (default: DEFAULT_GEMINI_MODEL)
+
+    Returns:
+        The parsed JSON value; callers validate its shape
+
+    Raises:
+        Exception: If generation fails, or the reply is not valid JSON
+    """
+    response = gemini_generate(prompt, client=client, model_name=model_name, json_output=True)
+    try:
+        parsed: object = json.loads(response)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Gemini reply is not valid JSON: {e}\nReply: {response}") from e
+    return parsed
+
+
 def translate_with_gemini(
-    traditional_text: str, client: GeminiClient | None = None, model_name: str = "gemini-2.5-flash", max_retries: int = 3
+    traditional_text: str, client: GeminiClient | None = None, model_name: str = DEFAULT_GEMINI_MODEL, max_retries: int = 3
 ) -> str:
     """
     Use Google Gemini API to translate Chinese text to English.
