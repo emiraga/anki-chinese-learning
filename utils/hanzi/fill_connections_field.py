@@ -610,8 +610,10 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
                 continue
             if not LATIN_WORD_PATTERN.search(diff):
                 raise ValueError(f"{where}: the diff for {w} is not in English: {diff!r}")
-            if re.search(r"\btarget\b", diff, re.IGNORECASE):
-                raise ValueError(f"{where}: the diff for {w} says 'target' instead of naming the word: {diff!r}")
+            # "target" is ordinary English (目標 "a concrete target"), so check the
+            # rule itself: the diff names the word rather than "the target word"
+            if not any(form in diff for form in target.forms):
+                raise ValueError(f"{where}: the diff for {w} does not name {target.word}: {diff!r}")
             cleaned.append({"w": w, "diff": diff})
         return cleaned
 
