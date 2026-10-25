@@ -4,10 +4,11 @@ import { useOutletContext, useParams } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { PhraseCard, PhraseList } from "~/components/Phrase";
 import { PhraseSearchSections } from "~/components/MorePhrases";
-import { IGNORE_PHRASE_CHARS } from "~/data/phrases";
+import { IGNORE_PHRASE_CHARS, phraseForms } from "~/data/phrases";
 import { removeDuplicateChars } from "~/utils/array";
 import { HanziCardDetails, HanziText } from "~/components/HanziText";
 import { useSettings } from "~/settings/SettingsContext";
+import { PhraseNoteDetails } from "~/components/PhraseNoteDetails";
 
 export function meta({ params }: Route.MetaArgs) {
   const phraseHanzi = decodeURIComponent(params.phraseHanzi || "");
@@ -34,10 +35,25 @@ export default function PhraseHanzi() {
   const filteredPhrases = phrases.filter((phrase) =>
     phrase.traditional.includes(phraseHanzi)
   );
+  // The notes of this exact phrase; filteredPhrases also has longer ones containing it
+  const matchingPhrases = phrases.filter((phrase) =>
+    phraseForms(phrase).includes(phraseHanzi),
+  );
   const noteTypes = settings.phraseNotes.map((pn) => pn.noteType);
   return (
     <MainFrame>
-      <PhraseCard phraseHanzi={phraseHanzi} />
+      {matchingPhrases.length === 0 ? (
+        <PhraseCard phraseHanzi={phraseHanzi} />
+      ) : (
+        matchingPhrases.map((phrase) => (
+          <PhraseNoteDetails
+            key={phrase.noteId}
+            phrase={phrase}
+            phrases={phrases}
+            phraseHanzi={phraseHanzi}
+          />
+        ))
+      )}
       {[
         ...removeDuplicateChars(
           removeDuplicateChars(phraseHanzi, IGNORE_PHRASE_CHARS),

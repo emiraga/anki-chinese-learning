@@ -39,6 +39,19 @@ from shared.translation_utils import translate_text_with_google
 # capturing the answer text (without the optional hint)
 CLOZE_PATTERN = re.compile(r"\{\{c\d+::(.*?)(?:::.*?)?\}\}")
 
+# Matches Japanese kana and Korean hangul, which sometimes leak into
+# AI generated "Traditional Chinese" sentences (e.g. "...插你眼。ふふ")
+NON_CHINESE_SCRIPT_PATTERN = re.compile(
+    "["
+    "぀-ヿ"  # Hiragana and Katakana
+    "ㇰ-ㇿ"  # Katakana Phonetic Extensions
+    "ｦ-ﾟ"  # Halfwidth Katakana
+    "ᄀ-ᇿ"  # Hangul Jamo
+    "㄰-㆏"  # Hangul Compatibility Jamo
+    "가-힯"  # Hangul Syllables
+    "]"
+)
+
 
 def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple[str, list[str]]:
     """
@@ -161,7 +174,14 @@ Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g
         raise Exception(f"  Error getting POS suggestion from Gemini: {e}") from e
 
 
-def generate_examples_json_with_gemini(traditional: str, pos_codes: str, pos_mapping: dict[str, Any], gemini_client: Any) -> dict[str, Any]:
+def generate_examples_json_with_gemini(
+    traditional: str,
+    pos_codes: str,
+    pos_mapping: dict[str, Any],
+    gemini_client: Any,
+    avoid_characters: set[str] | None = None,
+    existing_sentences: list[str] | None = None,
+) -> dict[str, Any]:
     """
     Use Gemini AI to generate example sentences for each POS of a Chinese phrase.
 
@@ -170,6 +190,9 @@ def generate_examples_json_with_gemini(traditional: str, pos_codes: str, pos_map
         pos_codes (str): POS codes separated by "/" (e.g., "N/V")
         pos_mapping (dict): Dictionary mapping POS codes to their descriptions
         gemini_client: The Gemini client instance
+        avoid_characters (set): Optional characters the sentences must not use
+            (e.g. characters the learner does not know yet)
+        existing_sentences (list): Optional sentences that must not be repeated
 
     Returns:
         dict: Dictionary mapping POS codes to lists of example objects
@@ -202,6 +225,16 @@ def generate_examples_json_with_gemini(traditional: str, pos_codes: str, pos_map
     all_pos_list = "\n".join(all_pos_options)
     pos_list = "\n".join(pos_descriptions)
 
+    extra_instructions = ""
+    if avoid_characters:
+        extra_instructions += (
+            "\nCRITICAL - The learner does not know these characters yet. Do NOT use any of them in any sentence:\n"
+            f"{'、'.join(sorted(avoid_characters))}\n"
+        )
+    if existing_sentences:
+        existing_list = "\n".join(f"- {sentence}" for sentence in existing_sentences)
+        extra_instructions += f"\nThese sentences already exist. Write NEW sentences, do not repeat them:\n{existing_list}\n"
+
     prompt = f"""You are a Chinese language expert specializing in Taiwan Mandarin.
 
 Generate example sentences for the word/phrase "{traditional}".
@@ -216,14 +249,14 @@ IMPORTANT: This system uses Taiwan TOCFL grammar categories. There is NO "A", "A
 What English calls "adjectives" are classified as "Vs" (intransitive state verbs) in this system.
 
 Requirements:
-1. Generate at least ONE example sentence for each POS listed above
+1. Generate at least ONE example sentence for each POS listed above, and at least TWO sentences in total
 2. If a POS has importantly different usages, generate multiple examples
 3. You MAY add examples for additional POS codes from the list above if the phrase is commonly used that way
 4. Sentences should reflect casual Taiwan Mandarin conversation
 5. Use Traditional Chinese characters
 6. CRITICAL: Use ONLY the exact codes shown above as JSON keys (e.g., "N", "V", "Vs", "Adv").
    Never use "A", "Adj", "Noun", "Verb", or any other abbreviations not in the list.
-
+{extra_instructions}
 CRITICAL - Sentence length:
 - Sentences MUST be very short and simple
 - Use basic vocabulary and simple grammar (casual conversation in Taiwan)
@@ -265,11 +298,14 @@ Example response format:
             if not isinstance(examples, list):
                 continue
 
-            validated_examples: list[dict[str, str]] = [
-                {"Traditional": example["Traditional"], "English": example["English"]}
-                for example in examples
-                if isinstance(example, dict) and "Traditional" in example and "English" in example
-            ]
+            validated_examples: list[dict[str, str]] = []
+            for example in examples:
+                if not (isinstance(example, dict) and "Traditional" in example and "English" in example):
+                    continue
+                if NON_CHINESE_SCRIPT_PATTERN.search(example["Traditional"]):
+                    print(f"  Rejected example with non-Chinese script for '{traditional}': '{example['Traditional']}'")
+                    continue
+                validated_examples.append({"Traditional": example["Traditional"], "English": example["English"]})
 
             if validated_examples:
                 validated_dict[pos_code] = validated_examples
@@ -334,6 +370,61 @@ def format_examples_as_html(examples_json_str: str, pos_mapping: dict[str, Any],
 
     # Join different POS sections with double line break
     return "<br><br>".join(pos_sections)
+
+
+def build_examples_html_updates(note_info: AnkiNoteInfo, examples_json_str: str, pos_mapping: dict[str, Any]) -> dict[str, str]:
+    """
+    Build the updates for the HTML formatted Examples fields that the note has.
+    "Examples" holds Chinese + English, "Examples English" only the translations.
+
+    Args:
+        note_info (dict): Note information dictionary
+        examples_json_str (str): The (possibly updated) Examples JSON value
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+
+    Returns:
+        dict: Field name mapped to its new value, only for fields that change
+    """
+    updates: dict[str, str] = {}
+    for field_name, english_only in (("Examples", False), ("Examples English", True)):
+        if field_name not in note_info["fields"]:
+            continue
+
+        new_examples_html = format_examples_as_html(examples_json_str, pos_mapping, english_only=english_only)
+        if new_examples_html and get_field_value(note_info, field_name) != new_examples_html:
+            updates[field_name] = new_examples_html
+
+    return updates
+
+
+def merge_examples_json(examples_json_str: str, new_examples: dict[str, Any]) -> str:
+    """
+    Append newly generated examples to an existing Examples JSON value,
+    skipping sentences that are already present.
+
+    Existing examples are kept, so a Sentence Traditional picked from them
+    stays valid (and keeps its Sentence Audio).
+
+    Args:
+        examples_json_str (str): Existing Examples JSON value (may be empty)
+        new_examples (dict): {<POS>: [{"Traditional": ..., "English": ...}]}
+
+    Returns:
+        str: The merged Examples JSON value
+    """
+    merged: dict[str, list[dict[str, str]]] = {}
+    if examples_json_str.strip():
+        merged = json.loads(examples_json_str)
+
+    existing_sentences = set(extract_example_sentences(examples_json_str))
+    for pos_code, examples in new_examples.items():
+        for example in examples:
+            if example["Traditional"].strip() in existing_sentences:
+                continue
+            merged.setdefault(pos_code, []).append(example)
+            existing_sentences.add(example["Traditional"].strip())
+
+    return json.dumps(merged, ensure_ascii=False)
 
 
 def extract_tagged_values(
@@ -645,36 +736,112 @@ def pick_random_sentence(sentences: list[str], known_characters: set[str], exclu
     return random.choice(eligible_sentences)
 
 
-def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
+# Maximum number of times Examples JSON is regenerated for one note while
+# looking for sentences that are composed entirely of known characters
+MAX_EXAMPLES_REGENERATIONS = 3
+
+
+def find_unknown_characters(sentences: list[str], known_characters: set[str]) -> set[str]:
+    """
+    Collect the Chinese characters used in the sentences that are not known.
+
+    Args:
+        sentences (list): Traditional sentences
+        known_characters (set): Set of Chinese characters the learner already knows
+
+    Returns:
+        set: Characters that appear in the sentences but not in known_characters
+    """
+    unknown: set[str] = set()
+    for sentence in sentences:
+        unknown.update(extract_all_characters(sentence) - known_characters)
+    return unknown
+
+
+def pick_sentence_pair(sentences: list[str], known_characters: set[str], current_sentence: str, current_sentence_2: str) -> tuple[str, str]:
+    """
+    Pick the values for Sentence Traditional and Sentence 2 Traditional.
+
+    A non-empty current value is kept; an empty one is picked at random with
+    pick_random_sentence, always different from the other sentence.
+
+    Args:
+        sentences (list): Candidate Traditional sentences
+        known_characters (set): Set of Chinese characters the learner already knows
+        current_sentence (str): Current Sentence Traditional value (may be empty)
+        current_sentence_2 (str): Current Sentence 2 Traditional value (may be empty)
+
+    Returns:
+        tuple: (sentence, sentence_2), each "" if no eligible sentence exists
+    """
+    sentence = current_sentence or pick_random_sentence(sentences, known_characters, exclude={current_sentence_2})
+    sentence_2 = current_sentence_2 or pick_random_sentence(sentences, known_characters, exclude={sentence})
+    return sentence, sentence_2
+
+
+def build_sentence_updates(fields: dict[str, Any], sentence: str, english: str) -> dict[str, str]:
+    """
+    Build the updates for setting Sentence Traditional to a new sentence.
+
+    Sentence Audio is always emptied, because it no longer matches the new
+    sentence; fill_audio_anki.py fills an empty Sentence Audio.
+
+    Args:
+        fields (dict): The note's fields
+        sentence (str): The new Sentence Traditional value
+        english (str): The translation, stored in Sentence English
+
+    Returns:
+        dict: Field name mapped to its new value
+    """
+    updates = {"Sentence Traditional": sentence}
+    if "Sentence English" in fields:
+        updates["Sentence English"] = english
+    if "Sentence Audio" in fields:
+        updates["Sentence Audio"] = ""
+    return updates
+
+
+def fill_sentence_traditional_for_due_cards(known_characters: set[str], pos_mapping: dict[str, Any], gemini_client: Any) -> int:
     """
     Fill the Sentence Traditional and Sentence 2 Traditional fields for cards
-    due today or tomorrow whose Traditional field has fewer than 4 characters.
+    that are due (now or within the next 7 days) or new, whose Traditional
+    field has fewer than 4 characters.
 
     For each matching note, every empty field of the two gets a Traditional
     example sentence from Examples JSON whose characters are all known, picked
     at random. The two fields always hold different sentences. Non-empty values
     are never changed. Sentence English and Sentence 2 English are set to the
     translations of the sentences picked for Sentence Traditional and
-    Sentence 2 Traditional.
+    Sentence 2 Traditional, and Sentence Audio is emptied whenever Sentence
+    Traditional is set.
+
+    When Examples JSON has no eligible sentence for a field, new examples are
+    generated with Gemini (instructed to avoid the unknown characters found in
+    the existing examples) and appended to Examples JSON, up to
+    MAX_EXAMPLES_REGENERATIONS times. Examples and Examples English are
+    updated to match.
 
     Args:
         known_characters (set): Set of Chinese characters the learner already knows
+        pos_mapping (dict): Dictionary mapping POS codes to their descriptions
+        gemini_client: The Gemini client instance used to regenerate examples
 
     Returns:
         int: Number of notes updated
 
     Raises:
-        Exception: If a non-empty Sentence Traditional does not appear in
-            Examples JSON (it was modified manually), or if Sentence Traditional
-            is empty and no eligible sentence exists for it
+        Exception: If a non-empty Sentence Traditional or Sentence 2 Traditional
+            does not appear in Examples JSON (it was modified manually), or if
+            Sentence Traditional is empty and no eligible sentence exists for it
     """
     # is:due matches cards waiting to be reviewed now (due today or overdue),
-    # and prop:due=1 matches cards due tomorrow.
+    # prop:due<=7 matches cards due within the next 7 days.
     query = "(is:due OR prop:due<=7 OR is:new) -is:suspended"
     print(f"Query: {query}")
 
     card_ids = find_cards_by_query(query)
-    print(f"Found {len(card_ids)} due today/tomorrow, non-suspended card(s)")
+    print(f"Found {len(card_ids)} due (within 7 days) or new, non-suspended card(s)")
 
     if not card_ids:
         return 0
@@ -690,6 +857,7 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
     notes_info = get_notes_info(note_ids)
 
     updated = 0
+    regenerated = 0
     skipped_no_sentence = 0
     skipped_traditional_too_long = 0
     skipped_sentence_already_filled = 0
@@ -708,19 +876,21 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
             skipped_traditional_too_long += 1
             continue
 
-        sentences = extract_example_sentences(fields.get("Examples JSON", {}).get("value", ""))
+        current_examples_json = fields.get("Examples JSON", {}).get("value", "")
+        examples_json_str = current_examples_json
+        sentences = extract_example_sentences(examples_json_str)
 
-        # Sentence Traditional is always picked from Examples JSON, so a value
+        # The sentence fields are always picked from Examples JSON, so a value
         # that is not there anymore must have been edited by hand
         current_sentence = fields.get("Sentence Traditional", {}).get("value", "").strip()
-        if current_sentence and current_sentence not in sentences:
-            raise Exception(
-                f"Note {note_id} ('{traditional}'): Sentence Traditional '{current_sentence}' does not appear in Examples JSON"
-                " (was it modified manually?)"
-            )
+        current_sentence_2 = fields.get("Sentence 2 Traditional", {}).get("value", "").strip()
+        for field_name, value in (("Sentence Traditional", current_sentence), ("Sentence 2 Traditional", current_sentence_2)):
+            if value and value not in sentences:
+                raise Exception(
+                    f"Note {note_id} ('{traditional}'): {field_name} '{value}' does not appear in Examples JSON (was it modified manually?)"
+                )
 
         # Only fill the sentence fields that are empty
-        current_sentence_2 = fields.get("Sentence 2 Traditional", {}).get("value", "").strip()
         needs_sentence = not current_sentence
         needs_sentence_2 = "Sentence 2 Traditional" in fields and not current_sentence_2
         if not needs_sentence and not needs_sentence_2:
@@ -731,30 +901,57 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
             skipped_no_sentence += 1
             continue
 
+        sentence, sentence_2 = pick_sentence_pair(list(sentences), known_characters, current_sentence, current_sentence_2)
+
+        # Regenerating only helps if the word itself is made of known characters,
+        # since every example sentence contains it
+        pos_value = fields.get("POS", {}).get("value", "").strip()
+        can_regenerate = bool(pos_value) and extract_all_characters(traditional).issubset(known_characters)
+
+        attempt = 0
+        while (not sentence or (needs_sentence_2 and not sentence_2)) and can_regenerate and attempt < MAX_EXAMPLES_REGENERATIONS:
+            attempt += 1
+            avoid_characters = find_unknown_characters(list(sentences), known_characters)
+            print(
+                f"  Regenerating Examples JSON for '{traditional}' (attempt {attempt}/{MAX_EXAMPLES_REGENERATIONS}),"
+                f" avoiding: {''.join(sorted(avoid_characters)) or '(none)'}"
+            )
+            new_examples = generate_examples_json_with_gemini(
+                traditional,
+                pos_value,
+                pos_mapping,
+                gemini_client,
+                avoid_characters=avoid_characters,
+                existing_sentences=list(sentences),
+            )
+            examples_json_str = merge_examples_json(examples_json_str, new_examples)
+            sentences = extract_example_sentences(examples_json_str)
+            sentence, sentence_2 = pick_sentence_pair(list(sentences), known_characters, current_sentence, current_sentence_2)
+
         fields_to_update: dict[str, str] = {}
 
-        sentence = current_sentence
+        if examples_json_str != current_examples_json:
+            fields_to_update["Examples JSON"] = examples_json_str
+            fields_to_update.update(build_examples_html_updates(note_info, examples_json_str, pos_mapping))
+            regenerated += 1
+
         if needs_sentence:
-            sentence = pick_random_sentence(list(sentences), known_characters, exclude={current_sentence_2})
             if not sentence:
                 raise Exception(
-                    f"Note {note_id} ('{traditional}'): No example sentence for Sentence Traditional"
-                    " is composed entirely of known characters"
+                    f"Note {note_id} ('{traditional}'): No example sentence for Sentence Traditional is composed entirely"
+                    f" of known characters (unknown: {''.join(sorted(find_unknown_characters(list(sentences), known_characters)))})"
                 )
-            fields_to_update["Sentence Traditional"] = sentence
-            if "Sentence English" in fields:
-                fields_to_update["Sentence English"] = sentences[sentence]
+            fields_to_update.update(build_sentence_updates(fields, sentence, sentences[sentence]))
 
         if needs_sentence_2:
-            sentence_2 = pick_random_sentence(list(sentences), known_characters, exclude={sentence})
             if sentence_2:
                 fields_to_update["Sentence 2 Traditional"] = sentence_2
                 if "Sentence 2 English" in fields:
                     fields_to_update["Sentence 2 English"] = sentences[sentence_2]
             else:
                 print(
-                    f"Warning: Note {note_id} ('{traditional}'): No example sentence for Sentence 2 Traditional"
-                    " is different from Sentence Traditional and composed entirely of known characters"
+                    f"Warning: Note {note_id} ('{traditional}'): no second example sentence made of only known characters"
+                    f" (unknown: {''.join(sorted(find_unknown_characters(list(sentences), known_characters)))})"
                 )
                 missing_sentence_2 += 1
 
@@ -767,6 +964,7 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str]) -> int:
         updated += 1
 
     print(f"Updated {updated} note(s)")
+    print(f"Regenerated Examples JSON on {regenerated} note(s)")
     print(f"Skipped {skipped_traditional_too_long} note(s) with empty/Traditional >= 4 chars")
     print(f"Skipped {skipped_sentence_already_filled} note(s) with Sentence Traditional and Sentence 2 Traditional already filled")
     print(f"Skipped {skipped_no_sentence} note(s) with no usable examples")
@@ -919,19 +1117,9 @@ def update_fields_for_note(
             if examples_dict:
                 fields_to_update["Examples JSON"] = json.dumps(examples_dict, ensure_ascii=False)
 
-        # Process the HTML formatted Examples fields if they exist.
-        # "Examples" holds Chinese + English, "Examples English" only the translations.
         # Use potentially updated Examples JSON or existing one
         examples_json_str = fields_to_update.get("Examples JSON") or current_examples_json
-        for field_name, english_only in (("Examples", False), ("Examples English", True)):
-            if field_name not in note_info["fields"]:
-                continue
-
-            current_examples_html = get_field_value(note_info, field_name)
-            new_examples_html = format_examples_as_html(examples_json_str, pos_mapping, english_only=english_only)
-
-            if new_examples_html and current_examples_html != new_examples_html:
-                fields_to_update[field_name] = new_examples_html
+        fields_to_update.update(build_examples_html_updates(note_info, examples_json_str, pos_mapping))
 
     # Process ID field - only if empty, set to "my_" + Traditional
     if "ID" in note_info["fields"] and "Traditional" in note_info["fields"]:
@@ -1042,7 +1230,7 @@ def main():
 
     # Fill Sentence Traditional / Sentence 2 Traditional for due cards with a short Traditional field
     print("\n=== Filling Sentence Traditional and Sentence 2 Traditional for due cards ===")
-    sentences_updated = fill_sentence_traditional_for_due_cards(known_characters)
+    sentences_updated = fill_sentence_traditional_for_due_cards(known_characters, pos_mapping, gemini_client)
     print(f"Updated Sentence Traditional / Sentence 2 Traditional on {sentences_updated} note(s)")
 
     # Translate Sentence Cloze Traditional into an empty Sentence Cloze English

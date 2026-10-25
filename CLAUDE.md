@@ -172,8 +172,12 @@ Files are named using underscores as separators.
 ## Testing and Quality
 
 - ESLint configuration with TypeScript, React, and accessibility rules
-- Type checking with `npm run typecheck`
-- No specific test framework currently configured
+- Type checking with `yarn check` (runs both of the following):
+  - `yarn check:js`: TypeScript (`tsc`)
+  - `yarn check:python`: Python, using **Pyrefly** (not mypy/pyright), scoped
+    to `utils/` and `anki/` via `[tool.pyrefly]` in `pyproject.toml`
+- Linting with `yarn lint` (ESLint + Ruff); auto-fix with `yarn lint:fix`
+- Tests with `yarn test` (Jest for JS, pytest-style scripts for Python)
 
 ## Common Development Patterns
 

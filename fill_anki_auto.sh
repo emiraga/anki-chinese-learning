@@ -13,7 +13,7 @@ set -e
 ./utils/tocfl/get_from_csv.py
 
 ./utils/hanzi/fill_props_field.py
-./utils/hanzi/fill_connections_field.py
+./utils/hanzi/fill_connections_field.py --limit 10
 
 ./utils/zhuyin/fill_zhuyin_anki.py
 

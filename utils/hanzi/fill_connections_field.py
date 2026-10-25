@@ -15,10 +15,10 @@ other words, and render it into the "Connections HTML" and "Meaning Hint" fields
 
 Connections JSON holds:
 
-    {"v": 3,
+    {"v": 4,
      "hint": "<English clue telling the word apart from similar ones, or empty>",
      "synonyms": [{"w": "之後", "diff": "<how this word differs from 之後, in English>"}],
-     "antonyms": [{"w": "以前"}],
+     "antonyms": [{"w": "以前", "diff": "<how this word contrasts with 以前, in English>"}],
      "measure_words": ["輛"],
      "register": "colloquial" | "neutral" | "formal" | "written",
      "region": {"usage": "tw" | "cn" | "both", "equivalents": [{"w": "出租車", "region": "cn"}]},
@@ -83,7 +83,7 @@ NOTE_TYPE = "TOCFL"
 CONNECTIONS_JSON_FIELD = "Connections JSON"
 CONNECTIONS_HTML_FIELD = "Connections HTML"
 MEANING_HINT_FIELD = "Meaning Hint"
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # A note is a single word (and so gets connections) when its main form is at
 # most this long, has no sentence punctuation, and is not an idiom.
@@ -130,10 +130,6 @@ class WordDiff(TypedDict):
     diff: str
 
 
-class WordRef(TypedDict):
-    w: str
-
-
 class RegionEquivalent(TypedDict):
     w: str
     region: str
@@ -153,7 +149,7 @@ class Connections(TypedDict):
     v: int
     hint: str
     synonyms: list[WordDiff]
-    antonyms: list[WordRef]
+    antonyms: list[WordDiff]
     measure_words: list[str]
     register: str
     region: Region
@@ -475,7 +471,7 @@ For EACH target word return an object:
 {"w": "<the target word, exactly as given>",
  "hint": "<English clue, see rules>",
  "synonyms": [{"w": "<word>", "diff": "<how the TARGET word differs from this one>"}],
- "antonyms": [{"w": "<word>"}],
+ "antonyms": [{"w": "<word>", "diff": "<how the TARGET word contrasts with this one>"}],
  "measure_words": ["<measure word>"],
  "register": "colloquial" | "neutral" | "formal" | "written",
  "region": {"usage": "tw" | "cn" | "both", "equivalents": [{"w": "<word>", "region": "tw" | "cn"}]},
@@ -490,7 +486,7 @@ Rules:
   characters literally or explain their etymology (not "literally hand-washing room"), since that gives
   the answer away. Use "" when no target or context word could be confused with the target, rather
   than restating the meaning.
-- "diff" MUST be written in ENGLISH, at most 25 words. Chinese only for the words themselves, and it
+- "diff" (of synonyms and antonyms) MUST be written in ENGLISH, at most 25 words. Chinese only for the words themselves, and it
   names both words in Chinese (never "the target" or "this word"): "陰天 is fully overcast, whereas 多雲 ...".
 - synonyms: at most 3 real near-synonyms. Every other target or context word that is a near-synonym
   of the target MUST be listed before any candidate; use the candidates only for the remaining slots.
@@ -604,17 +600,22 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
     if leak is not None:
         raise ValueError(f"{where}: the hint contains {leak}: {hint!r}")
 
-    synonyms: list[WordDiff] = []
-    for synonym in require(item, "synonyms", list, where):
-        w = require(synonym, "w", str, where).strip()
-        diff = require(synonym, "diff", str, where).strip()
-        if w in target.forms or finder.is_too_advanced(w) or any(s["w"] == w for s in synonyms):
-            continue
-        if not LATIN_WORD_PATTERN.search(diff):
-            raise ValueError(f"{where}: the diff for {w} is not in English: {diff!r}")
-        if re.search(r"\btarget\b", diff, re.IGNORECASE):
-            raise ValueError(f"{where}: the diff for {w} says 'target' instead of naming the word: {diff!r}")
-        synonyms.append({"w": w, "diff": diff})
+    def clean_word_diffs(key: str, excluded: set[str]) -> list[WordDiff]:
+        """Validate a list of related words with diffs, skipping the excluded and too rare ones."""
+        cleaned: list[WordDiff] = []
+        for related in require(item, key, list, where):
+            w = require(related, "w", str, where).strip()
+            diff = require(related, "diff", str, where).strip()
+            if w in excluded or finder.is_too_advanced(w) or any(c["w"] == w for c in cleaned):
+                continue
+            if not LATIN_WORD_PATTERN.search(diff):
+                raise ValueError(f"{where}: the diff for {w} is not in English: {diff!r}")
+            if re.search(r"\btarget\b", diff, re.IGNORECASE):
+                raise ValueError(f"{where}: the diff for {w} says 'target' instead of naming the word: {diff!r}")
+            cleaned.append({"w": w, "diff": diff})
+        return cleaned
+
+    synonyms = clean_word_diffs("synonyms", set(target.forms))
 
     pairs_with: list[Pairing] = []
     for pairing in require(item, "pairs_with", list, where):
@@ -623,13 +624,7 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
         if w and pattern and w not in target.forms and "…" not in w and "..." not in w:
             pairs_with.append({"w": w, "pattern": pattern})
 
-    excluded_antonyms = set(target.forms) | {s["w"] for s in synonyms} | {p["w"] for p in pairs_with}
-    antonyms: list[WordRef] = []
-    for antonym in require(item, "antonyms", list, where):
-        w = require(antonym, "w", str, where).strip()
-        if w not in excluded_antonyms and not finder.is_too_advanced(w):
-            antonyms.append({"w": w})
-            excluded_antonyms.add(w)
+    antonyms = clean_word_diffs("antonyms", set(target.forms) | {s["w"] for s in synonyms} | {p["w"] for p in pairs_with})
 
     measure_words: list[str] = []
     for measure_word in require(item, "measure_words", list, where):
@@ -745,6 +740,8 @@ def generate_all(groups: list[Group], finder: RelationFinder, dry_run: bool) -> 
 
 
 GRAY_STYLE = "color: gray;"
+# An explanation goes on its own line below its word, indented and smaller
+EXPLANATION_STYLE = "display: inline-block; margin: 0 0 0.4em 1em; font-size: 0.85em;"
 
 
 def is_learned(word: str, deck_index: dict[str, DeckWord]) -> bool:
@@ -762,23 +759,30 @@ def format_entry(word: str, deck_index: dict[str, DeckWord], explanation: str = 
     """
     Format a related word, with its pinyin when known and an optional explanation.
 
-    A learned word is bold with gray pinyin. A word the learner has not learned is
-    gray as a whole - pinyin and explanation included - so it reads as secondary.
+    The word and its pinyin are on one line; the explanation follows on the next
+    line, indented and in smaller text. A learned word is bold with gray pinyin.
+    A word the learner has not learned is gray and not bold as a whole - pinyin
+    and explanation included - so it reads as secondary.
     """
     entry = deck_index.get(word)
     pinyin = escape_html(entry.pinyin) if entry is not None and entry.pinyin else ""
-    suffix = f" — {escape_html(explanation)}" if explanation else ""
+    learned = is_learned(word, deck_index)
 
-    if is_learned(word, deck_index):
+    if learned:
         pinyin_html = f' <span style="{GRAY_STYLE}">{pinyin}</span>' if pinyin else ""
-        return f"<b>{escape_html(word)}</b>{pinyin_html}{suffix}"
+        word_line = f"<b>{escape_html(word)}</b>{pinyin_html}"
+    else:
+        pinyin_text = f" {pinyin}" if pinyin else ""
+        word_line = f'<span style="{GRAY_STYLE}">{escape_html(word)}{pinyin_text}</span>'
 
-    pinyin_text = f" {pinyin}" if pinyin else ""
-    return f'<span style="{GRAY_STYLE}">{escape_html(word)}{pinyin_text}{suffix}</span>'
+    if not explanation:
+        return word_line
+    explanation_style = EXPLANATION_STYLE if learned else f"{EXPLANATION_STYLE} {GRAY_STYLE}"
+    return f'{word_line}<br><span style="{explanation_style}">{escape_html(explanation)}</span>'
 
 
 def render_connections_html(
-    connections: Connections, extra_synonyms: list[WordDiff], extra_antonyms: list[str], deck_index: dict[str, DeckWord]
+    connections: Connections, extra_synonyms: list[WordDiff], extra_antonyms: list[WordDiff], deck_index: dict[str, DeckWord]
 ) -> str:
     """
     Render Connections JSON as HTML, one titled section per non-empty relation.
@@ -794,16 +798,20 @@ def render_connections_html(
     """
     sections: list[list[str]] = []
 
-    synonyms = list(connections["synonyms"])
-    synonyms += [extra for extra in extra_synonyms if all(s["w"] != extra["w"] for s in synonyms)]
-    synonyms.sort(key=lambda synonym: not is_learned(synonym["w"], deck_index))
-    if synonyms:
-        sections.append(["Similar words"] + [format_entry(s["w"], deck_index, s["diff"]) for s in synonyms])
+    def word_diff_lines(own: list[WordDiff], extra: list[WordDiff]) -> list[str]:
+        """One entry per related word, with its diff below it, the learned words first."""
+        merged = list(own)
+        merged += [e for e in extra if all(m["w"] != e["w"] for m in merged)]
+        merged.sort(key=lambda related: not is_learned(related["w"], deck_index))
+        return [format_entry(related["w"], deck_index, related["diff"]) for related in merged]
 
-    antonyms = [a["w"] for a in connections["antonyms"]]
-    antonyms += [w for w in extra_antonyms if w not in antonyms]
-    if antonyms:
-        sections.append(["Opposites", ", ".join(format_entry(w, deck_index) for w in learned_first(antonyms, deck_index))])
+    synonym_lines = word_diff_lines(connections["synonyms"], extra_synonyms)
+    if synonym_lines:
+        sections.append(["Similar words", *synonym_lines])
+
+    antonym_lines = word_diff_lines(connections["antonyms"], extra_antonyms)
+    if antonym_lines:
+        sections.append(["Opposites", *antonym_lines])
 
     if connections["pairs_with"]:
         sections.append(["Pairs with", ", ".join(escape_html(p["pattern"]) for p in connections["pairs_with"])])
@@ -844,12 +852,12 @@ def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: 
     # Both relations are symmetric: show B on A's card when only B's connections
     # list A. A diff names both words, so it reads correctly from either side.
     listed_as_synonym_by: dict[str, list[WordDiff]] = defaultdict(list)
-    listed_as_antonym_by: dict[str, list[str]] = defaultdict(list)
+    listed_as_antonym_by: dict[str, list[WordDiff]] = defaultdict(list)
     for word in with_connections:
         for synonym in parsed[word.note_id]["synonyms"]:
             listed_as_synonym_by[synonym["w"]].append({"w": word.word, "diff": synonym["diff"]})
         for antonym in parsed[word.note_id]["antonyms"]:
-            listed_as_antonym_by[antonym["w"]].append(word.word)
+            listed_as_antonym_by[antonym["w"]].append({"w": word.word, "diff": antonym["diff"]})
 
     changed = 0
     for word in with_connections:

@@ -42,7 +42,11 @@ export default defineConfig(({ mode }) => ({
         plugins: [["babel-plugin-react-compiler"]],
       },
     }),
-    tsconfigPaths(),
+    tsconfigPaths({
+      // The build output has a copy of public/ - including
+      // public/tone_trainer/tsconfig.json, which fails to parse there
+      skip: (dir) => dir === "build",
+    }),
   ],
   build: {
     rollupOptions: {
