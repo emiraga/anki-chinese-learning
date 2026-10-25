@@ -3,6 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "requests",
+#   "dragonmapper",
 #   "google-genai",
 #   "hanziconv",
 #   "opencc-python-reimplemented",
@@ -10,11 +11,12 @@
 # ///
 """
 Fill the "Connections JSON" field of TOCFL notes with each word's relations to
-other words, and render it as HTML into the "Connections" field.
+other words, and render it into the "Connections HTML" and "Meaning Hint" fields.
 
 Connections JSON holds:
 
-    {"v": 1,
+    {"v": 2,
+     "hint": "<English clue telling the word apart from similar ones, or empty>",
      "synonyms": [{"w": "之後", "diff": "<how this word differs from 之後, in English>"}],
      "antonyms": [{"w": "以前"}],
      "measure_words": ["輛"],
@@ -23,20 +25,26 @@ Connections JSON holds:
      "pairs_with": [{"w": "所以", "pattern": "因為…所以…"}]}
 
 Work is done a little at a time: the script starts from unsuspended notes with a
-card due today (or overdue) and an empty Connections JSON. Each such word is sent
+card due today (or overdue), in the order Anki will show them for review, whose Connections JSON is empty or was made with an
+older schema version. Each such word is sent
 to the model together with the active words it is easily confused with - those
 sharing an English gloss, or listed as its synonym/antonym by the MOE dictionary.
-Related active words whose Connections JSON is still empty are filled by the same
-call, so the contrast between two words is written from both sides at once.
+Related active words that need connections too are filled by the same call, so
+the contrast between two words is written from both sides at once.
 
 Only single words are processed: sentences, phrases longer than 4 characters
-and idioms (POS "Id") are skipped. A non-empty Connections JSON is never
-overwritten; clear the field to regenerate it.
+and idioms (POS "Id") are skipped. Connections JSON of the current schema
+version is never overwritten; clear the field to regenerate it.
 
-The "Connections" HTML field (optional on the note type) is re-rendered for every
-note that has Connections JSON. It marks which related words are in the active
-deck, and antonyms are shown from both sides, so it changes as the deck grows
-without needing any model call.
+Meaning Hint is meant for the front of the meaning card, so it is English only
+and never contains Chinese characters, Zhuyin, or the pinyin of the word or of
+the words it is contrasted with. The diffs name the Chinese words and belong on
+the back, in Connections HTML.
+
+Both rendered fields are refreshed on every run for every note with current
+Connections JSON. Connections HTML marks which related words are in the active
+deck, and synonyms and antonyms are shown from both sides, so it changes as the
+deck grows without needing any model call.
 """
 
 import argparse
@@ -50,16 +58,27 @@ from pathlib import Path
 from typing import TypedDict, TypeVar, cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from shared.anki_utils import AnkiNoteInfo, find_notes_by_query, get_field_value, iter_notes_info, update_note_fields
+from shared.anki_utils import (
+    AnkiNoteInfo,
+    find_cards_by_query,
+    find_notes_by_query,
+    get_cards_info,
+    get_field_value,
+    iter_notes_info,
+    update_note_fields,
+)
 from shared.character_conversion import to_simplified
 from shared.gemini_utils import STRONG_GEMINI_MODEL, GeminiClient, create_gemini_client, gemini_generate_json
 from shared.html_utils import escape_html
 from shared.moedict import get_moedict_relations
+from shared.pinyin_utils import remove_tone_marks
+from shared.review_order import sort_cards_in_review_order
 
 NOTE_TYPE = "TOCFL"
 CONNECTIONS_JSON_FIELD = "Connections JSON"
-CONNECTIONS_HTML_FIELD = "Connections"
-SCHEMA_VERSION = 1
+CONNECTIONS_HTML_FIELD = "Connections HTML"
+MEANING_HINT_FIELD = "Meaning Hint"
+SCHEMA_VERSION = 2
 
 # A note is a single word (and so gets connections) when its main form is at
 # most this long, has no sentence punctuation, and is not an idiom.
@@ -70,6 +89,7 @@ SENTENCE_PUNCTUATION = re.compile("[\uff0c\u3002\uff1f\uff01\u3001\uff1b\uff1a,.
 IDIOM_POS = "Id"
 
 CJK_PATTERN = re.compile(r"[㐀-鿿]")
+ZHUYIN_PATTERN = re.compile(r"[ㄅ-ㄯˇˋˊ˙]")
 LATIN_WORD_PATTERN = re.compile(r"[A-Za-z]{3,}")
 HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
 # A CC-CEDICT classifier list, e.g. "CL:輛|辆[liang4],台|台[tai2]"
@@ -86,6 +106,7 @@ MAX_CANDIDATES = 15
 MAX_MEANING_LENGTH = 120
 MAX_CONTEXT_MEANING_LENGTH = 60
 
+MAX_HINT_WORDS = 15
 MAX_SYNONYMS = 3
 MAX_ANTONYMS = 2
 MAX_MEASURE_WORDS = 3
@@ -125,6 +146,7 @@ class Pairing(TypedDict):
 
 class Connections(TypedDict):
     v: int
+    hint: str
     synonyms: list[WordDiff]
     antonyms: list[WordRef]
     measure_words: list[str]
@@ -149,8 +171,8 @@ class DeckWord:
     active: bool
     """Whether the note is unsuspended."""
     connections_json: str
-    connections_html: str | None
-    """The rendered field's value, or None when the note type has no such field."""
+    connections_html: str
+    meaning_hint: str
 
 
 @dataclass
@@ -211,7 +233,7 @@ def load_deck_words() -> list[DeckWord]:
     literary words never reach the model.
 
     Raises:
-        ValueError: If the note type has no Connections JSON field
+        ValueError: If the note type lacks one of the fields this script fills
     """
     note_ids = find_notes_by_query(f"note:{NOTE_TYPE}")
     active_ids = set(find_notes_by_query(f"note:{NOTE_TYPE} -is:suspended"))
@@ -219,8 +241,9 @@ def load_deck_words() -> list[DeckWord]:
 
     words: list[DeckWord] = []
     for note in iter_notes_info(note_ids):
-        if CONNECTIONS_JSON_FIELD not in note["fields"]:
-            raise ValueError(f'Note type {NOTE_TYPE} has no "{CONNECTIONS_JSON_FIELD}" field')
+        for field_name in (CONNECTIONS_JSON_FIELD, CONNECTIONS_HTML_FIELD, MEANING_HINT_FIELD):
+            if field_name not in note["fields"]:
+                raise ValueError(f'Note type {NOTE_TYPE} has no "{field_name}" field')
 
         traditional_forms = [form.strip() for form in get_field_value(note, "Traditional").split("/") if form.strip()]
         if not traditional_forms:
@@ -237,7 +260,8 @@ def load_deck_words() -> list[DeckWord]:
                 cedict_measure_words=extract_cedict_measure_words(note),
                 active=note["noteId"] in active_ids,
                 connections_json=get_field_value(note, CONNECTIONS_JSON_FIELD),
-                connections_html=get_field_value(note, CONNECTIONS_HTML_FIELD) if CONNECTIONS_HTML_FIELD in note["fields"] else None,
+                connections_html=get_field_value(note, CONNECTIONS_HTML_FIELD),
+                meaning_hint=get_field_value(note, MEANING_HINT_FIELD),
             )
         )
     return words
@@ -267,9 +291,22 @@ def is_single_word(word: DeckWord) -> bool:
     )
 
 
+def has_current_connections(word: DeckWord) -> bool:
+    """
+    Whether the note's Connections JSON exists and uses the current schema version.
+
+    Raises:
+        json.JSONDecodeError: If the note's Connections JSON is not valid JSON
+    """
+    if not word.connections_json:
+        return False
+    stored = json.loads(word.connections_json)
+    return isinstance(stored, dict) and stored.get("v") == SCHEMA_VERSION
+
+
 def needs_connections(word: DeckWord) -> bool:
     """Whether this note should get Connections JSON generated now."""
-    return word.active and not word.connections_json and is_single_word(word)
+    return word.active and is_single_word(word) and not has_current_connections(word)
 
 
 def extract_glosses(meaning: str) -> set[str]:
@@ -379,6 +416,7 @@ PROMPT_INSTRUCTIONS = """You are a Chinese language expert helping a learner of 
 
 For EACH target word return an object:
 {"w": "<the target word, exactly as given>",
+ "hint": "<English clue, see rules>",
  "synonyms": [{"w": "<word>", "diff": "<how the TARGET word differs from this one>"}],
  "antonyms": [{"w": "<word>"}],
  "measure_words": ["<measure word>"],
@@ -388,10 +426,17 @@ For EACH target word return an object:
 
 Rules:
 - Use Traditional characters and the perspective of Taiwan Mandarin.
-- "diff" MUST be written in ENGLISH, at most 25 words. Chinese only for the words themselves.
+- "hint" is shown on a flashcard that gives the English meaning and asks the learner to recall the
+  Chinese target word. In ENGLISH, at most 12 words, it adds what the meaning lacks to pick the target
+  over its near-synonyms among the target and context words (陰天: "fully overcast all day, not just
+  partly cloudy"). It MUST NOT contain Chinese characters, pinyin or zhuyin, since it would give the
+  answer away. Use "" when no target or context word could be confused with the target.
+- "diff" MUST be written in ENGLISH, at most 25 words. Chinese only for the words themselves, and it
+  names both words in Chinese (never "the target" or "this word"): "陰天 is fully overcast, whereas 多雲 ...".
 - synonyms: at most 3 real near-synonyms. Every other target or context word that is a near-synonym
-  of the target MUST be listed before any candidate; use the candidates only for the remaining slots. Common words only, never obscure or
-  literary ones. Words that only share an English translation but mean something else are NOT synonyms.
+  of the target MUST be listed before any candidate; use the candidates only for the remaining slots.
+  Common words only, never obscure or literary ones. Words that only share an English translation but
+  mean something else are NOT synonyms.
 - antonyms: at most 2, opposite meanings only. Correlative partners (雖然/但是, 因為/所以) are NOT antonyms; put them in pairs_with.
 - measure_words: the common Taiwan measure words of a noun; [] for other parts of speech.
 - region.equivalents: a DIFFERENT word with the same meaning used in the other region (計程車 tw vs 出租車 cn).
@@ -440,7 +485,37 @@ def require(obj: object, key: str, kind: type[T], where: str) -> T:
     return value
 
 
-def clean_connections(item: object, target: DeckWord) -> Connections:
+def find_hint_leak(hint: str, group_words: list[DeckWord]) -> str | None:
+    """
+    Find what in a hint would give a word away on the front of the meaning card.
+
+    Args:
+        hint: The hint to check
+        group_words: The words of the hint's group (targets and context), whose
+            pinyin must not appear in the hint either
+
+    Returns:
+        A description of the leak, or None when the hint is safe
+    """
+    if CJK_PATTERN.search(hint) or ZHUYIN_PATTERN.search(hint):
+        return "Chinese characters or Zhuyin"
+
+    lowered = hint.lower()
+    for word in group_words:
+        for reading in re.split(r"[,/;]", strip_html(word.pinyin)):
+            accented = reading.strip().lower().replace(" ", "")
+            if not accented:
+                continue
+            if accented in lowered.replace(" ", ""):
+                return f"the pinyin of {word.word} ({accented})"
+            # Toneless single syllables are too often English words ("men", "you")
+            toneless = remove_tone_marks(accented)
+            if len(word.word) >= 2 and re.search(rf"\b{re.escape(toneless)}\b", lowered):
+                return f"the pinyin of {word.word} ({toneless})"
+    return None
+
+
+def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord]) -> Connections:
     """
     Validate one word's connections from the model reply, and remove what the
     prompt rules forbid but models still produce: the word's own spellings,
@@ -448,9 +523,17 @@ def clean_connections(item: object, target: DeckWord) -> Connections:
     regional equivalents, and lists over their size limit.
 
     Raises:
-        ValueError: If the reply's structure is wrong, or a diff is not in English
+        ValueError: If the reply's structure is wrong, a diff is not in English,
+            or the hint is too long or would give a word away
     """
     where = f"Connections of {target.word}"
+
+    hint = require(item, "hint", str, where).strip()
+    if len(hint.split()) > MAX_HINT_WORDS:
+        raise ValueError(f"{where}: the hint is longer than {MAX_HINT_WORDS} words: {hint!r}")
+    leak = find_hint_leak(hint, group_words)
+    if leak is not None:
+        raise ValueError(f"{where}: the hint contains {leak}: {hint!r}")
 
     synonyms: list[WordDiff] = []
     for synonym in require(item, "synonyms", list, where):
@@ -460,6 +543,8 @@ def clean_connections(item: object, target: DeckWord) -> Connections:
             continue
         if not LATIN_WORD_PATTERN.search(diff):
             raise ValueError(f"{where}: the diff for {w} is not in English: {diff!r}")
+        if re.search(r"\btarget\b", diff, re.IGNORECASE):
+            raise ValueError(f"{where}: the diff for {w} says 'target' instead of naming the word: {diff!r}")
         synonyms.append({"w": w, "diff": diff})
 
     pairs_with: list[Pairing] = []
@@ -505,6 +590,7 @@ def clean_connections(item: object, target: DeckWord) -> Connections:
 
     return {
         "v": SCHEMA_VERSION,
+        "hint": hint,
         "synonyms": synonyms[:MAX_SYNONYMS],
         "antonyms": antonyms[:MAX_ANTONYMS],
         "measure_words": measure_words[:MAX_MEASURE_WORDS],
@@ -528,12 +614,13 @@ def parse_reply(reply: object, group: Group) -> dict[int, Connections]:
         raise ValueError(f"Expected a JSON array, got {reply!r}")
     items_by_word = {require(item, "w", str, "Reply item").strip(): item for item in cast("list[object]", reply)}
 
+    group_words = group.targets + group.context
     result: dict[int, Connections] = {}
     for target in group.targets:
         item = next((items_by_word[form] for form in [target.word, *sorted(target.forms)] if form in items_by_word), None)
         if item is None:
             raise ValueError(f"The reply has no entry for {target.word}; it has {sorted(items_by_word)}")
-        result[target.note_id] = clean_connections(item, target)
+        result[target.note_id] = clean_connections(item, target, group_words)
     return result
 
 
@@ -588,17 +675,37 @@ def generate_all(groups: list[Group], finder: RelationFinder, dry_run: bool) -> 
     return filled
 
 
-def format_word(word: str, deck_index: dict[str, DeckWord]) -> str:
-    """Format a related word: bold when it is in the active deck, with pinyin when known."""
+GRAY_STYLE = "color: gray;"
+
+
+def is_learned(word: str, deck_index: dict[str, DeckWord]) -> bool:
+    """Whether a related word is one the learner studies: a TOCFL note in the active deck."""
     entry = deck_index.get(word)
-    text = escape_html(word)
-    if entry is None:
-        return text
-    if entry.active:
-        text = f"<b>{text}</b>"
-    if entry.pinyin:
-        text += f' <span style="color: gray;">{escape_html(entry.pinyin)}</span>'
-    return text
+    return entry is not None and entry.active
+
+
+def learned_first(words: list[str], deck_index: dict[str, DeckWord]) -> list[str]:
+    """Order words so the learned ones come first, keeping the order within each part."""
+    return sorted(words, key=lambda word: not is_learned(word, deck_index))
+
+
+def format_entry(word: str, deck_index: dict[str, DeckWord], explanation: str = "") -> str:
+    """
+    Format a related word, with its pinyin when known and an optional explanation.
+
+    A learned word is bold with gray pinyin. A word the learner has not learned is
+    gray as a whole - pinyin and explanation included - so it reads as secondary.
+    """
+    entry = deck_index.get(word)
+    pinyin = escape_html(entry.pinyin) if entry is not None and entry.pinyin else ""
+    suffix = f" — {escape_html(explanation)}" if explanation else ""
+
+    if is_learned(word, deck_index):
+        pinyin_html = f' <span style="{GRAY_STYLE}">{pinyin}</span>' if pinyin else ""
+        return f"<b>{escape_html(word)}</b>{pinyin_html}{suffix}"
+
+    pinyin_text = f" {pinyin}" if pinyin else ""
+    return f'<span style="{GRAY_STYLE}">{escape_html(word)}{pinyin_text}{suffix}</span>'
 
 
 def render_connections_html(
@@ -607,34 +714,39 @@ def render_connections_html(
     """
     Render Connections JSON as HTML, one titled section per non-empty relation.
 
+    In every list, learned words come first and the others follow in gray.
+
     Args:
         connections: The note's connections
         extra_synonyms: Words that list this word as their synonym, with their
             diff; shown when this word's own connections do not list them back
         extra_antonyms: Words that list this word as their antonym, likewise
-        deck_index: Every TOCFL spelling, to mark active words and show pinyin
+        deck_index: Every TOCFL spelling, to mark learned words and show pinyin
     """
     sections: list[list[str]] = []
 
     synonyms = list(connections["synonyms"])
     synonyms += [extra for extra in extra_synonyms if all(s["w"] != extra["w"] for s in synonyms)]
+    synonyms.sort(key=lambda synonym: not is_learned(synonym["w"], deck_index))
     if synonyms:
-        sections.append(["Similar words"] + [f"{format_word(s['w'], deck_index)} — {escape_html(s['diff'])}" for s in synonyms])
+        sections.append(["Similar words"] + [format_entry(s["w"], deck_index, s["diff"]) for s in synonyms])
 
     antonyms = [a["w"] for a in connections["antonyms"]]
     antonyms += [w for w in extra_antonyms if w not in antonyms]
     if antonyms:
-        sections.append(["Opposites", ", ".join(format_word(w, deck_index) for w in antonyms)])
+        sections.append(["Opposites", ", ".join(format_entry(w, deck_index) for w in learned_first(antonyms, deck_index))])
 
     if connections["pairs_with"]:
         sections.append(["Pairs with", ", ".join(escape_html(p["pattern"]) for p in connections["pairs_with"])])
 
     if connections["measure_words"]:
-        sections.append(["Measure words", ", ".join(format_word(w, deck_index) for w in connections["measure_words"])])
+        measure_words = learned_first(connections["measure_words"], deck_index)
+        sections.append(["Measure words", ", ".join(format_entry(w, deck_index) for w in measure_words)])
 
     region = connections["region"]
     region_lines = [f"Mainly used in {REGION_NAMES[region['usage']]}"] if region["usage"] in REGION_NAMES else []
-    region_lines += [f"{REGION_NAMES[e['region']]}: {format_word(e['w'], deck_index)}" for e in region["equivalents"]]
+    equivalents = sorted(region["equivalents"], key=lambda equivalent: not is_learned(equivalent["w"], deck_index))
+    region_lines += [f"{REGION_NAMES[e['region']]}: {format_entry(e['w'], deck_index)}" for e in equivalents]
     if region_lines:
         sections.append(["Region", *region_lines])
 
@@ -646,21 +758,16 @@ def render_connections_html(
 
 def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: bool) -> int:
     """
-    Re-render the Connections HTML field of every note that has Connections JSON.
+    Refresh the Connections HTML and Meaning Hint fields of every note whose
+    Connections JSON uses the current schema version.
 
     Returns:
-        Number of notes whose field changed
+        Number of notes whose fields changed
 
     Raises:
         json.JSONDecodeError: If a note's Connections JSON is not valid JSON
     """
-    with_connections = [word for word in words if word.connections_json]
-    if not with_connections:
-        return 0
-    if all(word.connections_html is None for word in with_connections):
-        print(f'Note type {NOTE_TYPE} has no "{CONNECTIONS_HTML_FIELD}" field; add it to get the rendered HTML')
-        return 0
-
+    with_connections = [word for word in words if has_current_connections(word)]
     parsed: dict[int, Connections] = {word.note_id: json.loads(word.connections_json) for word in with_connections}
 
     # Both relations are symmetric: show B on A's card when only B's connections
@@ -675,27 +782,30 @@ def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: 
 
     changed = 0
     for word in with_connections:
-        if word.connections_html is None:
-            continue
         forms = sorted(word.forms)
         extra_synonyms = [s for form in forms for s in listed_as_synonym_by.get(form, [])]
         extra_antonyms = [w for form in forms for w in listed_as_antonym_by.get(form, [])]
-        html = render_connections_html(parsed[word.note_id], extra_synonyms, extra_antonyms, deck_index)
-        if html == word.connections_html:
+        rendered = {
+            CONNECTIONS_HTML_FIELD: render_connections_html(parsed[word.note_id], extra_synonyms, extra_antonyms, deck_index),
+            MEANING_HINT_FIELD: escape_html(parsed[word.note_id]["hint"]),
+        }
+        if rendered[CONNECTIONS_HTML_FIELD] == word.connections_html and rendered[MEANING_HINT_FIELD] == word.meaning_hint:
             continue
         if not dry_run:
-            update_note_fields(word.note_id, {CONNECTIONS_HTML_FIELD: html})
-        word.connections_html = html
+            update_note_fields(word.note_id, rendered)
+        word.connections_html = rendered[CONNECTIONS_HTML_FIELD]
+        word.meaning_hint = rendered[MEANING_HINT_FIELD]
         changed += 1
     return changed
 
 
 def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -> list[DeckWord]:
     """
-    Pick the words to start groups from: the given word, or the due notes.
+    Pick the words to start groups from: the given word, or the due notes in the
+    order their first card comes up in Anki's review queue.
 
     Raises:
-        ValueError: If --word does not name an active single word with empty Connections JSON
+        ValueError: If --word does not name an active single word that needs connections
     """
     if args.word:
         matches = [word for word in active_words if args.word in word.forms]
@@ -703,12 +813,15 @@ def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -
             raise ValueError(f"No unsuspended {NOTE_TYPE} note has the word {args.word}")
         start_words = [word for word in matches if needs_connections(word)]
         if not start_words:
-            raise ValueError(f"{args.word} is not a single word, or its {CONNECTIONS_JSON_FIELD} is already filled (clear it to redo)")
+            raise ValueError(f"{args.word} is not a single word, or its {CONNECTIONS_JSON_FIELD} is up to date (clear it to redo)")
         return start_words
 
-    due_ids = set(find_notes_by_query(f'note:{NOTE_TYPE} is:due -is:suspended "{CONNECTIONS_JSON_FIELD}:"'))
-    start_words = [word for word in active_words if word.note_id in due_ids and needs_connections(word)]
-    print(f"{len(due_ids)} due note(s) with empty {CONNECTIONS_JSON_FIELD}, {len(start_words)} of them single words")
+    due_cards = sort_cards_in_review_order(get_cards_info(find_cards_by_query(f"note:{NOTE_TYPE} is:due -is:suspended")))
+    due_note_ids = list(dict.fromkeys(card["note"] for card in due_cards))
+    words_by_note = {word.note_id: word for word in active_words}
+    start_words = [words_by_note[note_id] for note_id in due_note_ids if needs_connections(words_by_note[note_id])]
+    print(f"{len(due_note_ids)} due note(s), {len(start_words)} of them single words needing {CONNECTIONS_JSON_FIELD}")
+    print(f"In review order: {' '.join(word.word for word in start_words[:10])}{' ...' if len(start_words) > 10 else ''}")
     if args.limit is not None:
         start_words = start_words[: args.limit]
     return start_words
@@ -741,7 +854,8 @@ def main() -> None:
 
     rendered = render_all(words, deck_index, args.dry_run)
 
-    print(f"\nFilled {CONNECTIONS_JSON_FIELD} on {filled} note(s), re-rendered {CONNECTIONS_HTML_FIELD} on {rendered} note(s)")
+    print(f"\nFilled {CONNECTIONS_JSON_FIELD} on {filled} note(s)")
+    print(f"Refreshed {CONNECTIONS_HTML_FIELD} and {MEANING_HINT_FIELD} on {rendered} note(s)")
     if args.dry_run:
         print("(DRY RUN - no changes were made)")
 
