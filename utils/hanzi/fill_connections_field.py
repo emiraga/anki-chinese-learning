@@ -571,10 +571,13 @@ def find_hint_leak(hint: str, group_words: list[DeckWord]) -> str | None:
             accented = reading.strip().lower().replace(" ", "")
             if not accented:
                 continue
-            if accented in lowered.replace(" ", ""):
+            toneless = remove_tone_marks(accented)
+            # Tone-marked pinyin never occurs in English, so it is searched for
+            # anywhere; a reading without tone marks (吧 "ba") would match inside
+            # English words ("bad") and goes through the whole-word check instead
+            if accented != toneless and accented in lowered.replace(" ", ""):
                 return f"the pinyin of {word.word} ({accented})"
             # Toneless single syllables are too often English words ("men", "you")
-            toneless = remove_tone_marks(accented)
             if len(word.word) >= 2 and re.search(rf"\b{re.escape(toneless)}\b", lowered):
                 return f"the pinyin of {word.word} ({toneless})"
     return None
