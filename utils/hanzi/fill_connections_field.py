@@ -25,7 +25,9 @@ Connections JSON holds:
      "pairs_with": [{"w": "所以", "pattern": "因為…所以…"}]}
 
 Work is done a little at a time: the script starts from unsuspended notes with a
-card due today (or overdue), in the order Anki will show them for review, whose Connections JSON is empty or was made with an
+card that is overdue, due today, or due in the next UPCOMING_DAYS days - those
+due now first, in the order Anki will show them for review, then the upcoming
+ones in the same order - whose Connections JSON is empty or was made with an
 older schema version. Each such word is sent
 to the model together with the active words it is easily confused with - those
 sharing an English gloss, or listed as its synonym/antonym by the MOE dictionary.
@@ -118,6 +120,9 @@ MAX_MEASURE_WORDS = 3
 REGISTERS = ("colloquial", "neutral", "formal", "written")
 REGION_NAMES = {"tw": "Taiwan", "cn": "Mainland China"}
 REGION_USAGES = (*REGION_NAMES, "both")
+
+# Notes are also filled ahead of time, when a card is due within this many days
+UPCOMING_DAYS = 7
 
 PARALLEL_REQUESTS = 8
 GENERATION_ATTEMPTS = 2
@@ -882,8 +887,10 @@ def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: 
 
 def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -> list[DeckWord]:
     """
-    Pick the words to start groups from: the given words, or the due notes in the
-    order their first card comes up in Anki's review queue.
+    Pick the words to start groups from: the given words, or the notes with a
+    card due now (overdue or today) or within UPCOMING_DAYS days. The due-now
+    notes come first, in the order their first card comes up in Anki's review
+    queue, then the upcoming ones, likewise ordered.
 
     Raises:
         ValueError: If a --word is not an active single word that needs connections
@@ -900,11 +907,18 @@ def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -
             start_words.extend(needing)
         return start_words
 
-    due_cards = sort_cards_in_review_order(get_cards_info(find_cards_by_query(f"note:{NOTE_TYPE} is:due -is:suspended")))
-    due_note_ids = list(dict.fromkeys(card["note"] for card in due_cards))
+    base_query = f"note:{NOTE_TYPE} -is:suspended"
+    due_cards = sort_cards_in_review_order(get_cards_info(find_cards_by_query(f"{base_query} is:due")))
+    upcoming_cards = sort_cards_in_review_order(
+        get_cards_info(find_cards_by_query(f"{base_query} -is:due prop:due>=1 prop:due<={UPCOMING_DAYS}"))
+    )
+    due_note_ids = list(dict.fromkeys(card["note"] for card in due_cards + upcoming_cards))
     words_by_note = {word.note_id: word for word in active_words}
     start_words = [words_by_note[note_id] for note_id in due_note_ids if needs_connections(words_by_note[note_id])]
-    print(f"{len(due_note_ids)} due note(s), {len(start_words)} of them single words needing {CONNECTIONS_JSON_FIELD}")
+    print(
+        f"{len(due_note_ids)} note(s) due now or within {UPCOMING_DAYS} days,"
+        f" {len(start_words)} of them single words needing {CONNECTIONS_JSON_FIELD}"
+    )
     print(f"In review order: {' '.join(word.word for word in start_words[:10])}{' ...' if len(start_words) > 10 else ''}")
     if args.limit is not None:
         start_words = start_words[: args.limit]
@@ -914,8 +928,10 @@ def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dry-run", action="store_true", help="Generate and print connections without updating notes")
-    parser.add_argument("--limit", type=int, metavar="N", help="Start from at most N due notes (related words are filled too)")
-    parser.add_argument("--word", nargs="+", metavar="WORD", help="Fill these words (and their related words) instead of the due notes")
+    parser.add_argument("--limit", type=int, metavar="N", help="Start from at most N due or upcoming notes (related words are filled too)")
+    parser.add_argument(
+        "--word", nargs="+", metavar="WORD", help="Fill these words (and their related words) instead of the due and upcoming notes"
+    )
     return parser.parse_args()
 
 
