@@ -297,6 +297,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/pos",
+          name: "Parts of speech",
+          show: true,
+        },
+        {
           pathname: "/help",
           name: "Help",
           show: true,

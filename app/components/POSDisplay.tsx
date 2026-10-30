@@ -1,5 +1,7 @@
 import { Tooltip } from "@base-ui-components/react/tooltip";
-import { POS } from "~/data/pos";
+import { Link } from "react-router";
+import { POS, isPosCode, parsePOSString } from "~/data/pos";
+import { POS_DETAILS } from "~/data/pos_details";
 import styles from "./index.module.css";
 import { useDarkMode } from "./DarkModeToggle";
 
@@ -10,30 +12,43 @@ export const POSDisplay: React.FC<{ posKey: string }> = ({ posKey }) => {
     return null;
   }
 
-  // Try to find the POS in the dictionary
-  const posInfo = POS[posKey];
-
-  if (!posInfo) {
+  if (!isPosCode(posKey)) {
     // If not found in dictionary, just display the raw key
     return <span className="text-gray-600 dark:text-gray-400">{posKey}</span>;
   }
 
-  const [englishName, chineseName, examples] = posInfo;
+  const [englishName, chineseName, examples] = POS[posKey];
 
   return (
     <Tooltip.Root>
-      <Tooltip.Trigger className="inline-block cursor-help">
-        <span className="text-purple-600 dark:text-purple-400 font-medium">
-          {posKey}
-        </span>
+      <Tooltip.Trigger
+        className="inline-block cursor-help text-purple-600 dark:text-purple-400 font-medium hover:underline"
+        render={<Link to={`/pos/${encodeURIComponent(posKey)}`} />}
+      >
+        {posKey}
       </Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Positioner sideOffset={10}>
-          <Tooltip.Popup className={styles.Popup} data-dark-mode={isDarkMode}>
-            <div className="font-semibold">{englishName}</div>
-            <div className="text-gray-300 dark:text-gray-600">{chineseName}</div>
-            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              e.g. {examples}
+          <Tooltip.Popup
+            className={`${styles.Popup} max-w-xs`}
+            data-dark-mode={isDarkMode}
+          >
+            <div className="font-semibold">
+              {englishName}
+              {chineseName && (
+                <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">
+                  {chineseName}
+                </span>
+              )}
+            </div>
+            <div className="text-sm mt-1">{POS_DETAILS[posKey].summary}</div>
+            {examples && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                e.g. {examples}
+              </div>
+            )}
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
+              Click for details
             </div>
           </Tooltip.Popup>
         </Tooltip.Positioner>
@@ -47,11 +62,7 @@ export const POSList: React.FC<{ posString: string }> = ({ posString }) => {
     return null;
   }
 
-  // Remove HTML tags and split by common separators
-  const cleanString = posString.replace(/<[^>]*>/g, "").trim();
-
-  // Split by comma, semicolon, slash, or space (common POS separators)
-  const posParts = cleanString.split(/[,;、/\s]+/).filter(Boolean);
+  const posParts = parsePOSString(posString);
 
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
@@ -60,7 +71,7 @@ export const POSList: React.FC<{ posString: string }> = ({ posString }) => {
           {index > 0 && (
             <span className="text-gray-400 dark:text-gray-500 mx-1">·</span>
           )}
-          <POSDisplay posKey={part.trim()} />
+          <POSDisplay posKey={part} />
         </span>
       ))}
     </span>

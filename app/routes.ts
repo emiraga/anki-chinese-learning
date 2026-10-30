@@ -17,6 +17,8 @@ export default [
   route("phrases_more", "routes/phrases_more.tsx"),
   route("phrases_process", "routes/phrases_process.tsx"),
   route("pinyin", "routes/pinyin.tsx"),
+  route("pos/:posKey", "routes/pos/$posKey.tsx"),
+  route("pos", "routes/pos.tsx"),
   route("place/:placeName", "routes/place/$placeName.tsx"),
   route("places", "routes/places.tsx"),
   route("practice", "routes/practice.tsx"),
