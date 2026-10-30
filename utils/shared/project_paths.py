@@ -25,6 +25,14 @@ PLECO_OUTLIER_HTML_TC_DIR = RAW_DATA_DIR / "pleco" / "outlier_series_tc"
 RTEGA_HTML_DIR = RAW_DATA_DIR / "rtega"
 TOCFL_CSV_DIR = RAW_DATA_DIR / "tocfl" / "20240923"
 
+# Part-of-speech dictionary dumps (see POS_SOURCES.md), fetched by
+# `utils/pos/download_pos_sources.py`.
+KAIKKI_EN_JSONL = RAW_DATA_DIR / "kaikki" / "en" / "kaikki.org-dictionary-Chinese.jsonl.gz"
+KAIKKI_ZH_JSONL = RAW_DATA_DIR / "kaikki" / "zh" / "kaikki.org-dictionary-漢語.jsonl.gz"
+MOEDICT_DUMP_JSON = RAW_DATA_DIR / "moedict_dump" / "dict-revised.json.xz"
+JIEBA_DICT_TXT = RAW_DATA_DIR / "jieba" / "dict.txt.big"
+UD_CHINESE_GSD_DIR = RAW_DATA_DIR / "ud_chinese_gsd"
+
 # Converted data, served by the dev server and the built app from `public/`.
 PUBLIC_DATA_DIR = PROJECT_ROOT / "public" / "data"
 DONG_DIR = PUBLIC_DATA_DIR / "dong"
@@ -44,6 +52,8 @@ DONG_IMAGES_DIR = PROJECT_ROOT / "public" / "images" / "dong"
 # Files the app imports directly from `app/data/`.
 PINYIN_TABLE_JSON = PROJECT_ROOT / "app" / "data" / "pinyin_table.json"
 POS_JSON = PROJECT_ROOT / "app" / "data" / "pos.json"
+POS_DETAILS_JSON = PROJECT_ROOT / "app" / "data" / "pos_details.json"
+POS_VERB_KINDS_JSON = PROJECT_ROOT / "app" / "data" / "pos_verb_kinds.json"
 
 
 def load_char_json(directory: Path, character: str) -> dict[str, Any] | None:
@@ -80,3 +90,32 @@ def load_pos_mapping() -> dict[str, Any]:
     with POS_JSON.open(encoding="utf-8") as f:
         pos_data: dict[str, Any] = json.load(f)
     return pos_data
+
+
+def load_pos_details() -> dict[str, Any]:
+    """
+    Load `app/data/pos_details.json`, the explanations of the POS codes shown
+    on the app's `/pos` pages.
+
+    Returns:
+        Mapping of POS code (e.g. "N") to its summary, description, tests,
+        examples and contrasts with easily confused codes
+    """
+    with POS_DETAILS_JSON.open(encoding="utf-8") as f:
+        pos_details: dict[str, Any] = json.load(f)
+    return pos_details
+
+
+def load_pos_verb_kinds() -> list[dict[str, Any]]:
+    """
+    Load `app/data/pos_verb_kinds.json`, the grammatical behaviour of the
+    action, state and process verb kinds shown on the app's `/pos` page.
+
+    Returns:
+        One entry per verb kind, with its tests (很, 了, 在, reduplication,
+        negation) and the POS codes of its transitive, intransitive and
+        separable verbs
+    """
+    with POS_VERB_KINDS_JSON.open(encoding="utf-8") as f:
+        verb_kinds: list[dict[str, Any]] = json.load(f)
+    return verb_kinds

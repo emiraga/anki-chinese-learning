@@ -176,6 +176,11 @@ public/tone_trainer/Research Papers/*
 data/hackchinese/words/*
 data/hackchinese/lists/*
 data/moedict/
+data/moedict_dump/
+data/kaikki/
+data/jieba/
+data/tbcl/
+data/ud_chinese_gsd/
 public/data/hackchinese/*
 public/data/pleco/*
 data/pleco/*

@@ -13,6 +13,15 @@ Checked with the test word 繼續 (2026-10). Status for each item:
 "verified" = checked in this repo or online, "unverified" = not yet checked,
 needs a look before relying on it.
 
+## Offline copies
+
+`./utils/pos/download_pos_sources.py` downloads every dump marked "Offline" below
+into `data/` (about 280 MB, gitignored). `./utils/pos/print_pos_sources.py 繼續`
+prints what each source says about a word; without arguments it prints how
+often each tag occurs per source. The readers live in
+`utils/shared/pos_sources.py` and return the tags unmapped, in each source's own
+scheme.
+
 ## Sources that return POS
 
 ### TOCFL 華語八千詞表 (primary source)
@@ -22,10 +31,10 @@ needs a look before relying on it.
 - **繼續:** `V` (Level 3 list).
 - **Offline:** already in the repo, `data/tocfl/20240923/*.csv` (one CSV per
   level, parsed by `utils/shared/tocfl_csv.py`). Column `詞類 / Part of speech`.
-- **Download:** https://tocfl.edu.tw/tocfl/ (download section; the older URL
-  `sc-top.org.tw/chinese/download.php` cited in the 2022 PDF no longer
-  responds). Verified that the site is up; check for newer versions than
-  20240923.
+- **Download:** https://tocfl.edu.tw/tocfl/index.php/exam/download (the older
+  URL `sc-top.org.tw/chinese/download.php` cited in the 2022 PDF no longer
+  responds). Verified 2026-10: the newest list there is still
+  `8000zhuyin_202409.zip`, the same version as the local copy.
 - **Coverage:** ~8000 words only. Words outside the list have no POS here.
 - **Reliability:** high. This is the authoritative source for the codes the app
   uses.
@@ -35,11 +44,19 @@ needs a look before relying on it.
 - **Scheme:** coarse Chinese terms (動詞, 名詞, 副詞, ...), one per sense.
 - **繼續:** 動詞 (verb) "延續", and 名詞 (noun) "連續而不間斷".
 - **Online:** https://zh.wiktionary.org/zh-hant/繼續
-- **Download:** Wiktextract JSONL dumps at https://kaikki.org/zhwiktionary/
-  (Chinese edition) and https://kaikki.org/dictionary/Chinese/ (English
-  edition, Chinese words). Wiktextract entries normally carry a `pos` field.
-  Verified that both pages exist; the file layout and size are unverified.
-- **Coverage:** large, includes multi-character words.
+- **Offline:** Wiktextract JSONL dumps, one JSON object per entry and POS,
+  with a `pos` field (and `pos_title`, the Chinese heading, in the Chinese
+  edition). Verified, downloaded to:
+  - `data/kaikki/en/kaikki.org-dictionary-Chinese.jsonl.gz` (English edition,
+    156 MB compressed, 1.2 GB raw), from https://kaikki.org/dictionary/Chinese/.
+    Keyed by the traditional form; simplified forms are `soft-redirect`
+    entries without POS. Single characters only get `pos: "character"`, with
+    all senses mixed together.
+  - `data/kaikki/zh/kaikki.org-dictionary-漢語.jsonl.gz` (Chinese edition,
+    91 MB compressed), from https://kaikki.org/zhwiktionary/漢語/. About 75% of
+    the entries have no real POS (`unknown`, heading 釋義).
+- **Coverage:** large, includes multi-character words: ~200k entries with a
+  POS in the English edition.
 - **Reliability:** medium. Crowd-sourced, no Vs/Vp/Vaux distinctions, so only
   useful as a sanity check or a fallback for words not in TOCFL.
 
@@ -52,10 +69,39 @@ needs a look before relying on it.
   single characters (還, 著, 吧, 長, ...).
 - **Offline:** partially cached in `data/moedict/*.json`, fetched by
   `utils/shared/moedict.py` from `https://www.moedict.tw/uni/{word}`.
-- **Download:** full dump at https://github.com/g0v/moedict-data
-  (`dict-revised.json.xz`, MOE license: content may be converted but not
-  modified). Verified that the repository and file exist.
+- **Offline:** the full dump, `data/moedict_dump/dict-revised.json.xz` (15 MB),
+  from https://github.com/g0v/moedict-data (branch `main`; MOE license: content
+  may be converted but not modified). Verified: 161k entries, of which 8802
+  have a `type` on at least one definition, all of them single characters
+  except one (持阻). The per-word cache in `data/moedict/` is a subset of this
+  dump.
 - **Reliability:** high for single characters, but no help for words.
+
+### jieba `dict.txt.big`
+
+- **Scheme:** ICTCLAS / PKU tags (`v`, `n`, `a`, `d`, `vn`, `nr`, `i`, `l`,
+  ...), one tag per line, with a corpus frequency.
+- **繼續:** `v` (frequency 14690).
+- **Offline:** `data/jieba/dict.txt.big` (8.6 MB), from
+  https://github.com/fxsjy/jieba/tree/master/extra_dict (MIT). Verified. Format
+  per line: `<word> <frequency> <tag>`; a word with several tags is listed once
+  per tag (會 `v` and `zg`).
+- **Coverage:** ~584k lines, traditional and simplified forms both listed.
+- **Reliability:** medium. Automatically derived from a mainland corpus, coarse
+  tags, no Vs/Vp distinctions; `a` (adjective) roughly maps to Vs.
+
+### Universal Dependencies Chinese GSD treebank
+
+- **Scheme:** UPOS (`VERB`, `AUX`, `ADJ`, ...) and the treebank's XPOS (`VV`,
+  `MD`, `JJ`, ...), per token in a sentence.
+- **繼續:** `VERB/VV` 23x, `ADJ/JJ` 1x, `NOUN/NN` 1x.
+- **Offline:** `data/ud_chinese_gsd/zh_gsd-ud-{train,dev,test}.conllu`
+  (12 MB), from https://github.com/UniversalDependencies/UD_Chinese-GSD
+  (CC BY-SA 4.0). Verified. Traditional characters (Chinese Wikipedia text).
+- **Coverage:** small: ~23k distinct word/tag pairs from ~4k sentences.
+- **Reliability:** medium. Hand-annotated, but corpus counts rather than a
+  dictionary: the tag depends on context. Useful for telling Vaux (會 `AUX/MD`)
+  from plain verbs.
 
 ### kmcha.com
 
@@ -106,3 +152,5 @@ needs a look before relying on it.
    with the coarse POS mapped to a rough TOCFL group (動詞 → V*, 名詞 → N,
    副詞 → Adv, ...), and marked as approximate.
 3. moedict dump for single characters.
+4. jieba and UD GSD as tie-breakers, e.g. `a` / `ADJ` suggesting Vs and
+   `AUX` suggesting Vaux.

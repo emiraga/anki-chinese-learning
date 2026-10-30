@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Action",
+    "meaning": "something you do",
+    "hen": "✗",
+    "le": "✓ 買了",
+    "zai": "✓ 在買",
+    "reduplication": "✓ 看看 (a little)",
+    "negation": "不 / 沒",
+    "transitive": "V",
+    "intransitive": ["Vi"],
+    "separable": "V-sep"
+  },
+  {
+    "name": "State",
+    "meaning": "a lasting quality or feeling",
+    "hen": "✓ 很冷",
+    "le": "✗",
+    "zai": "✗",
+    "reduplication": "✓ 高高的 (intensifies)",
+    "negation": "不",
+    "transitive": "Vst",
+    "intransitive": ["Vs", "Vs-attr", "Vs-pred"],
+    "separable": "Vs-sep"
+  },
+  {
+    "name": "Process",
+    "meaning": "an instant change of state",
+    "hen": "✗",
+    "le": "✓ 死了",
+    "zai": "✗",
+    "reduplication": "✗",
+    "negation": "沒",
+    "transitive": "Vpt",
+    "intransitive": ["Vp"],
+    "separable": "Vp-sep"
+  }
+]

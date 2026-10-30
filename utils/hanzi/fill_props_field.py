@@ -9,6 +9,7 @@
 # ]
 # ///
 
+import functools
 import json
 import random
 import re
@@ -32,7 +33,7 @@ from shared.cli import parse_no_arguments
 from shared.gemini_utils import STRONG_GEMINI_MODEL, create_gemini_client, gemini_generate, gemini_generate_json
 from shared.google_credentials import setup_google_credentials
 from shared.pinyin_utils import remove_tone_marks
-from shared.project_paths import load_pos_mapping
+from shared.project_paths import load_pos_details, load_pos_mapping, load_pos_verb_kinds
 from shared.review_order import find_note_ids_in_upcoming_order
 from shared.translation_utils import translate_text_with_google
 
@@ -101,21 +102,102 @@ def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple
     return "\n".join(descriptions), unknown_codes
 
 
-def build_pos_name_to_code_mapping(pos_mapping: dict[str, Any]) -> dict[str, str]:
+def format_verb_kinds_table(verb_kinds: list[dict[str, Any]]) -> str:
     """
-    Build a reverse mapping from POS English names to their codes.
+    Format the action/state/process verb kinds (the table on the app's /pos
+    page) as a Markdown table.
 
     Args:
-        pos_mapping (dict): Dictionary mapping POS codes to [name, chinese_name, examples]
+        verb_kinds (list): Entries of app/data/pos_verb_kinds.json
 
     Returns:
-        dict: Dictionary mapping English names (lowercase) to POS codes
+        str: Markdown table, one row per verb kind
     """
-    name_to_code = {}
-    for code, entry in pos_mapping.items():
-        name = entry[0].lower()  # English name, lowercase for matching
-        name_to_code[name] = code
-    return name_to_code
+    rows = [
+        "| Kind | Takes 很 | Completive 了 | Progressive 在 | Reduplication | Negation | Transitive | Intransitive | Separable |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for kind in verb_kinds:
+        rows.append(
+            f"| {kind['name']} ({kind['meaning']}) | {kind['hen']} | {kind['le']} | {kind['zai']} | {kind['reduplication']}"
+            f" | {kind['negation']} | {kind['transitive']} | {', '.join(kind['intransitive'])} | {kind['separable']} |"
+        )
+    return "\n".join(rows)
+
+
+def format_pos_code_details(code: str, pos_entry: list[str], detail: dict[str, Any]) -> str:
+    """
+    Format everything the app's /pos/<code> page says about one POS code.
+
+    Args:
+        code (str): The POS code (e.g. "Vs")
+        pos_entry (list): The code's [english_name, chinese_name, typical_words] from pos.json
+        detail (dict): The code's entry from pos_details.json
+
+    Returns:
+        str: Markdown section describing the code
+    """
+    english_name, chinese_name, typical_words = pos_entry
+    lines = [f"### {code}: {english_name} {chinese_name}".rstrip(), detail["summary"], detail["description"]]
+    if typical_words:
+        lines.append(f"Typical words: {typical_words}")
+
+    lines.append("How to recognize it:")
+    lines.extend(f"- {test}" for test in detail["tests"])
+
+    lines.append("Examples:")
+    for example in detail["examples"]:
+        wrong = example.get("wrong")
+        if wrong:
+            lines.append(f"- INCORRECT: *{example['zh']} {example['en']}. Why: {wrong['why']} Correct: {wrong['correct']}")
+        else:
+            lines.append(f"- {example['zh']} ({example['en']})")
+
+    lines.append("Don't confuse with:")
+    lines.extend(f"- {contrast['pos']}: {contrast['note']}" for contrast in detail["contrasts"])
+    return "\n".join(lines)
+
+
+@functools.cache
+def build_pos_guide() -> str:
+    """
+    Build the explanation of the TOCFL POS system given to the AI, from the
+    same data the app's /pos pages show (pos.json, pos_details.json and
+    pos_verb_kinds.json).
+
+    Returns:
+        str: Markdown guide to all POS codes
+
+    Raises:
+        KeyError: If a POS code in pos.json has no entry in pos_details.json
+    """
+    pos_mapping = load_pos_mapping()
+    pos_details = load_pos_details()
+    code_sections = "\n\n".join(format_pos_code_details(code, entry, pos_details[code]) for code, entry in pos_mapping.items())
+
+    return f"""## The TOCFL part of speech system
+
+The codes come from the TOCFL 8000 word list (華語八千詞表), which follows the classification of
+鄧守信 (Teng Shou-hsin) used in "A Course in Contemporary Chinese". It differs from English grammar:
+- There is NO adjective category. What English calls adjectives are state verbs (Vs and its variants).
+- Numbers, pronouns, time words (昨天) and the question word 幾 are nouns (N).
+- 把, aspect markers (了, 過, 著), resultative complements (完, 掉) and interjections are particles (Ptc).
+
+Verbs are split by the kind of event they describe, and each kind by whether it takes an object:
+
+{format_verb_kinds_table(load_pos_verb_kinds())}
+
+A code without extra marking stands for the most common case:
+- V is an action verb, and transitive.
+- Vs and Vp are intransitive; a trailing "t" (Vst, Vpt) marks the transitive ones.
+- Vs can both modify a noun and be the predicate. Vs-attr can only stand before a noun (主要道路, but
+  not *這條路很主要), and Vs-pred can only be the predicate (時間夠, but not *夠時間).
+- "-sep" verbs are intransitive verb+object compounds. They split to let in the target, frequency,
+  duration or completion of the event: 生他的氣, 結過三次婚.
+
+## All codes
+
+{code_sections}"""
 
 
 def suggest_pos_with_gemini(traditional: str, meaning: str, pos_mapping: dict[str, Any], gemini_client: Any) -> str:
@@ -131,59 +213,36 @@ def suggest_pos_with_gemini(traditional: str, meaning: str, pos_mapping: dict[st
 
     Returns:
         str: The suggested POS code(s) separated by "/", or empty string if unable to determine
+
+    Raises:
+        Exception: If Gemini fails or replies with a code that is not in pos_mapping
     """
-    # Build list of POS options with English names and examples
-    pos_options = []
-    for entry in pos_mapping.values():
-        name = entry[0]  # English name
-        examples = entry[2]  # Chinese examples
-        if examples:
-            pos_options.append(f"- {name} (e.g., {examples})")
-        else:
-            pos_options.append(f"- {name}")
+    prompt = f"""You are a Chinese language expert specializing in Taiwan Mandarin. Determine the part(s) of speech (POS)
+of a Chinese word/phrase, using the TOCFL classification explained below.
 
-    pos_list = "\n".join(pos_options)
+{build_pos_guide()}
 
-    prompt = f"""You are a Chinese language expert. Determine the part(s) of speech (POS) for the following Chinese word/phrase.
+## Task
 
 Chinese (Traditional): {traditional}
 English meaning: {meaning}
 
-Choose from this list (a word can have multiple POS if it's commonly used in different ways):
-{pos_list}
+Apply the "How to recognize it" tests and the "Don't confuse with" notes above to decide. A word can have
+multiple POS if it's commonly used in different ways (e.g. 壞 is Vs in 他很壞 and Vp in 電腦壞了), but only
+list a POS that matches the given English meaning.
 
-Reply with ONLY the part of speech name(s), separated by commas if multiple (e.g., "noun" or "noun, verb"). Nothing else."""
+Reply with ONLY the POS code(s), exactly as written above, separated by commas if multiple
+(e.g. "N" or "Vs, Vp"). Nothing else."""
 
     try:
         response = gemini_generate(prompt, client=gemini_client, max_retries=2)
-        suggested_names = [name.strip().lower() for name in response.strip().split(",")]
+        codes = list(dict.fromkeys(code for code in re.split(r"[,/\s]+", response.strip().strip("`\"'")) if code))
 
-        # Build reverse mapping
-        name_to_code = build_pos_name_to_code_mapping(pos_mapping)
+        unknown_codes = [code for code in codes if code not in pos_mapping]
+        if unknown_codes:
+            raise Exception(f"AI suggested {unknown_codes} which don't match any POS code (reply: '{response}')")
 
-        # Find codes for each suggested name
-        codes: list[str] = []
-        for suggested_name in suggested_names:
-            # Try exact match first
-            if suggested_name in name_to_code:
-                codes.append(name_to_code[suggested_name])
-                continue
-
-            # Try partial match (in case AI returns slightly different format)
-            matched = False
-            for name, code in name_to_code.items():
-                if suggested_name in name or name in suggested_name:
-                    codes.append(code)
-                    matched = True
-                    break
-
-            if not matched:
-                raise Exception(f"  Warning: AI suggested '{suggested_name}' which doesn't match any POS")
-
-        if codes:
-            return "/".join(codes)
-
-        return ""
+        return "/".join(codes)
 
     except Exception as e:
         raise Exception(f"  Error getting POS suggestion from Gemini: {e}") from e
