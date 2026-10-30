@@ -114,11 +114,12 @@ def format_verb_kinds_table(verb_kinds: list[dict[str, Any]]) -> str:
         str: Markdown table, one row per verb kind
     """
     rows = [
-        "| Kind | Takes 很 | Completive 了 | Progressive 在 | Reduplication | Negation | Transitive | Intransitive | Separable |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| Kind | Takes 很 | Completive 了 | Progressive 在 | Durative 著 | Reduplication | Negation"
+        " | Transitive | Intransitive | Separable |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     rows.extend(
-        f"| {kind['name']} ({kind['meaning']}) | {kind['hen']} | {kind['le']} | {kind['zai']} | {kind['reduplication']}"
+        f"| {kind['name']} ({kind['meaning']}) | {kind['hen']} | {kind['le']} | {kind['zai']} | {kind['zhe']} | {kind['reduplication']}"
         f" | {kind['negation']} | {kind['transitive']} | {', '.join(kind['intransitive'])} | {kind['separable']} |"
         for kind in verb_kinds
     )

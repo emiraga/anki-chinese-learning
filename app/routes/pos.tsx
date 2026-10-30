@@ -45,6 +45,7 @@ export default function PartsOfSpeech() {
                 <th className={CELL}>Takes 很</th>
                 <th className={CELL}>Completive 了</th>
                 <th className={CELL}>Progressive 在</th>
+                <th className={CELL}>Durative 著</th>
                 <th className={CELL}>Reduplication</th>
                 <th className={CELL}>Negation</th>
                 <th className={CELL}>Transitive</th>
@@ -64,6 +65,7 @@ export default function PartsOfSpeech() {
                   <td className={CELL}>{kind.hen}</td>
                   <td className={CELL}>{kind.le}</td>
                   <td className={CELL}>{kind.zai}</td>
+                  <td className={CELL}>{kind.zhe}</td>
                   <td className={CELL}>{kind.reduplication}</td>
                   <td className={CELL}>{kind.negation}</td>
                   <td className={CELL}>
@@ -85,7 +87,13 @@ export default function PartsOfSpeech() {
           </table>
           <p className={SOURCE}>
             Source: <em>A Course in Contemporary Chinese 1</em>, Introduction §F
-            (verb classes), p. XIV, and §G (negation), p. XV.
+            (verb classes), p. XIV, and §G (negation), p. XV. Durative 著: Yu
+            Liu, &ldquo;The Acquisition of Durative Marker zhe&rdquo;, in{" "}
+            <em>
+              Pedagogical Grammar and Grammar Pedagogy in Chinese as a Second
+              Language
+            </em>{" "}
+            (2022), ch. 12.
           </p>
         </div>
 

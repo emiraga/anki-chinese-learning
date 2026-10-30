@@ -55,6 +55,8 @@ export type VerbKind = {
   hen: string;
   le: string;
   zai: string;
+  /** Durative 著. */
+  zhe: string;
   reduplication: string;
   negation: string;
   transitive: PosCode;
