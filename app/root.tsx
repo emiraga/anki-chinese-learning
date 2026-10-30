@@ -40,7 +40,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           crossOrigin="anonymous"
         />
       </head>
-      <body className={isDarkMode ? "dark" : ""}>
+      <body>
         <SettingsProvider>{children}</SettingsProvider>
         <ScrollRestoration />
         <Scripts />

@@ -75,6 +75,8 @@ export type KnownSoundsType = {
 
 export type CharactersType = { [key1: string]: CharacterType };
 
+const EMPTY_PHRASES_PINYIN: CharsToPhrasesPinyin = {};
+
 // Create a custom hook to load and manage Anki data with reload capability
 export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
   const [characters, setCharacters] = useState<CharactersType>({});
@@ -83,6 +85,13 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { settings } = useSettings();
+  const characterNoteType = settings.characterNote?.noteType;
+  // Only depend on phrase pinyin when characters are derived from it,
+  // otherwise every phrase load would trigger a redundant character reload.
+  const phrasesPinyin =
+    characterNoteType && characterNoteType.length > 0
+      ? EMPTY_PHRASES_PINYIN
+      : charPhrasesPinyin;
 
   // Define the load function with useCallback so it doesn't recreate on every render
   const loadData = useCallback(async () => {
@@ -91,11 +100,10 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
       const loadedChars: CharactersType = {};
       const loadedKnownSounds: KnownSoundsType = {};
       const loadedCharacterList: string[] = [];
-      const characterNoteType = settings.characterNote?.noteType;
       if (!characterNoteType || characterNoteType.length === 0) {
         // Load character info from phrases.
-        for (const hanzi of Object.keys(charPhrasesPinyin)) {
-          const pinyinSorted = Object.values(charPhrasesPinyin[hanzi]).sort(
+        for (const hanzi of Object.keys(phrasesPinyin)) {
+          const pinyinSorted = Object.values(phrasesPinyin[hanzi]).sort(
             comparePinyin,
           );
           let info: CharacterType = {
@@ -202,7 +210,7 @@ export function useAnkiCharacters(charPhrasesPinyin: CharsToPhrasesPinyin) {
     } finally {
       setLoading(false);
     }
-  }, [charPhrasesPinyin, settings.characterNote?.noteType]); // Empty dependency array means this function won't change
+  }, [phrasesPinyin, characterNoteType]);
 
   // Initial load on component mount
   useEffect(() => {
