@@ -6,6 +6,7 @@ import AnkiAudioPlayer from "./AnkiAudioPlayer";
 import type { OutletContext } from "~/data/types";
 import { HanziText } from "./HanziText";
 import { POSList } from "./POSDisplay";
+import { htmlToText } from "~/utils/text";
 
 /** Links to look the phrase up in online dictionaries. */
 export const PhraseDictionaryLinks: React.FC<{ phraseHanzi: string }> = ({
@@ -125,63 +126,88 @@ export const PhraseList: React.FC<{
   phrases: PhraseType[];
   // Optional extra column with per-phrase action buttons
   actions?: (phrase: PhraseType) => React.ReactNode;
-}> = ({ phrases, actions }) => {
+  // Phrases not enabled in Anki yet: render without header and row
+  // background, with dimmed text
+  notEnabled?: boolean;
+}> = ({ phrases, actions, notEnabled }) => {
   if (phrases.length === 0) {
     return <></>;
   }
+  const cellClassName = `${
+    notEnabled
+      ? "text-gray-500 dark:text-gray-400"
+      : "text-gray-900 dark:text-gray-100"
+  } px-2 py-3`;
   return (
     <div className="overflow-x-auto">
       <table className="w-full divide-y divide-gray-200 dark:divide-gray-600">
-        <thead className="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th className="w-10 text-gray-900 dark:text-gray-100 px-2 py-3">
-              Source
-            </th>
-            <th className="text-gray-900 dark:text-gray-100 px-2 py-3">Tags</th>
-            <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
-              Traditional
-            </th>
-            <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
-              Pinyin
-            </th>
-            <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
-              Part of Speech
-            </th>
-            <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
-              Meaning
-            </th>
-            {actions && (
-              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
-                Actions
+        {!notEnabled && (
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th className="w-10 text-gray-900 dark:text-gray-100 px-2 py-3">
+                Source
               </th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-600">
+              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                Tags
+              </th>
+              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                Traditional
+              </th>
+              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                Pinyin
+              </th>
+              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                Part of Speech
+              </th>
+              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                Meaning
+              </th>
+              {actions && (
+                <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                  Actions
+                </th>
+              )}
+            </tr>
+          </thead>
+        )}
+        <tbody
+          className={`${notEnabled ? "" : "bg-white dark:bg-gray-900"} divide-y divide-gray-200 dark:divide-gray-600`}
+        >
           {phrases.map((phrase, i) => {
             return (
-              <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <tr
+                key={i}
+                className={
+                  notEnabled ? "" : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                }
+              >
                 <td className="w-20 px-2 py-3">
                   <PhraseSourceButton phrase={phrase} />
                 </td>
                 <td className="px-2 py-3 max-w-30">
                   <TagList tags={phrase.tags} />
                 </td>
-                <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                <td className={cellClassName}>
                   <PhraseLink value={phrase.traditional} />
                 </td>
-                <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                <td className={cellClassName}>
                   <span className="inline-block mr-2">{phrase.zhuyin}</span>
                   <span
                     dangerouslySetInnerHTML={{ __html: phrase.pinyin }}
                   ></span>
                   <AnkiAudioPlayer audioField={phrase.audio} />
                 </td>
-                <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                <td className={cellClassName}>
                   <POSList posString={phrase.partOfSpeech || ""} />
                 </td>
-                <td className="text-gray-900 dark:text-gray-100 px-2 py-3">
-                  <div className="max-w-md truncate">
+                <td className={cellClassName}>
+                  <div
+                    className="max-w-md truncate"
+                    title={[phrase.meaning, phrase.meaning2]
+                      .filter((m) => m !== undefined)
+                      .map(htmlToText)
+                      .join("\n\n")}
+                  >
                     <PhraseMeaning meaning={phrase.meaning} />
                   </div>
                 </td>

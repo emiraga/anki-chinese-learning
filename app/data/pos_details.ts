@@ -15,8 +15,15 @@ export type PosExample = {
   /** Traditional Chinese sentence or phrase. */
   zh: string;
   en: string;
-  /** Marks an ungrammatical example, shown with a leading "*". */
-  wrong?: boolean;
+  /** Marks an ungrammatical example: a typical learner mistake. */
+  wrong?: PosMistake;
+};
+
+export type PosMistake = {
+  /** Which rule of this part of speech the sentence breaks. */
+  why: string;
+  /** Grammatical version of the intended sentence. */
+  correct: string;
 };
 
 export type PosContrast = {
@@ -104,7 +111,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "我也很忙。", en: "I'm also very busy." },
       { zh: "他常到處旅行。", en: "He often travels all over the place." },
       { zh: "你難道不知道嗎？", en: "Don't tell me you don't know?" },
-      { zh: "也我去。", en: "(meant: I'm also going)", wrong: true },
+      {
+        zh: "也我去。",
+        en: "(meant: I'm also going)",
+        wrong: {
+          why: "Adverbs go after the subject, right before the verb; they can't open the sentence.",
+          correct: "我也去。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -195,7 +209,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "他吃了三碗飯。", en: "He ate three bowls of rice." },
       { zh: "我去過台灣兩次。", en: "I've been to Taiwan twice." },
       { zh: "他被罵了一頓。", en: "He got a scolding." },
-      { zh: "這裡有三書。", en: "(meant: there are three books)", wrong: true },
+      {
+        zh: "這裡有三書。",
+        en: "(meant: there are three books)",
+        wrong: {
+          why: "A number can't attach directly to a noun; a measure word must come between them.",
+          correct: "這裡有三本書。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -317,7 +338,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "我想買一件外套。", en: "I want to buy a coat." },
       { zh: "他在做功課。", en: "He's doing homework." },
       { zh: "我昨天沒說。", en: "I didn't say it yesterday." },
-      { zh: "我很買衣服。", en: "(meant: I buy clothes a lot)", wrong: true },
+      {
+        zh: "我很買衣服。",
+        en: "(meant: I buy clothes a lot)",
+        wrong: {
+          why: "Action verbs can't be modified by 很; only state verbs can. Use a frequency adverb instead.",
+          correct: "我常買衣服。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -344,7 +372,10 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
     ],
     examples: [
       { zh: "請坐。", en: "Please have a seat." },
-      { zh: "他每天早上跑半個小時。", en: "He runs for half an hour every morning." },
+      {
+        zh: "他每天早上跑半個小時。",
+        en: "He runs for half an hour every morning.",
+      },
       { zh: "她對我笑了笑。", en: "She smiled at me." },
     ],
     contrasts: [
@@ -377,7 +408,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "我們去唱歌吧！", en: "Let's go sing (karaoke)!" },
       { zh: "他上了一整天的網。", en: "He was online all day." },
       { zh: "他們小時候常打架。", en: "They often fought as kids." },
-      { zh: "我明天見面他。", en: "(meant: I'll meet him tomorrow)", wrong: true },
+      {
+        zh: "我明天見面他。",
+        en: "(meant: I'll meet him tomorrow)",
+        wrong: {
+          why: "見面 already contains its own object (面), so it can't take another one; the other person is introduced with 跟.",
+          correct: "我明天跟他見面。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -410,7 +448,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "今天很冷。", en: "It's cold today." },
       { zh: "她的衣服很漂亮。", en: "Her clothes are pretty." },
       { zh: "他不高。", en: "He isn't tall." },
-      { zh: "他是高。", en: "(meant: he is tall)", wrong: true },
+      {
+        zh: "他是高。",
+        en: "(meant: he is tall)",
+        wrong: {
+          why: "State verbs are predicates on their own and don't take 是; 很 is the neutral link instead.",
+          correct: "他很高。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -444,7 +489,10 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
     ],
     examples: [
       { zh: "我很喜歡台灣。", en: "I like Taiwan a lot." },
-      { zh: "父母都很關心孩子。", en: "Parents all care about their children." },
+      {
+        zh: "父母都很關心孩子。",
+        en: "Parents all care about their children.",
+      },
       { zh: "我不同意你的看法。", en: "I don't agree with your view." },
       { zh: "他會中文。", en: "He knows Chinese." },
     ],
@@ -478,7 +526,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "這裡有很多野生動物。", en: "There are many wild animals here." },
       { zh: "我坐公共汽車上班。", en: "I take the bus to work." },
       { zh: "這是一個新興產業。", en: "This is an emerging industry." },
-      { zh: "這個公園很公共。", en: "(meant: this park is very public)", wrong: true },
+      {
+        zh: "這個公園很公共。",
+        en: "(meant: this park is very public)",
+        wrong: {
+          why: "Attributive-only state verbs can only stand before a noun; they can't be the predicate or take 很.",
+          correct: "這是一個公共公園。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -505,7 +560,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "這裡的人很多。", en: "There are a lot of people here." },
       { zh: "我的錢不夠。", en: "I don't have enough money." },
       { zh: "他今天吃得很少。", en: "He ate very little today." },
-      { zh: "這裡有多人。", en: "(meant: there are many people here)", wrong: true },
+      {
+        zh: "這裡有多人。",
+        en: "(meant: there are many people here)",
+        wrong: {
+          why: "Predicative-only state verbs can't directly modify a noun; 多 needs 很 in front to do so.",
+          correct: "這裡有很多人。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -533,7 +595,14 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "別生我的氣。", en: "Don't be angry at me." },
       { zh: "你放心吧，沒問題。", en: "Don't worry, it's no problem." },
       { zh: "他很幽默。", en: "He's very humorous." },
-      { zh: "你別生氣我。", en: "(meant: don't be angry at me)", wrong: true },
+      {
+        zh: "你別生氣我。",
+        en: "(meant: don't be angry at me)",
+        wrong: {
+          why: "生氣 already contains its own object (氣), so the person goes inside the split verb: 生 X 的氣.",
+          correct: "你別生我的氣。",
+        },
+      },
     ],
     contrasts: [
       {
@@ -659,8 +728,18 @@ export const POS_DETAILS: Record<PosCode, PosDetail> = {
       { zh: "他們去年結婚了。", en: "They got married last year." },
       { zh: "他結過兩次婚。", en: "He has been married twice." },
       { zh: "我上個月生了一場大病。", en: "I was seriously ill last month." },
-      { zh: "她明年從大學畢業。", en: "She graduates from university next year." },
-      { zh: "他想結婚她。", en: "(meant: he wants to marry her)", wrong: true },
+      {
+        zh: "她明年從大學畢業。",
+        en: "She graduates from university next year.",
+      },
+      {
+        zh: "他想結婚她。",
+        en: "(meant: he wants to marry her)",
+        wrong: {
+          why: "結婚 already contains its own object (婚), so it can't take another one; the partner is introduced with 跟.",
+          correct: "他想跟她結婚。",
+        },
+      },
     ],
     contrasts: [
       {

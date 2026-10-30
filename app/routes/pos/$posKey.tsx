@@ -19,15 +19,47 @@ export function meta({ params }: Route.MetaArgs) {
   ];
 }
 
-const ExampleSentence: React.FC<{ example: PosExample }> = ({ example }) => (
-  <li className={example.wrong ? "text-red-700 dark:text-red-400" : ""}>
-    <span className="text-lg">
-      {example.wrong && <span title="ungrammatical">*</span>}
-      <HanziText value={example.zh} />
-    </span>
-    <span className="ml-3 text-gray-600 dark:text-gray-400">{example.en}</span>
-  </li>
-);
+const ExampleSentence: React.FC<{ example: PosExample }> = ({ example }) => {
+  if (!example.wrong) {
+    return (
+      <li>
+        <span className="text-lg">
+          <HanziText value={example.zh} />
+        </span>
+        <span className="ml-3 text-gray-600 dark:text-gray-400">
+          {example.en}
+        </span>
+      </li>
+    );
+  }
+  return (
+    <li className="border-l-4 border-red-400 dark:border-red-600 pl-3 py-1">
+      <div>
+        <span className="mr-2 rounded bg-red-100 dark:bg-red-900 px-1.5 py-0.5 text-xs font-semibold text-red-800 dark:text-red-200">
+          ✗ Incorrect
+        </span>
+        <span className="text-lg text-red-700 dark:text-red-400 line-through decoration-1">
+          <HanziText value={example.zh} />
+        </span>
+        <span className="ml-3 text-gray-600 dark:text-gray-400">
+          {example.en}
+        </span>
+      </div>
+      <div className="text-sm text-gray-700 dark:text-gray-300">
+        <span className="font-semibold">Why: </span>
+        {example.wrong.why}
+      </div>
+      <div className="text-sm">
+        <span className="font-semibold text-green-700 dark:text-green-400">
+          ✓ Correct:{" "}
+        </span>
+        <span className="text-lg">
+          <HanziText value={example.wrong.correct} />
+        </span>
+      </div>
+    </li>
+  );
+};
 
 export default function PosDetail() {
   const { posKey } = useParams();
@@ -73,7 +105,7 @@ export default function PosDetail() {
         </ul>
 
         <h4 className="text-xl font-semibold mb-2">Examples</h4>
-        <ul className="mb-4 space-y-1">
+        <ul className="mb-4 space-y-2">
           {detail.examples.map((example, i) => (
             <ExampleSentence key={i} example={example} />
           ))}

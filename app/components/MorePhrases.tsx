@@ -192,13 +192,7 @@ function SearchMorePhrases({
       setPhrases(notes);
     };
     load();
-  }, [
-    characters,
-    filterKnownChars,
-    noteTypes,
-    search,
-    withTags,
-  ]);
+  }, [characters, filterKnownChars, noteTypes, search, withTags]);
 
   if (!phrases) {
     return <div>Loading...</div>;
@@ -207,11 +201,14 @@ function SearchMorePhrases({
   return (
     <PhraseList
       phrases={phrases.map(phraseFromNote)}
+      notEnabled
       actions={(phrase) => (
         <button
           className="rounded-2xl bg-green-100 dark:bg-green-800 dark:text-green-100 p-1 inline text-xs text-green-500"
           onClick={async () => {
-            const cards = phrases.find((n) => n.noteId === phrase.noteId)?.cards;
+            const cards = phrases.find(
+              (n) => n.noteId === phrase.noteId,
+            )?.cards;
             if (!cards) {
               throw new Error(`Note ${phrase.noteId} not found`);
             }

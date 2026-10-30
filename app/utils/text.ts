@@ -70,3 +70,10 @@ function segmentByCharacter(text: string): SegmentedWord[] {
 
   return segments;
 }
+
+/** Converts an HTML field value (e.g. Anki "Meaning") to plain text. */
+export function htmlToText(html: string): string {
+  const withNewlines = html.replace(/<br\s*\/?>/gi, "\n");
+  const doc = new DOMParser().parseFromString(withNewlines, "text/html");
+  return (doc.body.textContent ?? "").trim();
+}
