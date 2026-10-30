@@ -5,12 +5,66 @@ import { useEffect, useState } from "react";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "./index.module.css";
 import { PhraseLink, PhraseList } from "./Phrase";
+import { CharLink } from "./CharCard";
 import { phraseFromNote } from "~/data/phrases";
 import {
   DANGDAI_NEXT_LEVEL,
   TBCL_NEXT_LEVEL,
   TOCFL_NEXT_LEVEL,
 } from "~/data/status";
+
+function FlaggedItem({
+  label,
+  link,
+  meaning,
+}: {
+  label: string;
+  link: React.ReactNode;
+  meaning: string;
+}) {
+  return (
+    <div>
+      {label}: {link} -{" "}
+      <span dangerouslySetInnerHTML={{ __html: meaning }}></span>
+    </div>
+  );
+}
+
+const LEECH_TAG = "leech";
+
+function LeechPhrasesAndChars() {
+  const { phrases, characters } = useOutletContext<OutletContext>();
+  const leechPhrases = phrases.filter((p) => p.tags.includes(LEECH_TAG));
+  const leechChars = Object.values(characters).filter((c) =>
+    c.tags.includes(LEECH_TAG),
+  );
+
+  if (leechPhrases.length === 0 && leechChars.length === 0) {
+    return undefined;
+  }
+
+  return (
+    <>
+      <h3 className="font-serif text-3xl">Leech phrases and characters:</h3>
+      {leechPhrases.map((phrase) => (
+        <FlaggedItem
+          key={phrase.noteId}
+          label="Leech phrase"
+          link={<PhraseLink value={phrase.traditional} />}
+          meaning={phrase.meaning}
+        />
+      ))}
+      {leechChars.map((char) => (
+        <FlaggedItem
+          key={char.traditional}
+          label="Leech character"
+          link={<CharLink traditional={char.traditional} />}
+          meaning={char.meaning}
+        />
+      ))}
+    </>
+  );
+}
 
 function TodoPhrases() {
   const [notes, setNotes] = useState<NoteInfo[] | undefined>(undefined);
@@ -36,20 +90,15 @@ function TodoPhrases() {
 
   return (
     <>
-      <h3 className="font-serif text-3xl">TODO phrases:</h3>
-      {notes.map((note, i) => {
-        return (
-          <div key={i}>
-            🚨 TODO:{" "}
-            <PhraseLink value={note.fields["Traditional"]?.value || ""} /> -{" "}
-            <span
-              dangerouslySetInnerHTML={{
-                __html: note.fields["Meaning"]?.value,
-              }}
-            ></span>
-          </div>
-        );
-      })}
+      <h3 className="font-serif text-3xl">TODO phrases and characters:</h3>
+      {notes.map((note) => (
+        <FlaggedItem
+          key={note.noteId}
+          label="TODO"
+          link={<PhraseLink value={note.fields["Traditional"]?.value || ""} />}
+          meaning={note.fields["Meaning"]?.value}
+        />
+      ))}
     </>
   );
 }
@@ -185,6 +234,9 @@ export const MorePhrases: React.FC<{}> = ({}) => {
     <>
       <section className="block m-4">
         <TodoPhrases />
+      </section>
+      <section className="block m-4">
+        <LeechPhrasesAndChars />
       </section>
       <section className="block m-4">
         <Collapsible.Root className={styles.Collapsible}>
