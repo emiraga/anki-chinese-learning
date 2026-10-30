@@ -5,7 +5,12 @@ import type { OutletContext } from "~/data/types";
 import { POS, type PosCode } from "~/data/pos";
 import { POS_DETAILS, VERB_KINDS, VERB_KIND_TRAITS } from "~/data/pos_details";
 import { POSDisplay } from "~/components/POSDisplay";
-import { VerbKindTooltip, VerbTraitTooltip } from "~/components/PosExamples";
+import {
+  AnnotatedSentence,
+  VerbKindTooltip,
+  VerbTraitTooltip,
+} from "~/components/PosExamples";
+import { POS_SENTENCES } from "~/data/pos_sentences";
 import { usePhrasesByPos } from "~/components/PosPhrases";
 
 export function meta({}: Route.MetaArgs) {
@@ -158,6 +163,17 @@ export default function PartsOfSpeech() {
           pp. XVI–XVII, and Parts of Speech table, p. XXIV. Teng 2009, ch. 13,
           pp. 179–184.
         </p>
+
+        <h2 className="text-2xl font-semibold mb-2">Examples</h2>
+        <p className="mb-4 text-gray-700 dark:text-gray-300">
+          Sentences split into words, each labeled with its code from the TOCFL
+          list. Hover over a label for what the word does in the sentence.
+        </p>
+        <div className="mb-8 space-y-6">
+          {POS_SENTENCES.map((sentence) => (
+            <AnnotatedSentence key={sentence.en} sentence={sentence} />
+          ))}
+        </div>
 
         <h2 className="text-2xl font-semibold mb-2">All codes</h2>
         <table className="border-collapse text-sm mb-8">

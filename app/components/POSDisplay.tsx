@@ -5,7 +5,14 @@ import { POS_DETAILS } from "~/data/pos_details";
 import styles from "./index.module.css";
 import { useDarkMode } from "./DarkModeToggle";
 
-export const POSDisplay: React.FC<{ posKey: string }> = ({ posKey }) => {
+/**
+ * A part of speech code, with its name and summary in a tooltip. `note`
+ * describes the word's role in a particular sentence, shown above the summary.
+ */
+export const POSDisplay: React.FC<{ posKey: string; note?: string }> = ({
+  posKey,
+  note,
+}) => {
   const { isDarkMode } = useDarkMode();
 
   if (!posKey) {
@@ -41,6 +48,7 @@ export const POSDisplay: React.FC<{ posKey: string }> = ({ posKey }) => {
                 </span>
               )}
             </div>
+            {note && <div className="text-sm mt-1 font-medium">{note}</div>}
             <div className="text-sm mt-1">{POS_DETAILS[posKey].summary}</div>
             {examples && (
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
