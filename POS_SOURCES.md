@@ -39,6 +39,38 @@ scheme.
 - **Reliability:** high. This is the authoritative source for the codes the app
   uses.
 
+### TBCL 臺灣華語文能力基準 基礎詞彙表
+
+- **Scheme:** TOCFL-style codes, but a coarse subset: only N, V, Vs, Vp, Vaux,
+  Adv, M, Det, Conj, Prep, Ptc, plus `Phrase` (= Ph). No Vi, Vst, V-sep, Vpt,
+  Vp-sep or Vs-attr/pred: 結婚 is `V` here but `Vp-sep` in TOCFL. A few cells
+  are not codes at all (`Vt`, `Conj.`, a full-width `Ｖ`, `詞組`). Multiple
+  categories are "/"-separated.
+- **繼續:** not listed (it is TBCL level 4).
+- **Offline:** `data/tbcl/臺灣華語文能力基準基礎詞彙表_111-09-20.xlsx` (180 KB), from
+  `https://coct.naer.edu.tw/file/files/<same file name>`. Verified. It is no
+  longer linked from the download page, but still served. Columns: 詞語, 級別,
+  注音, 漢拼, 詞類/性質, 詞彙英譯, 語義/義項, 情境, 用法-常用搭配詞, 例句. One row
+  per sense, so a word can be listed several times (還 has 6 rows).
+- **Coverage:** 1518 rows, 1374 words after expanding variants, TBCL levels 1-3
+  only. 1253 of those are also in TOCFL; for those, 82% of TBCL's tags are among
+  TOCFL's codes for the word, and most disagreements are TBCL using the coarser
+  code (V where TOCFL has V-sep/Vi/Vst). The 121 words not in TOCFL are mostly
+  short forms (車, 鞋, 椅), names and easy compounds (法國, 星期一, 吃飯,
+  晚餐), so it adds little beyond TOCFL.
+- **Reliability:** high, same 鄧守信 framework as TOCFL, but coarser.
+- **Not useful:** the main TBCL word list on https://coct.naer.edu.tw/page.jsp?ID=41
+  (`14452詞語表202504.xlsx`, all 7 levels, 14452 words) has **no POS column**,
+  only level, context (情境), frequencies, bopomofo and pinyin; the same applies
+  to the 類詞綴表 (affixes) and the online lookup. ivankra/tocfl's `tbcl.csv`
+  (https://github.com/ivankra/tocfl) has a POS column, but it is filled from this
+  基礎詞彙表 for L1-3 only. The technical report 《解詞造句-華語文基礎詞語彙編》
+  (17 MB PDF on page.jsp?ID=41) is the printed version of the same 基礎詞彙表,
+  with the same coarse codes: the finer ones (Vi, Vst, V-sep, ...) appear only
+  in its legend table, never on an entry. Checked 2026-10.
+- **Download quirk:** coct.naer.edu.tw drops connections partway through larger
+  files; `download_pos_sources.py` resumes with Range requests.
+
 ### Wiktionary (zh.wiktionary.org)
 
 - **Scheme:** coarse Chinese terms (動詞, 名詞, 副詞, ...), one per sense.
@@ -148,6 +180,7 @@ scheme.
 ## Suggested order for an offline POS lookup
 
 1. TOCFL CSVs (already local), using the exact codes from `pos.json`.
+   TBCL 基礎詞彙表 for the few L1-3 words TOCFL lacks, with its coarse codes.
 2. Wiktextract dump from kaikki.org as a fallback for words not in TOCFL,
    with the coarse POS mapped to a rough TOCFL group (動詞 → V*, 名詞 → N,
    副詞 → Adv, ...), and marked as approximate.

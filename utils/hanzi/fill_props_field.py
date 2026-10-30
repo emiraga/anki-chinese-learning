@@ -117,11 +117,11 @@ def format_verb_kinds_table(verb_kinds: list[dict[str, Any]]) -> str:
         "| Kind | Takes 很 | Completive 了 | Progressive 在 | Reduplication | Negation | Transitive | Intransitive | Separable |",
         "|---|---|---|---|---|---|---|---|---|",
     ]
-    for kind in verb_kinds:
-        rows.append(
-            f"| {kind['name']} ({kind['meaning']}) | {kind['hen']} | {kind['le']} | {kind['zai']} | {kind['reduplication']}"
-            f" | {kind['negation']} | {kind['transitive']} | {', '.join(kind['intransitive'])} | {kind['separable']} |"
-        )
+    rows.extend(
+        f"| {kind['name']} ({kind['meaning']}) | {kind['hen']} | {kind['le']} | {kind['zai']} | {kind['reduplication']}"
+        f" | {kind['negation']} | {kind['transitive']} | {', '.join(kind['intransitive'])} | {kind['separable']} |"
+        for kind in verb_kinds
+    )
     return "\n".join(rows)
 
 
@@ -235,8 +235,11 @@ Reply with ONLY the POS code(s), exactly as written above, separated by commas i
 (e.g. "N" or "Vs, Vp"). Nothing else."""
 
     try:
-        response = gemini_generate(prompt, client=gemini_client, max_retries=2)
-        codes = list(dict.fromkeys(code for code in re.split(r"[,/\s]+", response.strip().strip("`\"'")) if code))
+        # The default model often confuses close codes (e.g. Vs instead of Vs-attr for 非法)
+        response = gemini_generate(prompt, client=gemini_client, model_name=STRONG_GEMINI_MODEL, max_retries=2)
+        # Remove markdown formatting the model sometimes adds (e.g. "**V**")
+        plain_response = re.sub(r"[*`\"']", "", response)
+        codes = list(dict.fromkeys(code for code in re.split(r"[,/\s]+", plain_response) if code))
 
         unknown_codes = [code for code in codes if code not in pos_mapping]
         if unknown_codes:

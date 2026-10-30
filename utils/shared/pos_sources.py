@@ -5,6 +5,8 @@ Every source uses its own tag scheme, so the tags are returned as they appear in
 the source, without mapping them to the TOCFL codes of `app/data/pos.json`:
 
 - TOCFL: TOCFL codes (V, Vs, Vaux, ...)
+- TBCL 基礎詞彙表: a coarser subset of the TOCFL codes (no Vi, Vst, V-sep, ...),
+  levels 1-3 only
 - Wiktionary, English and Chinese editions (kaikki.org dumps): verb, noun, ...
 - moedict dump: 動, 名, 副, 形, ... (single characters only, in practice)
 - jieba `dict.txt.big`: ICTCLAS tags (v, n, d, a, ...)
@@ -18,13 +20,23 @@ lines.
 import gzip
 import json
 import lzma
+import re
 from collections import Counter
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .project_paths import JIEBA_DICT_TXT, KAIKKI_EN_JSONL, KAIKKI_ZH_JSONL, MOEDICT_DUMP_JSON, UD_CHINESE_GSD_DIR
+import openpyxl
+
+from .project_paths import (
+    JIEBA_DICT_TXT,
+    KAIKKI_EN_JSONL,
+    KAIKKI_ZH_JSONL,
+    MOEDICT_DUMP_JSON,
+    TBCL_GLOSSARY_XLSX,
+    UD_CHINESE_GSD_DIR,
+)
 from .tocfl_csv import load_all
 
 
@@ -47,6 +59,37 @@ def read_tocfl(words: set[str] | None = None) -> Iterator[PosEntry]:
     for word in load_all():
         if words is None or word.traditional in words:
             yield PosEntry(word.traditional, ", ".join(word.part_of_speech), f"{word.level}, {word.pinyin}")
+
+
+TBCL_GLOSSARY_COLUMNS = ("詞語", "級別", "漢拼", "詞類/性質", "詞彙英譯")
+
+
+def read_tbcl(words: set[str] | None = None) -> Iterator[PosEntry]:
+    """
+    TBCL basic glossary (基礎詞彙表): one row per sense, ~1500 rows for levels 1-3.
+
+    Words are written like the TOCFL lists: "/" separates variants (爸爸/爸), and
+    a trailing digit numbers homographs (好1), which is dropped here. Tags are
+    "/"-separated and returned as written, including a few that are not TOCFL
+    codes (Phrase, Vt, Conj., a full-width V).
+    """
+    sheet = openpyxl.load_workbook(_require_file(TBCL_GLOSSARY_XLSX), read_only=True).worksheets[0]
+    rows = sheet.iter_rows(values_only=True)
+    header = next(rows)
+    missing = [column for column in TBCL_GLOSSARY_COLUMNS if column not in header]
+    if missing:
+        raise ValueError(f"{TBCL_GLOSSARY_XLSX}: missing columns {missing}, got {header}")
+    word_col, level_col, pinyin_col, pos_col, english_col = (header.index(column) for column in TBCL_GLOSSARY_COLUMNS)
+    for row in rows:
+        raw_word = row[word_col]
+        if raw_word is None:
+            continue
+        pos = str(row[pos_col]).strip()
+        detail = f"{row[level_col]}, {row[pinyin_col]}: {row[english_col]}"
+        for variant in str(raw_word).split("/"):
+            word = re.sub(r"\d+$", "", variant.strip())
+            if words is None or word in words:
+                yield PosEntry(word, pos, detail)
 
 
 def _read_kaikki(path: Path, words: set[str] | None) -> Iterator[PosEntry]:
@@ -139,6 +182,7 @@ def read_ud_gsd(words: set[str] | None = None) -> Iterator[PosEntry]:
 
 POS_SOURCES = {
     "TOCFL": read_tocfl,
+    "TBCL": read_tbcl,
     "Wiktionary (en)": read_kaikki_en,
     "Wiktionary (zh)": read_kaikki_zh,
     "moedict": read_moedict_dump,

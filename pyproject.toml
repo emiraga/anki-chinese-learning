@@ -13,6 +13,7 @@ dependencies = [
     "google-cloud-texttospeech",
     "beautifulsoup4",
     "lxml",
+    "openpyxl",
 ]
 
 [dependency-groups]
@@ -21,6 +22,7 @@ dev = [
     "pyrefly",
     "ruff",
     "types-requests",
+    "types-openpyxl",
 ]
 
 [tool.ruff]

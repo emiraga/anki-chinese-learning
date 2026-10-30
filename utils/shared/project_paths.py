@@ -32,6 +32,7 @@ KAIKKI_ZH_JSONL = RAW_DATA_DIR / "kaikki" / "zh" / "kaikki.org-dictionary-漢語
 MOEDICT_DUMP_JSON = RAW_DATA_DIR / "moedict_dump" / "dict-revised.json.xz"
 JIEBA_DICT_TXT = RAW_DATA_DIR / "jieba" / "dict.txt.big"
 UD_CHINESE_GSD_DIR = RAW_DATA_DIR / "ud_chinese_gsd"
+TBCL_GLOSSARY_XLSX = RAW_DATA_DIR / "tbcl" / "臺灣華語文能力基準基礎詞彙表_111-09-20.xlsx"
 
 # Converted data, served by the dev server and the built app from `public/`.
 PUBLIC_DATA_DIR = PROJECT_ROOT / "public" / "data"

@@ -181,6 +181,7 @@ data/kaikki/
 data/jieba/
 data/tbcl/
 data/ud_chinese_gsd/
+data/tbcl/
 public/data/hackchinese/*
 public/data/pleco/*
 data/pleco/*
