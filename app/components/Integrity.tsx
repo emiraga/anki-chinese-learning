@@ -71,13 +71,18 @@ function MixedSuspension({
     .filter((note) => note.modelName === noteType)
     .map((note) => ({
       ...note,
-      suspendedCards: note.cardDetails.filter(
-        (c) =>
-          c.queue === -1 &&
-          !note.tags.includes(
-            `card-${CARDS_INFO[noteType][c.ord]["name"]}-ignored-on-purpose`,
-          ),
-      ).length,
+      suspendedCards: note.cardDetails.filter((c) => {
+        if (c.queue !== -1) {
+          return false;
+        }
+        const cardInfo = CARDS_INFO[noteType]?.[c.ord];
+        if (!cardInfo) {
+          throw new Error(
+            `Missing CARDS_INFO entry for note type "${noteType}" card ord ${c.ord} (add it to app/data/cards.ts)`,
+          );
+        }
+        return !note.tags.includes(`card-${cardInfo.name}-ignored-on-purpose`);
+      }).length,
       regularCards: note.cardDetails.filter((c) => c.queue !== -1).length,
     }))
     .filter((note) => note.suspendedCards > 0 && note.regularCards > 0);

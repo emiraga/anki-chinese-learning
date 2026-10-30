@@ -5,10 +5,11 @@ export const CARDS_INFO: { [key: string]: { name: string; deck: string }[] } = {
     { name: "meaning", deck: "Chinese::dPhrases" },
     { name: "listening", deck: "Chinese::sListening" },
     { name: "reading", deck: "Chinese::dPhrases" },
+    { name: "cloze", deck: "Chinese::cCloze" },
   ],
   Hanzi: [
     { name: "Recognize Hanzi", deck: "Chinese::wCharsProps" },
-    { name: "Simplified", deck: "Chinese::Simplified" },
+    { name: "Simplified", deck: "Chinese::jSimplified" },
   ],
   Props: [
     { name: "Recognize prop", deck: "Chinese::wCharsProps" },
