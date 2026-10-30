@@ -3,8 +3,9 @@ import type { Route } from "./+types/pos";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import { POS, type PosCode } from "~/data/pos";
-import { POS_DETAILS, VERB_KINDS } from "~/data/pos_details";
+import { POS_DETAILS, VERB_KINDS, VERB_KIND_TRAITS } from "~/data/pos_details";
 import { POSDisplay } from "~/components/POSDisplay";
+import { VerbKindTooltip, VerbTraitTooltip } from "~/components/PosExamples";
 import { usePhrasesByPos } from "~/components/PosPhrases";
 
 export function meta({}: Route.MetaArgs) {
@@ -46,7 +47,10 @@ export default function PartsOfSpeech() {
             Language
           </em>
           , Routledge, 2023, a collection of studies by several authors, many
-          based on learner corpora.
+          based on learner corpora. Notes marked &ldquo;ACCC 1&rdquo; come from{" "}
+          <em>A Course in Contemporary Chinese 1</em> (當代中文課程 1), ed.
+          鄧守信, Taipei: 聯經: its introduction (pages in Roman numerals) and
+          the grammar notes of its lessons.
         </p>
 
         <h2 className="text-2xl font-semibold mb-2">Verb classes</h2>
@@ -55,12 +59,11 @@ export default function PartsOfSpeech() {
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800">
                 <th className={CELL}>Kind</th>
-                <th className={CELL}>Takes 很</th>
-                <th className={CELL}>Completive 了</th>
-                <th className={CELL}>Progressive 在</th>
-                <th className={CELL}>Durative 著</th>
-                <th className={CELL}>Reduplication</th>
-                <th className={CELL}>Negation</th>
+                {VERB_KIND_TRAITS.map(({ key, title }) => (
+                  <th key={key} className={CELL}>
+                    {title}
+                  </th>
+                ))}
                 <th className={CELL}>Transitive</th>
                 <th className={CELL}>Intransitive</th>
                 <th className={CELL}>Separable</th>
@@ -70,17 +73,17 @@ export default function PartsOfSpeech() {
               {VERB_KINDS.map((kind) => (
                 <tr key={kind.name}>
                   <td className={CELL}>
-                    <div className="font-semibold">{kind.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {kind.meaning}
-                    </div>
+                    <VerbKindTooltip kind={kind} />
                   </td>
-                  <td className={CELL}>{kind.hen}</td>
-                  <td className={CELL}>{kind.le}</td>
-                  <td className={CELL}>{kind.zai}</td>
-                  <td className={CELL}>{kind.zhe}</td>
-                  <td className={CELL}>{kind.reduplication}</td>
-                  <td className={CELL}>{kind.negation}</td>
+                  {VERB_KIND_TRAITS.map(({ key, title }) => (
+                    <td key={key} className={CELL}>
+                      <VerbTraitTooltip
+                        trait={kind.traits[key]}
+                        title={title}
+                        kindName={kind.name}
+                      />
+                    </td>
+                  ))}
                   <td className={CELL}>
                     <POSDisplay posKey={kind.transitive} />
                   </td>
@@ -98,6 +101,9 @@ export default function PartsOfSpeech() {
               ))}
             </tbody>
           </table>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Hover over a cell for examples, including typical mistakes.
+          </p>
           <p className={SOURCE}>
             Source: <em>A Course in Contemporary Chinese 1</em>, Introduction §F
             (verb classes), p. XIV, and §G (negation), p. XV. Sentence 了 with

@@ -73,6 +73,10 @@
       },
       {
         "text": "Cannot stand alone as an answer or form A-not-A questions: *也不也."
+      },
+      {
+        "text": "Order of several adverbs: 也 goes first (也都, 也常, 也不). Negation usually follows the adverb (比較不熱), but 常 follows 不 (不常), and with 都 the order changes the meaning: 都不 'none', 不都 'not all'.",
+        "source": "ACCC 1, p. 54–55, 168"
       }
     ],
     "examples": [
@@ -99,7 +103,26 @@
         "wrong": {
           "why": "Adverbs go after the subject, right before the verb; they can't open the sentence.",
           "correct": "我也去。"
-        }
+        },
+        "source": "ACCC 1, p. 33, 53"
+      },
+      {
+        "zh": "我都喜歡李老師、王老師。",
+        "en": "(meant: I like both Teacher Li and Teacher Wang)",
+        "wrong": {
+          "why": "都 sums up what comes before it, so the things it covers must stand in front, here as a topic.",
+          "correct": "李老師、王老師，我都喜歡。"
+        },
+        "source": "ACCC 1, p. 33"
+      },
+      {
+        "zh": "他明天快要回來了。",
+        "en": "(meant: he's coming back tomorrow)",
+        "wrong": {
+          "why": "快要…了 means 'soon, any moment now' and can't take a time word. With a time word use 就要…了.",
+          "correct": "他明天就要回來了。"
+        },
+        "source": "ACCC 1, p. 308"
       },
       {
         "zh": "我們常常聊天、喝茶一起。",
@@ -151,6 +174,14 @@
       {
         "text": "和/跟/與 never join clauses: 'and' between clauses is usually left out.",
         "source": "Teng 2009, p. 170"
+      },
+      {
+        "text": "Cause comes before effect, and 因為 and 所以 usually appear together, unlike English 'because' or 'so' alone.",
+        "source": "ACCC 1, p. XII, 213"
+      },
+      {
+        "text": "要是 'if' can stand before or after the subject; the result clause takes the adverb 就 right before its predicate.",
+        "source": "ACCC 1, p. 193"
       }
     ],
     "examples": [
@@ -165,6 +196,16 @@
       {
         "zh": "他會說中文，而且說得很好。",
         "en": "He speaks Chinese, and he speaks it well."
+      },
+      {
+        "zh": "因為火車太慢了，所以我想坐高鐵。",
+        "en": "The train is too slow, so I want to take the high-speed rail.",
+        "source": "ACCC 1, p. 213"
+      },
+      {
+        "zh": "你要是沒空，我們就不要去逛夜市。",
+        "en": "If you don't have time, we won't go to the night market.",
+        "source": "ACCC 1, p. 193"
       },
       {
         "zh": "他週末開車到紐約，跟我馬上打電話叫姊姊來一起吃飯。",
@@ -192,10 +233,15 @@
     "description": "Determiners come first in a noun phrase and specify which or how many: demonstratives (這, 那), the question word 哪, and quantifiers like 每 and 某. They normally need a measure word before the noun.",
     "tests": [
       {
-        "text": "Pattern: Det + (Number) + M + N, e.g. 這三本書."
+        "text": "Pattern: Det + (Number) + M + N, e.g. 這三本書. The number 一 is often dropped: 哪一個 = 哪個.",
+        "source": "ACCC 1, p. 35, 70"
       },
       {
         "text": "Usually needs a measure word before the noun: 這本書."
+      },
+      {
+        "text": "每 + M + N almost always comes with 都 before the verb. 不 or 沒 goes after 都 (每天都不忙); 'not every' is 不是每…都.",
+        "source": "ACCC 1, p. 142–143"
       },
       {
         "text": "這/那 can stand alone as a subject: 這是我的。"
@@ -226,6 +272,11 @@
         "zh": "每兩個人一組。",
         "en": "Groups of two.",
         "source": "Teng 2009, p. 169"
+      },
+      {
+        "zh": "他朋友不是每天都去看電影。",
+        "en": "His friend doesn't go to the movies every day.",
+        "source": "ACCC 1, p. 143"
       }
     ],
     "contrasts": [
@@ -247,7 +298,8 @@
         "text": "Pattern: Number/Det + M + N, e.g. 兩張紙."
       },
       {
-        "text": "A number cannot directly precede a noun: *三書, 三本書."
+        "text": "A number cannot directly precede a noun: *三書, 三本書. About 30 common measure words cover most needs at the start.",
+        "source": "ACCC 1, p. VIII–IX, 70"
       },
       {
         "text": "Verbal measures follow the verb: 去過三次."
@@ -318,7 +370,19 @@
       },
       {
         "text": "Place words are built with a localizer (上, 裡, 前), which shortens step by step: 桌子的上面 → 桌子上面 → 桌子上 → 桌上.",
-        "source": "Teng 2009, p. 117"
+        "source": "Teng 2009, p. 117; ACCC 1, p. 112"
+      },
+      {
+        "text": "After 在, a common noun needs a localizer to become a place (在房子裡面), while a place name takes none (在臺灣, *在臺灣裡面). The reference point comes first: 房子的前面 'in front of the house', 前面的房子 'the house in front'.",
+        "source": "ACCC 1, p. 111"
+      },
+      {
+        "text": "Time units go from larger to smaller (明天晚上, *晚上明天), and time comes before place: Time + Place + Event.",
+        "source": "ACCC 1, p. 49, 138"
+      },
+      {
+        "text": "A subject is normally understood as someone known. A new, indefinite subject is introduced with 有: 有兩個學生來找你. 有 + thing + 在 + place says the same as place + 有 + thing, but the first is about the thing, the second about the place.",
+        "source": "ACCC 1, p. 232–233"
       }
     ],
     "examples": [
@@ -346,16 +410,26 @@
           "why": "Time words go before the verb or at the start of the sentence, never at the end as in English.",
           "correct": "他們昨天做功課。"
         },
-        "source": "Yuan et al. 2023, p. 16"
+        "source": "Yuan et al. 2023, p. 16; ACCC 1, p. 139"
       },
       {
-        "zh": "有一個人在圖書館。",
-        "en": "(meant: there is someone in the library)",
+        "zh": "他在房子。",
+        "en": "(meant: he is in the house)",
         "wrong": {
-          "why": "To introduce something new, start with the place and end with the new thing: place + 有 + thing.",
-          "correct": "圖書館裡有一個人。"
+          "why": "房子 is a thing, not a place. After 在 it needs a localizer such as 裡面 to name a location.",
+          "correct": "他在房子裡面。"
         },
-        "source": "Yuan et al. 2023, p. 17, 26"
+        "source": "ACCC 1, p. 111"
+      },
+      {
+        "zh": "地上有一支手機。",
+        "en": "There's a cellphone on the floor (talking about the floor: place + 有 + thing).",
+        "source": "ACCC 1, p. 115, 233"
+      },
+      {
+        "zh": "有一支手機在地上。",
+        "en": "There's a cellphone on the floor (talking about the phone: 有 + thing + 在 + place).",
+        "source": "ACCC 1, p. 233"
       },
       {
         "zh": "飯館在旁邊的學校。",
@@ -398,6 +472,14 @@
       {
         "text": "Only 在, 到 and 給 can also follow the verb, and then they mark where something ends up: 放在桌上, 寄給老師.",
         "source": "Teng 2009, p. 115"
+      },
+      {
+        "text": "Negation goes before the preposition, not before the main verb: 他不在家吃飯, 我不跟他去.",
+        "source": "ACCC 1, p. 71, 96, 119, 166"
+      },
+      {
+        "text": "In a 比 comparison the state verb takes no 很, 真 or 非常. How big the difference is goes after it: 貴一點, 貴得多.",
+        "source": "ACCC 1, p. 170, 338"
       }
     ],
     "examples": [
@@ -429,7 +511,7 @@
           "why": "The place comes before the action: Prep + place goes before the verb.",
           "correct": "我們在教室上課。"
         },
-        "source": "Yuan et al. 2023, p. 17, 29"
+        "source": "Yuan et al. 2023, p. 17, 29; ACCC 1, p. 119"
       },
       {
         "zh": "我剛回宿舍從他家。",
@@ -438,7 +520,25 @@
           "why": "The starting point comes first, in the order things happen: 從 + place goes before the verb.",
           "correct": "我剛從他家回宿舍。"
         },
-        "source": "Yuan et al. 2023, p. 28–29"
+        "source": "Yuan et al. 2023, p. 28–29; ACCC 1, p. XII"
+      },
+      {
+        "zh": "他幫我不微波包子。",
+        "en": "(meant: he won't microwave the baozi for me)",
+        "wrong": {
+          "why": "不 negates the whole Prep + verb phrase, so it goes in front of the preposition.",
+          "correct": "他不幫我微波包子。"
+        },
+        "source": "ACCC 1, p. 72"
+      },
+      {
+        "zh": "我的手機比他的很貴。",
+        "en": "(meant: my phone is much more expensive than his)",
+        "wrong": {
+          "why": "比 already says 'more'; the state verb after it can't take 很. Put the size of the difference after the verb.",
+          "correct": "我的手機比他的貴得多。"
+        },
+        "source": "ACCC 1, p. 170, 338"
       },
       {
         "zh": "他在桌上放手。",
@@ -455,6 +555,11 @@
         "pos": "V",
         "note": "在 and 給 are verbs when they are the only verb: 他在家 'he's at home', 他給我一本書 'he gave me a book'.",
         "source": "Yuan et al. 2023, p. 63"
+      },
+      {
+        "pos": "Vs",
+        "note": "在 right before an action verb, with no place after it, marks an action in progress (李老師在上課). This 在 is listed as Vs, not Prep.",
+        "source": "ACCC 1, p. 137, 141"
       },
       {
         "pos": "Conj",
@@ -481,7 +586,23 @@
       },
       {
         "text": "了 right after an action verb marks completion (我買了三張票); 了 at the end of a sentence marks a change (天冷了). The second is the easier one to learn.",
-        "source": "Teng 2009, p. 217, 223"
+        "source": "Teng 2009, p. 217, 223; ACCC 1, p. 212, 278"
+      },
+      {
+        "text": "Verbal 了 disappears in the negative: 我沒吃晚飯, never *沒吃了. The question form is V了…沒有?",
+        "source": "ACCC 1, p. 279"
+      },
+      {
+        "text": "的 between possessor and noun can be dropped only for close relations with a pronoun possessor: 我爸爸, but 李先生的爸爸.",
+        "source": "ACCC 1, p. 29"
+      },
+      {
+        "text": "With a 得 complement, negation goes inside the complement: 做得不好.",
+        "source": "ACCC 1, p. 93"
+      },
+      {
+        "text": "吧 at the end turns a command into a suggestion. A bare command (喝！) sounds blunt.",
+        "source": "ACCC 1, p. 56"
       },
       {
         "text": "In Taiwan 著 is rarely progressive (他在吃飯, not 他吃著飯); it marks a lasting state (門開著) or a posture during another action (站著吃).",
@@ -489,11 +610,15 @@
       },
       {
         "text": "In 是…的, 是 can highlight who, when, where or how, but never the object: 我是昨天買的.",
-        "source": "Teng 2009, p. 115, 191"
+        "source": "Teng 2009, p. 115, 191; ACCC 1, p. 254–255"
       },
       {
         "text": "被 usually reports something unpleasant (錢包被偷了), so *他被升官了 sounds odd.",
         "source": "Teng 2009, p. 114"
+      },
+      {
+        "text": "The object of 把 must be definite (這支手機, 他的書, or a bare noun meaning a known one): *把一支手機賣了. 沒 or 別 goes before 把.",
+        "source": "ACCC 1, p. 332"
       },
       {
         "text": "V得 describes how something actually went (吃得很開心). It doesn't combine with 要, 會 or 應該, nor with a result complement (*學得學好了).",
@@ -544,13 +669,31 @@
         "source": "Yuan et al. 2023, p. 156"
       },
       {
+        "zh": "我沒吃了晚飯。",
+        "en": "(meant: I didn't eat dinner)",
+        "wrong": {
+          "why": "沒 says the event didn't happen, so there is nothing for 了 to mark as completed. Drop 了.",
+          "correct": "我沒吃晚飯。"
+        },
+        "source": "ACCC 1, p. 279"
+      },
+      {
+        "zh": "李先生爸爸很高。",
+        "en": "(meant: Mr. Li's dad is tall)",
+        "wrong": {
+          "why": "的 can be left out only after a pronoun (我爸爸). After a name or a noun it stays.",
+          "correct": "李先生的爸爸很高。"
+        },
+        "source": "ACCC 1, p. 29"
+      },
+      {
         "zh": "他說中文得很好。",
         "en": "(meant: he speaks Chinese well)",
         "wrong": {
           "why": "得 must follow a verb. When the verb has an object, repeat the verb before 得, or move the object to the front.",
           "correct": "他說中文說得很好。"
         },
-        "source": "Yuan et al. 2023, p. 118"
+        "source": "Yuan et al. 2023, p. 118; ACCC 1, p. 92"
       },
       {
         "zh": "我要把汽車賣。",
@@ -560,6 +703,15 @@
           "correct": "我要把汽車賣掉。"
         },
         "source": "Teng 2009, p. 114"
+      },
+      {
+        "zh": "我想把一支手機賣了。",
+        "en": "(meant: I want to sell a phone)",
+        "wrong": {
+          "why": "把 means doing something to a particular, known thing, so its object can't be indefinite (一支). Point to the phone, or drop 把.",
+          "correct": "我想把那支手機賣了。"
+        },
+        "source": "ACCC 1, p. 332"
       },
       {
         "zh": "你買了是什麼東西？",
@@ -665,7 +817,15 @@
       },
       {
         "text": "把 + bare verb + 了 works only with outward verbs: 我把房子賣了. Inward verbs need a complement: 我把房子買下來了.",
-        "source": "Teng 2009, p. 69, 114"
+        "source": "Teng 2009, p. 69, 114; ACCC 1, p. 332"
+      },
+      {
+        "text": "A duration follows the verb. With an object, repeat the verb (教中文教一年) or move the object to the front (房子他只租了半年).",
+        "source": "ACCC 1, p. 189, 306"
+      },
+      {
+        "text": "Doubling means 'a little': 看看, and only the verb doubles, not the object: 做做飯. VV看 'try and see' takes no object after it: *喝喝看咖啡.",
+        "source": "ACCC 1, p. 116, 208"
       },
       {
         "text": "Double objects depend on the verb: 賣他一張卡 works, *買他一張卡 and *寄他一張卡 don't. V + thing + 給 + person works for all: 寄一張卡給他.",
@@ -695,6 +855,11 @@
         "source": "Yuan et al. 2023, p. 212–213"
       },
       {
+        "zh": "他租房子租了半年。",
+        "en": "He rented the place for half a year.",
+        "source": "ACCC 1, p. 306"
+      },
+      {
         "zh": "我很買衣服。",
         "en": "(meant: I buy clothes a lot)",
         "wrong": {
@@ -709,7 +874,7 @@
           "why": "買 is an 'inward' verb: the house comes to you. 把 + bare verb + 了 only works with 'outward' verbs like 賣; inward verbs need a complement.",
           "correct": "我把房子買下來了。"
         },
-        "source": "Teng 2009, p. 69"
+        "source": "Teng 2009, p. 69; ACCC 1, p. 332"
       },
       {
         "zh": "我寄他一張聖誕卡。",
@@ -816,13 +981,14 @@
     "tests": [
       {
         "text": "Things go in the middle: 唱了兩首歌, 上了一個小時的網, 打過架.",
-        "source": "Yuan et al. 2023, p. 75"
+        "source": "Yuan et al. 2023, p. 75; ACCC 1, p. 190, 339"
       },
       {
         "text": "No second object: *見面他, use 跟他見面."
       },
       {
-        "text": "Reduplicates as AAB: 唱唱歌 (not *唱歌唱歌)."
+        "text": "Reduplicates as AAB: 唱唱歌, 上上網 (not *唱歌唱歌).",
+        "source": "ACCC 1, p. 116"
       },
       {
         "text": "Behaves like an action verb otherwise: 在唱歌, no 很."
@@ -857,6 +1023,11 @@
         "zh": "你吃飯了嗎？",
         "en": "Have you eaten?",
         "source": "Yuan et al. 2023, p. 90"
+      },
+      {
+        "zh": "我們每天上八個鐘頭的班。",
+        "en": "We work eight hours a day.",
+        "source": "ACCC 1, p. 339"
       },
       {
         "zh": "我明天見面他。",
@@ -899,16 +1070,34 @@
         "text": "Takes degree adverbs: 很冷, 太貴, 非常漂亮."
       },
       {
-        "text": "Predicate without 是: 他很高 (*他是高)."
+        "text": "Predicate without 是: 他很高 (*他是高).",
+        "source": "ACCC 1, p. XIV"
+      },
+      {
+        "text": "A plain statement needs 很, 不 or another adverb before the Vs. This 很 is unstressed; stressed, it means 'very'.",
+        "source": "ACCC 1, p. 14"
       },
       {
         "text": "Negated with 不: 不冷."
       },
       {
-        "text": "Not progressive: *在冷."
+        "text": "Not progressive: *在冷.",
+        "source": "ACCC 1, p. 142"
       },
       {
         "text": "Can modify a noun: 高樓, 漂亮的衣服."
+      },
+      {
+        "text": "有一點 + Vs is a mild complaint, so it only takes unwelcome qualities: 有一點貴, *有一點漂亮.",
+        "source": "ACCC 1, p. 91"
+      },
+      {
+        "text": "早, 晚, 快, 慢, 多, 少 can go before the verb for what is planned (明天早一點來) or after it for how it turned out (我來早了).",
+        "source": "ACCC 1, p. XIII"
+      },
+      {
+        "text": "好/難 + a perception verb make one word (好吃, 難看); with an action verb they mean 'easy/hard to' (好學, 難找).",
+        "source": "ACCC 1, p. 257"
       },
       {
         "text": "很有/很沒 + noun chunks act as Vs: 很有名, 很有道理, 很沒禮貌.",
@@ -934,12 +1123,22 @@
         "source": "Yuan et al. 2023, p. 41"
       },
       {
-        "zh": "他是高。",
-        "en": "(meant: he is tall)",
+        "zh": "我今天是忙。",
+        "en": "(meant: I'm busy today)",
         "wrong": {
           "why": "State verbs are predicates on their own and don't take 是; 很 is the neutral link instead.",
-          "correct": "他很高。"
-        }
+          "correct": "我今天很忙。"
+        },
+        "source": "ACCC 1, p. XIV"
+      },
+      {
+        "zh": "他妹妹有一點漂亮。",
+        "en": "(meant: his younger sister is quite pretty)",
+        "wrong": {
+          "why": "有一點 marks something as a bit too much, a complaint, so it doesn't go with a compliment.",
+          "correct": "他妹妹很漂亮。"
+        },
+        "source": "ACCC 1, p. 91"
       }
     ],
     "contrasts": [
@@ -980,6 +1179,10 @@
       {
         "text": "Not used with 把: *我把他喜歡.",
         "source": "Teng 2009, p. 193"
+      },
+      {
+        "text": "有 is an exception among state verbs: it is negated only with 沒, never 不: 我沒有書, *我不有書.",
+        "source": "ACCC 1, p. 31"
       },
       {
         "text": "Even with Vst, 很 doesn't fit every use: 他很有錢 but not *他很有兩億元; 他很知道做人 ('knows how to treat people') but not *他很知道我的電話號碼.",
@@ -1044,7 +1247,8 @@
         "text": "Only before a noun: 野生動物, 公共廁所."
       },
       {
-        "text": "Not a predicate: *這個廁所很公共."
+        "text": "Not a predicate: *這個廁所很公共, *這條路很主要.",
+        "source": "ACCC 1, p. XVI"
       },
       {
         "text": "No degree adverbs: *很野生."
@@ -1094,10 +1298,15 @@
         "text": "Works as a predicate: 錢不夠, 人很多."
       },
       {
-        "text": "Not directly before a noun: *多人, *少錢."
+        "text": "Not directly before a noun: *多人, *少錢, *夠時間.",
+        "source": "ACCC 1, p. XVI–XVII"
       },
       {
         "text": "Takes degree adverbs and 不 like other Vs."
+      },
+      {
+        "text": "多 and 少 can go right before a verb, meaning 'more/less than planned': 多穿衣服, 少看電視.",
+        "source": "ACCC 1, p. XIII, 285"
       }
     ],
     "examples": [
@@ -1112,6 +1321,11 @@
       {
         "zh": "他今天吃得很少。",
         "en": "He ate very little today."
+      },
+      {
+        "zh": "我中文不好，應該多看書，少看電視。",
+        "en": "My Chinese isn't good; I should read more and watch less TV.",
+        "source": "ACCC 1, p. 285"
       },
       {
         "zh": "這裡有多人。",
@@ -1150,14 +1364,15 @@
         "text": "Takes degree adverbs: 很生氣, 很放心."
       },
       {
-        "text": "Splits to include a person: 生他的氣 (*生氣他)."
+        "text": "Splits to include a person: 生他的氣 (*生氣他).",
+        "source": "ACCC 1, p. XVII"
       },
       {
         "text": "Negated with 不: 不放心."
       },
       {
-        "text": "Not every word listed as separable really splits: 幽默 (a loan of 'humor') is never split, and 擔心 is mostly used whole (我很擔心他).",
-        "source": "Yuan et al. 2023, p. 76–77, 86"
+        "text": "Not every word listed as separable really splits: 幽默 (a loan of 'humor') is never split.",
+        "source": "Yuan et al. 2023, p. 86"
       }
     ],
     "examples": [
@@ -1214,13 +1429,23 @@
         "text": "Followed by a verb phrase: 會說, 可以去."
       },
       {
-        "text": "A-not-A question: 會不會？ 可不可以？"
+        "text": "A-not-A question: 會不會？ 可不可以？ The auxiliary, not the main verb, is doubled: 能不能照相.",
+        "source": "ACCC 1, p. 76"
       },
       {
-        "text": "Can answer alone: 會。/ 不可以。"
+        "text": "Can answer alone: 會。/ 不可以。",
+        "source": "ACCC 1, p. 12, 145"
       },
       {
         "text": "No 了, 過, 著: *會了說."
+      },
+      {
+        "text": "會 has two meanings: a learned skill (他會做飯) and likelihood (我明天會去看他).",
+        "source": "ACCC 1, p. 94, 234"
+      },
+      {
+        "text": "不可以 only forbids (你不可以在這裡照相); the question 可不可以 can ask about either permission or possibility.",
+        "source": "ACCC 1, p. 144–145"
       }
     ],
     "examples": [
@@ -1235,6 +1460,11 @@
       {
         "zh": "你應該早一點睡。",
         "en": "You should sleep a bit earlier."
+      },
+      {
+        "zh": "他明天不會去上書法課。",
+        "en": "He won't go to calligraphy class tomorrow.",
+        "source": "ACCC 1, p. 234"
       }
     ],
     "contrasts": [
@@ -1260,7 +1490,8 @@
         "text": "Usually with 了: 杯子破了."
       },
       {
-        "text": "Negated with 沒: 沒壞, not *不壞 (as 'not broken')."
+        "text": "Negated with 沒: 沒壞, not *不壞 (as 'not broken').",
+        "source": "ACCC 1, p. XV, 282"
       },
       {
         "text": "No degree adverbs: *很死."
@@ -1270,7 +1501,7 @@
       },
       {
         "text": "The noun after a Vp is its subject, not an object: in 王冕七歲死了父親 it is the father who died. This order reports something appearing or disappearing: 昨天大火死了不少人.",
-        "source": "Teng 2009, p. 105; Yuan et al. 2023, p. 22"
+        "source": "Teng 2009, p. 105; Yuan et al. 2023, p. 22; ACCC 1, p. XIII–XIV"
       }
     ],
     "examples": [
@@ -1289,6 +1520,16 @@
       {
         "zh": "花還沒死。",
         "en": "The flowers haven't died yet."
+      },
+      {
+        "zh": "這次颱風死了不少人。",
+        "en": "Quite a few people died in this typhoon.",
+        "source": "ACCC 1, p. XIII"
+      },
+      {
+        "zh": "我還沒決定要不要去旅行。",
+        "en": "I haven't decided yet whether to travel.",
+        "source": "ACCC 1, p. 282"
       },
       {
         "zh": "那棵樹最近掉了不少葉子。",
@@ -1342,7 +1583,8 @@
         "text": "Takes an object: 忘記他的名字, 變成冰."
       },
       {
-        "text": "Negated with 沒: 我沒忘記."
+        "text": "Negated with 沒: 我沒忘記.",
+        "source": "ACCC 1, p. 282"
       },
       {
         "text": "No degree adverbs: *很忘記."
@@ -1394,7 +1636,8 @@
     "description": "離合詞 that describe a change of state: getting married, getting sick, graduating. They split like other separable verbs and are negated with 沒 like other process verbs. The person or place involved goes in a preposition phrase.",
     "tests": [
       {
-        "text": "Splits: 結了婚, 結過兩次婚, 生了一場病, 畢了業."
+        "text": "Splits: 結了婚, 結過兩次婚, 生了一場病, 畢了業.",
+        "source": "ACCC 1, p. XVII"
       },
       {
         "text": "No direct object: *結婚她, use 跟她結婚; *畢業大學, use 從大學畢業."

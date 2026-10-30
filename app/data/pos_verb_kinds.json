@@ -2,12 +2,186 @@
   {
     "name": "Action",
     "meaning": "something you do",
-    "hen": "✗",
-    "le": "✓ 買了",
-    "zai": "✓ 在買",
-    "zhe": "✓ 坐著",
-    "reduplication": "✓ 看看 (a little)",
-    "negation": "不 / 沒",
+    "description": "An activity that someone does on purpose: it starts and ends, can be going on right now, and you can choose to do it or refuse.",
+    "descriptionSource": "ACCC 1, p. XIV–XV",
+    "examples": [
+      {
+        "zh": "我在吃飯。",
+        "en": "I'm eating."
+      },
+      {
+        "zh": "他想買一支新手機。",
+        "en": "He wants to buy a new phone."
+      },
+      {
+        "zh": "請坐。",
+        "en": "Please have a seat."
+      },
+      {
+        "zh": "我們去唱歌吧！",
+        "en": "Let's go sing!"
+      }
+    ],
+    "traits": {
+      "hen": {
+        "allowed": "no",
+        "label": "",
+        "note": "An activity has no degree, so it can't take 很. Use a frequency adverb, or put 很 on a state verb like 喜歡.",
+        "examples": [
+          {
+            "zh": "我常買衣服。",
+            "en": "I often buy clothes."
+          },
+          {
+            "zh": "我很喜歡買衣服。",
+            "en": "I really like buying clothes."
+          },
+          {
+            "zh": "我很買衣服。",
+            "en": "(meant: I buy clothes a lot)",
+            "wrong": {
+              "why": "買 is an action; 很 only grades states.",
+              "correct": "我常買衣服。"
+            }
+          }
+        ]
+      },
+      "le": {
+        "allowed": "yes",
+        "label": "買了",
+        "note": "了 right after the verb marks the action as done.",
+        "examples": [
+          {
+            "zh": "我買了三張票。",
+            "en": "I bought three tickets.",
+            "source": "Teng 2009, p. 217"
+          },
+          {
+            "zh": "你吃完了嗎？",
+            "en": "Have you finished eating?"
+          },
+          {
+            "zh": "我去年每天都學了中文。",
+            "en": "(meant: last year I studied Chinese every day)",
+            "wrong": {
+              "why": "了 marks a completed event, not past time. Habits take no 了, even in the past.",
+              "correct": "我去年每天都學中文。"
+            },
+            "source": "Yuan et al. 2023, p. 156"
+          },
+          {
+            "zh": "我沒吃了晚飯。",
+            "en": "(meant: I didn't eat dinner)",
+            "wrong": {
+              "why": "An action that didn't happen can't be completed: 沒 + verb takes no 了.",
+              "correct": "我沒吃晚飯。"
+            },
+            "source": "ACCC 1, p. 279"
+          }
+        ]
+      },
+      "zai": {
+        "allowed": "yes",
+        "label": "在買",
+        "note": "在 before the verb: the action is in progress right now.",
+        "examples": [
+          {
+            "zh": "他在做功課。",
+            "en": "He's doing homework."
+          },
+          {
+            "zh": "我打電話的時候，他在洗澡。",
+            "en": "When I called, he was taking a shower."
+          }
+        ]
+      },
+      "zhe": {
+        "allowed": "yes",
+        "label": "坐著",
+        "note": "著 marks the lasting state an action leaves behind, or the manner of another action. In Taiwan it is rarely used for 'in progress'.",
+        "examples": [
+          {
+            "zh": "門開著。",
+            "en": "The door is open.",
+            "source": "Teng 2009, p. 113"
+          },
+          {
+            "zh": "他坐著看球。",
+            "en": "He watches the game sitting down.",
+            "source": "Yuan et al. 2023, p. 214"
+          },
+          {
+            "zh": "和尚想著一陣。",
+            "en": "(meant: the monk thought for a while)",
+            "wrong": {
+              "why": "著 is an ongoing state with no end point, so it can't take a duration. A completed stretch of time takes 了.",
+              "correct": "和尚想了一陣。"
+            },
+            "source": "Yuan et al. 2023, p. 218"
+          }
+        ]
+      },
+      "reduplication": {
+        "allowed": "yes",
+        "label": "看看 (a little)",
+        "note": "Doubling softens the action: do it a little, briefly, casually. Two-syllable verbs double as ABAB.",
+        "examples": [
+          {
+            "zh": "你看看這本書。",
+            "en": "Take a look at this book."
+          },
+          {
+            "zh": "我們休息休息吧。",
+            "en": "Let's rest a bit."
+          },
+          {
+            "zh": "我想學中文，請教教我。",
+            "en": "I want to learn Chinese, please teach me.",
+            "source": "ACCC 1, p. 116"
+          },
+          {
+            "zh": "我們休休息息吧。",
+            "en": "(meant: let's rest a bit)",
+            "wrong": {
+              "why": "AABB doubling is for state verbs (高高興興). Action verbs repeat the whole word: ABAB.",
+              "correct": "我們休息休息吧。"
+            }
+          }
+        ]
+      },
+      "negation": {
+        "label": "不 / 沒",
+        "note": "不: won't, doesn't (habits, intentions, the future). 沒: didn't, hasn't (the action didn't happen).",
+        "examples": [
+          {
+            "zh": "我不喝咖啡。",
+            "en": "I don't drink coffee."
+          },
+          {
+            "zh": "我昨天沒喝咖啡。",
+            "en": "I didn't drink coffee yesterday."
+          },
+          {
+            "zh": "你不買票，我就不讓你進去。",
+            "en": "If you don't buy a ticket, I won't let you in.",
+            "source": "ACCC 1, p. XV"
+          },
+          {
+            "zh": "我今天沒帶錢。",
+            "en": "I have no money on me today (I didn't bring any).",
+            "source": "ACCC 1, p. XV"
+          },
+          {
+            "zh": "他明天沒來。",
+            "en": "(meant: he won't come tomorrow)",
+            "wrong": {
+              "why": "沒 says that something didn't happen, so it can't refer to the future. Use 不.",
+              "correct": "他明天不來。"
+            }
+          }
+        ]
+      }
+    },
     "transitive": "V",
     "intransitive": ["Vi"],
     "separable": "V-sep"
@@ -15,12 +189,192 @@
   {
     "name": "State",
     "meaning": "a lasting quality or feeling",
-    "hen": "✓ 很冷",
-    "le": "✗ (only sentence 了: 天冷了)",
-    "zai": "✗",
-    "zhe": "some: 愛著",
-    "reduplication": "✓ 高高的 (intensifies)",
-    "negation": "不",
+    "description": "A quality, feeling or piece of knowledge that simply holds, with no start or end in view. Most English adjectives belong here.",
+    "descriptionSource": "ACCC 1, p. XIV–XV",
+    "examples": [
+      {
+        "zh": "今天很冷。",
+        "en": "It's cold today."
+      },
+      {
+        "zh": "這支手機很貴。",
+        "en": "This phone is expensive."
+      },
+      {
+        "zh": "我很喜歡台灣。",
+        "en": "I like Taiwan a lot."
+      },
+      {
+        "zh": "他不知道。",
+        "en": "He doesn't know."
+      }
+    ],
+    "traits": {
+      "hen": {
+        "allowed": "yes",
+        "label": "很冷",
+        "note": "States have a degree. With plain state verbs 很 is also the neutral link to the subject, where English uses 'is'.",
+        "examples": [
+          {
+            "zh": "今天很冷。",
+            "en": "It's cold today."
+          },
+          {
+            "zh": "我很喜歡台灣。",
+            "en": "I like Taiwan a lot."
+          },
+          {
+            "zh": "他是高。",
+            "en": "(meant: he is tall)",
+            "wrong": {
+              "why": "A state verb is the predicate on its own; it doesn't take 是.",
+              "correct": "他很高。"
+            }
+          }
+        ]
+      },
+      "le": {
+        "allowed": "no",
+        "label": "— but 天冷了 means 'it got cold'",
+        "note": "A state isn't an action, so it can't be 'done' and 了 isn't a past tense. 了 at the end of the sentence does work, with a different meaning: the state is new, it has become so.",
+        "examples": [
+          {
+            "zh": "天冷了。",
+            "en": "It's gotten cold (it wasn't before).",
+            "source": "Teng 2009, p. 217"
+          },
+          {
+            "zh": "咖啡貴了。",
+            "en": "Coffee has gotten more expensive.",
+            "source": "ACCC 1, p. 212"
+          },
+          {
+            "zh": "昨天很冷。",
+            "en": "It was cold yesterday."
+          },
+          {
+            "zh": "昨天很冷了。",
+            "en": "(meant: it was cold yesterday)",
+            "wrong": {
+              "why": "A past state needs no 了; the time word already says when. 了 would mean 'it had become cold'.",
+              "correct": "昨天很冷。"
+            }
+          },
+          {
+            "zh": "我小時候喜歡了螞蟻。",
+            "en": "(meant: as a child I liked ants)",
+            "wrong": {
+              "why": "A liking that lasted through a period in the past is a state and takes no 了.",
+              "correct": "我小時候喜歡螞蟻。"
+            },
+            "source": "Teng 2009, p. 111"
+          }
+        ]
+      },
+      "zai": {
+        "allowed": "no",
+        "label": "",
+        "note": "A state isn't an activity, so it can't be in progress. 'Right now' is said with 現在.",
+        "examples": [
+          {
+            "zh": "我現在很累。",
+            "en": "I'm tired right now."
+          },
+          {
+            "zh": "我現在在累。",
+            "en": "(meant: I'm tired right now)",
+            "wrong": {
+              "why": "在 + verb is for activities in progress; a state just holds.",
+              "correct": "我現在很累。"
+            }
+          }
+        ]
+      },
+      "zhe": {
+        "allowed": "some",
+        "label": "some: 愛著",
+        "note": "Most states already last, so they don't take 著. A few feelings take it to stress that they go on.",
+        "examples": [
+          {
+            "zh": "我一直愛著你。",
+            "en": "I've always loved you."
+          },
+          {
+            "zh": "他很高著。",
+            "en": "(meant: he is tall)",
+            "wrong": {
+              "why": "Qualities like 高 never take 著.",
+              "correct": "他很高。"
+            }
+          }
+        ]
+      },
+      "reduplication": {
+        "allowed": "yes",
+        "label": "高高的 (intensifies)",
+        "note": "Doubling makes the description more vivid and personal, and takes 的. Two-syllable ones double as AABB. Not every state verb doubles: 貴, 近, 忙, 新, 少 don't.",
+        "examples": [
+          {
+            "zh": "她的眼睛大大的。",
+            "en": "Her eyes are nice and big."
+          },
+          {
+            "zh": "他高高興興地回家了。",
+            "en": "He went home happily."
+          },
+          {
+            "zh": "她的眼睛很大大的。",
+            "en": "(meant: her eyes are very big)",
+            "wrong": {
+              "why": "Doubling already intensifies, so it doesn't combine with 很.",
+              "correct": "她的眼睛大大的。"
+            },
+            "source": "ACCC 1, p. 209"
+          },
+          {
+            "zh": "這杯茶香香。",
+            "en": "(meant: this tea smells nice)",
+            "wrong": {
+              "why": "A doubled state verb needs 的 after it.",
+              "correct": "這杯茶香香的。"
+            },
+            "source": "ACCC 1, p. 209"
+          },
+          {
+            "zh": "老闆，我要一杯熱熱的咖啡。",
+            "en": "(meant: a hot coffee, please)",
+            "wrong": {
+              "why": "Doubling expresses the speaker's feeling, praise or complaint. A plain factual request like ordering uses the bare verb.",
+              "correct": "老闆，我要一杯熱咖啡。"
+            },
+            "source": "ACCC 1, p. 210"
+          }
+        ]
+      },
+      "negation": {
+        "label": "不",
+        "note": "States are negated with 不, also in the past.",
+        "examples": [
+          {
+            "zh": "昨天不冷。",
+            "en": "It wasn't cold yesterday."
+          },
+          {
+            "zh": "他不知道這件事。",
+            "en": "He didn't know / doesn't know about this.",
+            "source": "ACCC 1, p. XV"
+          },
+          {
+            "zh": "我小時候沒喜歡吃菜。",
+            "en": "(meant: as a child I didn't like vegetables)",
+            "wrong": {
+              "why": "沒 negates events. A state is negated with 不, whatever the time.",
+              "correct": "我小時候不喜歡吃菜。"
+            }
+          }
+        ]
+      }
+    },
     "transitive": "Vst",
     "intransitive": ["Vs", "Vs-attr", "Vs-pred"],
     "separable": "Vs-sep"
@@ -28,12 +382,156 @@
   {
     "name": "Process",
     "meaning": "an instant change of state",
-    "hen": "✗",
-    "le": "✓ 死了",
-    "zai": "✗",
-    "zhe": "✗",
-    "reduplication": "✗",
-    "negation": "沒",
+    "description": "The instant something changes from one state into another; what matters is the result.",
+    "descriptionSource": "ACCC 1, p. XIV–XV",
+    "examples": [
+      {
+        "zh": "杯子破了。",
+        "en": "The cup broke."
+      },
+      {
+        "zh": "我忘了他的名字。",
+        "en": "I forgot his name."
+      },
+      {
+        "zh": "他畢業了。",
+        "en": "He graduated."
+      },
+      {
+        "zh": "我醒了。",
+        "en": "I'm awake (I woke up)."
+      }
+    ],
+    "traits": {
+      "hen": {
+        "allowed": "no",
+        "label": "",
+        "note": "A change either happened or not; it has no degree. How bad the result is goes in a 得 complement.",
+        "examples": [
+          {
+            "zh": "媽媽病得很重。",
+            "en": "Mom is seriously ill."
+          },
+          {
+            "zh": "媽媽很病。",
+            "en": "(meant: mom is very sick)",
+            "wrong": {
+              "why": "病 'get sick' is a change, not a quality, so it can't take 很.",
+              "correct": "媽媽病了。"
+            },
+            "source": "Teng 2009, p. 177"
+          }
+        ]
+      },
+      "le": {
+        "allowed": "yes",
+        "label": "死了",
+        "note": "了 says the change has happened; process verbs almost always appear with it.",
+        "examples": [
+          {
+            "zh": "杯子破了。",
+            "en": "The cup broke."
+          },
+          {
+            "zh": "我感冒了。",
+            "en": "I caught a cold."
+          },
+          {
+            "zh": "我忘記他的名字了。",
+            "en": "I forgot his name."
+          }
+        ]
+      },
+      "zai": {
+        "allowed": "no",
+        "label": "",
+        "note": "A change happens in an instant, so it can't be in progress. 'About to change' is 快…了.",
+        "examples": [
+          {
+            "zh": "花快死了。",
+            "en": "The flowers are dying (about to die)."
+          },
+          {
+            "zh": "花在死。",
+            "en": "(meant: the flowers are dying)",
+            "wrong": {
+              "why": "死 is the instant of dying, not an activity that can be in progress.",
+              "correct": "花快死了。"
+            }
+          }
+        ]
+      },
+      "zhe": {
+        "allowed": "no",
+        "label": "",
+        "note": "The state after the change is reported with 了, not 著.",
+        "examples": [
+          {
+            "zh": "杯子破了。",
+            "en": "The cup is broken."
+          },
+          {
+            "zh": "杯子破著。",
+            "en": "(meant: the cup is broken)",
+            "wrong": {
+              "why": "著 is for lasting actions and states; a change is over in an instant.",
+              "correct": "杯子破了。"
+            }
+          }
+        ]
+      },
+      "reduplication": {
+        "allowed": "no",
+        "label": "",
+        "note": "An instant change can't be done 'a little', so it doesn't double.",
+        "examples": [
+          {
+            "zh": "你把這件事忘了吧。",
+            "en": "Just forget about it."
+          },
+          {
+            "zh": "你忘記忘記這件事吧。",
+            "en": "(meant: just forget about it)",
+            "wrong": {
+              "why": "Only action verbs double to mean 'a little'; 忘記 is a change.",
+              "correct": "你把這件事忘了吧。"
+            }
+          }
+        ]
+      },
+      "negation": {
+        "label": "沒",
+        "note": "A change either happened or didn't, so it's negated with 沒.",
+        "examples": [
+          {
+            "zh": "我的電腦沒壞。",
+            "en": "My computer isn't broken."
+          },
+          {
+            "zh": "他還沒結婚。",
+            "en": "He isn't married yet."
+          },
+          {
+            "zh": "中文課還沒結束，所以我不能回國。",
+            "en": "Chinese class isn't over yet, so I can't go home.",
+            "source": "ACCC 1, p. 282"
+          },
+          {
+            "zh": "我還沒決定要不要去旅行。",
+            "en": "I haven't decided yet whether to travel.",
+            "source": "ACCC 1, p. 282"
+          },
+          {
+            "zh": "我的電腦不壞。",
+            "en": "(meant: my computer isn't broken)",
+            "wrong": {
+              "why": "不壞 is the state 'not bad'. 'Not broken' means the change didn't happen: 沒壞.",
+              "correct": "我的電腦沒壞。"
+            }
+          }
+        ]
+      }
+    },
     "transitive": "Vpt",
     "intransitive": ["Vp"],
     "separable": "Vp-sep"

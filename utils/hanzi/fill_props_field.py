@@ -118,12 +118,28 @@ def format_verb_kinds_table(verb_kinds: list[dict[str, Any]]) -> str:
         " | Transitive | Intransitive | Separable |",
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
+    trait_keys = ["hen", "le", "zai", "zhe", "reduplication", "negation"]
     rows.extend(
-        f"| {kind['name']} ({kind['meaning']}) | {kind['hen']} | {kind['le']} | {kind['zai']} | {kind['zhe']} | {kind['reduplication']}"
-        f" | {kind['negation']} | {kind['transitive']} | {', '.join(kind['intransitive'])} | {kind['separable']} |"
+        f"| {kind['name']} ({kind['meaning']}) | "
+        + " | ".join(format_verb_kind_trait(kind["traits"][key]) for key in trait_keys)
+        + f" | {kind['transitive']} | {', '.join(kind['intransitive'])} | {kind['separable']} |"
         for kind in verb_kinds
     )
     return "\n".join(rows)
+
+
+def format_verb_kind_trait(trait: dict[str, Any]) -> str:
+    """
+    Format one cell of the verb kinds table the way the app shows it, e.g. "✓ 很冷".
+
+    Args:
+        trait (dict): A trait of an entry in app/data/pos_verb_kinds.json
+
+    Returns:
+        str: The ✓/✗ mark followed by the trait's label
+    """
+    mark = {"yes": "✓", "no": "✗", "some": ""}[trait["allowed"]] if "allowed" in trait else ""
+    return " ".join(part for part in (mark, trait["label"]) if part)
 
 
 def format_pos_code_details(code: str, pos_entry: list[str], detail: dict[str, Any]) -> str:

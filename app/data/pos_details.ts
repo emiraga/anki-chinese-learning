@@ -58,17 +58,40 @@ export type PosDetail = {
   contrasts: PosContrast[];
 };
 
+/** One grammatical property of a verb kind, e.g. whether it takes 很. */
+export type VerbKindTrait = {
+  /** Whether the verb kind allows it; absent when it isn't a yes/no question (negation). */
+  allowed?: "yes" | "no" | "some";
+  /** Short text shown in the table, after the ✓/✗ mark. */
+  label: string;
+  /** What the property means for this verb kind. */
+  note: string;
+  examples: PosExample[];
+};
+
+/** Columns of the verb classes table, in display order. */
+export const VERB_KIND_TRAITS = [
+  { key: "hen", title: "Takes 很" },
+  { key: "le", title: "Completive 了" },
+  { key: "zai", title: "Progressive 在" },
+  { key: "zhe", title: "Durative 著" },
+  { key: "reduplication", title: "Reduplication" },
+  { key: "negation", title: "Negation" },
+] as const;
+
+export type VerbKindTraitKey = (typeof VERB_KIND_TRAITS)[number]["key"];
+
 /** How one kind of verb (action, state, process) behaves grammatically. */
 export type VerbKind = {
   name: string;
   meaning: string;
-  hen: string;
-  le: string;
-  zai: string;
-  /** Durative 著. */
-  zhe: string;
-  reduplication: string;
-  negation: string;
+  /** Longer explanation of `meaning`, shown in the tooltip. */
+  description: string;
+  /** Where the description comes from, e.g. "ACCC 1, p. XIV". */
+  descriptionSource?: string;
+  /** Simple sentences with verbs of this kind. */
+  examples: PosExample[];
+  traits: Record<VerbKindTraitKey, VerbKindTrait>;
   transitive: PosCode;
   intransitive: PosCode[];
   separable: PosCode;
@@ -77,3 +100,13 @@ export type VerbKind = {
 export const POS_DETAILS = posDetailsJSON as Record<PosCode, PosDetail>;
 
 export const VERB_KINDS = posVerbKindsJSON as VerbKind[];
+
+/** The verb kind a verb code belongs to, or undefined for non-verb codes. */
+export function verbKindOf(code: PosCode): VerbKind | undefined {
+  return VERB_KINDS.find(
+    (kind) =>
+      kind.transitive === code ||
+      kind.separable === code ||
+      kind.intransitive.includes(code),
+  );
+}
