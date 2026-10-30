@@ -35,6 +35,12 @@ export default function PartsOfSpeech() {
           <em>A Course in Contemporary Chinese</em>. Verbs are split by the kind
           of event they describe, and each kind by whether it takes an object.
         </p>
+        <p className="mb-4 text-gray-700 dark:text-gray-300">
+          Notes marked &ldquo;Teng 2009&rdquo; come from 鄧守信,{" "}
+          <em>對外漢語教學語法 (A Pedagogical Grammar of Chinese)</em>, revised
+          ed., Taipei: 文鶴, 2009. Most of its wrong sentences are real errors
+          made by English-speaking learners.
+        </p>
 
         <h2 className="text-2xl font-semibold mb-2">Verb classes</h2>
         <div className="overflow-x-auto mb-8">
@@ -87,7 +93,8 @@ export default function PartsOfSpeech() {
           </table>
           <p className={SOURCE}>
             Source: <em>A Course in Contemporary Chinese 1</em>, Introduction §F
-            (verb classes), p. XIV, and §G (negation), p. XV. Durative 著: Yu
+            (verb classes), p. XIV, and §G (negation), p. XV. Sentence 了 with
+            state verbs: Teng 2009, pp. 217, 223. Durative 著: Yu
             Liu, &ldquo;The Acquisition of Durative Marker zhe&rdquo;, in{" "}
             <em>
               Pedagogical Grammar and Grammar Pedagogy in Chinese as a Second
@@ -124,10 +131,23 @@ export default function PartsOfSpeech() {
             target, frequency, duration or completion of the event: 生他的氣,
             結過三次婚.
           </li>
+          <li>
+            A word used in two classes is learned as two words: 報告 &ldquo;a
+            report&rdquo; is <POSDisplay posKey="N" />, 報告 &ldquo;to
+            report&rdquo; is <POSDisplay posKey="V" />.
+          </li>
         </ul>
+        <p className="mb-2 text-gray-700 dark:text-gray-300">
+          The defaults depend on the learner&apos;s native language too:
+          properties that carry over from English (跑 and 哭 take no object in
+          either language) need no explanation, while ones that differ (結婚
+          and 破 take no object, unlike &ldquo;marry&rdquo; and
+          &ldquo;break&rdquo;) are where mistakes happen.
+        </p>
         <p className={`${SOURCE} mb-8`}>
           Source: <em>A Course in Contemporary Chinese 1</em>, Introduction §H,
-          pp. XVI–XVII, and Parts of Speech table, p. XXIV.
+          pp. XVI–XVII, and Parts of Speech table, p. XXIV. Teng 2009, ch. 13,
+          pp. 179–184.
         </p>
 
         <h2 className="text-2xl font-semibold mb-2">All codes</h2>

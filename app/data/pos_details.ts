@@ -23,6 +23,8 @@ export type PosExample = {
   en: string;
   /** Marks an ungrammatical example: a typical learner mistake. */
   wrong?: PosMistake;
+  /** Where the example comes from, e.g. "Teng 2009, p. 177". */
+  source?: string;
 };
 
 export type PosMistake = {
@@ -35,6 +37,8 @@ export type PosMistake = {
 export type PosContrast = {
   pos: PosCode;
   note: string;
+  /** Where the note comes from, e.g. "Teng 2009, p. 109". */
+  source?: string;
 };
 
 export type PosDetail = {

@@ -19,6 +19,17 @@ export function meta({ params }: Route.MetaArgs) {
   ];
 }
 
+const SourceNote: React.FC<{ source?: string }> = ({ source }) => {
+  if (!source) {
+    return null;
+  }
+  return (
+    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+      ({source})
+    </span>
+  );
+};
+
 const ExampleSentence: React.FC<{ example: PosExample }> = ({ example }) => {
   if (!example.wrong) {
     return (
@@ -29,6 +40,7 @@ const ExampleSentence: React.FC<{ example: PosExample }> = ({ example }) => {
         <span className="ml-3 text-gray-600 dark:text-gray-400">
           {example.en}
         </span>
+        <SourceNote source={example.source} />
       </li>
     );
   }
@@ -56,6 +68,7 @@ const ExampleSentence: React.FC<{ example: PosExample }> = ({ example }) => {
         <span className="text-lg">
           <HanziText value={example.wrong.correct} />
         </span>
+        <SourceNote source={example.source} />
       </div>
     </li>
   );
@@ -119,6 +132,7 @@ export default function PosDetail() {
                 <POSDisplay posKey={contrast.pos} />
               </span>
               {contrast.note}
+              <SourceNote source={contrast.source} />
             </li>
           ))}
         </ul>
