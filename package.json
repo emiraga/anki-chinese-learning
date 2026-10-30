@@ -12,7 +12,7 @@
     "check:python": "uv run pyrefly check --min-severity warn",
     "test": "yarn test:js && yarn test:python",
     "test:js": "jest",
-    "test:python": "./utils/hanzi/test_connect_dots_notes.py",
+    "test:python": "./utils/hanzi/test_connect_dots_notes.py && ./utils/hanzi/test_fill_props_field.py",
     "lint": "yarn lint:js && yarn lint:python",
     "lint:fix": "yarn lint:js:fix && yarn lint:python:fix",
     "lint:js": "eslint . --ext .ts,.tsx",

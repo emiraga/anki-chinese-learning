@@ -66,9 +66,7 @@ from typing import TypedDict, TypeVar, cast
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
     AnkiNoteInfo,
-    find_cards_by_query,
     find_notes_by_query,
-    get_cards_info,
     get_field_value,
     iter_notes_info,
     update_note_fields,
@@ -78,7 +76,7 @@ from shared.gemini_utils import STRONG_GEMINI_MODEL, GeminiClient, create_gemini
 from shared.html_utils import escape_html
 from shared.moedict import get_moedict_relations
 from shared.pinyin_utils import remove_tone_marks
-from shared.review_order import sort_cards_in_review_order
+from shared.review_order import find_note_ids_in_upcoming_order
 from shared.tocfl_csv import load_tocfl_levels
 
 NOTE_TYPE = "TOCFL"
@@ -907,12 +905,7 @@ def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -
             start_words.extend(needing)
         return start_words
 
-    base_query = f"note:{NOTE_TYPE} -is:suspended"
-    due_cards = sort_cards_in_review_order(get_cards_info(find_cards_by_query(f"{base_query} is:due")))
-    upcoming_cards = sort_cards_in_review_order(
-        get_cards_info(find_cards_by_query(f"{base_query} -is:due prop:due>=1 prop:due<={UPCOMING_DAYS}"))
-    )
-    due_note_ids = list(dict.fromkeys(card["note"] for card in due_cards + upcoming_cards))
+    due_note_ids = find_note_ids_in_upcoming_order(f"note:{NOTE_TYPE} -is:suspended", UPCOMING_DAYS)
     words_by_note = {word.note_id: word for word in active_words}
     start_words = [words_by_note[note_id] for note_id in due_note_ids if needs_connections(words_by_note[note_id])]
     print(

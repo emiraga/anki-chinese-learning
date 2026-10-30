@@ -14,11 +14,16 @@ ordering is rebuilt here from the cards and their deck options. It follows
 
 Learning cards (intraday and interday) are placed before reviews. Anki mixes
 them in by due time instead, so this part is an approximation.
+
+New cards are only predictable when the deck options gather them by ascending
+position: then they come up in the order of their position (the `due` value of
+a new card). The random gather orders are seeded by the day and cannot be
+predicted for the days ahead.
 """
 
 from typing import Any
 
-from .anki_utils import AnkiCardInfo, anki_connect_request
+from .anki_utils import AnkiCardInfo, anki_connect_request, find_cards_by_query, get_cards_info
 
 # ReviewCardOrder values from Anki's proto/anki/deck_config.proto
 REVIEW_ORDER_DAY = 0
@@ -29,6 +34,9 @@ SUPPORTED_REVIEW_ORDERS = {
     REVIEW_ORDER_DAY_THEN_DECK: "Due date, then deck",
     REVIEW_ORDER_DECK_THEN_DAY: "Deck, then due date",
 }
+
+# NewCardGatherPriority value from Anki's proto/anki/deck_config.proto
+NEW_GATHER_LOWEST_POSITION = 1
 
 # Card queues (Anki's `queue` column)
 QUEUE_LEARNING = 1
@@ -69,8 +77,7 @@ def get_review_order(deck_names: set[str]) -> int:
             this module cannot reproduce
     """
     orders: dict[int, list[str]] = {}
-    for deck_name in sorted(deck_names):
-        config: dict[str, Any] = anki_connect_request("getDeckConfig", {"deck": deck_name})["result"]
+    for deck_name, config in get_deck_configs(deck_names).items():
         orders.setdefault(int(config["reviewOrder"]), []).append(deck_name)
 
     if len(orders) > 1:
@@ -79,6 +86,16 @@ def get_review_order(deck_names: set[str]) -> int:
     if order not in SUPPORTED_REVIEW_ORDERS:
         raise ValueError(f"Review sort order {order} is not supported, only: {SUPPORTED_REVIEW_ORDERS}")
     return order
+
+
+def get_deck_configs(deck_names: set[str]) -> dict[str, dict[str, Any]]:
+    """
+    Read the deck options of the given decks.
+
+    Returns:
+        Deck name mapped to its deck options (AnkiConnect's getDeckConfig result)
+    """
+    return {deck_name: anki_connect_request("getDeckConfig", {"deck": deck_name})["result"] for deck_name in sorted(deck_names)}
 
 
 def sort_cards_in_review_order(cards: list[AnkiCardInfo]) -> list[AnkiCardInfo]:
@@ -115,3 +132,60 @@ def sort_cards_in_review_order(cards: list[AnkiCardInfo]) -> list[AnkiCardInfo]:
         return (learning_first, card["due"], tie_breaker)
 
     return sorted(cards, key=sort_key)
+
+
+def sort_new_cards_in_queue_order(cards: list[AnkiCardInfo]) -> list[AnkiCardInfo]:
+    """
+    Sort new cards in the order Anki introduces them: by ascending position,
+    siblings sharing a position by template.
+
+    Args:
+        cards: New cards, e.g. from `get_cards_info` on an `is:new` search
+
+    Returns:
+        The cards, first-introduced first
+
+    Raises:
+        ValueError: If a deck does not gather new cards by ascending position,
+            since then the order cannot be predicted
+    """
+    if not cards:
+        return []
+
+    random_decks = [
+        deck_name
+        for deck_name, config in get_deck_configs({card["deckName"] for card in cards}).items()
+        if int(config["newGatherPriority"]) != NEW_GATHER_LOWEST_POSITION
+    ]
+    if random_decks:
+        raise ValueError(
+            f"Decks {random_decks} do not gather new cards by ascending position, so their order cannot be predicted."
+            " Set 'New card gather order' to 'Ascending position' in the deck options."
+        )
+    return sorted(cards, key=lambda card: (card["due"], card["ord"]))
+
+
+def find_note_ids_in_upcoming_order(base_query: str, upcoming_days: int, include_new: bool = False) -> list[int]:
+    """
+    Find the notes with a card matching base_query that is due now (overdue or
+    today) or within upcoming_days days, ordered by when their first such card
+    comes up: due-now cards in review order, then the upcoming ones likewise
+    ordered, then (with include_new) the new cards in the order they are introduced.
+
+    Args:
+        base_query: Anki search the cards must match, e.g. "note:TOCFL -is:suspended"
+        upcoming_days: How many days ahead to include cards that are not due yet
+        include_new: Also include notes with a new card, after the due ones
+
+    Returns:
+        Note ids, first-shown first, without duplicates
+
+    Raises:
+        ValueError: If the decks' review sort order or new card gather order
+            is not supported
+    """
+    cards = sort_cards_in_review_order(get_cards_info(find_cards_by_query(f"{base_query} is:due")))
+    cards += sort_cards_in_review_order(get_cards_info(find_cards_by_query(f"{base_query} -is:due prop:due>=1 prop:due<={upcoming_days}")))
+    if include_new:
+        cards += sort_new_cards_in_queue_order(get_cards_info(find_cards_by_query(f"{base_query} is:new")))
+    return list(dict.fromkeys(card["note"] for card in cards))

@@ -29,10 +29,11 @@ from shared.anki_utils import (
 )
 from shared.character_discovery import extract_all_characters
 from shared.cli import parse_no_arguments
-from shared.gemini_utils import create_gemini_client, gemini_generate
+from shared.gemini_utils import STRONG_GEMINI_MODEL, create_gemini_client, gemini_generate, gemini_generate_json
 from shared.google_credentials import setup_google_credentials
 from shared.pinyin_utils import remove_tone_marks
 from shared.project_paths import load_pos_mapping
+from shared.review_order import find_note_ids_in_upcoming_order
 from shared.translation_utils import translate_text_with_google
 
 # Matches an Anki cloze deletion such as "{{c1::原因}}" or "{{c1::原因::reason}}",
@@ -985,6 +986,196 @@ def strip_cloze_markup(text: str) -> str:
     return CLOZE_PATTERN.sub(r"\1", text)
 
 
+def strip_cloze_hints(text: str) -> str:
+    """
+    Remove the optional hint from every Anki cloze deletion.
+
+    Args:
+        text (str): Text that may contain cloze markup, e.g. "{{c1::原因::reason}}"
+
+    Returns:
+        str: The text with the hints removed, e.g. "{{c1::原因}}"
+    """
+    return CLOZE_PATTERN.sub(r"{{c1::\1}}", text)
+
+
+# Number of empty Sentence Cloze Traditional fields filled per run. Kept small
+# so that the generated sentences can be reviewed before generating more.
+MAX_CLOZE_SENTENCES_PER_RUN = 10
+
+# Number of existing cloze sentences shown to Gemini as style examples
+CLOZE_STYLE_EXAMPLE_COUNT = 20
+
+# Longest Traditional value that gets a cloze sentence; longer phrases are
+# whole sentences themselves, and clozing them would only test the hint
+MAX_CLOZE_WORD_LENGTH = 4
+
+# Cloze cards due within this many days are filled before the new ones
+CLOZE_UPCOMING_DAYS = 7
+
+
+def load_cloze_style_examples() -> list[str]:
+    """
+    Pick existing TOCFL cloze sentences to show Gemini the expected style and
+    complexity. Their hints are removed, since a cloze without a hint is preferred.
+
+    Returns:
+        list: Randomly picked cloze sentences, e.g. "今天天氣好{{c1::熱}}。"
+
+    Raises:
+        Exception: If there are no existing cloze sentences to learn the style from
+    """
+    note_ids = find_notes_by_query('note:TOCFL "Sentence Cloze Traditional:_*" -is:suspended')
+    candidates = [
+        strip_cloze_hints(cloze)
+        for note_info in get_notes_info(note_ids)
+        if (cloze := get_field_value(note_info, "Sentence Cloze Traditional").strip())
+    ]
+    if not candidates:
+        raise Exception("No existing TOCFL Sentence Cloze Traditional values to use as style examples")
+    return random.sample(candidates, min(CLOZE_STYLE_EXAMPLE_COUNT, len(candidates)))
+
+
+def validate_cloze_sentence(cloze: str, traditional: str) -> str:
+    """
+    Check a generated cloze sentence.
+
+    Args:
+        cloze (str): The generated sentence with cloze markup
+        traditional (str): The word that must be clozed
+
+    Returns:
+        str: A description of the problem, or "" if the sentence is valid
+    """
+    answers = CLOZE_PATTERN.findall(cloze)
+    if not answers:
+        return "the sentence has no {{c1::...}} cloze"
+    # Either every cloze is the whole word, or the clozes are the parts of a
+    # separable word in order (e.g. "{{c1::看}}了兩次{{c1::病}}" for 看病)
+    if not (all(answer == traditional for answer in answers) or "".join(answers) == traditional):
+        return f"the cloze answers {answers} are not the word '{traditional}'"
+    sentence = strip_cloze_markup(cloze)
+    if "{{" in sentence or "}}" in sentence:
+        return "the cloze markup is malformed"
+    if NON_CHINESE_SCRIPT_PATTERN.search(sentence):
+        return "the sentence contains Japanese or Korean script"
+    return ""
+
+
+def generate_cloze_sentence_with_gemini(note_info: AnkiNoteInfo, style_examples: list[str], gemini_client: Any) -> str:
+    """
+    Use Gemini to write a cloze sentence for a TOCFL note, matching the style
+    and complexity of the existing cloze sentences.
+
+    The word should be guessable from the context alone; a hint is only added
+    when the context cannot disambiguate it. An invalid sentence (see
+    validate_cloze_sentence) is discarded; the note stays empty and is picked
+    again in a later run.
+
+    Args:
+        note_info (dict): The TOCFL note
+        style_examples (list): Existing cloze sentences to imitate
+        gemini_client: The Gemini client instance
+
+    Returns:
+        str: The cloze sentence, or "" if the generated sentence was invalid
+    """
+    traditional = get_field_value(note_info, "Traditional")
+    avoid_sentences = [s for s in (get_field_value(note_info, f) for f in ("Sentence Traditional", "Sentence 2 Traditional")) if s]
+    examples_list = "\n".join(f"- {example}" for example in style_examples)
+    avoid_list = "\n".join(f"- {sentence}" for sentence in avoid_sentences) or "(none)"
+
+    prompt = f"""You are a Chinese teacher in Taiwan writing cloze flashcards for a TOCFL learner.
+
+Word: {traditional}
+Pinyin: {get_field_value(note_info, "Pinyin")}
+Part of speech: {get_field_value(note_info, "POS Description") or get_field_value(note_info, "POS")}
+Meaning: {get_field_value(note_info, "Meaning")}
+
+Write ONE natural Taiwan Mandarin sentence in Traditional Chinese that uses this word, with the word
+marked as an Anki cloze: {{{{c1::{traditional}}}}}.
+
+Match the style and complexity of these existing cards (about 12-30 characters; a short two-clause
+sentence or a short "A:... B:..." dialogue is fine):
+{examples_list}
+
+Requirements:
+1. The context must make the hidden word guessable WITHOUT a hint: a learner who sees the sentence
+   with the word blanked out should be able to tell which word is missing. Prefer contexts where
+   near-synonyms would not fit.
+2. Do NOT add a hint by default. Only as a last resort, when no natural context can single out the
+   word, add a short English hint: {{{{c1::{traditional}::hint}}}}. Most cards should have no hint.
+3. If the word is a separable verb, you may split it, clozing each part: {{{{c1::看}}}}了兩次{{{{c1::病}}}}.
+4. Use common, everyday vocabulary around the word.
+5. Do not reuse these sentences, which the learner has already seen:
+{avoid_list}
+
+Reply in this EXACT JSON format (no markdown, no code blocks):
+{{"Cloze": "sentence with cloze markup"}}"""
+
+    result = gemini_generate_json(prompt, client=gemini_client, model_name=STRONG_GEMINI_MODEL)
+    cloze = result.get("Cloze", "").strip() if isinstance(result, dict) else ""
+    problem = validate_cloze_sentence(cloze, traditional) if cloze else "the reply has no Cloze value"
+    if problem:
+        print(f"  Rejected cloze for '{traditional}': '{cloze}': {problem}")
+        return ""
+    return cloze
+
+
+def fill_sentence_cloze_traditional(gemini_client: Any) -> int:
+    """
+    Fill an empty Sentence Cloze Traditional field on unsuspended TOCFL notes
+    whose Traditional is at most MAX_CLOZE_WORD_LENGTH characters long, with a
+    sentence generated by Gemini, at most MAX_CLOZE_SENTENCES_PER_RUN notes
+    per run. Sentence Cloze English is left empty, to be filled by
+    fill_sentence_cloze_english.
+
+    Notes are filled in the order their cloze card comes up in Anki: due now,
+    then due within CLOZE_UPCOMING_DAYS days, then new cards in the order they
+    are introduced, and finally the rest (e.g. with a suspended cloze card).
+
+    Args:
+        gemini_client: The Gemini client instance
+
+    Returns:
+        int: Number of notes updated
+    """
+    query = 'note:TOCFL "Sentence Cloze Traditional:" "Traditional:_*" -is:suspended'
+    print(f"Query: {query}")
+
+    notes_info = [
+        note_info
+        for note_info in get_notes_info(find_notes_by_query(query))
+        if len(get_field_value(note_info, "Traditional")) <= MAX_CLOZE_WORD_LENGTH
+    ]
+    upcoming_note_ids = find_note_ids_in_upcoming_order(f"{query} card:cloze", CLOZE_UPCOMING_DAYS, include_new=True)
+    position = {note_id: index for index, note_id in enumerate(upcoming_note_ids)}
+    notes_info.sort(key=lambda note_info: position.get(note_info["noteId"], len(position)))
+    print(
+        f"Found {len(notes_info)} note(s) with empty Sentence Cloze Traditional and Traditional <= {MAX_CLOZE_WORD_LENGTH} chars,"
+        f" filling up to {MAX_CLOZE_SENTENCES_PER_RUN}"
+    )
+    if not notes_info:
+        return 0
+
+    style_examples = load_cloze_style_examples()
+
+    updated = 0
+    for note_info in notes_info[:MAX_CLOZE_SENTENCES_PER_RUN]:
+        note_id = note_info["noteId"]
+        traditional = get_field_value(note_info, "Traditional")
+        cloze = generate_cloze_sentence_with_gemini(note_info, style_examples, gemini_client)
+        if not cloze:
+            print(f"Warning: Note {note_id} ('{traditional}'): no valid cloze sentence generated")
+            continue
+
+        update_note_fields(note_id, {"Sentence Cloze Traditional": cloze})
+        print(f"Updated note {note_id} with Sentence Cloze Traditional: '{cloze}'")
+        updated += 1
+
+    return updated
+
+
 def fill_sentence_cloze_english() -> int:
     """
     Fill an empty Sentence Cloze English field with the Google Translate
@@ -1172,7 +1363,7 @@ def main():
     Main function to process all note types and update Props, Mnemonic pegs, Anki Tags,
     POS, POS Description, Examples JSON, Same Syllable Traditional,
     Sentence Traditional, Sentence English, Sentence 2 Traditional,
-    Sentence 2 English, and Sentence Cloze English fields
+    Sentence 2 English, Sentence Cloze Traditional, and Sentence Cloze English fields
     """
     parse_no_arguments(__doc__)
 
@@ -1232,6 +1423,11 @@ def main():
     print("\n=== Filling Sentence Traditional and Sentence 2 Traditional for due cards ===")
     sentences_updated = fill_sentence_traditional_for_due_cards(known_characters, pos_mapping, gemini_client)
     print(f"Updated Sentence Traditional / Sentence 2 Traditional on {sentences_updated} note(s)")
+
+    # Generate a small batch of missing Sentence Cloze Traditional values
+    print("\n=== Filling Sentence Cloze Traditional with Gemini ===")
+    cloze_traditional_updated = fill_sentence_cloze_traditional(gemini_client)
+    print(f"Updated Sentence Cloze Traditional on {cloze_traditional_updated} note(s)")
 
     # Translate Sentence Cloze Traditional into an empty Sentence Cloze English
     print("\n=== Filling Sentence Cloze English with Google Translate ===")
