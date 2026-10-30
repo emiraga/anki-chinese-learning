@@ -2,7 +2,6 @@ import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 import anki, { type NoteInfo } from "~/apis/anki";
 import { useEffect, useState } from "react";
-import { HanziCardDetails } from "./HanziText";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "./index.module.css";
 import { PhraseLink, PhraseList } from "./Phrase";
@@ -71,18 +70,16 @@ export function PhraseSearchSections({
   );
 }
 
-export function SearchMorePhrases({
-  noteTypes: noteTypes,
+function SearchMorePhrases({
+  noteTypes,
   withTags,
   search,
   filterKnownChars,
-  filterUnknownChars,
 }: {
   noteTypes: string[];
   withTags?: string[];
   search?: string;
   filterKnownChars?: boolean;
-  filterUnknownChars?: boolean;
 }) {
   const { characters } = useOutletContext<OutletContext>();
   const [phrases, setPhrases] = useState<NoteInfo[] | undefined>(undefined);
@@ -114,20 +111,6 @@ export function SearchMorePhrases({
             }
           }
           return true;
-        });
-      }
-      if (filterUnknownChars) {
-        notes = notes.filter((n) => {
-          const traditional = n.fields["Traditional"].value;
-          for (const c of [...traditional]) {
-            if (c === "/" || c === "(" || c === ")" || search?.includes(c)) {
-              continue;
-            }
-            if (characters[c] === undefined || !characters[c].withSound) {
-              return true;
-            }
-          }
-          return false;
         });
       }
 
@@ -163,7 +146,6 @@ export function SearchMorePhrases({
   }, [
     characters,
     filterKnownChars,
-    filterUnknownChars,
     noteTypes,
     search,
     withTags,
@@ -195,41 +177,6 @@ export function SearchMorePhrases({
         </button>
       )}
     />
-  );
-}
-
-function NextCharsByFrequency({}: {}) {
-  const { characters } = useOutletContext<OutletContext>();
-  const [chars, setChars] = useState<NoteInfo[] | undefined>(undefined);
-
-  useEffect(() => {
-    const load = async () => {
-      const notesId = await anki.note.findNotes({
-        query: "note:Hanzi is:suspended FrequencyRank:__",
-      });
-      const notes = await anki.note.notesInfo({ notes: notesId });
-
-      setChars(notes);
-    };
-    load();
-  }, []);
-
-  if (!chars) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <>
-      {chars.map((note) => {
-        const c = note.fields["Traditional"].value;
-        return (
-          <>
-            <div>Frequency: {note.fields["FrequencyRank"].value}</div>
-            <HanziCardDetails c={c} characters={characters} />
-          </>
-        );
-      })}
-    </>
   );
 }
 
@@ -300,18 +247,6 @@ export const MorePhrases: React.FC<{}> = ({}) => {
               withTags={["TBCL::" + TBCL_NEXT_LEVEL]}
               filterKnownChars={false}
             />
-          </Collapsible.Panel>
-        </Collapsible.Root>
-      </section>
-      <section className="block m-4">
-        <Collapsible.Root className={styles.Collapsible}>
-          <Collapsible.Trigger className={styles.Trigger}>
-            <h3 className="font-serif text-3xl">
-              Next by frequency...(expandable)
-            </h3>
-          </Collapsible.Trigger>
-          <Collapsible.Panel className={styles.Panel}>
-            <NextCharsByFrequency />
           </Collapsible.Panel>
         </Collapsible.Root>
       </section>

@@ -157,6 +157,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/pos",
+          name: "Parts of speech",
+          show: true,
+        },
+        {
           pathname: "/overlapping_phrases",
           name: "Overlapping Phrases",
           show: true,
@@ -294,11 +299,6 @@ export const MainToolbarNoOutlet: React.FC<{
         {
           pathname: "/media_clips",
           name: "Media clips",
-          show: true,
-        },
-        {
-          pathname: "/pos",
-          name: "Parts of speech",
           show: true,
         },
         {
