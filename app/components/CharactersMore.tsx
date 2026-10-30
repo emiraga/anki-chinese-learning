@@ -12,27 +12,37 @@ type UnknownCharFrequency = {
   examples: PhraseExample[];
 };
 
+/** The phrase's "Examples JSON" sentences plus its "Sentence Cloze" sentence. */
+function phraseSentences(phrase: PhraseType): PhraseExample[] {
+  const sentences = Object.values(phrase.examples ?? {}).flat();
+  if (phrase.sentenceCloze) {
+    sentences.push({
+      traditional: phrase.sentenceCloze.parts.map((part) => part.text).join(""),
+      english: phrase.sentenceCloze.english,
+    });
+  }
+  return sentences;
+}
+
 export function getUnknownExampleCharsByFrequency(
   phrases: PhraseType[],
   characters: CharactersType,
 ): UnknownCharFrequency[] {
   const freq = new Map<string, UnknownCharFrequency>();
   for (const phrase of phrases) {
-    for (const examples of Object.values(phrase.examples ?? {})) {
-      for (const example of examples) {
-        for (const char of example.traditional) {
-          if (!HAN_CHAR.test(char) || characters[char] !== undefined) {
-            continue;
-          }
-          let entry = freq.get(char);
-          if (entry === undefined) {
-            entry = { char, count: 0, examples: [] };
-            freq.set(char, entry);
-          }
-          entry.count++;
-          if (entry.examples.at(-1) !== example) {
-            entry.examples.push(example);
-          }
+    for (const example of phraseSentences(phrase)) {
+      for (const char of example.traditional) {
+        if (!HAN_CHAR.test(char) || characters[char] !== undefined) {
+          continue;
+        }
+        let entry = freq.get(char);
+        if (entry === undefined) {
+          entry = { char, count: 0, examples: [] };
+          freq.set(char, entry);
+        }
+        entry.count++;
+        if (entry.examples.at(-1) !== example) {
+          entry.examples.push(example);
         }
       }
     }
@@ -52,7 +62,8 @@ export const CharactersMore: React.FC<{
   return (
     <>
       <h3 className="font-serif text-3xl m-4">
-        Unknown characters in phrase examples ({unknownChars.length})
+        Unknown characters in phrase examples and sentences (
+        {unknownChars.length})
       </h3>
       <table className="border-collapse">
         <thead>

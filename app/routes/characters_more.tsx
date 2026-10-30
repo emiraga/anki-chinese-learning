@@ -10,7 +10,8 @@ export function meta({}: Route.MetaArgs) {
     { title: "More Characters" },
     {
       name: "description",
-      content: "Unknown characters from phrase examples, by frequency",
+      content:
+        "Unknown characters from phrase examples and sentences, by frequency",
     },
   ];
 }
