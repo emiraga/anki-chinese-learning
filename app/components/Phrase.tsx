@@ -121,9 +121,11 @@ export const PhraseLink: React.FC<{ value: string }> = ({ value }) => {
   );
 };
 
-export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
-  phrases,
-}) => {
+export const PhraseList: React.FC<{
+  phrases: PhraseType[];
+  // Optional extra column with per-phrase action buttons
+  actions?: (phrase: PhraseType) => React.ReactNode;
+}> = ({ phrases, actions }) => {
   if (phrases.length === 0) {
     return <></>;
   }
@@ -148,6 +150,11 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
             <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
               Meaning
             </th>
+            {actions && (
+              <th className="text-gray-900 dark:text-gray-100 px-2 py-3">
+                Actions
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-600">
@@ -178,6 +185,7 @@ export const PhraseList: React.FC<{ phrases: PhraseType[] }> = ({
                     <PhraseMeaning meaning={phrase.meaning} />
                   </div>
                 </td>
+                {actions && <td className="px-2 py-3">{actions(phrase)}</td>}
               </tr>
             );
           })}

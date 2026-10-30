@@ -31,9 +31,16 @@ const MainFrame: React.FC<{
       {
         key: "h",
         handler: () => {
-          const hanzi = window.prompt("Enter character (hanzi):");
-          if (hanzi && hanzi.trim()) {
-            navigate(`/char/${hanzi.trim()}`);
+          const hanzi = window.prompt("Enter character or phrase (hanzi):")?.trim();
+          if (!hanzi) {
+            return;
+          }
+          // Array.from counts code points, so rare characters outside the BMP
+          // (surrogate pairs) still count as a single character.
+          if (Array.from(hanzi).length === 1) {
+            navigate(`/char/${hanzi}`);
+          } else {
+            navigate(`/phrase/${hanzi}`);
           }
         },
       },

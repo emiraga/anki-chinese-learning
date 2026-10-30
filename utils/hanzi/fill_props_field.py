@@ -53,6 +53,20 @@ NON_CHINESE_SCRIPT_PATTERN = re.compile(
     "]"
 )
 
+# Number of empty Sentence Cloze Traditional fields filled per run. Kept small
+# so that the generated sentences can be reviewed before generating more.
+MAX_CLOZE_SENTENCES_PER_RUN = 2
+
+# Number of existing cloze sentences shown to Gemini as style examples
+CLOZE_STYLE_EXAMPLE_COUNT = 20
+
+# Longest Traditional value that gets a cloze sentence; longer phrases are
+# whole sentences themselves, and clozing them would only test the hint
+MAX_CLOZE_WORD_LENGTH = 4
+
+# Cloze cards due within this many days are filled before the new ones
+CLOZE_UPCOMING_DAYS = 7
+
 
 def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple[str, list[str]]:
     """
@@ -997,21 +1011,6 @@ def strip_cloze_hints(text: str) -> str:
         str: The text with the hints removed, e.g. "{{c1::原因}}"
     """
     return CLOZE_PATTERN.sub(r"{{c1::\1}}", text)
-
-
-# Number of empty Sentence Cloze Traditional fields filled per run. Kept small
-# so that the generated sentences can be reviewed before generating more.
-MAX_CLOZE_SENTENCES_PER_RUN = 10
-
-# Number of existing cloze sentences shown to Gemini as style examples
-CLOZE_STYLE_EXAMPLE_COUNT = 20
-
-# Longest Traditional value that gets a cloze sentence; longer phrases are
-# whole sentences themselves, and clozing them would only test the hint
-MAX_CLOZE_WORD_LENGTH = 4
-
-# Cloze cards due within this many days are filled before the new ones
-CLOZE_UPCOMING_DAYS = 7
 
 
 def load_cloze_style_examples() -> list[str]:

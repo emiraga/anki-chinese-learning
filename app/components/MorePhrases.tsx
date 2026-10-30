@@ -1,19 +1,17 @@
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
-import anki, { ankiOpenBrowse, type NoteInfo } from "~/apis/anki";
+import anki, { type NoteInfo } from "~/apis/anki";
 import { useEffect, useState } from "react";
-import { TagList } from "./TagList";
 import { HanziCardDetails } from "./HanziText";
 import { Collapsible } from "@base-ui-components/react/collapsible";
 import styles from "./index.module.css";
-import { PhraseLink } from "./Phrase";
+import { PhraseLink, PhraseList } from "./Phrase";
+import { phraseFromNote } from "~/data/phrases";
 import {
   DANGDAI_NEXT_LEVEL,
   TBCL_NEXT_LEVEL,
   TOCFL_NEXT_LEVEL,
 } from "~/data/status";
-import AnkiAudioPlayer from "./AnkiAudioPlayer";
-import { POSList } from "./POSDisplay";
 
 function TodoPhrases() {
   const [notes, setNotes] = useState<NoteInfo[] | undefined>(undefined);
@@ -176,49 +174,27 @@ export function SearchMorePhrases({
   }
 
   return (
-    <>
-      {phrases.map((note, i) => {
-        return (
-          <div key={i}>
-            New word:
-            <button
-              className="rounded-2xl bg-blue-100 dark:bg-blue-800 dark:text-blue-100 p-1 mx-2 inline text-xs text-blue-500"
-              onClick={async () => {
-                await ankiOpenBrowse(
-                  `note:${note.modelName} Traditional:${note.fields["Traditional"]?.value}`,
-                );
-              }}
-            >
-              anki
-            </button>
-            <PhraseLink value={note.fields["Traditional"]?.value} />(
-            {note.fields["Pinyin"]?.value}
-            <AnkiAudioPlayer audioField={note.fields["Audio"]?.value} />
-            )
-            <TagList tags={note.tags} />
-            <button
-              className="mx-1 rounded-2xl bg-green-100 dark:bg-green-800 dark:text-green-100 p-1 inline text-xs text-green-500"
-              onClick={async () => {
-                await anki.card.unsuspend({ cards: note.cards });
-                await anki.card.setDueDate({ cards: note.cards, days: "0" });
-                setPhrases((phrases) =>
-                  phrases?.filter((phrase) => phrase.noteId !== note.noteId),
-                );
-              }}
-            >
-              enable
-            </button>
-            <POSList posString={note.fields["POS"]?.value || ""} />
-            <span
-              className="ml-2"
-              dangerouslySetInnerHTML={{
-                __html: note.fields["Meaning"]?.value,
-              }}
-            ></span>
-          </div>
-        );
-      })}
-    </>
+    <PhraseList
+      phrases={phrases.map(phraseFromNote)}
+      actions={(phrase) => (
+        <button
+          className="rounded-2xl bg-green-100 dark:bg-green-800 dark:text-green-100 p-1 inline text-xs text-green-500"
+          onClick={async () => {
+            const cards = phrases.find((n) => n.noteId === phrase.noteId)?.cards;
+            if (!cards) {
+              throw new Error(`Note ${phrase.noteId} not found`);
+            }
+            await anki.card.unsuspend({ cards });
+            await anki.card.setDueDate({ cards, days: "0" });
+            setPhrases((phrases) =>
+              phrases?.filter((n) => n.noteId !== phrase.noteId),
+            );
+          }}
+        >
+          enable
+        </button>
+      )}
+    />
   );
 }
 

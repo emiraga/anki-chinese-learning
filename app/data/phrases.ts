@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import anki from "~/apis/anki";
+import anki, { type NoteInfo } from "~/apis/anki";
 import pinyinSplit from "pinyin-split";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 import { useSettings } from "~/settings/SettingsContext";
@@ -65,18 +65,18 @@ export type PhraseVariant = {
 
 // The TOCFL topic categories used in the "Context" field.
 export const TOCFL_CONTEXTS: Record<string, string> = {
-  "個人資料": "Personal information",
-  "健康及身體照護": "Health and body care",
-  "其他": "Other",
-  "工作": "Work",
+  個人資料: "Personal information",
+  健康及身體照護: "Health and body care",
+  其他: "Other",
+  工作: "Work",
   "房屋與家庭、環境": "House and home, environment",
-  "教育": "Education",
-  "旅行": "Travel",
-  "日常生活": "Daily life",
-  "與他人的關係": "Relationships with others",
-  "購物": "Shopping",
+  教育: "Education",
+  旅行: "Travel",
+  日常生活: "Daily life",
+  與他人的關係: "Relationships with others",
+  購物: "Shopping",
   "閒暇時間、娛樂": "Free time, entertainment",
-  "飲食": "Food and drink",
+  飲食: "Food and drink",
 };
 
 export type PhraseType = {
@@ -320,9 +320,45 @@ export type CharsToPhrasesPinyin = {
   };
 };
 
+/** Converts an Anki phrase note into a PhraseType. */
+export function phraseFromNote(note: NoteInfo): PhraseType {
+  const pinyin = note.fields["Pinyin"].value.toLowerCase();
+  const traditional = note.fields["Traditional"].value;
+  return {
+    noteId: note.noteId,
+    source: note.modelName,
+    traditional,
+    sentenceTraditional: note.fields["Sentence Traditional"]?.value ?? "",
+    sentenceAudio: nonEmptyField(note.fields["Sentence Audio"]?.value),
+    sentenceCloze: parseSentenceCloze(
+      note.fields["Sentence Cloze Traditional"]?.value,
+      note.fields["Sentence Cloze English"]?.value,
+    ),
+    meaning: note.fields["Meaning"].value,
+    meaning2: nonEmptyField(note.fields["Meaning 2"]?.value),
+    explanation: nonEmptyField(note.fields["Explanation"]?.value),
+    context: parseContext(note.fields["Context"]?.value, note.noteId),
+    level: nonEmptyField(note.fields["Level"]?.value),
+    variants: parseVariants(note.fields["Variants"]?.value, note.noteId),
+    partOfSpeech: note.fields["POS"]?.value,
+    examples: parseExamplesJson(
+      note.fields["Examples JSON"]?.value,
+      note.noteId,
+    ),
+    connections: parseConnectionsJson(
+      note.fields["Connections JSON"]?.value,
+      note.noteId,
+    ),
+    pinyin,
+    zhuyin: note.fields["Zhuyin"]?.value,
+    tags: note.tags,
+    audio: note.fields["Audio"].value,
+  };
+}
+
 const IGNORE_PHRASE_CHARS = new Set([
   ...Array.from({ length: 128 }, (_, i) => String.fromCharCode(1 + i)),
-  ..."–；《》—⋯Ａ？āēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ、，。…（）＝’！→ 【】“”「」ㄒ～：ㄧˊ ㄍㄨㄢˋㄈㄤㄔㄜㄐㄑㄠˇ ㄊㄚㄥㄗㄟㄩㄓㄖㄕㄌㄅㄆㄇㄉㄎㄏㄞㄣㄛㄦㄙㄘㄋㄝㄡ ̀◆ ́ ̌ ̄・",
+  ..."–；《》—⋯Ａ？āēīōūǖáéíóúǘǎěǐǒǔǚàèìòùǜ、，。…（）＝’！→ 【】“”「」ㄒ～：ㄧˊ ㄍㄨㄢˋㄈㄤㄔㄜㄐㄑㄠˇ ㄊㄚㄥㄗㄟㄩㄓㄖㄕㄌㄅㄆㄇㄉㄎㄏㄞㄣㄛㄦㄙㄘㄋㄝㄡ ̀◆ ́ ̌ ̄・｜",
 ]);
 const IGNORE_PHRASES = new Set([
   "我要",
@@ -373,38 +409,8 @@ export function useAnkiPhrases() {
       const chars: CharsToPhrasesPinyin = {};
 
       for (const note of notes) {
-        const pinyin = note.fields["Pinyin"].value.toLowerCase();
-        const traditional = note.fields["Traditional"].value;
-        const info: PhraseType = {
-          noteId: note.noteId,
-          source: note.modelName,
-          traditional,
-          sentenceTraditional: note.fields["Sentence Traditional"]?.value ?? "",
-          sentenceAudio: nonEmptyField(note.fields["Sentence Audio"]?.value),
-          sentenceCloze: parseSentenceCloze(
-            note.fields["Sentence Cloze Traditional"]?.value,
-            note.fields["Sentence Cloze English"]?.value,
-          ),
-          meaning: note.fields["Meaning"].value,
-          meaning2: nonEmptyField(note.fields["Meaning 2"]?.value),
-          explanation: nonEmptyField(note.fields["Explanation"]?.value),
-          context: parseContext(note.fields["Context"]?.value, note.noteId),
-          level: nonEmptyField(note.fields["Level"]?.value),
-          variants: parseVariants(note.fields["Variants"]?.value, note.noteId),
-          partOfSpeech: note.fields["POS"]?.value,
-          examples: parseExamplesJson(
-            note.fields["Examples JSON"]?.value,
-            note.noteId,
-          ),
-          connections: parseConnectionsJson(
-            note.fields["Connections JSON"]?.value,
-            note.noteId,
-          ),
-          pinyin,
-          zhuyin: note.fields["Zhuyin"]?.value,
-          tags: note.tags,
-          audio: note.fields["Audio"].value,
-        };
+        const info = phraseFromNote(note);
+        const { pinyin, traditional } = info;
 
         const processPinyin = (sPinyin: string, sTraditional: string) => {
           if (
