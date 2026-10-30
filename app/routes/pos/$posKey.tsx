@@ -113,7 +113,10 @@ export default function PosDetail() {
         <h4 className="text-xl font-semibold mb-2">How to recognize it</h4>
         <ul className="list-disc ml-6 mb-4 space-y-1">
           {detail.tests.map((test, i) => (
-            <li key={i}>{test}</li>
+            <li key={i}>
+              {test.text}
+              <SourceNote source={test.source} />
+            </li>
           ))}
         </ul>
 

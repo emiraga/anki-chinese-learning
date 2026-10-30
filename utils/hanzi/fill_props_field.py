@@ -144,7 +144,7 @@ def format_pos_code_details(code: str, pos_entry: list[str], detail: dict[str, A
         lines.append(f"Typical words: {typical_words}")
 
     lines.append("How to recognize it:")
-    lines.extend(f"- {test}" for test in detail["tests"])
+    lines.extend(f"- {test['text']}" for test in detail["tests"])
 
     lines.append("Examples:")
     for example in detail["examples"]:

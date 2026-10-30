@@ -3,9 +3,15 @@
     "summary": "A fixed multi-word expression, usually colloquial, learned as one unit.",
     "description": "Set phrases and sayings that are longer than a single word but are listed as one vocabulary item. Their meaning is often figurative, so they have to be memorized as a whole. Unlike 成語 (Id), they are usually colloquial and not restricted to four characters.",
     "tests": [
-      "Consists of several words, often a whole verb phrase or clause.",
-      "Meaning is usually not the sum of its parts.",
-      "Colloquial register, can be of any length."
+      {
+        "text": "Consists of several words, often a whole verb phrase or clause."
+      },
+      {
+        "text": "Meaning is usually not the sum of its parts."
+      },
+      {
+        "text": "Colloquial register, can be of any length."
+      }
     ],
     "examples": [
       {
@@ -24,9 +30,15 @@
     "summary": "成語: a literary idiom, nearly always four characters, often from classical texts.",
     "description": "Four-character idioms (成語) are compact, literary expressions, many of which come from historical stories or classical Chinese. In a sentence they act like a single word, most often as a predicate or modifier.",
     "tests": [
-      "Almost always exactly four characters.",
-      "Literary or classical grammar inside (e.g. 而, 之, 以).",
-      "Cannot be split or changed; the whole idiom acts as one word."
+      {
+        "text": "Almost always exactly four characters."
+      },
+      {
+        "text": "Literary or classical grammar inside (e.g. 而, 之, 以)."
+      },
+      {
+        "text": "Cannot be split or changed; the whole idiom acts as one word."
+      }
     ],
     "examples": [
       {
@@ -53,9 +65,15 @@
     "summary": "Goes before the verb to add degree, negation, frequency, scope or attitude; never directly before a noun.",
     "description": "Adverbs sit between the subject and the verb (or before another adverb) and modify the verb phrase. They cover degree (很, 太), negation (不, 沒), frequency (常), scope (也, 都), timing (就, 才) and the speaker's attitude (難道, 其實). Short one-syllable adverbs (才, 就, 還, 都, 又) are the hardest: on top of their basic meaning they carry the speaker's attitude. 都 is 'all' in 我們都去, but 'already' in 都十二點了.",
     "tests": [
-      "Position: Subject + Adv + Verb. Most adverbs cannot come before the subject.",
-      "Cannot modify a noun: *很人.",
-      "Cannot stand alone as an answer or form A-not-A questions: *也不也."
+      {
+        "text": "Position: Subject + Adv + Verb. Most adverbs cannot come before the subject."
+      },
+      {
+        "text": "Cannot modify a noun: *很人."
+      },
+      {
+        "text": "Cannot stand alone as an answer or form A-not-A questions: *也不也."
+      }
     ],
     "examples": [
       {
@@ -89,7 +107,8 @@
         "wrong": {
           "why": "Adverbs go before the verb, never at the end. You are together first, then you chat.",
           "correct": "我們常常一起聊天、喝茶。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 28–29"
       },
       {
         "zh": "外國學生恐怕蟑螂。",
@@ -120,10 +139,19 @@
     "summary": "Links words or clauses; often paired, like 雖然…但是 or 因為…所以.",
     "description": "Conjunctions join two nouns (和, 跟) or two clauses (而且, 雖然, 因為, 所以, 可是). Clause conjunctions frequently come in pairs, with an adverb like 也 or 就 in the second clause. 和, 跟 and 與 join only words (詞連); joining clauses (句連) takes other conjunctions or none at all. Using 跟 like English 'and' between clauses is a typical mistake.",
     "tests": [
-      "和/跟 link nouns, and the two sides can be swapped: 我跟他 = 他跟我.",
-      "Clause conjunctions can stand before the subject: 因為他病了，所以…",
-      "Cannot be followed by aspect markers like 了.",
-      "和/跟/與 never join clauses: 'and' between clauses is usually left out."
+      {
+        "text": "和/跟 link nouns, and the two sides can be swapped: 我跟他 = 他跟我."
+      },
+      {
+        "text": "Clause conjunctions can stand before the subject: 因為他病了，所以…"
+      },
+      {
+        "text": "Cannot be followed by aspect markers like 了."
+      },
+      {
+        "text": "和/跟/與 never join clauses: 'and' between clauses is usually left out.",
+        "source": "Teng 2009, p. 170"
+      }
     ],
     "examples": [
       {
@@ -163,10 +191,19 @@
     "summary": "Points to or picks out a noun: 這/那/哪/每/某 + (number) + measure word + noun.",
     "description": "Determiners come first in a noun phrase and specify which or how many: demonstratives (這, 那), the question word 哪, and quantifiers like 每 and 某. They normally need a measure word before the noun.",
     "tests": [
-      "Pattern: Det + (Number) + M + N, e.g. 這三本書.",
-      "Usually needs a measure word before the noun: 這本書.",
-      "這/那 can stand alone as a subject: 這是我的。",
-      "每 can take a number and measure word (每兩個人); the similar 各 can't (*各兩個人)."
+      {
+        "text": "Pattern: Det + (Number) + M + N, e.g. 這三本書."
+      },
+      {
+        "text": "Usually needs a measure word before the noun: 這本書."
+      },
+      {
+        "text": "這/那 can stand alone as a subject: 這是我的。"
+      },
+      {
+        "text": "每 can take a number and measure word (每兩個人); the similar 各 can't (*各兩個人).",
+        "source": "Teng 2009, p. 169"
+      }
     ],
     "examples": [
       {
@@ -206,10 +243,19 @@
     "summary": "Measure word (classifier) between a number/determiner and a noun; also units and counts of actions.",
     "description": "Chinese nouns cannot be counted directly: a measure word goes between the number or determiner and the noun. Measure words also include containers (碗, 杯), units (公尺, 公斤) and verbal measures that count how many times something happens (次, 頓, 遍). Which measure word a noun takes can't really be worked out by rule: 條 goes with 繩子, 河, 褲子, 法律 and 狗 alike, so learn the measure word together with each noun. Shape is a rough guide: 條 for long, flexible things (蛇, 魚), 根 for long, rigid things (棍子, 針), 枝 for long cylinders (筆, 蠟燭).",
     "tests": [
-      "Pattern: Number/Det + M + N, e.g. 兩張紙.",
-      "A number cannot directly precede a noun: *三書, 三本書.",
-      "Verbal measures follow the verb: 去過三次.",
-      "'Two' before a measure word is 兩, not 二: 兩本書."
+      {
+        "text": "Pattern: Number/Det + M + N, e.g. 兩張紙."
+      },
+      {
+        "text": "A number cannot directly precede a noun: *三書, 三本書."
+      },
+      {
+        "text": "Verbal measures follow the verb: 去過三次."
+      },
+      {
+        "text": "'Two' before a measure word is 兩, not 二: 兩本書.",
+        "source": "Teng 2009, p. 120"
+      }
     ],
     "examples": [
       {
@@ -261,10 +307,19 @@
     "summary": "People, things, places and times; in this system also numbers, pronouns and 幾.",
     "description": "Nouns can be subjects and objects and can be counted with a measure word. Note that this classification counts numbers (五), pronouns (他, 我), time words (昨天) and the question word 幾 as nouns too.",
     "tests": [
-      "Can be subject or object: 學校很大 / 我去學校.",
-      "Can be preceded by Det + M: 這所學校.",
-      "Cannot be modified by 很 or negated by 不 directly: *很學校, *不學校.",
-      "Place words are built with a localizer (上, 裡, 前), which shortens step by step: 桌子的上面 → 桌子上面 → 桌子上 → 桌上."
+      {
+        "text": "Can be subject or object: 學校很大 / 我去學校."
+      },
+      {
+        "text": "Can be preceded by Det + M: 這所學校."
+      },
+      {
+        "text": "Cannot be modified by 很 or negated by 不 directly: *很學校, *不學校."
+      },
+      {
+        "text": "Place words are built with a localizer (上, 裡, 前), which shortens step by step: 桌子的上面 → 桌子上面 → 桌子上 → 桌上.",
+        "source": "Teng 2009, p. 117"
+      }
     ],
     "examples": [
       {
@@ -290,7 +345,26 @@
         "wrong": {
           "why": "Time words go before the verb or at the start of the sentence, never at the end as in English.",
           "correct": "他們昨天做功課。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 16"
+      },
+      {
+        "zh": "有一個人在圖書館。",
+        "en": "(meant: there is someone in the library)",
+        "wrong": {
+          "why": "To introduce something new, start with the place and end with the new thing: place + 有 + thing.",
+          "correct": "圖書館裡有一個人。"
+        },
+        "source": "Yuan et al. 2023, p. 17, 26"
+      },
+      {
+        "zh": "飯館在旁邊的學校。",
+        "en": "(meant: the restaurant is next to the school)",
+        "wrong": {
+          "why": "旁邊 'side' is always the side of something, and the whole comes before its part: 學校旁邊 'the school's side'.",
+          "correct": "飯館在學校旁邊。"
+        },
+        "source": "Yuan et al. 2023, p. 28–30"
       }
     ],
     "contrasts": [
@@ -312,10 +386,19 @@
     "summary": "Introduces a noun (place, target, source, companion) before the main verb: Prep + N + V.",
     "description": "Prepositions (also called coverbs) form a phrase with a noun that comes before the main verb, adding where, from where, toward whom, with whom or for whom the action happens. Many of them are also full verbs in other contexts. The order follows the order of events: you are at a place, or leave a starting point, before you act. This is why Prep phrases go before the verb, not after it as in English. 跟 alone has three roles: who you do something with (我跟我媽住), who you say something to (你跟他說了什麼) and who you get something from (你跟他要了多少錢).",
     "tests": [
-      "Pattern: Subject + Prep + N + Verb, e.g. 我在家吃飯.",
-      "Cannot be the only verb in the sentence.",
-      "Doesn't take 了, 過 or 著.",
-      "Only 在, 到 and 給 can also follow the verb, and then they mark where something ends up: 放在桌上, 寄給老師."
+      {
+        "text": "Pattern: Subject + Prep + N + Verb, e.g. 我在家吃飯."
+      },
+      {
+        "text": "Cannot be the only verb in the sentence."
+      },
+      {
+        "text": "Doesn't take 了, 過 or 著."
+      },
+      {
+        "text": "Only 在, 到 and 給 can also follow the verb, and then they mark where something ends up: 放在桌上, 寄給老師.",
+        "source": "Teng 2009, p. 115"
+      }
     ],
     "examples": [
       {
@@ -345,7 +428,8 @@
         "wrong": {
           "why": "The place comes before the action: Prep + place goes before the verb.",
           "correct": "我們在教室上課。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 17, 29"
       },
       {
         "zh": "我剛回宿舍從他家。",
@@ -353,7 +437,8 @@
         "wrong": {
           "why": "The starting point comes first, in the order things happen: 從 + place goes before the verb.",
           "correct": "我剛從他家回宿舍。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 28–29"
       },
       {
         "zh": "他在桌上放手。",
@@ -368,7 +453,8 @@
     "contrasts": [
       {
         "pos": "V",
-        "note": "在 and 給 are verbs when they are the only verb: 他在家 'he's at home', 他給我一本書 'he gave me a book'."
+        "note": "在 and 給 are verbs when they are the only verb: 他在家 'he's at home', 他給我一本書 'he gave me a book'.",
+        "source": "Yuan et al. 2023, p. 63"
       },
       {
         "pos": "Conj",
@@ -384,13 +470,43 @@
     "summary": "Function words with purely grammatical meaning: 的, 得, 了, 嗎, 啊, 把, complements 完/掉, interjections.",
     "description": "A broad category for words that carry grammar rather than content: structural particles (的, 得, 地), aspect markers (了, 過, 著), sentence-final mood particles (嗎, 吧, 呢, 啊), the 把 construction, resultative complements (完, 掉) and interjections (喂).",
     "tests": [
-      "Cannot be used on its own or answer a question.",
-      "Usually unstressed, often in the neutral tone.",
-      "Attaches to a word or the end of a sentence.",
-      "了 right after an action verb marks completion (我買了三張票); 了 at the end of a sentence marks a change (天冷了). The second is the easier one to learn.",
-      "In Taiwan 著 is rarely progressive (他在吃飯, not 他吃著飯); it marks a lasting state (門開著) or a posture during another action (站著吃).",
-      "In 是…的, 是 can highlight who, when, where or how, but never the object: 我是昨天買的.",
-      "被 usually reports something unpleasant (錢包被偷了), so *他被升官了 sounds odd."
+      {
+        "text": "Cannot be used on its own or answer a question."
+      },
+      {
+        "text": "Usually unstressed, often in the neutral tone."
+      },
+      {
+        "text": "Attaches to a word or the end of a sentence."
+      },
+      {
+        "text": "了 right after an action verb marks completion (我買了三張票); 了 at the end of a sentence marks a change (天冷了). The second is the easier one to learn.",
+        "source": "Teng 2009, p. 217, 223"
+      },
+      {
+        "text": "In Taiwan 著 is rarely progressive (他在吃飯, not 他吃著飯); it marks a lasting state (門開著) or a posture during another action (站著吃).",
+        "source": "Teng 2009, p. 113"
+      },
+      {
+        "text": "In 是…的, 是 can highlight who, when, where or how, but never the object: 我是昨天買的.",
+        "source": "Teng 2009, p. 115, 191"
+      },
+      {
+        "text": "被 usually reports something unpleasant (錢包被偷了), so *他被升官了 sounds odd.",
+        "source": "Teng 2009, p. 114"
+      },
+      {
+        "text": "V得 describes how something actually went (吃得很開心). It doesn't combine with 要, 會 or 應該, nor with a result complement (*學得學好了).",
+        "source": "Yuan et al. 2023, p. 117–118"
+      },
+      {
+        "text": "V著 can't take a duration: 想了一陣, not *想著一陣.",
+        "source": "Yuan et al. 2023, p. 218"
+      },
+      {
+        "text": "V1著V2 means doing V2 while in the state of V1 (坐著看球); two separate activities at once take 一邊…一邊….",
+        "source": "Yuan et al. 2023, p. 214, 219"
+      }
     ],
     "examples": [
       {
@@ -424,7 +540,8 @@
         "wrong": {
           "why": "了 marks a completed event, not past time. Habits and repeated actions take no 了, even in the past.",
           "correct": "我去年每天都學中文。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 156"
       },
       {
         "zh": "他說中文得很好。",
@@ -432,7 +549,8 @@
         "wrong": {
           "why": "得 must follow a verb. When the verb has an object, repeat the verb before 得, or move the object to the front.",
           "correct": "他說中文說得很好。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 118"
       },
       {
         "zh": "我要把汽車賣。",
@@ -451,6 +569,60 @@
           "correct": "你買的是什麼東西？"
         },
         "source": "Teng 2009, p. 191"
+      },
+      {
+        "zh": "我昨天半夜十二點才回家了。",
+        "en": "(meant: I didn't get home until midnight last night)",
+        "wrong": {
+          "why": "才 'not until' already presents the event as late; it doesn't take 了.",
+          "correct": "我昨天半夜十二點才回家。"
+        },
+        "source": "Yuan et al. 2023, p. 156"
+      },
+      {
+        "zh": "我現在要甜食吃得越來越少了。",
+        "en": "(meant: I should eat less sweets now)",
+        "wrong": {
+          "why": "V得 describes how something actually turned out, so it can't follow 要 'should'. Say what you should do instead.",
+          "correct": "我現在要少吃甜食。"
+        },
+        "source": "Yuan et al. 2023, p. 118"
+      },
+      {
+        "zh": "和尚想著一陣，後來同意和他們住在一起。",
+        "en": "(meant: the monk thought for a while, then agreed to live with them)",
+        "wrong": {
+          "why": "著 marks an ongoing state with no end point, so it can't take a duration. A completed stretch of time takes 了.",
+          "correct": "和尚想了一陣，後來同意和他們住在一起。"
+        },
+        "source": "Yuan et al. 2023, p. 218"
+      },
+      {
+        "zh": "商場不允許人走著吸菸。",
+        "en": "(meant: the mall doesn't allow smoking while walking)",
+        "wrong": {
+          "why": "V1著V2 makes V1 the manner of V2 (坐著吃). Two activities done at the same time take 一邊…一邊….",
+          "correct": "商場不允許人一邊走一邊吸菸。"
+        },
+        "source": "Yuan et al. 2023, p. 219"
+      },
+      {
+        "zh": "小明沒給老師把作業交。",
+        "en": "(meant: Xiaoming didn't hand his homework in to the teacher)",
+        "wrong": {
+          "why": "The 把 phrase goes right before its verb, and the receiver follows the verb with 給: 把 + thing + V給 + person.",
+          "correct": "小明沒把作業交給老師。"
+        },
+        "source": "Yuan et al. 2023, p. 210"
+      },
+      {
+        "zh": "他把錢拿了從錢包出來。",
+        "en": "(meant: he took the money out of his wallet)",
+        "wrong": {
+          "why": "從 + place goes before the verb, and the direction (出來) attaches straight to the verb, with 了 at the end.",
+          "correct": "他把錢從錢包拿出來了。"
+        },
+        "source": "Yuan et al. 2023, p. 210"
       }
     ],
     "contrasts": [
@@ -472,14 +644,37 @@
     "summary": "Transitive action verb: something you do to an object; can be in progress (在) but takes no 很.",
     "description": "Action verbs describe deliberate activities. V marks the ones that take a direct object. They can be in progress (在), completed (了), experienced (過) and given as commands. V著 usually sets the background for another verb (騎著腳踏車去學校); on its own (他騎著腳踏車) it sounds unfinished. Teng also sorts action verbs by direction: 'outward' verbs send the object away from the subject (賣 'sell', 告訴 'tell'), 'inward' verbs bring it in (買 'buy', 問 'ask'). This matters for 把 and for double objects.",
     "tests": [
-      "Takes a direct object: 買東西, 做飯.",
-      "Can be progressive: 他在做飯.",
-      "Can't take degree adverbs: *很買.",
-      "Negation: 不 = won't / doesn't, 沒 = didn't.",
-      "Can be a command: 快說！ 別買！",
-      "With 把 when there is a result: 把飯吃完了.",
-      "把 + bare verb + 了 works only with outward verbs: 我把房子賣了. Inward verbs need a complement: 我把房子買下來了.",
-      "Double objects depend on the verb: 賣他一張卡 works, *買他一張卡 and *寄他一張卡 don't. V + thing + 給 + person works for all: 寄一張卡給他."
+      {
+        "text": "Takes a direct object: 買東西, 做飯."
+      },
+      {
+        "text": "Can be progressive: 他在做飯."
+      },
+      {
+        "text": "Can't take degree adverbs: *很買."
+      },
+      {
+        "text": "Negation: 不 = won't / doesn't, 沒 = didn't."
+      },
+      {
+        "text": "Can be a command: 快說！ 別買！"
+      },
+      {
+        "text": "With 把 when there is a result: 把飯吃完了.",
+        "source": "Yuan et al. 2023, p. 190"
+      },
+      {
+        "text": "把 + bare verb + 了 works only with outward verbs: 我把房子賣了. Inward verbs need a complement: 我把房子買下來了.",
+        "source": "Teng 2009, p. 69, 114"
+      },
+      {
+        "text": "Double objects depend on the verb: 賣他一張卡 works, *買他一張卡 and *寄他一張卡 don't. V + thing + 給 + person works for all: 寄一張卡給他.",
+        "source": "Teng 2009, p. 116"
+      },
+      {
+        "text": "To say what is somewhere, a transitive verb drops its doer: place + V著 + thing, 牆上掛著一張畫.",
+        "source": "Yuan et al. 2023, p. 214, 219"
+      }
     ],
     "examples": [
       {
@@ -496,7 +691,8 @@
       },
       {
         "zh": "他騎著腳踏車去學校。",
-        "en": "He rides his bike to school."
+        "en": "He rides his bike to school.",
+        "source": "Yuan et al. 2023, p. 212–213"
       },
       {
         "zh": "我很買衣服。",
@@ -523,6 +719,15 @@
           "correct": "我寄一張聖誕卡給他。"
         },
         "source": "Teng 2009, p. 116"
+      },
+      {
+        "zh": "在牆上，我還掛著幾張全家的照片。",
+        "en": "(meant: there are also a few family photos hanging on the wall)",
+        "wrong": {
+          "why": "To say what is somewhere, start with the place (without 在) and leave out who put it there: place + V著 + thing.",
+          "correct": "牆上還掛著幾張全家的照片。"
+        },
+        "source": "Yuan et al. 2023, p. 219"
       }
     ],
     "contrasts": [
@@ -544,11 +749,22 @@
     "summary": "Intransitive action verb: an activity with no direct object (跑, 坐, 睡, 笑).",
     "description": "Action verbs that don't take a direct object. Any target or location is introduced by a preposition before the verb instead (在椅子上坐, 對我笑). Otherwise they behave like V.",
     "tests": [
-      "Complete without an object: 孩子在笑.",
-      "Location/target goes in a preposition phrase: 跟朋友跑.",
-      "Can be progressive (在), take 了/過, be a command (請坐).",
-      "No degree adverbs: *很跑.",
-      "Shows what is somewhere: place + V著 + new noun, 台上站著一個人."
+      {
+        "text": "Complete without an object: 孩子在笑."
+      },
+      {
+        "text": "Location/target goes in a preposition phrase: 跟朋友跑."
+      },
+      {
+        "text": "Can be progressive (在), take 了/過, be a command (請坐)."
+      },
+      {
+        "text": "No degree adverbs: *很跑."
+      },
+      {
+        "text": "Shows what is somewhere: place + V著 + new noun, 台上站著一個人.",
+        "source": "Yuan et al. 2023, p. 23, 213–214"
+      }
     ],
     "examples": [
       {
@@ -565,7 +781,8 @@
       },
       {
         "zh": "教室裡坐著一個學生。",
-        "en": "A student is sitting in the classroom."
+        "en": "A student is sitting in the classroom.",
+        "source": "Yuan et al. 2023, p. 21"
       },
       {
         "zh": "我一直坐著在角落。",
@@ -573,7 +790,8 @@
         "wrong": {
           "why": "In V在+place the 在 phrase marks where you end up, so the verb can't take 著. Use either 坐在角落 or 在角落坐著.",
           "correct": "我一直坐在角落。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 213"
       }
     ],
     "contrasts": [
@@ -583,7 +801,8 @@
       },
       {
         "pos": "V-sep",
-        "note": "跑 is Vi; 跑步 (run + step) is V-sep: 跑了一個小時的步."
+        "note": "跑 is Vi; 跑步 (run + step) is V-sep: 跑了一個小時的步.",
+        "source": "Yuan et al. 2023, p. 74"
       },
       {
         "pos": "Vs",
@@ -595,12 +814,31 @@
     "summary": "Separable action verb: a verb+object compound that can be split (唱了一首歌).",
     "description": "離合詞 are verb-object compounds that act as one verb but can be split: aspect markers, durations, measures and modifiers go between the verb and its built-in object. Because they already contain an object, they can't take another one. Not every compound allows every split, so learn the common pattern of each one. When the noun half is generic, 了 usually follows the whole compound: 你吃飯了嗎 'have you eaten?', while 你吃了飯嗎 sounds like asking about the rice. Teng points out that many of these are a verb with a generic object that together name one activity (教書 'teach', 唱歌 'sing'): the object refers to nothing specific, so you can't ask about it. From 他是教書的 you can't ask *他教哪一本書.",
     "tests": [
-      "Things go in the middle: 唱了兩首歌, 上了一個小時的網, 打過架.",
-      "No second object: *見面他, use 跟他見面.",
-      "Reduplicates as AAB: 唱唱歌 (not *唱歌唱歌).",
-      "Behaves like an action verb otherwise: 在唱歌, no 很.",
-      "了 test: if 了 fits in the middle (跳了舞), other material usually can too. But each compound has its own patterns: 見了他一面, not *見了他的面.",
-      "了 alone in the middle sounds unfinished when the object is generic (*他教了書, *他留了學); add a duration or amount (教了三年書) or put 了 at the end."
+      {
+        "text": "Things go in the middle: 唱了兩首歌, 上了一個小時的網, 打過架.",
+        "source": "Yuan et al. 2023, p. 75"
+      },
+      {
+        "text": "No second object: *見面他, use 跟他見面."
+      },
+      {
+        "text": "Reduplicates as AAB: 唱唱歌 (not *唱歌唱歌)."
+      },
+      {
+        "text": "Behaves like an action verb otherwise: 在唱歌, no 很."
+      },
+      {
+        "text": "了 test: if 了 fits in the middle (跳了舞), other material usually can too. But each compound has its own patterns: 見了他一面, not *見了他的面.",
+        "source": "Yuan et al. 2023, p. 76, 87"
+      },
+      {
+        "text": "了 alone in the middle sounds unfinished when the object is generic (*他教了書, *他留了學); add a duration or amount (教了三年書) or put 了 at the end.",
+        "source": "Teng 2009, p. 109; Yuan et al. 2023, p. 74"
+      },
+      {
+        "text": "Some splits are allowed but sound incomplete on their own: ?我今天跑了步 needs more (跑了兩個小時的步) or 了 after the whole verb (跑步了).",
+        "source": "Yuan et al. 2023, p. 74"
+      }
     ],
     "examples": [
       {
@@ -616,6 +854,11 @@
         "en": "They often fought as kids."
       },
       {
+        "zh": "你吃飯了嗎？",
+        "en": "Have you eaten?",
+        "source": "Yuan et al. 2023, p. 90"
+      },
+      {
         "zh": "我明天見面他。",
         "en": "(meant: I'll meet him tomorrow)",
         "wrong": {
@@ -629,7 +872,8 @@
         "wrong": {
           "why": "Each separable verb splits in its own way. 見面 doesn't take a possessive inside; the person goes after 了 with 一面, or before the verb with 跟.",
           "correct": "我昨天見了他一面。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 87"
       }
     ],
     "contrasts": [
@@ -651,12 +895,25 @@
     "summary": "State verb ≈ English adjective: a quality that takes 很 and is a predicate without 是.",
     "description": "Most English adjectives are state verbs in Chinese. They work as the predicate directly (no 是), take degree adverbs, and can also modify nouns (with or without 的). With 了 they express a change of state (天冷了).",
     "tests": [
-      "Takes degree adverbs: 很冷, 太貴, 非常漂亮.",
-      "Predicate without 是: 他很高 (*他是高).",
-      "Negated with 不: 不冷.",
-      "Not progressive: *在冷.",
-      "Can modify a noun: 高樓, 漂亮的衣服.",
-      "很有/很沒 + noun chunks act as Vs: 很有名, 很有道理, 很沒禮貌."
+      {
+        "text": "Takes degree adverbs: 很冷, 太貴, 非常漂亮."
+      },
+      {
+        "text": "Predicate without 是: 他很高 (*他是高)."
+      },
+      {
+        "text": "Negated with 不: 不冷."
+      },
+      {
+        "text": "Not progressive: *在冷."
+      },
+      {
+        "text": "Can modify a noun: 高樓, 漂亮的衣服."
+      },
+      {
+        "text": "很有/很沒 + noun chunks act as Vs: 很有名, 很有道理, 很沒禮貌.",
+        "source": "Yuan et al. 2023, p. 37, 41"
+      }
     ],
     "examples": [
       {
@@ -673,7 +930,8 @@
       },
       {
         "zh": "你說的很有道理。",
-        "en": "What you say makes a lot of sense."
+        "en": "What you say makes a lot of sense.",
+        "source": "Yuan et al. 2023, p. 41"
       },
       {
         "zh": "他是高。",
@@ -707,12 +965,26 @@
     "summary": "Transitive state verb: a feeling, attitude or knowledge about an object; takes 很 (很喜歡他).",
     "description": "State verbs that take an object, mostly about emotions, attitudes and cognition. Like Vs they take degree adverbs and 不, and are not progressive; unlike Vs they take an object.",
     "tests": [
-      "Takes an object: 喜歡音樂, 關心你.",
-      "Takes degree adverbs (most of them): 很喜歡, 非常同意.",
-      "Negated with 不: 不同意.",
-      "Not progressive: *在喜歡.",
-      "Not used with 把: *我把他喜歡.",
-      "Even with Vst, 很 doesn't fit every use: 他很有錢 but not *他很有兩億元; 他很知道做人 ('knows how to treat people') but not *他很知道我的電話號碼."
+      {
+        "text": "Takes an object: 喜歡音樂, 關心你."
+      },
+      {
+        "text": "Takes degree adverbs (most of them): 很喜歡, 非常同意."
+      },
+      {
+        "text": "Negated with 不: 不同意."
+      },
+      {
+        "text": "Not progressive: *在喜歡."
+      },
+      {
+        "text": "Not used with 把: *我把他喜歡.",
+        "source": "Teng 2009, p. 193"
+      },
+      {
+        "text": "Even with Vst, 很 doesn't fit every use: 他很有錢 but not *他很有兩億元; 他很知道做人 ('knows how to treat people') but not *他很知道我的電話號碼.",
+        "source": "Teng 2009, p. 110"
+      }
     ],
     "examples": [
       {
@@ -768,10 +1040,18 @@
     "summary": "State verb used only before a noun; it can't be the predicate or take 很 (公共汽車, *很公共).",
     "description": "Non-gradable classifying words (區別詞, 'non-predicate adjectives'). They sort nouns into kinds: wild vs. domestic, public vs. private. They only appear directly before a noun, sometimes with 的, and can't be the predicate of a sentence.",
     "tests": [
-      "Only before a noun: 野生動物, 公共廁所.",
-      "Not a predicate: *這個廁所很公共.",
-      "No degree adverbs: *很野生.",
-      "As a predicate it needs 是…的: 這些動物是野生的."
+      {
+        "text": "Only before a noun: 野生動物, 公共廁所."
+      },
+      {
+        "text": "Not a predicate: *這個廁所很公共."
+      },
+      {
+        "text": "No degree adverbs: *很野生."
+      },
+      {
+        "text": "As a predicate it needs 是…的: 這些動物是野生的."
+      }
     ],
     "examples": [
       {
@@ -810,9 +1090,15 @@
     "summary": "State verb used only as a predicate; it can't directly modify a noun (人很多, *多人).",
     "description": "State verbs that can be the predicate of a sentence but can't be placed directly before a noun. To modify a noun they need a helper, e.g. 很多人 instead of *多人.",
     "tests": [
-      "Works as a predicate: 錢不夠, 人很多.",
-      "Not directly before a noun: *多人, *少錢.",
-      "Takes degree adverbs and 不 like other Vs."
+      {
+        "text": "Works as a predicate: 錢不夠, 人很多."
+      },
+      {
+        "text": "Not directly before a noun: *多人, *少錢."
+      },
+      {
+        "text": "Takes degree adverbs and 不 like other Vs."
+      }
     ],
     "examples": [
       {
@@ -860,9 +1146,19 @@
     "summary": "Separable state verb: a verb+object compound describing a feeling or state; takes 很 and can split (生他的氣).",
     "description": "離合詞 that describe states or emotions. They take degree adverbs like other state verbs, and like other separable verbs, the 'object' half can be split off to insert a person or modifier.",
     "tests": [
-      "Takes degree adverbs: 很生氣, 很放心.",
-      "Splits to include a person: 生他的氣 (*生氣他).",
-      "Negated with 不: 不放心."
+      {
+        "text": "Takes degree adverbs: 很生氣, 很放心."
+      },
+      {
+        "text": "Splits to include a person: 生他的氣 (*生氣他)."
+      },
+      {
+        "text": "Negated with 不: 不放心."
+      },
+      {
+        "text": "Not every word listed as separable really splits: 幽默 (a loan of 'humor') is never split, and 擔心 is mostly used whole (我很擔心他).",
+        "source": "Yuan et al. 2023, p. 76–77, 86"
+      }
     ],
     "examples": [
       {
@@ -905,7 +1201,8 @@
       },
       {
         "pos": "Vst",
-        "note": "擔心 is often taught as separable (擔什麼心), but in speech it's mostly used like Vst with a direct object: 我很擔心他."
+        "note": "擔心 is often taught as separable (擔什麼心), but in speech it's mostly used like Vst with a direct object: 我很擔心他.",
+        "source": "Yuan et al. 2023, p. 76–77, 88"
       }
     ]
   },
@@ -913,10 +1210,18 @@
     "summary": "Auxiliary (modal) verb before another verb: ability, permission, possibility, obligation (會, 可以, 應該).",
     "description": "Modal verbs that come before a main verb and add ability (會, 能), permission (可以), obligation (應該, 得), desire or intention (要, 想) and possibility. Like verbs, they can be negated, form A-not-A questions and serve as short answers. English 'can' splits into three: 會 (a learned skill), 能 (able, possible) and 可以 (allowed). One English word mapping to several Chinese ones is the hardest kind of difference for learners.",
     "tests": [
-      "Followed by a verb phrase: 會說, 可以去.",
-      "A-not-A question: 會不會？ 可不可以？",
-      "Can answer alone: 會。/ 不可以。",
-      "No 了, 過, 著: *會了說."
+      {
+        "text": "Followed by a verb phrase: 會說, 可以去."
+      },
+      {
+        "text": "A-not-A question: 會不會？ 可不可以？"
+      },
+      {
+        "text": "Can answer alone: 會。/ 不可以。"
+      },
+      {
+        "text": "No 了, 過, 著: *會了說."
+      }
     ],
     "examples": [
       {
@@ -951,11 +1256,22 @@
     "summary": "Intransitive process verb: an instant change of state (破, 死, 感冒); negated with 沒, no 很, no 在.",
     "description": "Process verbs describe the moment something changes from one state to another, with the result being what matters. They almost always appear with 了, and since the change is instant, they can't be in progress.",
     "tests": [
-      "Usually with 了: 杯子破了.",
-      "Negated with 沒: 沒壞, not *不壞 (as 'not broken').",
-      "No degree adverbs: *很死.",
-      "Not progressive: *在死.",
-      "The noun after a Vp is its subject, not an object: in 王冕七歲死了父親 it is the father who died. This order reports something appearing or disappearing: 昨天大火死了不少人."
+      {
+        "text": "Usually with 了: 杯子破了."
+      },
+      {
+        "text": "Negated with 沒: 沒壞, not *不壞 (as 'not broken')."
+      },
+      {
+        "text": "No degree adverbs: *很死."
+      },
+      {
+        "text": "Not progressive: *在死."
+      },
+      {
+        "text": "The noun after a Vp is its subject, not an object: in 王冕七歲死了父親 it is the father who died. This order reports something appearing or disappearing: 昨天大火死了不少人.",
+        "source": "Teng 2009, p. 105; Yuan et al. 2023, p. 22"
+      }
     ],
     "examples": [
       {
@@ -978,6 +1294,11 @@
         "zh": "那棵樹最近掉了不少葉子。",
         "en": "That tree has lost a lot of leaves lately.",
         "source": "Teng 2009, p. 106"
+      },
+      {
+        "zh": "屋裡來了一個人。",
+        "en": "Someone came into the room.",
+        "source": "Yuan et al. 2023, p. 22"
       },
       {
         "zh": "我破了你的杯子。",
@@ -1017,10 +1338,22 @@
     "summary": "Transitive process verb: an instant change involving an object (忘記, 變成, 丟); negated with 沒.",
     "description": "Process verbs that take an object. The event is a change that happens at a point in time (forgetting, becoming, losing) rather than an activity that lasts. 變成 + noun names the result (變成冰); 變得 + state verb describes the new state (變得很冷).",
     "tests": [
-      "Takes an object: 忘記他的名字, 變成冰.",
-      "Negated with 沒: 我沒忘記.",
-      "No degree adverbs: *很忘記.",
-      "Not progressive: *在忘記."
+      {
+        "text": "Takes an object: 忘記他的名字, 變成冰."
+      },
+      {
+        "text": "Negated with 沒: 我沒忘記."
+      },
+      {
+        "text": "No degree adverbs: *很忘記."
+      },
+      {
+        "text": "Not progressive: *在忘記."
+      },
+      {
+        "text": "變得 + description reports a change that has happened (他最近變得胖了些); it sounds wrong in a hypothetical or with 會: *我會變得很興奮回家.",
+        "source": "Yuan et al. 2023, p. 119, 126"
+      }
     ],
     "examples": [
       {
@@ -1037,7 +1370,8 @@
       },
       {
         "zh": "他最近變得很胖。",
-        "en": "He has gotten fat lately."
+        "en": "He has gotten fat lately.",
+        "source": "Yuan et al. 2023, p. 126"
       }
     ],
     "contrasts": [
@@ -1059,11 +1393,22 @@
     "summary": "Separable process verb: a verb+object compound for a one-time change (結婚, 畢業); splits as 結了婚.",
     "description": "離合詞 that describe a change of state: getting married, getting sick, graduating. They split like other separable verbs and are negated with 沒 like other process verbs. The person or place involved goes in a preposition phrase.",
     "tests": [
-      "Splits: 結了婚, 結過兩次婚, 生了一場病, 畢了業.",
-      "No direct object: *結婚她, use 跟她結婚; *畢業大學, use 從大學畢業.",
-      "Negated with 沒: 還沒結婚.",
-      "No 很, not progressive: *很結婚.",
-      "Time since the change goes after the whole verb: 畢業三年了, 結婚十年了."
+      {
+        "text": "Splits: 結了婚, 結過兩次婚, 生了一場病, 畢了業."
+      },
+      {
+        "text": "No direct object: *結婚她, use 跟她結婚; *畢業大學, use 從大學畢業."
+      },
+      {
+        "text": "Negated with 沒: 還沒結婚."
+      },
+      {
+        "text": "No 很, not progressive: *很結婚."
+      },
+      {
+        "text": "Time since the change goes after the whole verb: 畢業三年了, 結婚十年了.",
+        "source": "Yuan et al. 2023, p. 87"
+      }
     ],
     "examples": [
       {
@@ -1096,7 +1441,8 @@
         "wrong": {
           "why": "Not every separable verb accepts a duration inside. Time since a one-time change goes after the whole verb.",
           "correct": "她畢業三年了。"
-        }
+        },
+        "source": "Yuan et al. 2023, p. 87"
       }
     ],
     "contrasts": [

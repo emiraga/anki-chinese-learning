@@ -34,6 +34,12 @@ export type PosMistake = {
   correct: string;
 };
 
+export type PosTest = {
+  text: string;
+  /** Where the test comes from, e.g. "Teng 2009, p. 110". */
+  source?: string;
+};
+
 export type PosContrast = {
   pos: PosCode;
   note: string;
@@ -46,7 +52,7 @@ export type PosDetail = {
   summary: string;
   description: string;
   /** Grammatical behaviour that identifies the category. */
-  tests: string[];
+  tests: PosTest[];
   examples: PosExample[];
   /** How to tell this category apart from easily confused ones. */
   contrasts: PosContrast[];

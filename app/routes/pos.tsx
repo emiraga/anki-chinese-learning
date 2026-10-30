@@ -39,7 +39,14 @@ export default function PartsOfSpeech() {
           Notes marked &ldquo;Teng 2009&rdquo; come from 鄧守信,{" "}
           <em>對外漢語教學語法 (A Pedagogical Grammar of Chinese)</em>, revised
           ed., Taipei: 文鶴, 2009. Most of its wrong sentences are real errors
-          made by English-speaking learners.
+          made by English-speaking learners. Notes marked &ldquo;Yuan et al.
+          2023&rdquo; come from F. Yuan, B. He and W. Hu (eds.),{" "}
+          <em>
+            Pedagogical Grammar and Grammar Pedagogy in Chinese as a Second
+            Language
+          </em>
+          , Routledge, 2023, a collection of studies by several authors, many
+          based on learner corpora.
         </p>
 
         <h2 className="text-2xl font-semibold mb-2">Verb classes</h2>
@@ -94,13 +101,9 @@ export default function PartsOfSpeech() {
           <p className={SOURCE}>
             Source: <em>A Course in Contemporary Chinese 1</em>, Introduction §F
             (verb classes), p. XIV, and §G (negation), p. XV. Sentence 了 with
-            state verbs: Teng 2009, pp. 217, 223. Durative 著: Yu
-            Liu, &ldquo;The Acquisition of Durative Marker zhe&rdquo;, in{" "}
-            <em>
-              Pedagogical Grammar and Grammar Pedagogy in Chinese as a Second
-              Language
-            </em>{" "}
-            (2022), ch. 12.
+            state verbs: Teng 2009, pp. 217, 223. Durative 著: Yu Liu,
+            &ldquo;The Acquisition of Durative Marker zhe&rdquo;, in Yuan et al.
+            2023, ch. 12.
           </p>
         </div>
 
@@ -140,9 +143,9 @@ export default function PartsOfSpeech() {
         <p className="mb-2 text-gray-700 dark:text-gray-300">
           The defaults depend on the learner&apos;s native language too:
           properties that carry over from English (跑 and 哭 take no object in
-          either language) need no explanation, while ones that differ (結婚
-          and 破 take no object, unlike &ldquo;marry&rdquo; and
-          &ldquo;break&rdquo;) are where mistakes happen.
+          either language) need no explanation, while ones that differ (結婚 and
+          破 take no object, unlike &ldquo;marry&rdquo; and &ldquo;break&rdquo;)
+          are where mistakes happen.
         </p>
         <p className={`${SOURCE} mb-8`}>
           Source: <em>A Course in Contemporary Chinese 1</em>, Introduction §H,
