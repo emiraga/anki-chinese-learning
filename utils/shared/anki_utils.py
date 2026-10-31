@@ -476,6 +476,13 @@ def add_note(deck: str, model: str, fields: dict[str, str], tags: list[str] | No
     return note_id
 
 
+def delete_notes(note_ids: list[int]) -> None:
+    """Delete the given notes together with all their cards and review history."""
+    if not note_ids:
+        return
+    anki_connect_request("deleteNotes", {"notes": note_ids})
+
+
 def get_note_info(note_id: int) -> AnkiNoteInfo:
     """
     Get detailed information about a single note.
