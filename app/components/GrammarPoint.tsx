@@ -5,6 +5,7 @@ import {
   PATTERN_SYMBOLS,
   parseBold,
   type GrammarExample,
+  type GrammarMissingAspect,
   type GrammarPoint,
   type GrammarStudiedNote,
 } from "~/data/tbcl_grammar";
@@ -165,14 +166,25 @@ const GrammarStudiedList: React.FC<{ studied: GrammarStudiedNote[] }> = ({
   </div>
 );
 
-const GrammarMissingList: React.FC<{ missing: string[] }> = ({ missing }) => (
+const GrammarMissingList: React.FC<{ missing: GrammarMissingAspect[] }> = ({
+  missing,
+}) => (
   <div className="mt-2 rounded bg-amber-50 dark:bg-amber-950/40 p-2">
     <div className="text-sm font-semibold text-amber-800 dark:text-amber-300">
       Not yet covered
     </div>
-    <ul className="mt-1 list-disc pl-5 text-sm text-gray-700 dark:text-gray-300">
-      {missing.map((item, i) => (
-        <li key={i}>{item}</li>
+    <ul className="mt-1 list-disc pl-5 space-y-2">
+      {missing.map((aspect, i) => (
+        <li key={i}>
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            {aspect.explanation}
+          </div>
+          <ul className="mt-1 space-y-1">
+            {aspect.examples.map((example, j) => (
+              <GrammarExampleItem key={j} example={example} />
+            ))}
+          </ul>
+        </li>
       ))}
     </ul>
   </div>

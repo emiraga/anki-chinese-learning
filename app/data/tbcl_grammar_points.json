@@ -129,12 +129,40 @@
           "noteId": 1758268450042,
           "traditional": "你的專業是什麼",
           "justification": "是 links the topic 你的專業 to the question word: N1 + 是 + N2."
+        },
+        {
+          "noteId": 1769319195970,
+          "traditional": "我滿肚子都是屎",
+          "justification": "是 links 滿肚子 to 屎 in a plain statement: N1 + 是 + N2."
         }
       ],
       "missing": [
-        "Plain statement N1 + 是 + N2 (我是學生); the only note is a question.",
-        "Negation 不是.",
-        "The contrast with state verbs: 他很高, not 他是高."
+        {
+          "explanation": "Negation 不是.",
+          "examples": [
+            {
+              "zh": "他**不是**老師，他是學生。",
+              "en": "He is not a teacher, he is a student."
+            },
+            {
+              "zh": "這**不是**我的包包。",
+              "en": "This is not my bag."
+            }
+          ]
+        },
+        {
+          "explanation": "The contrast with state verbs: 他很高, not 他是高.",
+          "examples": [
+            {
+              "zh": "他**很高**。",
+              "en": "He is tall."
+            },
+            {
+              "zh": "這家餐廳**很貴**。",
+              "en": "This restaurant is expensive."
+            }
+          ]
+        }
       ]
     },
     {
@@ -154,7 +182,29 @@
           "en": "These are Dad's shoes."
         }
       ],
-      "page": 1
+      "page": 1,
+      "studied": [
+        {
+          "noteId": 1767142939259,
+          "traditional": "這家店的口味偏甜",
+          "justification": "這家店的口味: the shop's flavour, N1 + 的 + N2."
+        },
+        {
+          "noteId": 1768331573895,
+          "traditional": "這條魚的味道有點鹹",
+          "justification": "這條魚的味道: the fish's taste, N1 + 的 + N2."
+        },
+        {
+          "noteId": 1772444270741,
+          "traditional": "我就住在這棟大樓的頂層",
+          "justification": "這棟大樓的頂層: the building's top floor, N1 + 的 + N2."
+        },
+        {
+          "noteId": 1781963170696,
+          "traditional": "他的肩膀很寬",
+          "justification": "他的肩膀: a pronoun marked as owner with 的."
+        }
+      ]
     },
     {
       "id": "1-3",
@@ -195,9 +245,34 @@
       "page": 1,
       "studied": [
         {
+          "noteId": 1754040002202,
+          "traditional": "我中午後不喝咖啡",
+          "justification": "不 + V for a habit: 不喝咖啡."
+        },
+        {
+          "noteId": 1764679963825,
+          "traditional": "不相信有神",
+          "justification": "不 directly before the verb 相信."
+        },
+        {
           "noteId": 1767522201622,
           "traditional": "不告訴你",
           "justification": "不 negates the verb 告訴: S + 不 + V."
+        }
+      ],
+      "missing": [
+        {
+          "explanation": "不 + Vs negating an adjective; every note negates an action verb.",
+          "examples": [
+            {
+              "zh": "這件衣服**不貴**。",
+              "en": "This piece of clothing is not expensive."
+            },
+            {
+              "zh": "今天**不冷**。",
+              "en": "It is not cold today."
+            }
+          ]
         }
       ]
     },
@@ -255,7 +330,19 @@
         }
       ],
       "missing": [
-        "這／那 standing alone as the subject (這是什麼？, 那是誰？)."
+        {
+          "explanation": "這／那 standing alone as the subject (這是什麼？, 那是誰？).",
+          "examples": [
+            {
+              "zh": "**這**是我的手機。",
+              "en": "This is my phone."
+            },
+            {
+              "zh": "**那**是我們的老師。",
+              "en": "That is our teacher."
+            }
+          ]
+        }
       ]
     },
     {
@@ -557,8 +644,32 @@
         }
       ],
       "missing": [
-        "Numbers of 萬 and above, which group by 萬 (一萬, 一萬零八百九十).",
-        "零 for a skipped place value (一百零八, 一千零一十八); 九千八十 drops it colloquially."
+        {
+          "explanation": "Numbers of 萬 and above, which group by 萬 (一萬, 一萬零八百九十).",
+          "examples": [
+            {
+              "zh": "這台電腦**兩萬三千**塊。",
+              "en": "This computer costs 23,000 dollars."
+            },
+            {
+              "zh": "這個城市有**五十萬**人。",
+              "en": "This city has 500,000 people."
+            }
+          ]
+        },
+        {
+          "explanation": "零 for a skipped place value (一百零八, 一千零一十八); 九千八十 drops it colloquially.",
+          "examples": [
+            {
+              "zh": "這本書**一百零五**塊。",
+              "en": "This book costs 105 dollars."
+            },
+            {
+              "zh": "我們學校有**兩千零三十**個學生。",
+              "en": "Our school has 2,030 students."
+            }
+          ]
+        }
       ]
     },
     {
@@ -672,7 +783,19 @@
         }
       ],
       "missing": [
-        "誰 as the subject (誰在教室？); the note only has 誰 as an object."
+        {
+          "explanation": "誰 as the subject (誰在教室？); the note only has 誰 as an object.",
+          "examples": [
+            {
+              "zh": "**誰**要喝咖啡？",
+              "en": "Who wants coffee?"
+            },
+            {
+              "zh": "**誰**是你的中文老師？",
+              "en": "Who is your Chinese teacher?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -706,7 +829,19 @@
         }
       ],
       "missing": [
-        "The core pattern S + 在 + 哪裡？ asking where something is (郵局在哪裡？)."
+        {
+          "explanation": "The core pattern S + 在 + 哪裡？ asking where something is (郵局在哪裡？).",
+          "examples": [
+            {
+              "zh": "廁所**在哪裡**？",
+              "en": "Where is the toilet?"
+            },
+            {
+              "zh": "你現在**在哪裡**？",
+              "en": "Where are you now?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -766,7 +901,19 @@
         }
       ],
       "missing": [
-        "很 + Vs + 的 + N (很好看的電影)."
+        {
+          "explanation": "很 + Vs + 的 + N (很好看的電影).",
+          "examples": [
+            {
+              "zh": "她住在一個**很安靜的**地方。",
+              "en": "She lives in a very quiet place."
+            },
+            {
+              "zh": "這是一家**很有名的**餐廳。",
+              "en": "This is a very famous restaurant."
+            }
+          ]
+        }
       ]
     },
     {
@@ -812,6 +959,11 @@
           "noteId": 1775821859758,
           "traditional": "朋友寄了賀卡",
           "justification": "V + 了 + O for a completed action: 寄了賀卡."
+        },
+        {
+          "noteId": 1783860385392,
+          "traditional": "她嫁給了一位紳士",
+          "justification": "V了 + Num + M + O: 嫁給了一位紳士."
         }
       ]
     },
@@ -870,7 +1022,19 @@
         }
       ],
       "missing": [
-        "Dropping 有 after 沒 (我沒錢)."
+        {
+          "explanation": "Dropping 有 after 沒 (我沒錢).",
+          "examples": [
+            {
+              "zh": "我今天**沒**時間。",
+              "en": "I don't have time today."
+            },
+            {
+              "zh": "冰箱裡**沒**水了。",
+              "en": "There's no water left in the fridge."
+            }
+          ]
+        }
       ]
     },
     {
@@ -890,7 +1054,29 @@
           "en": "Will you go abroad this year?"
         }
       ],
-      "page": 3
+      "page": 3,
+      "studied": [
+        {
+          "noteId": 1760880303159,
+          "traditional": "他會好起來的",
+          "justification": "會 predicts a future outcome: he will get better."
+        }
+      ],
+      "missing": [
+        {
+          "explanation": "會 for a plain prediction or a question about the future, without the emphatic …的.",
+          "examples": [
+            {
+              "zh": "明天**會**下雨。",
+              "en": "It will rain tomorrow."
+            },
+            {
+              "zh": "你週末**會**在家嗎？",
+              "en": "Will you be home this weekend?"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "2-6",
@@ -918,7 +1104,19 @@
         }
       ],
       "missing": [
-        "S + V著 + O for something a person wears or holds (他戴著帽子); the note only has the existential use."
+        {
+          "explanation": "S + V著 + O for something a person wears or holds (他戴著帽子); the note only has the existential use.",
+          "examples": [
+            {
+              "zh": "她手裡**拿著**一杯咖啡。",
+              "en": "She is holding a cup of coffee."
+            },
+            {
+              "zh": "那個人**穿著**黑色的外套。",
+              "en": "That person is wearing a black jacket."
+            }
+          ]
+        }
       ]
     },
     {
@@ -997,7 +1195,19 @@
         }
       ],
       "missing": [
-        "Negative 不可以 'not allowed' (上課不可以吃東西)."
+        {
+          "explanation": "Negative 不可以 'not allowed' (上課不可以吃東西).",
+          "examples": [
+            {
+              "zh": "這裡**不可以**抽菸。",
+              "en": "Smoking is not allowed here."
+            },
+            {
+              "zh": "你**不可以**在捷運上喝飲料。",
+              "en": "You are not allowed to drink on the MRT."
+            }
+          ]
+        }
       ]
     },
     {
@@ -1129,7 +1339,19 @@
         }
       ],
       "missing": [
-        "Statement with final 了 for a duration that is still ongoing (他已經來臺灣一個月了); final 了 only appears in questions."
+        {
+          "explanation": "Statement with final 了 for a duration that is still ongoing (他已經來臺灣一個月了); final 了 only appears in questions.",
+          "examples": [
+            {
+              "zh": "我學中文**兩年了**。",
+              "en": "I have been studying Chinese for two years (and still am)."
+            },
+            {
+              "zh": "我們在這裡等了**半個小時了**。",
+              "en": "We have been waiting here for half an hour."
+            }
+          ]
+        }
       ]
     },
     {
@@ -1215,8 +1437,32 @@
         }
       ],
       "missing": [
-        "Statement form S + V過 + O (我看過這部電影); the note is a question.",
-        "Negation 沒(有) + V過."
+        {
+          "explanation": "Statement form S + V過 + O (我看過這部電影); the note is a question.",
+          "examples": [
+            {
+              "zh": "我**去過**日本。",
+              "en": "I have been to Japan."
+            },
+            {
+              "zh": "她**吃過**臭豆腐。",
+              "en": "She has eaten stinky tofu before."
+            }
+          ]
+        },
+        {
+          "explanation": "Negation 沒(有) + V過.",
+          "examples": [
+            {
+              "zh": "我**沒去過**台東。",
+              "en": "I have never been to Taitung."
+            },
+            {
+              "zh": "他**沒有學過**中文。",
+              "en": "He has never studied Chinese."
+            }
+          ]
+        }
       ]
     },
     {
@@ -1479,7 +1725,19 @@
         }
       ],
       "missing": [
-        "跟 itself; the only note uses 和 in this role."
+        {
+          "explanation": "跟 itself; the only note uses 和 in this role.",
+          "examples": [
+            {
+              "zh": "你要**跟**我說實話。",
+              "en": "You have to tell me the truth."
+            },
+            {
+              "zh": "我**跟**老闆說了這件事。",
+              "en": "I told the boss about this."
+            }
+          ]
+        }
       ]
     },
     {
@@ -1551,6 +1809,11 @@
           "noteId": 1757075464854,
           "traditional": "我想和你去約會",
           "justification": "和 'with' (companion): 和你去約會."
+        },
+        {
+          "noteId": 1760873769759,
+          "traditional": "你得要和我說",
+          "justification": "和 + N before the verb marks the partner: 和我說."
         }
       ]
     },
@@ -1702,7 +1965,19 @@
         }
       ],
       "missing": [
-        "可是 'but'; the note pairs 雖然 with 但是 instead."
+        {
+          "explanation": "可是 'but'; the note pairs 雖然 with 但是 instead.",
+          "examples": [
+            {
+              "zh": "**雖然**很累，**可是**我很開心。",
+              "en": "Although I'm tired, I'm happy."
+            },
+            {
+              "zh": "我想去，**可是**我沒有時間。",
+              "en": "I want to go, but I don't have time."
+            }
+          ]
+        }
       ]
     },
     {
@@ -1911,6 +2186,11 @@
           "noteId": 1767085107174,
           "traditional": "這台機器壞了",
           "justification": "Sentence-final 了 for a new state: 機器壞了."
+        },
+        {
+          "noteId": 1772938001639,
+          "traditional": "輪到你了",
+          "justification": "Sentence-final 了 for a new situation: now it is your turn."
         }
       ]
     },
@@ -1946,7 +2226,19 @@
         }
       ],
       "missing": [
-        "Polite 請不要 + VP."
+        {
+          "explanation": "Polite 請不要 + VP.",
+          "examples": [
+            {
+              "zh": "**請不要**在這裡停車。",
+              "en": "Please don't park here."
+            },
+            {
+              "zh": "**請不要**大聲說話。",
+              "en": "Please don't talk loudly."
+            }
+          ]
+        }
       ]
     },
     {
@@ -2103,8 +2395,32 @@
         }
       ],
       "missing": [
-        "以前 itself; the note uses the variant 之前.",
-        "以前 alone meaning 'in the past' (我以前在醫院工作過)."
+        {
+          "explanation": "以前 itself; the note uses the variant 之前.",
+          "examples": [
+            {
+              "zh": "睡覺**以前**我會看書。",
+              "en": "I read before going to sleep."
+            },
+            {
+              "zh": "三點**以前**要回來。",
+              "en": "You need to be back before three o'clock."
+            }
+          ]
+        },
+        {
+          "explanation": "以前 alone meaning 'in the past' (我以前在醫院工作過).",
+          "examples": [
+            {
+              "zh": "我**以前**住在波士尼亞。",
+              "en": "I used to live in Bosnia."
+            },
+            {
+              "zh": "他**以前**不喜歡喝咖啡。",
+              "en": "He didn't use to like coffee."
+            }
+          ]
+        }
       ]
     },
     {
@@ -2166,7 +2482,29 @@
           "en": "He can speak Chinese, and he can also speak Japanese."
         }
       ],
-      "page": 5
+      "page": 5,
+      "studied": [
+        {
+          "noteId": 1763729701173,
+          "traditional": "她不但唱歌好聽而且跳舞也很厲害",
+          "justification": "也 after the topic 跳舞, before the predicate 很厲害."
+        }
+      ],
+      "missing": [
+        {
+          "explanation": "也 'too, also' with a different subject repeating what came before.",
+          "examples": [
+            {
+              "zh": "他是學生，我**也**是學生。",
+              "en": "He is a student, and I am a student too."
+            },
+            {
+              "zh": "你喜歡喝茶嗎？我**也**喜歡。",
+              "en": "Do you like tea? I like it too."
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "2*-2",
@@ -2227,8 +2565,32 @@
         }
       ],
       "missing": [
-        "以後 itself; the notes use 之後／後.",
-        "以後 alone meaning 'from now on, in the future'."
+        {
+          "explanation": "以後 itself; the notes use 之後／後.",
+          "examples": [
+            {
+              "zh": "下課**以後**我們去吃飯。",
+              "en": "Let's go eat after class."
+            },
+            {
+              "zh": "回家**以後**，他就睡覺了。",
+              "en": "After he got home, he went to sleep."
+            }
+          ]
+        },
+        {
+          "explanation": "以後 alone meaning 'from now on, in the future'.",
+          "examples": [
+            {
+              "zh": "**以後**我不喝酒了。",
+              "en": "From now on I'm not drinking anymore."
+            },
+            {
+              "zh": "你**以後**想做什麼工作？",
+              "en": "What job do you want to do in the future?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -2291,7 +2653,19 @@
         }
       ],
       "missing": [
-        "多少 'how many / how much' (啤酒一罐多少錢？)."
+        {
+          "explanation": "多少 'how many / how much' (啤酒一罐多少錢？).",
+          "examples": [
+            {
+              "zh": "這個**多少**錢？",
+              "en": "How much is this?"
+            },
+            {
+              "zh": "你們班有**多少**學生？",
+              "en": "How many students are in your class?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -2436,7 +2810,19 @@
         }
       ],
       "missing": [
-        "V + 到 + PW for the destination of a movement (走到對面的超市)."
+        {
+          "explanation": "V + 到 + PW for the destination of a movement (走到對面的超市).",
+          "examples": [
+            {
+              "zh": "我們**走到**車站吧。",
+              "en": "Let's walk to the station."
+            },
+            {
+              "zh": "這班公車**開到**台北。",
+              "en": "This bus goes to Taipei."
+            }
+          ]
+        }
       ]
     },
     {
@@ -2508,7 +2894,29 @@
           "en": "We all like jogging."
         }
       ],
-      "page": 5
+      "page": 5,
+      "studied": [
+        {
+          "noteId": 1769319195970,
+          "traditional": "我滿肚子都是屎",
+          "justification": "都 sums up the whole of 滿肚子 before the verb 是."
+        }
+      ],
+      "missing": [
+        {
+          "explanation": "都 after a plural subject: the statement holds for all of them.",
+          "examples": [
+            {
+              "zh": "我們**都**喜歡吃牛肉麵。",
+              "en": "We all like beef noodles."
+            },
+            {
+              "zh": "我的朋友**都**住在台北。",
+              "en": "My friends all live in Taipei."
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "2*-15",
@@ -2608,7 +3016,19 @@
         }
       ],
       "missing": [
-        "A purpose VP after 到 + PW (他們到臺灣學中文); the note has no purpose clause."
+        {
+          "explanation": "A purpose VP after 到 + PW (他們到臺灣學中文); the note has no purpose clause.",
+          "examples": [
+            {
+              "zh": "我**到**超市**去買**牛奶。",
+              "en": "I'm going to the supermarket to buy milk."
+            },
+            {
+              "zh": "他**到**日本**工作**。",
+              "en": "He went to Japan to work."
+            }
+          ]
+        }
       ]
     },
     {
@@ -2765,7 +3185,19 @@
         }
       ],
       "missing": [
-        "The form with 在: 在 + PW + 的 + N (在桌上的電腦)."
+        {
+          "explanation": "The form with 在: 在 + PW + 的 + N (在桌上的電腦).",
+          "examples": [
+            {
+              "zh": "**在**冰箱裡**的**蛋糕是我的。",
+              "en": "The cake in the fridge is mine."
+            },
+            {
+              "zh": "**在**門口**的**那個人是誰？",
+              "en": "Who is that person at the door?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -2897,7 +3329,19 @@
         }
       ],
       "missing": [
-        "V + 到 + a clock time or date (上課上到下午五點)."
+        {
+          "explanation": "V + 到 + a clock time or date (上課上到下午五點).",
+          "examples": [
+            {
+              "zh": "我昨天工作**到**晚上十點。",
+              "en": "Yesterday I worked until ten in the evening."
+            },
+            {
+              "zh": "這家店開**到**半夜。",
+              "en": "This shop is open until midnight."
+            }
+          ]
+        }
       ]
     },
     {
@@ -3014,8 +3458,32 @@
         }
       ],
       "missing": [
-        "The basic A + 比 + B + Vs (弟弟比哥哥高); the note mixes 比 with a V得 complement.",
-        "Degree with 更／還／得多 instead of 很."
+        {
+          "explanation": "The basic A + 比 + B + Vs (弟弟比哥哥高); the note mixes 比 with a V得 complement.",
+          "examples": [
+            {
+              "zh": "今天**比**昨天冷。",
+              "en": "Today is colder than yesterday."
+            },
+            {
+              "zh": "台北**比**台中貴。",
+              "en": "Taipei is more expensive than Taichung."
+            }
+          ]
+        },
+        {
+          "explanation": "Degree with 更／還／得多 instead of 很.",
+          "examples": [
+            {
+              "zh": "這本書**比**那本**更**有意思。",
+              "en": "This book is even more interesting than that one."
+            },
+            {
+              "zh": "坐捷運**比**坐公車快**得多**。",
+              "en": "Taking the MRT is much faster than taking the bus."
+            }
+          ]
+        }
       ]
     },
     {
@@ -3084,7 +3552,19 @@
         }
       ],
       "missing": [
-        "是…的 focusing on time, place or manner (我是從美國來的); the note focuses only on the agent."
+        {
+          "explanation": "是…的 focusing on time, place or manner (我是從美國來的); the note focuses only on the agent.",
+          "examples": [
+            {
+              "zh": "我**是**去年來台灣**的**。",
+              "en": "It was last year that I came to Taiwan."
+            },
+            {
+              "zh": "你**是**坐什麼來**的**？",
+              "en": "How did you get here?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -3175,7 +3655,19 @@
         }
       ],
       "missing": [
-        "Distance expressed as a duration (我家離學校走路只要十分鐘)."
+        {
+          "explanation": "Distance expressed as a duration (我家離學校走路只要十分鐘).",
+          "examples": [
+            {
+              "zh": "我家**離**捷運站走路五分鐘。",
+              "en": "My home is a five-minute walk from the MRT station."
+            },
+            {
+              "zh": "**離**考試只有三天了。",
+              "en": "There are only three days left until the exam."
+            }
+          ]
+        }
       ]
     },
     {
@@ -3238,7 +3730,19 @@
         }
       ],
       "missing": [
-        "多 + other measure state verbs (多高, 多遠, 多大); every note uses 多久."
+        {
+          "explanation": "多 + other measure state verbs (多高, 多遠, 多大); every note uses 多久.",
+          "examples": [
+            {
+              "zh": "你**多高**？",
+              "en": "How tall are you?"
+            },
+            {
+              "zh": "你家離這裡**多遠**？",
+              "en": "How far is your home from here?"
+            }
+          ]
+        }
       ]
     },
     {
@@ -3311,7 +3815,19 @@
           "en": "After he looked at the menu, he decided to order a sandwich."
         }
       ],
-      "page": 7
+      "page": 7,
+      "studied": [
+        {
+          "noteId": 1763729608592,
+          "traditional": "因為我生病了所以不能上班",
+          "justification": "The subject 我 is not repeated in the 所以 clause."
+        },
+        {
+          "noteId": 1775827845690,
+          "traditional": "先去超市然後回家",
+          "justification": "One unstated subject carries over both clauses."
+        }
+      ]
     },
     {
       "id": "2*-45",
@@ -3492,7 +4008,19 @@
         }
       ],
       "missing": [
-        "才 + Num + M for a small amount or age (你才十一歲); the note has 才 + a time word."
+        {
+          "explanation": "才 + Num + M for a small amount or age (你才十一歲); the note has 才 + a time word.",
+          "examples": [
+            {
+              "zh": "他**才**二十歲就開了一家公司。",
+              "en": "He's only twenty and has already started a company."
+            },
+            {
+              "zh": "這件衣服**才**兩百塊。",
+              "en": "This piece of clothing is only 200 dollars."
+            }
+          ]
+        }
       ]
     },
     {
@@ -3951,7 +4479,19 @@
         }
       ],
       "missing": [
-        "先 marking the first action; every note has only 再."
+        {
+          "explanation": "先 marking the first action; every note has only 再.",
+          "examples": [
+            {
+              "zh": "我們**先**吃飯**再**去看電影。",
+              "en": "Let's eat first and then go see a movie."
+            },
+            {
+              "zh": "你**先**洗手**再**吃東西。",
+              "en": "Wash your hands first, then eat."
+            }
+          ]
+        }
       ]
     },
     {
@@ -3999,7 +4539,19 @@
         }
       ],
       "missing": [
-        "The full 快要…了; the note has the short 快…了."
+        {
+          "explanation": "The full 快要…了; the note has the short 快…了.",
+          "examples": [
+            {
+              "zh": "火車**快要**開**了**。",
+              "en": "The train is about to leave."
+            },
+            {
+              "zh": "我**快要**到**了**。",
+              "en": "I'm almost there."
+            }
+          ]
+        }
       ]
     },
     {
@@ -4073,7 +4625,19 @@
         }
       ],
       "missing": [
-        "V上 for movement up or onto a place (走上樓); the note is the 'closing' sense 閉上."
+        {
+          "explanation": "V上 for movement up or onto a place (走上樓); the note is the 'closing' sense 閉上.",
+          "examples": [
+            {
+              "zh": "他**爬上**了那座山。",
+              "en": "He climbed up that mountain."
+            },
+            {
+              "zh": "貓**跳上**了桌子。",
+              "en": "The cat jumped onto the table."
+            }
+          ]
+        }
       ]
     },
     {
@@ -4201,7 +4765,19 @@
         }
       ],
       "missing": [
-        "對 + N + an action directed at a person (對我笑, 對他說); the note uses 對 with a state."
+        {
+          "explanation": "對 + N + an action directed at a person (對我笑, 對他說); the note uses 對 with a state.",
+          "examples": [
+            {
+              "zh": "她**對**我笑了。",
+              "en": "She smiled at me."
+            },
+            {
+              "zh": "你不要**對**孩子大聲說話。",
+              "en": "Don't speak loudly to the child."
+            }
+          ]
+        }
       ]
     },
     {
@@ -4322,7 +4898,19 @@
         }
       ],
       "missing": [
-        "AA + 的 (大大的, 長長的) and AABB + 的 (漂漂亮亮的); the note is the ABB form 灰濛濛的."
+        {
+          "explanation": "AA + 的 (大大的, 長長的) and AABB + 的 (漂漂亮亮的); the note is the ABB form 灰濛濛的.",
+          "examples": [
+            {
+              "zh": "她的頭髮**長長的**。",
+              "en": "Her hair is long."
+            },
+            {
+              "zh": "房間打掃得**乾乾淨淨的**。",
+              "en": "The room has been cleaned spotless."
+            }
+          ]
+        }
       ]
     },
     {
@@ -4375,7 +4963,19 @@
         }
       ],
       "missing": [
-        "AABB + 地 + V (安安靜靜地坐著), and the AA form written with 地 (好好地休息)."
+        {
+          "explanation": "AABB + 地 + V (安安靜靜地坐著), and the AA form written with 地 (好好地休息).",
+          "examples": [
+            {
+              "zh": "孩子們**安安靜靜地**看書。",
+              "en": "The children are reading quietly."
+            },
+            {
+              "zh": "你今天要**好好地**休息。",
+              "en": "You should rest well today."
+            }
+          ]
+        }
       ]
     },
     {
@@ -4473,7 +5073,19 @@
         }
       ],
       "missing": [
-        "不必."
+        {
+          "explanation": "不必.",
+          "examples": [
+            {
+              "zh": "你**不必**帶傘，今天不會下雨。",
+              "en": "You don't need to bring an umbrella; it won't rain today."
+            },
+            {
+              "zh": "**不必**客氣。",
+              "en": "No need to be polite."
+            }
+          ]
+        }
       ]
     },
     {
@@ -4539,7 +5151,29 @@
           "en": "Dad has been abroad for quite a few days; he should be back soon."
         }
       ],
-      "page": 10
+      "page": 10,
+      "studied": [
+        {
+          "noteId": 1779633488976,
+          "traditional": "我被蚊子咬了好幾口",
+          "justification": "好幾 + M: 好幾口 'quite a few bites'."
+        }
+      ],
+      "missing": [
+        {
+          "explanation": "好多 and 好些 + M; the note only has 好幾.",
+          "examples": [
+            {
+              "zh": "我們**好多年**沒見了。",
+              "en": "We haven't seen each other for many years."
+            },
+            {
+              "zh": "他買了**好些**水果。",
+              "en": "He bought quite a lot of fruit."
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "3-52",
@@ -4816,7 +5450,19 @@
         }
       ],
       "missing": [
-        "起來 for an action that suddenly starts (笑起來); the notes only have a state beginning (好起來)."
+        {
+          "explanation": "起來 for an action that suddenly starts (笑起來); the notes only have a state beginning (好起來).",
+          "examples": [
+            {
+              "zh": "聽到這個消息，她**哭起來**了。",
+              "en": "When she heard the news, she started crying."
+            },
+            {
+              "zh": "大家都**笑起來**了。",
+              "en": "Everyone burst out laughing."
+            }
+          ]
+        }
       ]
     },
     {
@@ -5626,7 +6272,19 @@
         }
       ],
       "missing": [
-        "The productive pattern Duration + 沒 + VP + 了 (他兩天沒睡覺了); the only note is the fixed phrase 好久不見."
+        {
+          "explanation": "The productive pattern Duration + 沒 + VP + 了 (他兩天沒睡覺了); the only note is the fixed phrase 好久不見.",
+          "examples": [
+            {
+              "zh": "我**三天沒**喝咖啡**了**。",
+              "en": "I haven't had coffee for three days."
+            },
+            {
+              "zh": "他**一個星期沒**來上課**了**。",
+              "en": "He hasn't come to class for a week."
+            }
+          ]
+        }
       ]
     },
     {
@@ -5788,7 +6446,19 @@
         }
       ],
       "missing": [
-        "V掉 + O without 把 (賣掉了四雙皮鞋)."
+        {
+          "explanation": "V掉 + O without 把 (賣掉了四雙皮鞋).",
+          "examples": [
+            {
+              "zh": "他**賣掉**了他的車。",
+              "en": "He sold off his car."
+            },
+            {
+              "zh": "我**丟掉**了很多舊衣服。",
+              "en": "I threw away a lot of old clothes."
+            }
+          ]
+        }
       ]
     },
     {
@@ -5922,7 +6592,19 @@
         }
       ],
       "missing": [
-        "連 + N + 都／也 + 不／沒 (我連…都不知道)."
+        {
+          "explanation": "連 + N + 都／也 + 不／沒 (我連…都不知道).",
+          "examples": [
+            {
+              "zh": "他**連**自己的名字**都不**會寫。",
+              "en": "He can't even write his own name."
+            },
+            {
+              "zh": "我忙得**連**飯**也沒**吃。",
+              "en": "I was so busy I didn't even eat."
+            }
+          ]
+        }
       ]
     },
     {
@@ -5970,7 +6652,19 @@
         }
       ],
       "missing": [
-        "V了V for a past brief action (笑了笑) and V一V."
+        {
+          "explanation": "V了V for a past brief action (笑了笑) and V一V.",
+          "examples": [
+            {
+              "zh": "他**想了想**，說：「好吧。」",
+              "en": "He thought for a moment and said, 'All right.'"
+            },
+            {
+              "zh": "你**試一試**這件衣服。",
+              "en": "Try this piece of clothing on."
+            }
+          ]
+        }
       ]
     },
     {
@@ -5999,7 +6693,19 @@
         }
       ],
       "missing": [
-        "一M一M followed by a verb (一步一步爬上去); the note is a bare phrase."
+        {
+          "explanation": "一M一M followed by a verb (一步一步爬上去); the note is a bare phrase.",
+          "examples": [
+            {
+              "zh": "我們**一步一步**地往前走。",
+              "en": "We walk forward step by step."
+            },
+            {
+              "zh": "請**一個一個**進來。",
+              "en": "Please come in one at a time."
+            }
+          ]
+        }
       ]
     },
     {
@@ -6252,7 +6958,19 @@
         }
       ],
       "missing": [
-        "The 以外 part of 除了…以外, and the 也 variant."
+        {
+          "explanation": "The 以外 part of 除了…以外, and the 也 variant.",
+          "examples": [
+            {
+              "zh": "**除了**咖啡**以外**，我**也**喜歡喝茶。",
+              "en": "Besides coffee, I also like drinking tea."
+            },
+            {
+              "zh": "**除了**英文**以外**，他**還**會說日文。",
+              "en": "Besides English, he can also speak Japanese."
+            }
+          ]
+        }
       ]
     },
     {
@@ -6690,7 +7408,19 @@
         }
       ],
       "missing": [
-        "Plain A + 不如 + B comparing two things (火車站附近的發展不如新市區); the note is the different 與其…不如 pattern."
+        {
+          "explanation": "Plain A + 不如 + B comparing two things (火車站附近的發展不如新市區); the note is the different 與其…不如 pattern.",
+          "examples": [
+            {
+              "zh": "我的中文**不如**他好。",
+              "en": "My Chinese is not as good as his."
+            },
+            {
+              "zh": "坐公車**不如**坐捷運方便。",
+              "en": "Taking the bus is not as convenient as taking the MRT."
+            }
+          ]
+        }
       ]
     },
     {
@@ -6801,7 +7531,19 @@
         }
       ],
       "missing": [
-        "The productive conditional (你不來，活動就不能開始); the note is the fixed phrase 不見不散."
+        {
+          "explanation": "The productive conditional (你不來，活動就不能開始); the note is the fixed phrase 不見不散.",
+          "examples": [
+            {
+              "zh": "你**不**說，我就**不**知道。",
+              "en": "If you don't tell me, I won't know."
+            },
+            {
+              "zh": "**不**吃早餐就**不**能出門。",
+              "en": "You can't leave without eating breakfast."
+            }
+          ]
+        }
       ]
     },
     {
@@ -11469,7 +12211,29 @@
           "en": "Parents walk the road of growing up together with their children."
         }
       ],
-      "page": 31
+      "page": 31,
+      "studied": [
+        {
+          "noteId": 1768751671927,
+          "traditional": "虎狼之詞",
+          "justification": "之 as classical 的 in a set expression: 虎狼之詞."
+        }
+      ],
+      "missing": [
+        {
+          "explanation": "之 in productive formal writing (成長之路, 原因之一); the note is a fixed idiom.",
+          "examples": [
+            {
+              "zh": "這是我來台灣的原因**之**一。",
+              "en": "This is one of the reasons I came to Taiwan."
+            },
+            {
+              "zh": "學習中文**之**路很長。",
+              "en": "The road of learning Chinese is long."
+            }
+          ]
+        }
+      ]
     }
   ]
 }

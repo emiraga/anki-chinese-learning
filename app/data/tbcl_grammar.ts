@@ -32,7 +32,14 @@ export type GrammarPoint = {
   /** TOCFL notes whose Traditional text already practices this grammar point. */
   studied?: GrammarStudiedNote[];
   /** Aspects of the grammar point that the `studied` notes do not cover. */
-  missing?: string[];
+  missing?: GrammarMissingAspect[];
+};
+
+export type GrammarMissingAspect = {
+  /** What part of the grammar point no studied note practices. */
+  explanation: string;
+  /** Sample sentences that practice the missing aspect. */
+  examples: GrammarExample[];
 };
 
 export type GrammarStudiedNote = {
