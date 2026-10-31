@@ -5,6 +5,8 @@ This module provides a common interface for communicating with the AnkiConnect a
 """
 
 import base64
+import functools
+import re
 from collections.abc import Iterator
 from typing import Any, NotRequired, TypedDict
 
@@ -112,17 +114,108 @@ def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> d
     return result
 
 
+# A deck path component starting with this character stands for "any single
+# Latin letter here", e.g. "Chinese::.Connect" matches "Chinese::aConnect".
+# The Chinese subdecks carry a sort-order letter prefix that changes whenever
+# the decks are reordered, so scripts refer to them without it.
+DECK_LETTER_PLACEHOLDER = "."
+
+# A `deck:` term in an Anki search query, either quoted or bare.
+_DECK_SEARCH_TERM = re.compile(r'(?P<prefix>(?<!\S)-?deck:)(?:"(?P<quoted>[^"]*)"|(?P<bare>[^\s"]+))')
+
+
+def match_deck_name(pattern: str, deck_names: list[str]) -> str:
+    """
+    Resolve the placeholder components of a deck name against the existing decks.
+
+    Each `::`-separated component starting with `DECK_LETTER_PLACEHOLDER` has the
+    placeholder replaced by the one Latin letter that makes it an existing deck.
+    Other components are kept verbatim (so Anki wildcards like `*` still work).
+
+    Args:
+        pattern: Deck name, e.g. "Chinese::.Connect" or "Chinese::.Phrases::*"
+        deck_names: All deck names in the collection
+
+    Returns:
+        The deck name with every placeholder resolved
+
+    Raises:
+        Exception: If a placeholder component matches no deck, or more than one
+    """
+    components = pattern.split("::")
+    if not any(c.startswith(DECK_LETTER_PLACEHOLDER) for c in components):
+        return pattern
+
+    existing = [name.split("::") for name in deck_names]
+    resolved: list[str] = []
+    for i, component in enumerate(components):
+        if not component.startswith(DECK_LETTER_PLACEHOLDER):
+            resolved.append(component)
+            continue
+        regex = re.compile("[A-Za-z]" + re.escape(component[len(DECK_LETTER_PLACEHOLDER) :]))
+        candidates = sorted({parts[i] for parts in existing if len(parts) > i and parts[:i] == resolved and regex.fullmatch(parts[i])})
+        if len(candidates) != 1:
+            parent = "::".join(resolved) or "<top level>"
+            found = f"found {candidates}" if candidates else "found none"
+            raise Exception(f"Deck '{pattern}': expected exactly one deck matching '{component}' under '{parent}', {found}")
+        resolved.append(candidates[0])
+    return "::".join(resolved)
+
+
+def resolve_deck_name(pattern: str) -> str:
+    """
+    Resolve the `DECK_LETTER_PLACEHOLDER` components of a deck name via AnkiConnect.
+
+    A name without placeholders is returned as-is without contacting Anki.
+
+    Args:
+        pattern: Deck name, e.g. "Chinese::.Connect"
+
+    Returns:
+        The actual deck name, e.g. "Chinese::aConnect"
+    """
+    if not any(c.startswith(DECK_LETTER_PLACEHOLDER) for c in pattern.split("::")):
+        return pattern
+    return match_deck_name(pattern, _get_deck_names())
+
+
+@functools.cache
+def _get_deck_names() -> list[str]:
+    return anki_connect_request("deckNames")["result"]
+
+
+def resolve_deck_query(query: str) -> str:
+    """
+    Resolve deck placeholders in every `deck:` term of an Anki search query.
+
+    Args:
+        query: Anki search query, e.g. "deck:Chinese::.Connect is:due"
+
+    Returns:
+        The query with deck names resolved, e.g. 'deck:"Chinese::aConnect" is:due'
+    """
+
+    def replace(match: re.Match[str]) -> str:
+        name = match.group("quoted") if match.group("quoted") is not None else match.group("bare")
+        resolved = resolve_deck_name(name)
+        if resolved == name:
+            return match.group(0)
+        return f'{match.group("prefix")}"{resolved}"'
+
+    return _DECK_SEARCH_TERM.sub(replace, query)
+
+
 def find_notes_by_query(query: str) -> list[int]:
     """
     Find notes matching a query.
 
     Args:
-        query: Anki search query
+        query: Anki search query; `deck:` terms may use deck placeholders (see `resolve_deck_name`)
 
     Returns:
         List of note IDs
     """
-    response = anki_connect_request("findNotes", {"query": query})
+    response = anki_connect_request("findNotes", {"query": resolve_deck_query(query)})
     return response.get("result", [])
 
 
@@ -152,12 +245,12 @@ def find_cards_by_query(query: str) -> list[int]:
     Find cards matching a query.
 
     Args:
-        query: Anki search query
+        query: Anki search query; `deck:` terms may use deck placeholders (see `resolve_deck_name`)
 
     Returns:
         List of card IDs
     """
-    response = anki_connect_request("findCards", {"query": query})
+    response = anki_connect_request("findCards", {"query": resolve_deck_query(query)})
     return response.get("result", [])
 
 
@@ -311,10 +404,11 @@ def move_cards_to_deck(card_ids: list[int], deck: str) -> None:
 
     Args:
         card_ids: List of card IDs to move
-        deck: Name of the destination deck (e.g. "Chinese::gMediaClips")
+        deck: Name of the destination deck (e.g. "Chinese::.MediaClips"; see `resolve_deck_name`)
     """
     if not card_ids:
         return
+    deck = resolve_deck_name(deck)
     anki_connect_request("changeDeck", {"cards": card_ids, "deck": deck})
     print(f"Moved {len(card_ids)} card(s) to deck '{deck}'")
 
@@ -359,7 +453,7 @@ def add_note(deck: str, model: str, fields: dict[str, str], tags: list[str] | No
     Create a new note.
 
     Args:
-        deck: Deck the note's cards go into (e.g. "Chinese::wCharsProps")
+        deck: Deck the note's cards go into (e.g. "Chinese::.CharsProps"; see `resolve_deck_name`)
         model: Note type to use (e.g. "Hanzi")
         fields: Field values for the new note
         tags: Tags to put on the note
@@ -370,6 +464,7 @@ def add_note(deck: str, model: str, fields: dict[str, str], tags: list[str] | No
     Raises:
         Exception: If AnkiConnect refuses to create the note (e.g. a duplicate)
     """
+    deck = resolve_deck_name(deck)
     response = anki_connect_request(
         "addNote",
         {"note": {"deckName": deck, "modelName": model, "fields": fields, "tags": tags or []}},

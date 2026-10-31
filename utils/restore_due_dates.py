@@ -19,8 +19,8 @@ setting a card due today sets its interval to the days elapsed since its last
 review, which must match what this script computes from the review log.
 
 Examples:
-    ./restore_due_dates.py --query "deck:Chinese::aConnect is:due" --since "2026-10-11 19:09"
-    ./restore_due_dates.py --query "deck:Chinese::aConnect is:due" --since "2026-10-11 19:09" --apply
+    ./restore_due_dates.py --query "deck:Chinese::.Connect is:due" --since "2026-10-11 19:09"
+    ./restore_due_dates.py --query "deck:Chinese::.Connect is:due" --since "2026-10-11 19:09" --apply
 """
 
 import argparse

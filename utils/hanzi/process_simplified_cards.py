@@ -14,7 +14,7 @@ This script:
 
 The new-card queue order is not managed here: AnkiConnect no longer allows
 writing a new card's queue position. The pace at which they arrive is the
-new-cards/day limit of the Chinese::jSimplified deck, which you can change in
+new-cards/day limit of the Chinese::.Simplified deck, which you can change in
 Anki at any time.
 """
 
@@ -38,6 +38,7 @@ from shared.anki_utils import (
     get_field_value,
     get_notes_info,
     remove_tags,
+    resolve_deck_name,
     unsuspend_cards,
 )
 from shared.character_conversion import to_simplified
@@ -56,7 +57,7 @@ PHRASE_NOTE_TYPES = ["TOCFL"]
 
 # Deck holding the second (simplified-form) cards. Its new-cards/day limit is
 # what actually paces the schedule; the script only reads it for reporting.
-SIMPLIFIED_DECK = "Chinese::jSimplified"
+SIMPLIFIED_DECK = "Chinese::.Simplified"
 
 # Anki card queue values (see https://docs.ankiweb.net)
 QUEUE_NEW = 0
@@ -361,7 +362,7 @@ def print_stats(notes: list[AnkiNoteInfo], priority: list[dict[str, Any]]) -> No
 
 def get_new_cards_per_day() -> int:
     """Read the new-cards/day limit of the deck holding the second cards."""
-    config = anki_connect_request("getDeckConfig", {"deck": SIMPLIFIED_DECK})["result"]
+    config = anki_connect_request("getDeckConfig", {"deck": resolve_deck_name(SIMPLIFIED_DECK)})["result"]
     return int(config["new"]["perDay"])
 
 
