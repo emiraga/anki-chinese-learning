@@ -6,7 +6,7 @@ import anki, {
 } from "~/apis/anki";
 import { ACTOR_TAGS_MAP } from "~/data/pinyin_table";
 import { useEffect, useState } from "react";
-import { CARDS_INFO } from "~/data/cards";
+import { CARDS_INFO, deckMatches } from "~/data/cards";
 import { LoadingProgressBar } from "./LoadingProgressBar";
 
 /**
@@ -166,7 +166,10 @@ function CorrectDeck({ notesByCards }: { notesByCards: NoteWithCards[] }) {
               if (
                 CARDS_INFO[note.modelName] &&
                 CARDS_INFO[note.modelName][card.ord] &&
-                CARDS_INFO[note.modelName][card.ord].deck === card.deckName
+                deckMatches(
+                  CARDS_INFO[note.modelName][card.ord].deck,
+                  card.deckName,
+                )
               ) {
                 return undefined;
               }

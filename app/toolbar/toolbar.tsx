@@ -287,11 +287,6 @@ export const MainToolbarNoOutlet: React.FC<{
           show: phrases.length > 0,
         },
         {
-          pathname: "/migration",
-          name: "Migration",
-          show: true,
-        },
-        {
           pathname: "/stats_progress",
           name: "Progress",
           show: phrases.length > 0,
