@@ -82,6 +82,14 @@ def get_field_value(note: AnkiNoteInfo, field_name: str, default: str = "") -> s
     return field["value"].strip() or default
 
 
+# How many notes/cards to fetch per `notesInfo`/`cardsInfo` request. Every
+# AnkiConnect request carries ~45ms of fixed latency on top of the per-note
+# cost, so small batches dominate the runtime of scripts that load thousands
+# of notes (all 18k TOCFL notes: 15s in batches of 100, 7s in batches of 1000),
+# while one huge request gains little more and makes a single response large.
+ANKI_FETCH_BATCH_SIZE = 1000
+
+
 def anki_connect_request(action: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Send a request to AnkiConnect.
@@ -286,6 +294,21 @@ def get_cards_info(card_ids: list[int]) -> list[AnkiCardInfo]:
 
     response = anki_connect_request("cardsInfo", {"cards": card_ids})
     return response.get("result", [])
+
+
+def iter_cards_info(card_ids: list[int], batch_size: int = ANKI_FETCH_BATCH_SIZE) -> Iterator[AnkiCardInfo]:
+    """
+    Fetch cards in batches, yielding each one (see ANKI_FETCH_BATCH_SIZE).
+
+    Args:
+        card_ids: List of card IDs
+        batch_size: How many cards to fetch per request
+
+    Yields:
+        Each card's information, in the order the ids were given
+    """
+    for i in range(0, len(card_ids), batch_size):
+        yield from get_cards_info(card_ids[i : i + batch_size])
 
 
 class AnkiReview(TypedDict):
@@ -502,13 +525,12 @@ def get_note_info(note_id: int) -> AnkiNoteInfo:
     return notes[0]
 
 
-def iter_notes_info(note_ids: list[int], batch_size: int = 100) -> Iterator[AnkiNoteInfo]:
+def iter_notes_info(note_ids: list[int], batch_size: int = ANKI_FETCH_BATCH_SIZE) -> Iterator[AnkiNoteInfo]:
     """
     Fetch notes in batches, yielding each one.
 
-    AnkiConnect handles a bounded number of notes per `notesInfo` call
-    comfortably, so callers that hold thousands of note ids fetch them in
-    batches rather than in one request.
+    Callers that hold thousands of note ids fetch them in batches rather than
+    in one request (see ANKI_FETCH_BATCH_SIZE).
 
     Args:
         note_ids: List of note IDs

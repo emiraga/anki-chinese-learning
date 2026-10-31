@@ -34,9 +34,9 @@ from shared.anki_utils import (
     anki_connect_request,
     find_cards_by_query,
     find_notes_by_query,
-    get_cards_info,
     get_field_value,
-    get_notes_info,
+    iter_cards_info,
+    iter_notes_info,
     remove_tags,
     resolve_deck_name,
     unsuspend_cards,
@@ -114,9 +114,7 @@ def format_frequency_rank(rank: float) -> str:
 def fetch_all_hanzi_notes() -> list[AnkiNoteInfo]:
     """Fetch full note info for every Hanzi note."""
     note_ids = find_notes_by_query("note:Hanzi")
-    notes: list[AnkiNoteInfo] = []
-    for i in range(0, len(note_ids), 100):
-        notes.extend(get_notes_info(note_ids[i : i + 100]))
+    notes = list(iter_notes_info(note_ids))
     print(f"Fetched {len(notes)} Hanzi notes")
     return notes
 
@@ -232,10 +230,7 @@ def compute_character_frequency() -> Counter[str]:
 def fetch_card2_by_note() -> dict[int, AnkiCardInfo]:
     """Map every Hanzi note id to the card info of its second card (note:Hanzi card:2)."""
     card2_ids = find_cards_by_query("note:Hanzi card:2")
-    cards: list[AnkiCardInfo] = []
-    for i in range(0, len(card2_ids), 100):
-        cards.extend(get_cards_info(card2_ids[i : i + 100]))
-    return {card["note"]: card for card in cards}
+    return {card["note"]: card for card in iter_cards_info(card2_ids)}
 
 
 def build_priority_order(notes: list[AnkiNoteInfo], freq: Counter[str]) -> list[dict[str, Any]]:

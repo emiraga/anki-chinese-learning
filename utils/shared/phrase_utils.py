@@ -10,7 +10,7 @@ import json
 import re
 from typing import NamedTuple
 
-from .anki_utils import find_notes_by_query, get_field_value, get_notes_info
+from .anki_utils import find_notes_by_query, get_field_value, iter_notes_info
 from .pinyin_utils import extract_pinyin_syllables
 
 
@@ -53,99 +53,94 @@ def extract_characters_from_phrases(note_types: list[str], only_unsuspended: boo
         if not note_ids:
             continue
 
-        batch_size = 100
-        for i in range(0, len(note_ids), batch_size):
-            batch_ids = note_ids[i : i + batch_size]
-            notes_info = get_notes_info(batch_ids)
+        for note_info in iter_notes_info(note_ids):
+            meaning = get_field_value(note_info, "Meaning")
 
-            for note_info in notes_info:
-                meaning = get_field_value(note_info, "Meaning")
+            # Check if Variants field exists and has content
+            variants_raw = get_field_value(note_info, "Variants")
+            variants_list: list[dict[str, str]] = []
 
-                # Check if Variants field exists and has content
-                variants_raw = get_field_value(note_info, "Variants")
-                variants_list: list[dict[str, str]] = []
+            if variants_raw:
+                # Parse Variants JSON array
+                try:
+                    parsed_variants = json.loads(variants_raw)
+                    if isinstance(parsed_variants, list):
+                        variants_list = parsed_variants
+                except json.JSONDecodeError as e:
+                    print(f"Warning: Failed to parse Variants JSON: {e}")
 
-                if variants_raw:
-                    # Parse Variants JSON array
-                    try:
-                        parsed_variants = json.loads(variants_raw)
-                        if isinstance(parsed_variants, list):
-                            variants_list = parsed_variants
-                    except json.JSONDecodeError as e:
-                        print(f"Warning: Failed to parse Variants JSON: {e}")
+            # If no variants, use the Traditional and Pinyin fields as a single variant
+            if not variants_list:
+                traditional_raw = get_field_value(note_info, "Traditional")
+                pinyin_raw = get_field_value(note_info, "Pinyin")
 
-                # If no variants, use the Traditional and Pinyin fields as a single variant
-                if not variants_list:
-                    traditional_raw = get_field_value(note_info, "Traditional")
-                    pinyin_raw = get_field_value(note_info, "Pinyin")
+                # Clean HTML tags from pinyin
+                pinyin_raw = pinyin_raw.replace("<div>", "").replace("</div>", "").strip()
 
-                    # Clean HTML tags from pinyin
-                    pinyin_raw = pinyin_raw.replace("<div>", "").replace("</div>", "").strip()
+                if not traditional_raw or not pinyin_raw:
+                    print("Warning: missing traditional or pinyin", note_info)
+                    continue
 
-                    if not traditional_raw or not pinyin_raw:
-                        print("Warning: missing traditional or pinyin", note_info)
-                        continue
+                variants_list = [{"Traditional": traditional_raw, "Pinyin": pinyin_raw}]
 
-                    variants_list = [{"Traditional": traditional_raw, "Pinyin": pinyin_raw}]
+            # Process each variant
+            for variant in variants_list:
+                traditional_raw = variant.get("Traditional", "").strip()
+                pinyin_raw = variant.get("Pinyin", "").strip()
 
-                # Process each variant
-                for variant in variants_list:
-                    traditional_raw = variant.get("Traditional", "").strip()
-                    pinyin_raw = variant.get("Pinyin", "").strip()
+                if not traditional_raw or not pinyin_raw:
+                    continue
 
-                    if not traditional_raw or not pinyin_raw:
-                        continue
+                # Handle variants separated by / (e.g., "一塊/一塊兒" or "yīkuài/yīkuàir")
+                # Take only the first variant before the slash
+                traditional = traditional_raw.split("/")[0].strip()
+                pinyin = pinyin_raw.split("/")[0].strip()
 
-                    # Handle variants separated by / (e.g., "一塊/一塊兒" or "yīkuài/yīkuàir")
-                    # Take only the first variant before the slash
-                    traditional = traditional_raw.split("/")[0].strip()
-                    pinyin = pinyin_raw.split("/")[0].strip()
+                # Remove parenthetical content (e.g., "籠(子)" -> "籠", "lóng(zi)" -> "lóng")
+                # This handles optional suffixes
+                traditional = re.sub(r"\([^)]*\)", "", traditional).strip()
+                pinyin = re.sub(r"\([^)]*\)", "", pinyin).strip()
 
-                    # Remove parenthetical content (e.g., "籠(子)" -> "籠", "lóng(zi)" -> "lóng")
-                    # This handles optional suffixes
-                    traditional = re.sub(r"\([^)]*\)", "", traditional).strip()
-                    pinyin = re.sub(r"\([^)]*\)", "", pinyin).strip()
+                # Remove ellipsis and surrounding characters (e.g., "以…為…" -> skip)
+                if "…" in traditional or "..." in traditional:
+                    continue
 
-                    # Remove ellipsis and surrounding characters (e.g., "以…為…" -> skip)
-                    if "…" in traditional or "..." in traditional:
-                        continue
+                # Skip entries with Latin letters or numbers (e.g., "KTV", "BBC", "101")
+                if re.search(r"[A-Za-z0-9]", traditional):
+                    continue
 
-                    # Skip entries with Latin letters or numbers (e.g., "KTV", "BBC", "101")
-                    if re.search(r"[A-Za-z0-9]", traditional):
-                        continue
+                # Remove punctuation from traditional (e.g., "哪裡,哪裡" -> "哪裡哪裡")
+                # Include middle dot . which is used in foreign names
+                # Also remove question marks and other sentence-ending punctuation
+                traditional = re.sub(r"[，、。！？；：．·?!]", "", traditional).strip()  # noqa: RUF001
 
-                    # Remove punctuation from traditional (e.g., "哪裡,哪裡" -> "哪裡哪裡")
-                    # Include middle dot . which is used in foreign names
-                    # Also remove question marks and other sentence-ending punctuation
-                    traditional = re.sub(r"[，、。！？；：．·?!]", "", traditional).strip()  # noqa: RUF001
+                # Remove punctuation and clean pinyin
+                # Include middle dot, apostrophes, and question marks used in sentences
+                pinyin = re.sub(r"[,，、。！？；：．·'?!]", " ", pinyin).strip()  # noqa: RUF001
+                # Remove hyphens (e.g., "chāo-shāng" -> "chāo shāng")
+                pinyin = pinyin.replace("-", " ")
+                # Convert to lowercase to handle capitalized syllables (e.g., "Ōu" -> "ōu")
+                # But preserve tone marks
+                pinyin = pinyin.lower()
+                # Normalize multiple spaces to single space
+                pinyin = re.sub(r"\s+", " ", pinyin).strip()
 
-                    # Remove punctuation and clean pinyin
-                    # Include middle dot, apostrophes, and question marks used in sentences
-                    pinyin = re.sub(r"[,，、。！？；：．·'?!]", " ", pinyin).strip()  # noqa: RUF001
-                    # Remove hyphens (e.g., "chāo-shāng" -> "chāo shāng")
-                    pinyin = pinyin.replace("-", " ")
-                    # Convert to lowercase to handle capitalized syllables (e.g., "Ōu" -> "ōu")
-                    # But preserve tone marks
-                    pinyin = pinyin.lower()
-                    # Normalize multiple spaces to single space
-                    pinyin = re.sub(r"\s+", " ", pinyin).strip()
+                if not traditional or not pinyin:
+                    continue
 
-                    if not traditional or not pinyin:
-                        continue
+                # Extract pinyin syllables
+                try:
+                    pinyin_syllables = extract_pinyin_syllables(pinyin, len(traditional))
+                except Exception as e:
+                    print(f"Error extracting pinyin for '{traditional}' (from '{traditional_raw}'): {e}")
+                    continue
 
-                    # Extract pinyin syllables
-                    try:
-                        pinyin_syllables = extract_pinyin_syllables(pinyin, len(traditional))
-                    except Exception as e:
-                        print(f"Error extracting pinyin for '{traditional}' (from '{traditional_raw}'): {e}")
-                        continue
-
-                    # Map each character to its pinyin syllable
-                    if len(pinyin_syllables) == len(traditional):
-                        for char, syllable in zip(traditional, pinyin_syllables, strict=False):
-                            if char not in char_data:
-                                char_data[char] = []
-                            char_data[char].append(CharOccurrence(syllable, traditional, meaning))
+                # Map each character to its pinyin syllable
+                if len(pinyin_syllables) == len(traditional):
+                    for char, syllable in zip(traditional, pinyin_syllables, strict=False):
+                        if char not in char_data:
+                            char_data[char] = []
+                        char_data[char].append(CharOccurrence(syllable, traditional, meaning))
 
     print(f"Extracted data for {len(char_data)} unique characters")
     return char_data

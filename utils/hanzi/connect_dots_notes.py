@@ -313,8 +313,6 @@ def load_all_data() -> HanziDataStore:
 
     print(f"  Found {len(hanzi_ids)} Hanzi notes, fetching details...")
 
-    # Fetch note details in batches
-    batch_size = 500
     hanzi_notes: list[HanziNote] = [
         HanziNote(
             note_id=note["noteId"],
@@ -324,7 +322,7 @@ def load_all_data() -> HanziDataStore:
             sound_component=get_field_value(note, "Sound component character"),
             tags=set(note.get("tags", [])),
         )
-        for note in iter_notes_info(hanzi_ids, batch_size)
+        for note in iter_notes_info(hanzi_ids)
     ]
 
     print(f"  Loaded {len(hanzi_notes)} Hanzi notes")
@@ -341,7 +339,7 @@ def load_all_data() -> HanziDataStore:
             traditional=get_field_value(note, "Traditional"),
             meaning=get_meaning_field(note),
         )
-        for note in iter_notes_info(tocfl_ids, batch_size)
+        for note in iter_notes_info(tocfl_ids)
     ]
 
     print(f"  Loaded {len(tocfl_notes)} TOCFL notes")
