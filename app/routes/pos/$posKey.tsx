@@ -13,6 +13,8 @@ import {
   SourceNote,
   VerbTraitTooltip,
 } from "~/components/PosExamples";
+import { grammarPointsWithPos } from "~/data/tbcl_grammar";
+import { GrammarPointList } from "~/components/GrammarPoint";
 
 export function meta({ params }: Route.MetaArgs) {
   return [
@@ -37,6 +39,7 @@ export default function PosDetail() {
   const detail = POS_DETAILS[posKey];
   const matching = phrasesByPos.get(posKey) ?? [];
   const verbKind = verbKindOf(posKey);
+  const grammarPoints = grammarPointsWithPos(posKey);
 
   return (
     <MainFrame>
@@ -110,6 +113,25 @@ export default function PosDetail() {
             </li>
           ))}
         </ul>
+
+        {grammarPoints.length > 0 && (
+          <details className="mb-6">
+            <summary className="cursor-pointer text-xl font-semibold mb-2">
+              Grammar points with {posKey} ({grammarPoints.length})
+            </summary>
+            <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+              From the TBCL grammar point list,{" "}
+              <Link
+                to={`/grammar?pos=${encodeURIComponent(posKey)}`}
+                className="text-blue-700 dark:text-blue-300"
+              >
+                open in the grammar browser
+              </Link>
+              .
+            </p>
+            <GrammarPointList points={grammarPoints} />
+          </details>
+        )}
 
         <h4 className="text-xl font-semibold mb-2">
           Your phrases ({matching.length})

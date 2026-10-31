@@ -1,6 +1,7 @@
 import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/pos";
-import { useOutletContext } from "react-router";
+import { Link, useOutletContext } from "react-router";
+import { grammarPointsWithPos } from "~/data/tbcl_grammar";
 import type { OutletContext } from "~/data/types";
 import { POS, type PosCode } from "~/data/pos";
 import { POS_DETAILS, VERB_KINDS, VERB_KIND_TRAITS } from "~/data/pos_details";
@@ -25,6 +26,22 @@ export function meta({}: Route.MetaArgs) {
 
 const CELL = "border border-gray-300 dark:border-gray-600 px-3 py-2";
 const SOURCE = "mt-1 text-xs text-gray-500 dark:text-gray-400";
+
+/** Number of TBCL grammar points with this code, linking to them. */
+const GrammarCountLink: React.FC<{ code: PosCode }> = ({ code }) => {
+  const count = grammarPointsWithPos(code).length;
+  if (count === 0) {
+    return <>0</>;
+  }
+  return (
+    <Link
+      to={`/grammar?pos=${encodeURIComponent(code)}`}
+      className="text-blue-700 dark:text-blue-300 hover:underline"
+    >
+      {count}
+    </Link>
+  );
+};
 
 export default function PartsOfSpeech() {
   const { phrases } = useOutletContext<OutletContext>();
@@ -56,6 +73,14 @@ export default function PartsOfSpeech() {
           <em>A Course in Contemporary Chinese 1</em> (當代中文課程 1), ed.
           鄧守信, Taipei: 聯經: its introduction (pages in Roman numerals) and
           the grammar notes of its lessons.
+        </p>
+        <p className="mb-4 text-gray-700 dark:text-gray-300">
+          The{" "}
+          <Link to="/grammar" className="text-blue-700 dark:text-blue-300">
+            grammar points
+          </Link>{" "}
+          of the TBCL benchmark (臺灣華語文能力基準) are written with the same
+          codes.
         </p>
 
         <h2 className="text-2xl font-semibold mb-2">Verb classes</h2>
@@ -184,6 +209,7 @@ export default function PartsOfSpeech() {
               <th className={CELL}>Summary</th>
               <th className={CELL}>Examples</th>
               <th className={CELL}>Your phrases</th>
+              <th className={CELL}>Grammar points</th>
             </tr>
           </thead>
           <tbody>
@@ -204,6 +230,9 @@ export default function PartsOfSpeech() {
                   <td className={CELL}>{examples}</td>
                   <td className={`${CELL} text-right`}>
                     {phrasesByPos.get(code)?.length ?? 0}
+                  </td>
+                  <td className={`${CELL} text-right`}>
+                    <GrammarCountLink code={code} />
                   </td>
                 </tr>
               );

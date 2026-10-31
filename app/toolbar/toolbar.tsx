@@ -162,6 +162,11 @@ export const MainToolbarNoOutlet: React.FC<{
           show: true,
         },
         {
+          pathname: "/grammar",
+          name: "Grammar points",
+          show: true,
+        },
+        {
           pathname: "/overlapping_phrases",
           name: "Overlapping Phrases",
           show: true,

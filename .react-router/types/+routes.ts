@@ -68,6 +68,9 @@ type Pages = {
   "/pinyin": {
     params: {};
   };
+  "/grammar": {
+    params: {};
+  };
   "/pos/:posKey": {
     params: {
       "posKey": string;
@@ -193,7 +196,7 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/characters_more" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/pos/:posKey" | "/pos" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/media_clips" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
+    page: "/" | "/actor/:actorName" | "/actors" | "/char/:charHanzi" | "/chars" | "/characters_more" | "/conflicts" | "/invalid_data" | "/integrity" | "/phrase/:phraseHanzi" | "/phrase_conflicts" | "/phrases" | "/overlapping_phrases" | "/phrases_import" | "/phrases_more" | "/phrases_process" | "/pinyin" | "/grammar" | "/pos/:posKey" | "/pos" | "/place/:placeName" | "/places" | "/practice" | "/problematic" | "/prop/:propName" | "/props" | "/settings" | "/sibling_cards" | "/similar_props" | "/sound_components" | "/stats" | "/stats_progress" | "/story" | "/study" | "/study_weak_chars" | "/advance_cards" | "/sylable/:sylable" | "/tag/:tagName" | "/tags" | "/todo_chars" | "/chars_sentence_input" | "/chars_multiple_pronunciation" | "/exam_level" | "/help" | "/media_clips" | "/homophones" | "/migration" | "/tone/:toneName" | "/tones" | "/zhuyin_typing" | "/pronunciation" | "/dong_demo" | "/sound_eval" | "/installHook.js.map";
   };
   "routes/actor/$actorName.tsx": {
     id: "routes/actor/$actorName";
@@ -258,6 +261,10 @@ type RouteFiles = {
   "routes/pinyin.tsx": {
     id: "routes/pinyin";
     page: "/pinyin";
+  };
+  "routes/grammar.tsx": {
+    id: "routes/grammar";
+    page: "/grammar";
   };
   "routes/pos/$posKey.tsx": {
     id: "routes/pos/$posKey";
@@ -427,6 +434,7 @@ type RouteModules = {
   "routes/phrases_more": typeof import("./app/routes/phrases_more.tsx");
   "routes/phrases_process": typeof import("./app/routes/phrases_process.tsx");
   "routes/pinyin": typeof import("./app/routes/pinyin.tsx");
+  "routes/grammar": typeof import("./app/routes/grammar.tsx");
   "routes/pos/$posKey": typeof import("./app/routes/pos/$posKey.tsx");
   "routes/pos": typeof import("./app/routes/pos.tsx");
   "routes/place/$placeName": typeof import("./app/routes/place/$placeName.tsx");
