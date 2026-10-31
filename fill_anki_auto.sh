@@ -5,12 +5,7 @@ set -e
 
 ./utils/hanzi/fill_hanzi_chars.py
 ./utils/hanzi/process_simplified_cards.py
-./utils/hanzi/clean_notes.py
-## ./utils/hanzi/suspend_listening_cards.py
 ./utils/hanzi/connect_dots_notes.py
-./anki/connect-dots/deploy.py
-
-./utils/tocfl/get_from_csv.py
 
 ./utils/hanzi/fill_props_field.py
 ./utils/hanzi/fill_connections_field.py --limit 40
@@ -19,23 +14,6 @@ set -e
 
 ./utils/tts/fill_audio_anki.py --use-pinyin-hint
 
-./utils/hanziyuan/convert.py
-
-./utils/dong/augment_data.py
-./utils/dong/download_images.py
-./utils/dong/fill_dong_chinese.py
-
-./utils/rtega/parse_rtega_html.py
-./utils/rtega/fill_rtega_mnemonics.py
-
-./utils/yellowbridge/convert.py
-./utils/yellowbridge/fill_yellowbridge_chinese.py
-
-./utils/hackchinese/convert.py
-./utils/hackchinese/fill_hackchinese_outlier.py
-./utils/hackchinese/fill_example_sentences.py
-
 ./utils/video/augment_translation.py
 ./utils/video/fill_trimmed_audio.py --audio-preset speech
-# ./utils/video/fill_trimmed_audio.py
 ./utils/sync_ankiweb.py

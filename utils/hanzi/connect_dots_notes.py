@@ -1232,7 +1232,6 @@ class ConnectDotsManager:
                                 and existing["fake_right"] == new_fake_right
                                 and existing["right_is_pronunciation"] == new_right_is_pronunciation
                             ):
-                                print(f"  Unchanged: {split_note.key}")
                                 stats["unchanged"] += 1
                             else:
                                 self.update_note(existing["noteId"], split_note, existing)
