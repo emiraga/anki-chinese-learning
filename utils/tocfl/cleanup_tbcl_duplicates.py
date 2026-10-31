@@ -11,13 +11,18 @@
 Delete suspended TBCL notes that duplicate an existing TOCFL note (temporary cleanup).
 
 Loads every suspended "TOCFL" note tagged TBCL::L1 .. TBCL::L7 (all of its cards
-suspended) and looks for a non-TBCL note of type "TOCFL" (suspended or not) with
-the same Traditional and Pinyin. Such a TBCL note is redundant and gets deleted.
+suspended) and looks for a non-TBCL note of type "TOCFL" or "Hanzi" (suspended or
+not) with the same Traditional and Pinyin. Such a TBCL note is redundant and gets deleted.
 
 A TBCL note may list several forms, e.g. Traditional "常常/常" with Pinyin
-"chángcháng/cháng", or "例(子)" with "lì(zi)". It matches another note when that
-note's Traditional is one of the forms and every remaining form is listed in its
-Traditional or its "Variants" JSON field.
+"chángcháng/cháng", or "例(子)" with "lì(zi)". Its forms are looked up in the
+Traditional and "Variants" JSON field of the other notes:
+- They may be found in one note (常常 with variant 常) or spread over several
+  (晚餐 and 晚飯 as separate notes).
+- They may be found only as a variant (右 listed in the Variants of 右邊).
+- At least one form must be found. A form that is not found must be a single
+  character that no other note spells at all (雖然/雖 matches a note 雖然
+  without a 雖 variant, but 將 jiāng/jiàng does not match 將 jiāng alone).
 
 Pinyin is compared fuzzily: case, spacing and apostrophes are ignored, and a
 syllable matches when its tone is equal, either side is neutral (bàba / bàbà),
@@ -54,7 +59,7 @@ TBCL_TAG_QUERY = "(" + " OR ".join(f"tag:{tag}" for tag in TBCL_TAGS) + ")"
 
 TBCL_QUERY = f"note:TOCFL is:suspended {TBCL_TAG_QUERY}"
 TBCL_UNSUSPENDED_CARDS_QUERY = f"note:TOCFL -is:suspended {TBCL_TAG_QUERY}"
-OTHER_QUERY = "note:TOCFL -tag:TBCL::*"
+OTHER_QUERY = "(note:TOCFL OR note:Hanzi) -tag:TBCL::*"
 
 # Syllables whose written tone changes with tone sandhi, so sources disagree.
 SANDHI_SYLLABLES = {"yi", "bu"}
@@ -78,8 +83,12 @@ class Form:
 @dataclass
 class Match:
     tbcl: AnkiNoteInfo
-    other: AnkiNoteInfo
+    others: list[AnkiNoteInfo]
     exact: bool
+    # No covering note has one of the TBCL forms as its own Traditional.
+    only_as_variant: bool
+    # Single-character TBCL forms that no other note contains.
+    missing: list[Form]
 
 
 def clean(text: str) -> str:
@@ -119,9 +128,15 @@ def note_forms(note: AnkiNoteInfo) -> list[Form] | None:
     When the fields list a different number of forms (e.g. "姊姊/姐姐/姊/姐" with
     "jiějie/jiě"), the forms come from the note's Variants field instead.
 
+    A Hanzi note lists alternate spellings of its character separated by spaces,
+    all with the one pinyin (e.g. "并 併 並" with "bìng").
+
     Returns:
         The forms, or None if they cannot be determined
     """
+    if note["modelName"] == "Hanzi":
+        pinyin = clean(get_field_value(note, "Pinyin"))
+        return [Form(traditional, pinyin) for traditional in clean(get_field_value(note, "Traditional")).split()]
     forms = parse_forms(get_field_value(note, "Traditional"), get_field_value(note, "Pinyin"))
     if forms is not None:
         return forms
@@ -197,39 +212,48 @@ def find_form(form: Form, candidates: list[Form]) -> bool | None:
     return None
 
 
-def match_notes(tbcl_forms: list[Form], other: AnkiNoteInfo) -> bool | None:
+def find_duplicate(tbcl: AnkiNoteInfo, forms: list[Form], others_by_traditional: dict[str, list[AnkiNoteInfo]]) -> Match | None:
     """
-    Check whether a non-TBCL note covers all forms of a TBCL note.
+    Find the non-TBCL notes that together cover the forms of a TBCL note.
 
-    The other note's own Traditional must be one of the TBCL forms, and every
-    TBCL form must be found among its Traditional and Variants forms.
+    Notes whose own Traditional is one of the TBCL forms are preferred over
+    notes that only list a form as a variant.
 
     Returns:
-        True for an exact match, False for a fuzzy match, None for no match
+        The match, exact if every found form matched exactly, or None if no form is
+        found or a multi-character form is not found
     """
-    primary = note_forms(other)
-    if primary is None:
-        return None
-    if not any(find_form(form, primary) is not None for form in tbcl_forms):
-        return None
-    candidates = primary + variant_forms(other)
-    results = [find_form(form, candidates) for form in tbcl_forms]
-    if None in results:
-        return None
-    return all(results)
-
-
-def find_duplicate(tbcl: AnkiNoteInfo, forms: list[Form], others_by_traditional: dict[str, list[AnkiNoteInfo]]) -> Match | None:
-    """Find a non-TBCL note matching the TBCL note, preferring an exact match over a fuzzy one."""
     candidates = {other["noteId"]: other for form in forms for other in others_by_traditional.get(form.traditional, [])}
-    fuzzy: Match | None = None
+    eligible: list[tuple[AnkiNoteInfo, list[Form], bool]] = []
     for other in candidates.values():
-        result = match_notes(forms, other)
-        if result is True:
-            return Match(tbcl, other, exact=True)
-        if result is False and fuzzy is None:
-            fuzzy = Match(tbcl, other, exact=False)
-    return fuzzy
+        primary = note_forms(other) or []
+        is_primary = any(find_form(form, primary) is not None for form in forms)
+        eligible.append((other, primary + variant_forms(other), is_primary))
+    eligible.sort(key=lambda entry: not entry[2])
+
+    covering: dict[int, AnkiNoteInfo] = {}
+    missing: list[Form] = []
+    exact = True
+    only_as_variant = True
+    for form in forms:
+        results = [(find_form(form, other_forms), other, is_primary) for other, other_forms, is_primary in eligible]
+        best = next((r for r in results if r[0] is True), None) or next((r for r in results if r[0] is False), None)
+        if best is None:
+            # Only a missing spelling may be skipped, not a missing reading of a
+            # spelling that is there (將 jiàng next to 將 jiāng, 媽 ma next to 媽 mā).
+            other_readings = [f for f in forms if f != form and f.traditional == form.traditional]
+            spelling_found = any(f.traditional == form.traditional for _, other_forms, _ in eligible for f in other_forms)
+            if len(form.traditional) > 1 or other_readings or spelling_found:
+                return None
+            missing.append(form)
+            continue
+        result, other, is_primary = best
+        exact = exact and result is True
+        only_as_variant = only_as_variant and not is_primary
+        covering[other["noteId"]] = other
+    if not covering:
+        return None
+    return Match(tbcl, list(covering.values()), exact, only_as_variant, missing)
 
 
 def main():
@@ -243,12 +267,12 @@ def main():
     print(f"Found {len(tbcl_ids)} suspended TBCL notes, {len(fully_suspended_ids)} with all cards suspended")
 
     other_ids = find_notes_by_query(OTHER_QUERY)
-    print(f"Found {len(other_ids)} non-TBCL TOCFL notes")
+    print(f"Found {len(other_ids)} non-TBCL TOCFL and Hanzi notes")
 
     # Index the other notes by every spelling they contain, for quick lookup.
     others_by_traditional: dict[str, list[AnkiNoteInfo]] = {}
     for note in iter_notes_info(other_ids):
-        for form in note_forms(note) or []:
+        for form in {f.traditional: f for f in (note_forms(note) or []) + variant_forms(note)}.values():
             others_by_traditional.setdefault(form.traditional, []).append(note)
 
     matches: list[Match] = []
@@ -267,18 +291,30 @@ def main():
         suffix = f"  [variants: {variants}]" if variants else ""
         return f"{get_field_value(note, 'Traditional')} {get_field_value(note, 'Pinyin')} (note {note['noteId']}){suffix}"
 
-    fuzzy = [m for m in matches if not m.exact]
+    def describe_match(m: Match) -> str:
+        missing = f"  (not found: {', '.join(f'{f.traditional} {f.pinyin}' for f in m.missing)})" if m.missing else ""
+        return f"  {describe(m.tbcl)}  ->  " + "  +  ".join(describe(other) for other in m.others) + missing
+
     if unparsable:
         print(f"\n=== {len(unparsable)} TBCL notes skipped: cannot pair Traditional with Pinyin ===")
         for note in unparsable:
             print(f"  {describe(note)}")
-    if fuzzy:
-        print(f"\n=== {len(fuzzy)} fuzzy pinyin matches ===")
-        for m in fuzzy:
-            print(f"  {describe(m.tbcl)}  ->  {describe(m.other)}")
 
-    exact_count = len(matches) - len(fuzzy)
-    print(f"\n{len(matches)} duplicate TBCL notes ({exact_count} exact, {len(fuzzy)} fuzzy)")
+    sections = {
+        "fuzzy pinyin matches": [m for m in matches if not m.exact],
+        "matches spread over several notes": [m for m in matches if len(m.others) > 1],
+        "matches found only as a variant": [m for m in matches if m.only_as_variant],
+        "matches with single-character forms not found": [m for m in matches if m.missing],
+    }
+    for title, section in sections.items():
+        if section:
+            print(f"\n=== {len(section)} {title} ===")
+            for m in section:
+                print(describe_match(m))
+
+    print(f"\n{len(matches)} duplicate TBCL notes")
+    for title, section in sections.items():
+        print(f"  {len(section)} {title}")
 
     if not args.delete:
         print("Dry run, nothing deleted. Pass --delete to delete them.")
