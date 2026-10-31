@@ -1,9 +1,12 @@
+import { Link } from "react-router";
+import { ankiOpenBrowse } from "~/apis/anki";
 import { isPosCode } from "~/data/pos";
 import {
   PATTERN_SYMBOLS,
   parseBold,
   type GrammarExample,
   type GrammarPoint,
+  type GrammarStudiedNote,
 } from "~/data/tbcl_grammar";
 import { POSDisplay } from "./POSDisplay";
 import { HanziText } from "./HanziText";
@@ -116,6 +119,60 @@ export const GrammarPointCard: React.FC<{ point: GrammarPoint }> = ({
     <ul className="mt-2 space-y-1">
       {point.examples.map((example, i) => (
         <GrammarExampleItem key={i} example={example} />
+      ))}
+    </ul>
+    {point.studied && <GrammarStudiedList studied={point.studied} />}
+    {point.missing && <GrammarMissingList missing={point.missing} />}
+  </div>
+);
+
+const GrammarStudiedList: React.FC<{ studied: GrammarStudiedNote[] }> = ({
+  studied,
+}) => (
+  <div className="mt-3 rounded bg-green-50 dark:bg-green-950/40 p-2">
+    <div className="text-sm font-semibold text-green-800 dark:text-green-300">
+      Studied ({studied.length})
+    </div>
+    <ul className="mt-1 space-y-1">
+      {studied.map((note) => (
+        <li
+          key={note.noteId}
+          className="flex flex-col sm:flex-row sm:items-baseline sm:gap-3"
+        >
+          <span className="flex items-baseline gap-2">
+            <Link
+              to={`/phrase/${note.traditional}`}
+              className="text-lg hover:underline"
+            >
+              <HanziText value={note.traditional} />
+            </Link>
+            <button
+              type="button"
+              className="rounded-xl bg-blue-100 dark:bg-blue-900 px-2 py-0.5 text-xs text-blue-500 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              onClick={async () => {
+                await ankiOpenBrowse(`nid:${note.noteId}`);
+              }}
+            >
+              anki
+            </button>
+          </span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {note.justification}
+          </span>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const GrammarMissingList: React.FC<{ missing: string[] }> = ({ missing }) => (
+  <div className="mt-2 rounded bg-amber-50 dark:bg-amber-950/40 p-2">
+    <div className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+      Not yet covered
+    </div>
+    <ul className="mt-1 list-disc pl-5 text-sm text-gray-700 dark:text-gray-300">
+      {missing.map((item, i) => (
+        <li key={i}>{item}</li>
       ))}
     </ul>
   </div>

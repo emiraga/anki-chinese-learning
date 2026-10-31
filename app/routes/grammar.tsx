@@ -7,6 +7,7 @@ import {
   GRAMMAR_POINTS,
   GRAMMAR_SOURCE,
   matchesGrammarQuery,
+  type GrammarPoint,
 } from "~/data/tbcl_grammar";
 import { GrammarPointList } from "~/components/GrammarPoint";
 
@@ -15,7 +16,8 @@ export function meta({}: Route.MetaArgs) {
     { title: "Grammar points" },
     {
       name: "description",
-      content: "Grammar points of the Taiwan Benchmarks for the Chinese Language",
+      content:
+        "Grammar points of the Taiwan Benchmarks for the Chinese Language",
     },
   ];
 }
@@ -27,6 +29,31 @@ const USED_CODES = (Object.keys(POS) as PosCode[]).filter((code) =>
   GRAMMAR_POINTS.some((point) => point.pos.includes(code)),
 );
 
+const COVERAGE = {
+  studied: "studied",
+  partial: "partly studied",
+  complete: "fully studied",
+  unstudied: "not studied",
+} as const;
+type Coverage = keyof typeof COVERAGE;
+
+function isCoverage(value: string): value is Coverage {
+  return value in COVERAGE;
+}
+
+function hasCoverage(point: GrammarPoint, coverage: Coverage): boolean {
+  switch (coverage) {
+    case "studied":
+      return point.studied !== undefined;
+    case "partial":
+      return point.missing !== undefined;
+    case "complete":
+      return point.studied !== undefined && point.missing === undefined;
+    case "unstudied":
+      return point.studied === undefined;
+  }
+}
+
 const TAB = "rounded px-3 py-1 text-sm border";
 const TAB_ACTIVE = "bg-blue-600 text-white border-blue-600";
 const TAB_INACTIVE =
@@ -37,9 +64,9 @@ export default function Grammar() {
   const query = searchParams.get("q") ?? "";
   const posParam = searchParams.get("pos") ?? "";
   const pos = isPosCode(posParam) ? posParam : undefined;
-  // Searching or filtering by POS looks through all levels unless one is chosen.
-  const level =
-    searchParams.get("level") ?? (query || pos ? ALL : GRAMMAR_LEVELS[0].level);
+  const coverageParam = searchParams.get("coverage") ?? "";
+  const coverage = isCoverage(coverageParam) ? coverageParam : undefined;
+  const level = searchParams.get("level") ?? ALL;
 
   const updateParam = (key: string, value: string) => {
     setSearchParams(
@@ -55,15 +82,41 @@ export default function Grammar() {
     );
   };
 
-  const matching = GRAMMAR_POINTS.filter(
+  // Every filter except coverage, so the coverage links count all categories.
+  const inScope = GRAMMAR_POINTS.filter(
     (point) =>
+      (level === ALL || point.level === level) &&
       (!pos || point.pos.includes(pos)) &&
       (!query || matchesGrammarQuery(point, query)),
   );
-  const shown =
-    level === ALL ? matching : matching.filter((p) => p.level === level);
-  const countAt = (lv: string) =>
-    matching.filter((point) => point.level === lv).length;
+  const shown = coverage
+    ? inScope.filter((point) => hasCoverage(point, coverage))
+    : inScope;
+
+  /** Link to the current filters with coverage set to `key` (none: cleared). */
+  const coverageLink = (key: Coverage | undefined) => {
+    const params = new URLSearchParams(searchParams);
+    if (key) {
+      params.set("coverage", key);
+    } else {
+      params.delete("coverage");
+    }
+    return `?${params.toString()}`;
+  };
+  const coverageStats: {
+    key: Coverage | undefined;
+    label: string;
+    count: number;
+  }[] = [
+    { key: undefined, label: "total", count: inScope.length },
+    ...(["unstudied", "studied", "complete", "partial"] as const).map(
+      (key) => ({
+        key,
+        label: COVERAGE[key],
+        count: inScope.filter((point) => hasCoverage(point, key)).length,
+      }),
+    ),
+  ];
 
   return (
     <MainFrame>
@@ -108,6 +161,21 @@ export default function Grammar() {
               ))}
             </select>
           </label>
+          <label className="text-sm">
+            Coverage{" "}
+            <select
+              value={coverage ?? ""}
+              onChange={(e) => updateParam("coverage", e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1.5"
+            >
+              <option value="">any</option>
+              {(Object.keys(COVERAGE) as Coverage[]).map((key) => (
+                <option key={key} value={key}>
+                  {COVERAGE[key]}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -116,7 +184,7 @@ export default function Grammar() {
             onClick={() => updateParam("level", ALL)}
             className={`${TAB} ${level === ALL ? TAB_ACTIVE : TAB_INACTIVE}`}
           >
-            All ({matching.length})
+            All
           </button>
           {GRAMMAR_LEVELS.map(({ level: lv, name }) => (
             <button
@@ -126,10 +194,29 @@ export default function Grammar() {
               onClick={() => updateParam("level", lv)}
               className={`${TAB} ${level === lv ? TAB_ACTIVE : TAB_INACTIVE}`}
             >
-              Level {lv} ({countAt(lv)})
+              Level {lv}
             </button>
           ))}
         </div>
+
+        <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+          {coverageStats.map(({ key, label, count }, i) => (
+            <span key={label}>
+              {i > 0 && ", "}
+              <Link
+                to={coverageLink(key)}
+                replace
+                className={
+                  coverage === key
+                    ? "font-semibold text-blue-700 dark:text-blue-300"
+                    : "text-blue-700 dark:text-blue-300 hover:underline"
+                }
+              >
+                {count} {label}
+              </Link>
+            </span>
+          ))}
+        </p>
 
         {shown.length === 0 ? (
           <p className="text-gray-600 dark:text-gray-400">

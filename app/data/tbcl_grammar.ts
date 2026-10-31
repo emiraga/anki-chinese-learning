@@ -29,6 +29,17 @@ export type GrammarPoint = {
   examples: GrammarExample[];
   /** Page in the PDF. */
   page: number;
+  /** TOCFL notes whose Traditional text already practices this grammar point. */
+  studied?: GrammarStudiedNote[];
+  /** Aspects of the grammar point that the `studied` notes do not cover. */
+  missing?: string[];
+};
+
+export type GrammarStudiedNote = {
+  noteId: number;
+  traditional: string;
+  /** Why the note's text is an instance of the grammar point. */
+  justification: string;
 };
 
 export type GrammarLevel = {
