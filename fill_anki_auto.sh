@@ -16,4 +16,5 @@ set -e
 
 ./utils/video/augment_translation.py
 ./utils/video/fill_trimmed_audio.py --audio-preset speech
+./utils/hackchinese/fill_example_sentences.py
 ./utils/sync_ankiweb.py
