@@ -22,7 +22,11 @@ Connections JSON holds:
      "measure_words": ["輛"],
      "register": "colloquial" | "neutral" | "formal" | "written",
      "region": {"usage": "tw" | "cn" | "both", "equivalents": [{"w": "出租車", "region": "cn"}]},
-     "pairs_with": [{"w": "所以", "pattern": "因為…所以…"}]}
+     "pairs_with": [{"w": "所以", "pattern": "因為…所以…"}],
+     "pinyin": {"出租車": "chūzūchē"}}
+
+"pinyin" is optional: the model's pinyin of related words, kept only for words
+whose pinyin is not found elsewhere.
 
 Work is done a little at a time: the script starts from unsuspended notes with a
 card that is overdue, due today, or due in the next UPCOMING_DAYS days - those
@@ -34,9 +38,14 @@ sharing an English gloss, or listed as its synonym/antonym by the MOE dictionary
 Related active words that need connections too are filled by the same call, so
 the contrast between two words is written from both sides at once.
 
-Related words that are TOCFL vocabulary beyond Level 5 (遴選, 魂魄) are never
-suggested unless they are in the active deck: they are too rare to be worth
-contrasting. Words outside TOCFL entirely (多雲, 化妝室) are kept.
+Only unsuspended notes are loaded. The candidate synonyms and antonyms from
+TOCFL and moedict that are passed to the model are limited to TOCFL Level 1-5
+vocabulary and active words, so rare or literary words (遴選, 魂魄) are not
+suggested.
+
+The pinyin of a related word comes from its note in the active deck, else the
+TOCFL lists, else the moedict dump (loaded only when needed), else the pinyin
+the model suggested along with the connections.
 
 Only single words are processed: sentences, phrases longer than 4 characters
 and idioms (POS "Id") are skipped. Connections JSON of the current schema
@@ -61,7 +70,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TypedDict, TypeVar, cast
+from typing import NotRequired, TypedDict, TypeVar, cast
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
@@ -74,10 +83,10 @@ from shared.anki_utils import (
 from shared.character_conversion import to_simplified
 from shared.gemini_utils import STRONG_GEMINI_MODEL, GeminiClient, create_gemini_client, gemini_generate_json
 from shared.html_utils import escape_html
-from shared.moedict import get_moedict_relations
+from shared.moedict import get_moedict_relations, lookup_moedict_pinyin
 from shared.pinyin_utils import remove_tone_marks
 from shared.review_order import find_note_ids_in_upcoming_order
-from shared.tocfl_csv import load_tocfl_levels
+from shared.tocfl_csv import TocflWord, load_tocfl_index
 
 NOTE_TYPE = "TOCFL"
 CONNECTIONS_JSON_FIELD = "Connections JSON"
@@ -157,6 +166,8 @@ class Connections(TypedDict):
     register: str
     region: Region
     pairs_with: list[Pairing]
+    pinyin: NotRequired[dict[str, str]]
+    """The model's pinyin of related words that have none elsewhere."""
 
 
 @dataclass
@@ -174,8 +185,6 @@ class DeckWord:
     pos_codes: tuple[str, ...]
     meaning: str
     cedict_measure_words: tuple[str, ...]
-    active: bool
-    """Whether the note is unsuspended."""
     connections_json: str
     connections_html: str
     meaning_hint: str
@@ -268,18 +277,13 @@ def extract_cedict_measure_words(note: AnkiNoteInfo) -> tuple[str, ...]:
 
 def load_deck_words() -> list[DeckWord]:
     """
-    Load every TOCFL note.
-
-    All notes are needed, not only the active ones: the full TOCFL vocabulary is
-    what moedict's candidate relations are filtered against, so that rare or
-    literary words never reach the model.
+    Load the unsuspended TOCFL notes: the active deck.
 
     Raises:
         ValueError: If the note type lacks one of the fields this script fills
     """
-    note_ids = find_notes_by_query(f"note:{NOTE_TYPE}")
-    active_ids = set(find_notes_by_query(f"note:{NOTE_TYPE} -is:suspended"))
-    print(f"Loading {len(note_ids)} {NOTE_TYPE} notes ({len(active_ids)} unsuspended)...")
+    note_ids = find_notes_by_query(f"note:{NOTE_TYPE} -is:suspended")
+    print(f"Loading {len(note_ids)} unsuspended {NOTE_TYPE} notes...")
 
     words: list[DeckWord] = []
     for note in iter_notes_info(note_ids):
@@ -302,7 +306,6 @@ def load_deck_words() -> list[DeckWord]:
                 pos_codes=tuple(code.strip() for code in get_field_value(note, "POS").split("/") if code.strip()),
                 meaning=strip_html(get_field_value(note, "Meaning 2") or get_field_value(note, "Meaning")),
                 cedict_measure_words=extract_cedict_measure_words(note),
-                active=note["noteId"] in active_ids,
                 connections_json=get_field_value(note, CONNECTIONS_JSON_FIELD),
                 connections_html=get_field_value(note, CONNECTIONS_HTML_FIELD),
                 meaning_hint=get_field_value(note, MEANING_HINT_FIELD),
@@ -313,15 +316,13 @@ def load_deck_words() -> list[DeckWord]:
 
 def build_deck_index(words: list[DeckWord]) -> dict[str, DeckWord]:
     """
-    Map every spelling to its note, preferring active notes when a spelling is
+    Map every spelling to its note, keeping the first note when a spelling is
     shared by several (e.g. a word that is also listed under a longer entry).
     """
     index: dict[str, DeckWord] = {}
     for word in words:
         for form in word.forms:
-            existing = index.get(form)
-            if existing is None or (word.active and not existing.active):
-                index[form] = word
+            index.setdefault(form, word)
     return index
 
 
@@ -350,7 +351,7 @@ def has_current_connections(word: DeckWord) -> bool:
 
 def needs_connections(word: DeckWord) -> bool:
     """Whether this note should get Connections JSON generated now."""
-    return word.active and is_single_word(word) and not has_current_connections(word)
+    return is_single_word(word) and not has_current_connections(word)
 
 
 def extract_glosses(meaning: str) -> set[str]:
@@ -367,17 +368,17 @@ def extract_glosses(meaning: str) -> set[str]:
     return glosses
 
 
-def build_gloss_index(active_words: list[DeckWord]) -> tuple[dict[int, set[str]], dict[str, list[DeckWord]]]:
+def build_gloss_index(words: list[DeckWord]) -> tuple[dict[int, set[str]], dict[str, list[DeckWord]]]:
     """
-    Index the active single words by English gloss.
+    Index the single words of the active deck by English gloss.
 
     Returns:
         (glosses of each note id, words of each gloss shared by 2 to
         MAX_GLOSS_SHARERS words)
     """
-    glosses_by_note = {word.note_id: extract_glosses(word.meaning) for word in active_words if is_single_word(word)}
+    glosses_by_note = {word.note_id: extract_glosses(word.meaning) for word in words if is_single_word(word)}
     words_by_gloss: dict[str, list[DeckWord]] = defaultdict(list)
-    for word in active_words:
+    for word in words:
         for gloss in glosses_by_note.get(word.note_id, ()):
             words_by_gloss[gloss].append(word)
     shared = {gloss: words for gloss, words in words_by_gloss.items() if 2 <= len(words) <= MAX_GLOSS_SHARERS}
@@ -387,20 +388,11 @@ def build_gloss_index(active_words: list[DeckWord]) -> tuple[dict[int, set[str]]
 class RelationFinder:
     """Finds the active words a word is easily confused with."""
 
-    def __init__(self, deck_index: dict[str, DeckWord], active_words: list[DeckWord], tocfl_levels: dict[str, str]) -> None:
+    def __init__(self, deck_index: dict[str, DeckWord], words: list[DeckWord], tocfl_index: dict[str, TocflWord]) -> None:
         self.deck_index = deck_index
-        self.tocfl_levels = tocfl_levels
-        self.glosses_by_note, self.words_by_gloss = build_gloss_index(active_words)
+        self.tocfl_index = tocfl_index
+        self.glosses_by_note, self.words_by_gloss = build_gloss_index(words)
         self._moedict_cache: dict[str, tuple[list[str], list[str]]] = {}
-
-    def is_too_advanced(self, word: str) -> bool:
-        """
-        Whether a related word is too rare to suggest: TOCFL vocabulary beyond
-        Level 5 (a TOCFL note missing from the Level 1-5 lists) that the learner
-        does not study. Words outside TOCFL are not judged.
-        """
-        entry = self.deck_index.get(word)
-        return entry is not None and not entry.active and word not in self.tocfl_levels
 
     def prefetch_moedict(self, words: list[DeckWord]) -> None:
         """Download the moedict entries of many words in parallel (cached on disk afterwards)."""
@@ -412,7 +404,8 @@ class RelationFinder:
     def candidates(self, word: DeckWord) -> tuple[list[str], list[str]]:
         """
         The candidate synonyms and antonyms of a word: its TOCFL alternatives
-        first, then the moedict relations that are TOCFL vocabulary.
+        first, then the moedict relations. Only active words and TOCFL Level 1-5
+        vocabulary are kept, so that rare or literary words never reach the model.
 
         Returns:
             (synonyms, antonyms), each at most MAX_CANDIDATES long
@@ -423,7 +416,7 @@ class RelationFinder:
 
         def keep(related: list[str]) -> list[str]:
             candidates = dict.fromkeys(related)
-            return [w for w in candidates if w in self.deck_index and w not in word.forms and not self.is_too_advanced(w)][:MAX_CANDIDATES]
+            return [w for w in candidates if (w in self.deck_index or w in self.tocfl_index) and w not in word.forms][:MAX_CANDIDATES]
 
         return keep([*word.alternatives, *synonyms]), keep(antonyms)
 
@@ -435,14 +428,45 @@ class RelationFinder:
         synonyms, antonyms = self.candidates(word)
         related: dict[int, DeckWord] = {}
         for candidate in synonyms + antonyms:
-            entry = self.deck_index[candidate]
-            if entry.active and is_single_word(entry):
+            entry = self.deck_index.get(candidate)
+            if entry is not None and is_single_word(entry):
                 related[entry.note_id] = entry
         for gloss in sorted(self.glosses_by_note.get(word.note_id, ())):
             for entry in self.words_by_gloss.get(gloss, ()):
                 related[entry.note_id] = entry
         related.pop(word.note_id, None)
         return [entry for entry in related.values() if not (entry.forms & word.forms)]
+
+
+class PinyinLookup:
+    """
+    Finds the pinyin of related words: from their note in the active deck, else
+    the TOCFL lists, else the moedict dump (loaded on first use), else the
+    pinyin the model suggested.
+    """
+
+    def __init__(self, deck_index: dict[str, DeckWord], tocfl_index: dict[str, TocflWord]) -> None:
+        self.deck_index = deck_index
+        self.tocfl_index = tocfl_index
+
+    def find(self, word: str) -> str | None:
+        """
+        The pinyin of a word from the active deck, the TOCFL lists or moedict.
+
+        Returns:
+            The pinyin, or None when none of them has the word
+        """
+        entry = self.deck_index.get(word)
+        if entry is not None and entry.pinyin:
+            return entry.pinyin
+        tocfl_word = self.tocfl_index.get(word)
+        if tocfl_word is not None:
+            return tocfl_word.pinyin
+        return lookup_moedict_pinyin(word)
+
+    def find_or_suggested(self, word: str, suggested: dict[str, str]) -> str | None:
+        """The pinyin of a word, falling back to the model's suggestion when no source has it."""
+        return self.find(word) or suggested.get(word)
 
 
 def build_groups(start_words: list[DeckWord], finder: RelationFinder) -> list[Group]:
@@ -478,7 +502,8 @@ For EACH target word return an object:
  "measure_words": ["<measure word>"],
  "register": "colloquial" | "neutral" | "formal" | "written",
  "region": {"usage": "tw" | "cn" | "both", "equivalents": [{"w": "<word>", "region": "tw" | "cn"}]},
- "pairs_with": [{"w": "<word>", "pattern": "<e.g. 因為…所以…>"}]}
+ "pairs_with": [{"w": "<word>", "pattern": "<e.g. 因為…所以…>"}],
+ "pinyin": {"<word>": "<its pinyin>"}}
 
 Rules:
 - Use Traditional characters and the perspective of Taiwan Mandarin.
@@ -503,6 +528,8 @@ Rules:
   used in the other region (計程車 tw vs 出租車 cn, 公車 tw vs 公交車 cn). A simplified spelling of the
   same word is NOT an equivalent. When unsure, or when usage is "both", use [].
 - pairs_with: fixed correlative pairings only; "w" is a single word (先 for 先…然後…).
+- pinyin: the Taiwan pronunciation, in pinyin with tone marks, of every word listed in synonyms,
+  antonyms, measure_words and region.equivalents.
 - Never list spelling variants of the target word. Empty lists are fine.
 - Proper nouns (places, people, countries, organizations: 嘉義市, 伊斯坦堡) and literal phrases whose
   meaning is just the sum of their words (一些花, 很多人) have nothing worth contrasting: give them an
@@ -582,17 +609,18 @@ def find_hint_leak(hint: str, group_words: list[DeckWord]) -> str | None:
     return None
 
 
-def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord], finder: RelationFinder) -> Connections:
+def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord], pinyin_lookup: PinyinLookup) -> Connections:
     """
     Validate one word's connections from the model reply, and remove what the
     prompt rules forbid but models still produce: the word's own spellings,
-    synonyms and antonyms too rare to suggest, correlative partners listed as
-    antonyms, simplified spellings listed as regional equivalents, and lists
-    over their size limit.
+    correlative partners listed as antonyms, simplified spellings listed as
+    regional equivalents, and lists over their size limit. The model's pinyin
+    is kept only for listed words whose pinyin no other source has.
 
     Raises:
         ValueError: If the reply's structure is wrong, a diff is not in English,
-            or the hint is too long or would give a word away
+            the hint is too long or would give a word away, or a pinyin is not
+            in pinyin
     """
     where = f"Connections of {target.word}"
 
@@ -609,7 +637,7 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
         for related in require(item, key, list, where):
             w = require(related, "w", str, where).strip()
             diff = require(related, "diff", str, where).strip()
-            if w in excluded or finder.is_too_advanced(w) or any(c["w"] == w for c in cleaned):
+            if w in excluded or any(c["w"] == w for c in cleaned):
                 continue
             if not LATIN_WORD_PATTERN.search(diff):
                 raise ValueError(f"{where}: the diff for {w} is not in English: {diff!r}")
@@ -620,7 +648,7 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
             cleaned.append({"w": w, "diff": diff})
         return cleaned
 
-    synonyms = clean_word_diffs("synonyms", set(target.forms))
+    synonyms = clean_word_diffs("synonyms", set(target.forms))[:MAX_SYNONYMS]
 
     pairs_with: list[Pairing] = []
     for pairing in require(item, "pairs_with", list, where):
@@ -629,7 +657,7 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
         if w and pattern and w not in target.forms and "…" not in w and "..." not in w:
             pairs_with.append({"w": w, "pattern": pattern})
 
-    antonyms = clean_word_diffs("antonyms", set(target.forms) | {s["w"] for s in synonyms} | {p["w"] for p in pairs_with})
+    antonyms = clean_word_diffs("antonyms", set(target.forms) | {s["w"] for s in synonyms} | {p["w"] for p in pairs_with})[:MAX_ANTONYMS]
 
     measure_words: list[str] = []
     for measure_word in require(item, "measure_words", list, where):
@@ -638,6 +666,7 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
         measure_word = measure_word.strip()
         if 1 <= len(measure_word) <= 2 and all(CJK_PATTERN.match(char) for char in measure_word) and measure_word not in measure_words:
             measure_words.append(measure_word)
+    measure_words = measure_words[:MAX_MEASURE_WORDS]
 
     register = require(item, "register", str, where)
     if register not in REGISTERS:
@@ -657,19 +686,33 @@ def clean_connections(item: object, target: DeckWord, group_words: list[DeckWord
         if w and w not in target.forms and to_simplified_word(w) != simplified_word:
             equivalents.append({"w": w, "region": equivalent_region})
 
-    return {
+    suggested_pinyin = cast("dict[str, object]", require(item, "pinyin", dict, where))
+    listed_words = [*(s["w"] for s in synonyms), *(a["w"] for a in antonyms), *measure_words, *(e["w"] for e in equivalents)]
+    pinyin: dict[str, str] = {}
+    for w in listed_words:
+        reading = suggested_pinyin.get(w)
+        if reading is None or w in pinyin or pinyin_lookup.find(w) is not None:
+            continue
+        if not isinstance(reading, str) or not re.search("[a-z]", reading) or CJK_PATTERN.search(reading) or ZHUYIN_PATTERN.search(reading):
+            raise ValueError(f"{where}: the pinyin of {w} is not pinyin: {reading!r}")
+        pinyin[w] = "".join(reading.split())
+
+    connections: Connections = {
         "v": SCHEMA_VERSION,
         "hint": hint,
-        "synonyms": synonyms[:MAX_SYNONYMS],
-        "antonyms": antonyms[:MAX_ANTONYMS],
-        "measure_words": measure_words[:MAX_MEASURE_WORDS],
+        "synonyms": synonyms,
+        "antonyms": antonyms,
+        "measure_words": measure_words,
         "register": register,
         "region": {"usage": usage, "equivalents": equivalents},
         "pairs_with": pairs_with,
     }
+    if pinyin:
+        connections["pinyin"] = pinyin
+    return connections
 
 
-def parse_reply(reply: object, group: Group, finder: RelationFinder) -> dict[int, Connections]:
+def parse_reply(reply: object, group: Group, pinyin_lookup: PinyinLookup) -> dict[int, Connections]:
     """
     Match the model's reply to the group's targets and clean each entry.
 
@@ -689,11 +732,11 @@ def parse_reply(reply: object, group: Group, finder: RelationFinder) -> dict[int
         item = next((items_by_word[form] for form in [target.word, *sorted(target.forms)] if form in items_by_word), None)
         if item is None:
             raise ValueError(f"The reply has no entry for {target.word}; it has {sorted(items_by_word)}")
-        result[target.note_id] = clean_connections(item, target, group_words, finder)
+        result[target.note_id] = clean_connections(item, target, group_words, pinyin_lookup)
     return result
 
 
-def generate_group(group: Group, finder: RelationFinder, client: GeminiClient) -> dict[int, Connections]:
+def generate_group(group: Group, finder: RelationFinder, pinyin_lookup: PinyinLookup, client: GeminiClient) -> dict[int, Connections]:
     """
     Generate the connections of a group's targets, retrying a malformed reply.
 
@@ -704,14 +747,14 @@ def generate_group(group: Group, finder: RelationFinder, client: GeminiClient) -
     last_error: ValueError | None = None
     for attempt in range(1, GENERATION_ATTEMPTS + 1):
         try:
-            return parse_reply(gemini_generate_json(prompt, client=client, model_name=STRONG_GEMINI_MODEL), group, finder)
+            return parse_reply(gemini_generate_json(prompt, client=client, model_name=STRONG_GEMINI_MODEL), group, pinyin_lookup)
         except ValueError as e:
             last_error = e
             print(f"  Malformed reply for {[t.word for t in group.targets]} (attempt {attempt}/{GENERATION_ATTEMPTS}): {e}")
     raise Exception(f"No valid reply for {[t.word for t in group.targets]} after {GENERATION_ATTEMPTS} attempts") from last_error
 
 
-def generate_all(groups: list[Group], finder: RelationFinder, dry_run: bool) -> int:
+def generate_all(groups: list[Group], finder: RelationFinder, pinyin_lookup: PinyinLookup, dry_run: bool) -> int:
     """
     Run the groups' model calls in parallel and save each result as it arrives,
     so that the work already done is kept if a later call fails.
@@ -724,7 +767,7 @@ def generate_all(groups: list[Group], finder: RelationFinder, dry_run: bool) -> 
     executor = ThreadPoolExecutor(max_workers=PARALLEL_REQUESTS)
     try:
         futures: dict[Future[dict[int, Connections]], Group] = {
-            executor.submit(generate_group, group, finder, client): group for group in groups
+            executor.submit(generate_group, group, finder, pinyin_lookup, client): group for group in groups
         }
         for done, future in enumerate(as_completed(futures), 1):
             group = futures[future]
@@ -751,8 +794,7 @@ EXPLANATION_STYLE = "display: inline-block; margin: 0 0 0.4em 1em; font-size: 0.
 
 def is_learned(word: str, deck_index: dict[str, DeckWord]) -> bool:
     """Whether a related word is one the learner studies: a TOCFL note in the active deck."""
-    entry = deck_index.get(word)
-    return entry is not None and entry.active
+    return word in deck_index
 
 
 def learned_first(words: list[str], deck_index: dict[str, DeckWord]) -> list[str]:
@@ -760,7 +802,7 @@ def learned_first(words: list[str], deck_index: dict[str, DeckWord]) -> list[str
     return sorted(words, key=lambda word: not is_learned(word, deck_index))
 
 
-def format_entry(word: str, deck_index: dict[str, DeckWord], explanation: str = "") -> str:
+def format_entry(word: str, deck_index: dict[str, DeckWord], pinyin: str | None, explanation: str = "") -> str:
     """
     Format a related word, with its pinyin when known and an optional explanation.
 
@@ -769,15 +811,14 @@ def format_entry(word: str, deck_index: dict[str, DeckWord], explanation: str = 
     A word the learner has not learned is gray and not bold as a whole - pinyin
     and explanation included - so it reads as secondary.
     """
-    entry = deck_index.get(word)
-    pinyin = escape_html(entry.pinyin) if entry is not None and entry.pinyin else ""
+    pinyin_text = escape_html(pinyin) if pinyin else ""
     learned = is_learned(word, deck_index)
 
     if learned:
-        pinyin_html = f' <span style="{GRAY_STYLE}">{pinyin}</span>' if pinyin else ""
+        pinyin_html = f' <span style="{GRAY_STYLE}">{pinyin_text}</span>' if pinyin_text else ""
         word_line = f"<b>{escape_html(word)}</b>{pinyin_html}"
     else:
-        pinyin_text = f" {pinyin}" if pinyin else ""
+        pinyin_text = f" {pinyin_text}" if pinyin_text else ""
         word_line = f'<span style="{GRAY_STYLE}">{escape_html(word)}{pinyin_text}</span>'
 
     if not explanation:
@@ -787,7 +828,11 @@ def format_entry(word: str, deck_index: dict[str, DeckWord], explanation: str = 
 
 
 def render_connections_html(
-    connections: Connections, extra_synonyms: list[WordDiff], extra_antonyms: list[WordDiff], deck_index: dict[str, DeckWord]
+    connections: Connections,
+    extra_synonyms: list[WordDiff],
+    extra_antonyms: list[WordDiff],
+    deck_index: dict[str, DeckWord],
+    pinyin_lookup: PinyinLookup,
 ) -> str:
     """
     Render Connections JSON as HTML, one titled section per non-empty relation.
@@ -799,16 +844,21 @@ def render_connections_html(
         extra_synonyms: Words that list this word as their synonym, with their
             diff; shown when this word's own connections do not list them back
         extra_antonyms: Words that list this word as their antonym, likewise
-        deck_index: Every TOCFL spelling, to mark learned words and show pinyin
+        deck_index: Every spelling in the active deck, to mark learned words
+        pinyin_lookup: Finds the pinyin shown after each related word
     """
     sections: list[list[str]] = []
+    suggested_pinyin = connections.get("pinyin", {})
+
+    def entry(word: str, explanation: str = "") -> str:
+        return format_entry(word, deck_index, pinyin_lookup.find_or_suggested(word, suggested_pinyin), explanation)
 
     def word_diff_lines(own: list[WordDiff], extra: list[WordDiff]) -> list[str]:
         """One entry per related word, with its diff below it, the learned words first."""
         merged = list(own)
         merged += [e for e in extra if all(m["w"] != e["w"] for m in merged)]
         merged.sort(key=lambda related: not is_learned(related["w"], deck_index))
-        return [format_entry(related["w"], deck_index, related["diff"]) for related in merged]
+        return [entry(related["w"], related["diff"]) for related in merged]
 
     synonym_lines = word_diff_lines(connections["synonyms"], extra_synonyms)
     if synonym_lines:
@@ -823,7 +873,7 @@ def render_connections_html(
 
     if connections["measure_words"]:
         measure_words = learned_first(connections["measure_words"], deck_index)
-        sections.append(["Measure words", ", ".join(format_entry(w, deck_index) for w in measure_words)])
+        sections.append(["Measure words", ", ".join(entry(w) for w in measure_words)])
 
     region = connections["region"]
     # Only shown with an equivalent word: "Mainly used in Taiwan" alone tells a
@@ -831,7 +881,7 @@ def render_connections_html(
     equivalents = sorted(region["equivalents"], key=lambda equivalent: not is_learned(equivalent["w"], deck_index))
     if equivalents:
         region_lines = [f"Mainly used in {REGION_NAMES[region['usage']]}"] if region["usage"] in REGION_NAMES else []
-        region_lines += [f"{REGION_NAMES[e['region']]}: {format_entry(e['w'], deck_index)}" for e in equivalents]
+        region_lines += [f"{REGION_NAMES[e['region']]}: {entry(e['w'])}" for e in equivalents]
         sections.append(["Region", *region_lines])
 
     if connections["register"] != "neutral":
@@ -840,7 +890,7 @@ def render_connections_html(
     return "<br><br>".join("<br>".join([f"<u>{escape_html(title)}</u>", *lines]) for title, *lines in sections)
 
 
-def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: bool) -> int:
+def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], pinyin_lookup: PinyinLookup, dry_run: bool) -> int:
     """
     Refresh the Connections HTML and Meaning Hint fields of every note whose
     Connections JSON uses the current schema version.
@@ -869,8 +919,9 @@ def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: 
         forms = sorted(word.forms)
         extra_synonyms = [s for form in forms for s in listed_as_synonym_by.get(form, [])]
         extra_antonyms = [w for form in forms for w in listed_as_antonym_by.get(form, [])]
+        connections_html = render_connections_html(parsed[word.note_id], extra_synonyms, extra_antonyms, deck_index, pinyin_lookup)
         rendered = {
-            CONNECTIONS_HTML_FIELD: render_connections_html(parsed[word.note_id], extra_synonyms, extra_antonyms, deck_index),
+            CONNECTIONS_HTML_FIELD: connections_html,
             MEANING_HINT_FIELD: escape_html(parsed[word.note_id]["hint"]),
         }
         if rendered[CONNECTIONS_HTML_FIELD] == word.connections_html and rendered[MEANING_HINT_FIELD] == word.meaning_hint:
@@ -883,7 +934,7 @@ def render_all(words: list[DeckWord], deck_index: dict[str, DeckWord], dry_run: 
     return changed
 
 
-def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -> list[DeckWord]:
+def select_start_words(args: argparse.Namespace, words: list[DeckWord]) -> list[DeckWord]:
     """
     Pick the words to start groups from: the given words, or the notes with a
     card due now (overdue or today) or within UPCOMING_DAYS days. The due-now
@@ -896,7 +947,7 @@ def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -
     if args.word:
         start_words: list[DeckWord] = []
         for requested in args.word:
-            matches = [word for word in active_words if requested in word.forms]
+            matches = [word for word in words if requested in word.forms]
             if not matches:
                 raise ValueError(f"No unsuspended {NOTE_TYPE} note has the word {requested}")
             needing = [word for word in matches if needs_connections(word)]
@@ -906,7 +957,7 @@ def select_start_words(args: argparse.Namespace, active_words: list[DeckWord]) -
         return start_words
 
     due_note_ids = find_note_ids_in_upcoming_order(f"note:{NOTE_TYPE} -is:suspended", UPCOMING_DAYS)
-    words_by_note = {word.note_id: word for word in active_words}
+    words_by_note = {word.note_id: word for word in words}
     start_words = [words_by_note[note_id] for note_id in due_note_ids if needs_connections(words_by_note[note_id])]
     print(
         f"{len(due_note_ids)} note(s) due now or within {UPCOMING_DAYS} days,"
@@ -933,19 +984,20 @@ def main() -> None:
 
     words = load_deck_words()
     deck_index = build_deck_index(words)
-    active_words = [word for word in words if word.active]
-    finder = RelationFinder(deck_index, active_words, load_tocfl_levels())
+    tocfl_index = load_tocfl_index()
+    finder = RelationFinder(deck_index, words, tocfl_index)
+    pinyin_lookup = PinyinLookup(deck_index, tocfl_index)
 
-    start_words = select_start_words(args, active_words)
+    start_words = select_start_words(args, words)
     filled = 0
     if start_words:
         print(f"Looking up {len(start_words)} word(s) in moedict...")
         finder.prefetch_moedict(start_words)
         groups = build_groups(start_words, finder)
         print(f"Generating connections with {STRONG_GEMINI_MODEL}: {sum(len(g.targets) for g in groups)} word(s) in {len(groups)} group(s)")
-        filled = generate_all(groups, finder, args.dry_run)
+        filled = generate_all(groups, finder, pinyin_lookup, args.dry_run)
 
-    rendered = render_all(words, deck_index, args.dry_run)
+    rendered = render_all(words, deck_index, pinyin_lookup, args.dry_run)
 
     print(f"\nFilled {CONNECTIONS_JSON_FIELD} on {filled} note(s)")
     print(f"Refreshed {CONNECTIONS_HTML_FIELD} and {MEANING_HINT_FIELD} on {rendered} note(s)")

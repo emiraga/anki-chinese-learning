@@ -257,15 +257,14 @@ def load_all() -> list[TocflWord]:
     return all_words
 
 
-def load_tocfl_levels() -> dict[str, str]:
+def load_tocfl_index() -> dict[str, TocflWord]:
     """
-    Map every word in the TOCFL lists to the easiest level it is listed at.
+    Map every word in the TOCFL lists to its entry at the easiest level it is listed at.
 
     Returns:
-        Traditional word -> level name (e.g. "Level 3"); words missing from the
-        lists are beyond Level 5
+        Traditional word -> its entry; words missing from the lists are beyond Level 5
     """
-    levels: dict[str, str] = {}
+    index: dict[str, TocflWord] = {}
     for word in load_all():  # sorted easiest level first
-        levels.setdefault(word.traditional, word.level)
-    return levels
+        index.setdefault(word.traditional, word)
+    return index

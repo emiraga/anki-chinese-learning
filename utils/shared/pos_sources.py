@@ -19,7 +19,6 @@ lines.
 
 import gzip
 import json
-import lzma
 import re
 from collections import Counter
 from collections.abc import Iterator
@@ -29,11 +28,11 @@ from typing import Any
 
 import openpyxl
 
+from .moedict import load_moedict_dump
 from .project_paths import (
     JIEBA_DICT_TXT,
     KAIKKI_EN_JSONL,
     KAIKKI_ZH_JSONL,
-    MOEDICT_DUMP_JSON,
     TBCL_GLOSSARY_XLSX,
     UD_CHINESE_GSD_DIR,
 )
@@ -126,9 +125,7 @@ def read_kaikki_zh(words: set[str] | None = None) -> Iterator[PosEntry]:
 
 def read_moedict_dump(words: set[str] | None = None) -> Iterator[PosEntry]:
     """One entry per definition that has a `type`; definitions without one are skipped."""
-    with lzma.open(_require_file(MOEDICT_DUMP_JSON), "rt", encoding="utf-8") as f:
-        entries: list[dict[str, Any]] = json.load(f)
-    for entry in entries:
+    for entry in load_moedict_dump():
         title = entry["title"]
         if words is not None and title not in words:
             continue
