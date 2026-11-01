@@ -3,6 +3,7 @@ import anki, { type NoteInfo } from "~/apis/anki";
 import pinyinSplit from "pinyin-split";
 import { diacriticToNumber, removeTone } from "pinyin-tools";
 import { useSettings } from "~/settings/SettingsContext";
+import { expandArabicNumerals } from "~/utils/chinese_numerals";
 import type { PinyinType } from "~/utils/pinyin";
 import type { InvalidDataRecord } from "./types";
 
@@ -422,6 +423,7 @@ export function useAnkiPhrases() {
             sTraditional = sTraditional.slice(0, sTraditional.length - 1);
           }
           const split = pinyinSplit(sPinyin);
+          sTraditional = expandArabicNumerals(sTraditional, split);
           if (split.length === sTraditional.length) {
             for (var i = 0; i < split.length; i++) {
               const t = sTraditional[i];
