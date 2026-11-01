@@ -117,9 +117,13 @@
       ? [...uniqueRight].sort((a, b) => getToneNumber(a) - getToneNumber(b))
       : shuffle(uniqueRight);
 
-    // Create shuffled indices for left items display order
+    // Left items display order. Sentence cards keep the words in sentence order
+    // (the script writes them with `ordered=True`); all others are shuffled.
+    const keepLeftOrder = keyRaw.startsWith("pos_sentence:");
     const leftIndices = leftItems.map((_, i) => i);
-    const shuffledLeftIndices = shuffle(leftIndices);
+    const shuffledLeftIndices = keepLeftOrder
+      ? leftIndices
+      : shuffle(leftIndices);
 
     // Color palette for connections
     const colors = [

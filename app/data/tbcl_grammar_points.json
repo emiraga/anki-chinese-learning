@@ -134,6 +134,11 @@
           "noteId": 1769319195970,
           "traditional": "我滿肚子都是屎",
           "justification": "是 links 滿肚子 to 屎 in a plain statement: N1 + 是 + N2."
+        },
+        {
+          "noteId": 1766469455151,
+          "traditional": "他很矮",
+          "justification": "Contrast with 是: a state verb predicate takes 很, not 是 (他很矮, not 他是矮)."
         }
       ],
       "missing": [
@@ -147,19 +152,6 @@
             {
               "zh": "這**不是**我的包包。",
               "en": "This is not my bag."
-            }
-          ]
-        },
-        {
-          "explanation": "The contrast with state verbs: 他很高, not 他是高.",
-          "examples": [
-            {
-              "zh": "他**很高**。",
-              "en": "He is tall."
-            },
-            {
-              "zh": "這家餐廳**很貴**。",
-              "en": "This restaurant is expensive."
             }
           ]
         }

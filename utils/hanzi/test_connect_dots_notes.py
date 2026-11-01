@@ -18,11 +18,14 @@ from connect_dots_notes import (
     ConnectDotsNote,
     HanziDataStore,
     HanziNote,
+    PosSentenceToPos,
     SyllableInitialHanziToPinyin,
     TagUnionHanziToPinyin,
     calculate_coverage_from_notes,
     get_tone_number,
+    pick_fake_pos_codes,
     pinyin_with_zhuyin,
+    pos_label,
     stable_bin,
     syllable_with_tone,
 )
@@ -500,6 +503,83 @@ class TestCalculateCoverage:
         assert coverage.uncovered_characters == {"選"}
         assert coverage.coverage_percentage <= 100
         assert len(coverage.coverage_by_type["two_char_phrase"]) == 2
+
+
+POS_NAMES = {
+    "N": "noun",
+    "V": "verb",
+    "Vs": "intransitive state verbs",
+    "Adv": "adverb",
+    "M": "measure",
+    "Det": "determiner",
+    "Ptc": "particle",
+    "Prep": "preposition",
+    "Conj": "conjunction",
+    "Vaux": "auxiliary verbs",
+}
+POS_CODES = list(POS_NAMES)
+
+SENTENCE = {
+    "en": "This cup of coffee is too sweet.",
+    "note": "",
+    "tokens": [
+        {"zh": "這", "pos": "Det", "gloss": "this"},
+        {"zh": "杯", "pos": "M", "gloss": "cup"},
+        {"zh": "咖啡", "pos": "N", "gloss": "coffee"},
+        {"zh": "太", "pos": "Adv", "gloss": "too"},
+        {"zh": "甜", "pos": "Vs", "gloss": "sweet", "note": "A state verb."},
+        {"zh": "了", "pos": "Ptc", "gloss": "(excess)"},
+        {"zh": "。"},
+        {"zh": "杯", "pos": "M", "gloss": "cup"},
+        {"zh": "。"},
+    ],
+}
+
+
+class TestPosSentenceToPos:
+    """Tests for the sentence -> part of speech generator"""
+
+    def test_left_in_sentence_order_without_punctuation(self):
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES).generate_notes()
+        assert note.left == ["這", "杯", "咖啡", "太", "甜", "了", "杯"]
+        assert note.right == [
+            "Det (determiner)",
+            "M (measure)",
+            "N (noun)",
+            "Adv (adverb)",
+            "Vs (intransitive state verbs)",
+            "Ptc (particle)",
+            "M (measure)",
+        ]
+        # The fields keep the sentence order instead of sorting
+        assert note.left_str() == "這, 杯, 咖啡, 太, 甜, 了, 杯"
+        assert note.right_str().startswith("Det (determiner), M (measure), N (noun), ")
+        assert note.explanation[4] == "sweet: A state verb."
+
+    def test_key_is_the_sentence(self):
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES).generate_notes()
+        assert note.key == "pos_sentence:這杯咖啡太甜了。杯。"
+
+    def test_fake_right_are_codes_not_in_sentence(self):
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, fake_count=3).generate_notes()
+        assert len(note.fake_right) == 3
+        assert not set(note.fake_right) & set(note.right)
+        assert set(note.fake_right) <= {pos_label(code, POS_NAMES) for code in POS_CODES}
+
+    def test_fake_right_is_deterministic(self):
+        first = pick_fake_pos_codes("k", {"N"}, POS_CODES, 3)
+        assert first == pick_fake_pos_codes("k", {"N"}, POS_CODES, 3)
+        assert "N" not in first
+
+    def test_long_sentence_is_not_split(self):
+        tokens = [{"zh": f"字{i}", "pos": POS_CODES[i % len(POS_CODES)]} for i in range(15)]
+        (note,) = PosSentenceToPos({"en": "long", "tokens": tokens}, POS_NAMES).generate_notes()
+        assert note.split_stably(max_items=10) == [note]
+
+    def test_unknown_pos_code_raises(self):
+        sentence = {"en": "bad", "tokens": [{"zh": "我", "pos": "Nope"}]}
+        with pytest.raises(ValueError, match="Unknown POS code"):
+            PosSentenceToPos(sentence, POS_NAMES).generate_notes()
 
 
 if __name__ == "__main__":

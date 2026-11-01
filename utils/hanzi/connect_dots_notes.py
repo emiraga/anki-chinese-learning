@@ -22,7 +22,7 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 # Add parent directory to path for shared imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -46,12 +46,14 @@ from shared.pinyin_utils import (
     remove_tone_marks,
     syllable_with_tone,
 )
+from shared.project_paths import load_pos_mapping, load_pos_sentences
 
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
 SYLLABLE_MIN_COUNT = 3  # Minimum characters sharing a syllable
 TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
+POS_SENTENCE_FAKE_COUNT = 3  # POS codes not in a sentence, offered as decoys
 
 # Tags to generate Hanzi-to-Pinyin ConnectDots notes for (using TagHanziToPinyin generator)
 # Full tag names in format "prefix::name"
@@ -417,6 +419,10 @@ class ConnectDotsNote:
     right: list[str]
     explanation: list[str] = field(default_factory=lambda: list[str]())
     fake_right: list[str] = field(default_factory=lambda: list[str]())
+    # When True the order of `left` is meaningful (e.g. the words of a
+    # sentence): fields keep it instead of sorting, and the note is never split.
+    # The front template must also keep it - see `keepLeftOrder` there.
+    ordered: bool = False
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
@@ -425,9 +431,10 @@ class ConnectDotsNote:
             raise ValueError(f"Explanation must have same length as Left/Right: explanation={len(self.explanation)}, left={len(self.left)}")
 
     def get_sorted_tuples(self) -> list[tuple[str, str, str]]:
-        """Get (left, right, explanation) tuples sorted by left element"""
+        """Get (left, right, explanation) tuples sorted by left element, or in their original order if `ordered`"""
         explanations = self.explanation or [""] * len(self.left)
-        return sorted(zip(self.left, self.right, explanations, strict=False), key=lambda x: x[0])
+        tuples = list(zip(self.left, self.right, explanations, strict=True))
+        return tuples if self.ordered else sorted(tuples, key=lambda x: x[0])
 
     def left_str(self) -> str:
         """Get comma-separated left elements, sorted"""
@@ -490,8 +497,11 @@ class ConnectDotsNote:
         Each split note also gets a 'fake_right' field with right values drawn from
         sibling notes (and the original fake_right), limited so options don't
         outnumber items.
+
+        An `ordered` note is never split, since splitting would tear its left
+        items (e.g. the words of a sentence) apart.
         """
-        if len(self.left) <= max_items:
+        if self.ordered or len(self.left) <= max_items:
             return [self]
 
         explanations = self.explanation or [""] * len(self.left)
@@ -898,6 +908,85 @@ class TwoCharPhraseByCharacter(ConnectDotsGenerator):
 
         key = f"{self.generator_type}:{self.character}"
         return [ConnectDotsNote(key=key, left=left, right=right)]
+
+
+def pick_fake_pos_codes(key: str, real_codes: set[str], all_codes: list[str], count: int) -> list[str]:
+    """
+    Deterministically pick `count` POS codes not in `real_codes` as decoys.
+
+    The pick is a pseudo-random order seeded by `key`, so it varies between
+    sentences but stays the same across runs (re-running the script must not
+    change, and so reschedule, a note whose sentence did not change).
+    """
+    candidates = [code for code in all_codes if code not in real_codes]
+    candidates.sort(key=lambda code: hashlib.md5(f"{key}|{code}".encode()).hexdigest())
+    return candidates[:count]
+
+
+def pos_label(code: str, pos_names: dict[str, str]) -> str:
+    """Label a POS code with its English name from app/data/pos.json, e.g. "Vaux (auxiliary verbs)"."""
+    return f"{code} ({pos_names[code]})"
+
+
+def load_pos_names() -> dict[str, str]:
+    """Map each POS code in app/data/pos.json to its English name (the first entry of its value)."""
+    return {code: entry[0] for code, entry in load_pos_mapping().items()}
+
+
+class PosSentenceToPos(ConnectDotsGenerator):
+    """
+    Generate one note per sentence of app/data/pos_sentences.json, mapping each
+    word of the sentence to its part of speech code.
+
+    Left = the sentence's words in sentence order (punctuation dropped),
+    Right = their POS codes with English names (e.g. "N (noun)", "Vaux (auxiliary verbs)"),
+    Explanation = the word's gloss and note,
+    Fake Right = a few labelled POS codes that do not occur in the sentence.
+
+    The notes are `ordered`, so the left side reads as the sentence and is
+    never split; the template still shuffles the right side.
+    """
+
+    def __init__(self, sentence: dict[str, Any], pos_names: dict[str, str], fake_count: int = POS_SENTENCE_FAKE_COUNT):
+        """
+        Args:
+            sentence: One entry of app/data/pos_sentences.json
+            pos_names: POS code -> English name, see load_pos_names()
+            fake_count: Number of POS codes not in the sentence to add as decoys
+        """
+        self.sentence = sentence
+        self.pos_names = pos_names
+        self.fake_count = fake_count
+
+    @property
+    def generator_type(self) -> str:
+        return "pos_sentence"
+
+    def generate_notes(self) -> list[ConnectDotsNote]:
+        tokens: list[dict[str, str]] = self.sentence["tokens"]
+        words = [token for token in tokens if token.get("pos")]
+        if not words:
+            raise ValueError(f"POS sentence has no tagged words: {self.sentence['en']}")
+
+        codes = [word["pos"] for word in words]
+        unknown = sorted(set(codes) - set(self.pos_names))
+        if unknown:
+            raise ValueError(f"Unknown POS code(s) {unknown} in sentence: {self.sentence['en']}")
+
+        key = f"{self.generator_type}:{''.join(token['zh'] for token in tokens)}"
+        explanation = [": ".join(filter(None, [word.get("gloss", ""), word.get("note", "")])) for word in words]
+        fake_codes = pick_fake_pos_codes(key, set(codes), list(self.pos_names), self.fake_count)
+
+        return [
+            ConnectDotsNote(
+                key=key,
+                left=[word["zh"] for word in words],
+                right=[pos_label(code, self.pos_names) for code in codes],
+                explanation=explanation,
+                fake_right=[pos_label(code, self.pos_names) for code in fake_codes],
+                ordered=True,
+            )
+        ]
 
 
 class IntersectionGenerator(ConnectDotsGenerator):
@@ -1714,6 +1803,12 @@ def main():
     print(f"Adding {len(COMBINED_SOUND_COMPONENTS_TO_PINYIN)} combined sound component(s)...")
     for key_name, components in COMBINED_SOUND_COMPONENTS_TO_PINYIN.items():
         generators.append(CombinedSoundComponentHanziToPinyin(key_name, components))
+
+    # Sentence generators: match each word of a sentence to its part of speech
+    pos_sentences = load_pos_sentences()
+    pos_names = load_pos_names()
+    print(f"Adding {len(pos_sentences)} POS sentence(s)...")
+    generators.extend(PosSentenceToPos(sentence, pos_names) for sentence in pos_sentences)
 
     if not generators:
         print("No generators to run")

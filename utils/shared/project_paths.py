@@ -55,6 +55,7 @@ PINYIN_TABLE_JSON = PROJECT_ROOT / "app" / "data" / "pinyin_table.json"
 POS_JSON = PROJECT_ROOT / "app" / "data" / "pos.json"
 POS_DETAILS_JSON = PROJECT_ROOT / "app" / "data" / "pos_details.json"
 POS_VERB_KINDS_JSON = PROJECT_ROOT / "app" / "data" / "pos_verb_kinds.json"
+POS_SENTENCES_JSON = PROJECT_ROOT / "app" / "data" / "pos_sentences.json"
 
 
 def load_char_json(directory: Path, character: str) -> dict[str, Any] | None:
@@ -120,3 +121,17 @@ def load_pos_verb_kinds() -> list[dict[str, Any]]:
     with POS_VERB_KINDS_JSON.open(encoding="utf-8") as f:
         verb_kinds: list[dict[str, Any]] = json.load(f)
     return verb_kinds
+
+
+def load_pos_sentences() -> list[dict[str, Any]]:
+    """
+    Load `app/data/pos_sentences.json`, the example sentences split into words
+    and tagged with their POS codes, shown on the app's `/pos` page.
+
+    Returns:
+        One entry per sentence, with "en", "note" and "tokens"; each token has
+        "zh" and, unless it is punctuation, "pos" and "gloss"
+    """
+    with POS_SENTENCES_JSON.open(encoding="utf-8") as f:
+        sentences: list[dict[str, Any]] = json.load(f)
+    return sentences
