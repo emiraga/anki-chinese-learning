@@ -22,6 +22,13 @@ from shared.character_conversion import to_simplified, to_traditional
 from shared.dictionary_utils import lookup_character_meaning
 from shared.phrase_utils import CharOccurrence, extract_characters_from_phrases
 
+PHRASE_NOTE_TYPES = ["TOCFL"]
+
+
+def extract_unsuspended_phrase_characters() -> dict[str, list[CharOccurrence]]:
+    """Extract characters only from phrase notes that have an unsuspended card."""
+    return extract_characters_from_phrases(PHRASE_NOTE_TYPES, only_unsuspended=True)
+
 
 def extract_existing_hanzi_characters() -> set[str]:
     """
@@ -136,8 +143,7 @@ def process_single_character(char: str, char_data: dict[str, list[CharOccurrence
     """
     # If no char_data provided, extract it from phrases
     if char_data is None:
-        note_types = ["TOCFL"]
-        all_char_data = extract_characters_from_phrases(note_types)
+        all_char_data = extract_unsuspended_phrase_characters()
         char_occurrences = all_char_data.get(char, [])
     else:
         char_occurrences = char_data.get(char, [])
@@ -213,9 +219,8 @@ def main() -> None:
     # Step 1: Get existing Hanzi characters
     existing_chars = extract_existing_hanzi_characters()
 
-    # Step 2: Extract characters from TOCFL
-    note_types = ["TOCFL"]
-    char_data = extract_characters_from_phrases(note_types)
+    # Step 2: Extract characters from unsuspended TOCFL notes
+    char_data = extract_unsuspended_phrase_characters()
 
     # Step 3: Find missing characters
     all_chars = set(char_data.keys())
