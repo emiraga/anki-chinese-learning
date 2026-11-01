@@ -35,8 +35,12 @@ ones in the same order - whose Connections JSON is empty or was made with an
 older schema version. Each such word is sent
 to the model together with the active words it is easily confused with - those
 sharing an English gloss, or listed as its synonym/antonym by the MOE dictionary.
-Related active words that need connections too are filled by the same call, so
-the contrast between two words is written from both sides at once.
+Its related active words are filled by the same call (up to MAX_GROUP_TARGETS
+words in total), so the contrast between two words is written from both sides
+at once: first those that need connections too, then those that already have
+them, which are regenerated so that their hint and their synonyms and antonyms
+take the new word into account. The remaining related words are named only for
+contrast.
 
 Only unsuspended notes are loaded. The candidate synonyms and antonyms from
 TOCFL and moedict that are passed to the model are limited to TOCFL Level 1-5
@@ -49,7 +53,8 @@ the model suggested along with the connections.
 
 Only single words are processed: sentences, phrases longer than 4 characters
 and idioms (POS "Id") are skipped. Connections JSON of the current schema
-version is never overwritten; clear the field to regenerate it.
+version is only overwritten when a related word is being filled; clear the
+field to regenerate it on its own.
 
 Meaning Hint is meant for the front of the meaning card, so it is English only
 and never contains Chinese characters, Zhuyin, or the pinyin of the word or of
@@ -121,8 +126,8 @@ MAX_MEANING_LENGTH = 120
 MAX_CONTEXT_MEANING_LENGTH = 60
 
 MAX_HINT_WORDS = 15
-MAX_SYNONYMS = 3
-MAX_ANTONYMS = 2
+MAX_SYNONYMS = 5
+MAX_ANTONYMS = 5
 MAX_MEASURE_WORDS = 3
 REGISTERS = ("colloquial", "neutral", "formal", "written")
 REGION_NAMES = {"tw": "Taiwan", "cn": "Mainland China"}
@@ -195,9 +200,9 @@ class Group:
     """The words of one model call."""
 
     targets: list[DeckWord]
-    """Words whose Connections JSON is generated."""
+    """Words whose Connections JSON is generated (or regenerated)."""
     context: list[DeckWord]
-    """Related words that already have connections, named only for contrast."""
+    """Related words beyond the target limit, named only for contrast."""
 
 
 def strip_html(text: str) -> str:
@@ -473,9 +478,11 @@ def build_groups(start_words: list[DeckWord], finder: RelationFinder) -> list[Gr
     """
     Group each starting word with its related words.
 
-    A starting word's related words that still need connections join it as
-    targets (up to MAX_GROUP_TARGETS in total); the remaining related words are
-    passed as context. Every word is a target of at most one group.
+    A starting word's related words join it as targets (up to MAX_GROUP_TARGETS
+    in total): first those that still need connections, then those that already
+    have them, which are regenerated to take the starting word into account. The
+    remaining related words are passed as context. Every word is a target of at
+    most one group.
     """
     assigned: set[int] = set()
     groups: list[Group] = []
@@ -483,7 +490,8 @@ def build_groups(start_words: list[DeckWord], finder: RelationFinder) -> list[Gr
         if start.note_id in assigned:
             continue
         related = finder.related_active_words(start)
-        joining = [word for word in related if needs_connections(word) and word.note_id not in assigned]
+        # sorted() is stable, so each part keeps the relatedness order
+        joining = sorted((word for word in related if word.note_id not in assigned), key=lambda word: not needs_connections(word))
         targets = [start, *joining[: MAX_GROUP_TARGETS - 1]]
         target_ids = {word.note_id for word in targets}
         context = [word for word in related if word.note_id not in target_ids][:MAX_GROUP_CONTEXT]
@@ -516,11 +524,11 @@ Rules:
   than restating the meaning.
 - "diff" (of synonyms and antonyms) MUST be written in ENGLISH, at most 25 words. Chinese only for the words themselves, and it
   names both words in Chinese (never "the target" or "this word"): "陰天 is fully overcast, whereas 多雲 ...".
-- synonyms: at most 3 real near-synonyms. Every other target or context word that is a near-synonym
+- synonyms: at most 5 real near-synonyms. Every other target or context word that is a near-synonym
   of the target MUST be listed before any candidate; use the candidates only for the remaining slots.
   Common words only, never obscure or literary ones. Words that only share an English translation but
   mean something else are NOT synonyms.
-- antonyms: at most 2, and only an opposite a native speaker would name immediately (高興/難過,
+- antonyms: at most 5, and only an opposite a native speaker would name immediately (高興/難過,
   晴天/陰天). Related roles (店員/老闆), loose contrasts (發明/模仿) and rare words are NOT antonyms; when
   unsure, use []. Correlative partners (雖然/但是, 因為/所以) are NOT antonyms; put them in pairs_with.
 - measure_words: the common Taiwan measure words of a noun; [] for other parts of speech.
@@ -776,7 +784,8 @@ def generate_all(groups: list[Group], finder: RelationFinder, pinyin_lookup: Pin
             print(f"[{done}/{len(groups)}] {' '.join(t.word for t in group.targets)}{context}")
             for target in group.targets:
                 value = json.dumps(connections_by_note[target.note_id], ensure_ascii=False)
-                print(f"  {target.word}: {value}")
+                regenerated = " (regenerated)" if has_current_connections(target) else ""
+                print(f"  {target.word}{regenerated}: {value}")
                 if not dry_run:
                     update_note_fields(target.note_id, {CONNECTIONS_JSON_FIELD: value})
                 target.connections_json = value
@@ -941,8 +950,11 @@ def select_start_words(args: argparse.Namespace, words: list[DeckWord]) -> list[
     notes come first, in the order their first card comes up in Anki's review
     queue, then the upcoming ones, likewise ordered.
 
+    With --force, a --word is regenerated even when its connections are current.
+
     Raises:
-        ValueError: If a --word is not an active single word that needs connections
+        ValueError: If a --word is not an active single word that needs
+            connections (or, with --force, not an active single word)
     """
     if args.word:
         start_words: list[DeckWord] = []
@@ -950,9 +962,16 @@ def select_start_words(args: argparse.Namespace, words: list[DeckWord]) -> list[
             matches = [word for word in words if requested in word.forms]
             if not matches:
                 raise ValueError(f"No unsuspended {NOTE_TYPE} note has the word {requested}")
-            needing = [word for word in matches if needs_connections(word)]
-            if not needing:
-                raise ValueError(f"{requested} is not a single word, or its {CONNECTIONS_JSON_FIELD} is up to date (clear it to redo)")
+            if args.force:
+                needing = [word for word in matches if is_single_word(word)]
+                if not needing:
+                    raise ValueError(f"{requested} is not a single word")
+            else:
+                needing = [word for word in matches if needs_connections(word)]
+                if not needing:
+                    raise ValueError(
+                        f"{requested} is not a single word, or its {CONNECTIONS_JSON_FIELD} is up to date (use --force to regenerate it)"
+                    )
             start_words.extend(needing)
         return start_words
 
@@ -976,7 +995,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--word", nargs="+", metavar="WORD", help="Fill these words (and their related words) instead of the due and upcoming notes"
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--force", action="store_true", help="With --word, regenerate the words even when their Connections JSON is up to date"
+    )
+    args = parser.parse_args()
+    if args.force and not args.word:
+        parser.error("--force requires --word")
+    return args
 
 
 def main() -> None:
@@ -994,6 +1019,7 @@ def main() -> None:
         print(f"Looking up {len(start_words)} word(s) in moedict...")
         finder.prefetch_moedict(start_words)
         groups = build_groups(start_words, finder)
+        finder.prefetch_moedict([target for group in groups for target in group.targets])
         print(f"Generating connections with {STRONG_GEMINI_MODEL}: {sum(len(g.targets) for g in groups)} word(s) in {len(groups)} group(s)")
         filled = generate_all(groups, finder, pinyin_lookup, args.dry_run)
 
