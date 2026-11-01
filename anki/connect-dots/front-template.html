@@ -65,8 +65,11 @@
     const CONFIGURATION_OPTIONS = {
       leftOrder: ["shuffled", "fixed"], // "fixed": keep the left items in order
       rightOrder: ["shuffled", "tone"], // "tone": list right items by tone 1-5
-      colorBy: ["palette", "tone"], // "tone": color pronunciations by tone
+      // "tone": color pronunciations by tone, "fixed": colors of rightColors
+      colorBy: ["palette", "tone", "fixed"],
     };
+    // Besides those, "rightColors" ({right value: "#rrggbb"}) gives the color
+    // of each right value; required by, and only allowed with, colorBy "fixed".
 
     function parseConfiguration(raw) {
       const configuration = {};
@@ -92,7 +95,24 @@
       }
       for (const name in parsed) {
         const allowed = CONFIGURATION_OPTIONS[name];
-        if (!allowed) {
+        if (name === "rightColors") {
+          const rightColors = parsed[name];
+          const valid =
+            rightColors !== null &&
+            typeof rightColors === "object" &&
+            !Array.isArray(rightColors) &&
+            Object.values(rightColors).every(
+              (color) =>
+                typeof color === "string" && /^#[0-9a-f]{6}$/i.test(color),
+            );
+          if (valid) {
+            configuration.rightColors = rightColors;
+          } else {
+            showCardError(
+              'Configuration rightColors must map values to "#rrggbb" colors',
+            );
+          }
+        } else if (!allowed) {
           showCardError("Unknown Configuration option: " + name);
         } else if (!allowed.includes(parsed[name])) {
           showCardError(
@@ -106,6 +126,12 @@
         } else {
           configuration[name] = parsed[name];
         }
+      }
+      if ((configuration.colorBy === "fixed") !== !!configuration.rightColors) {
+        showCardError(
+          'Configuration rightColors goes together with colorBy "fixed"',
+        );
+        configuration.colorBy = CONFIGURATION_OPTIONS.colorBy[0];
       }
       return configuration;
     }
@@ -138,6 +164,18 @@
 
     // Get unique right items for display (real + fake combined)
     const uniqueRight = [...new Set([...rightItems, ...fakeRightItems])];
+
+    if (configuration.colorBy === "fixed") {
+      const uncolored = uniqueRight.filter(
+        (value) => !Object.hasOwn(configuration.rightColors, value),
+      );
+      if (uncolored.length > 0) {
+        showCardError(
+          "Configuration rightColors has no color for: " + uncolored.join(", "),
+        );
+        configuration.colorBy = CONFIGURATION_OPTIONS.colorBy[0];
+      }
+    }
 
     // Shuffle helper
     function shuffle(arr) {
@@ -244,6 +282,10 @@
       // tone 1 red, 2 green, 3 blue, 4 purple, 5 gray (first five colors).
       if (configuration.colorBy === "tone") {
         return colors[(getToneNumber(rightValue) - 1) % colors.length];
+      }
+      // Fixed color per value, e.g. the color of each part of speech
+      if (configuration.colorBy === "fixed") {
+        return configuration.rightColors[rightValue];
       }
       const idx = shuffledRight.indexOf(rightValue);
       return colors[idx % colors.length];

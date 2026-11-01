@@ -47,7 +47,7 @@ from shared.pinyin_utils import (
     remove_tone_marks,
     syllable_with_tone,
 )
-from shared.project_paths import load_pos_mapping, load_pos_sentences
+from shared.project_paths import load_pos_colors, load_pos_mapping, load_pos_sentences
 
 # Thresholds for automatic generator creation
 SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
@@ -62,9 +62,12 @@ NOTE_FIELDS = ["Key", "Left", "Right", "Explanation", "Fake Right", "Configurati
 # Options of the "Configuration" field (a JSON object) and their defaults, which
 # apply when an option is left out. Keep in sync with CONFIGURATION_OPTIONS in
 # anki/connect-dots/front-template.html.
-#   leftOrder:  "shuffled" | "fixed" - "fixed" keeps the left items in order
-#   rightOrder: "shuffled" | "tone"  - "tone" lists right items by tone 1-5
-#   colorBy:    "palette"  | "tone"  - "tone" colors pronunciations by tone
+#   leftOrder:  "shuffled" | "fixed"          - "fixed" keeps the left items in order
+#   rightOrder: "shuffled" | "tone"           - "tone" lists right items by tone 1-5
+#   colorBy:    "palette"  | "tone" | "fixed" - "tone" colors pronunciations by tone,
+#                                               "fixed" uses the colors of rightColors
+#   rightColors: {right value: "#rrggbb"}     - required by, and only allowed with,
+#                                               colorBy "fixed"; has no default
 CONFIGURATION_DEFAULTS = {"leftOrder": "shuffled", "rightOrder": "shuffled", "colorBy": "palette"}
 
 # Tags to generate Hanzi-to-Pinyin ConnectDots notes for (using TagHanziToPinyin generator)
@@ -438,12 +441,19 @@ class ConnectDotsNote:
     # When True the card lists the right values by tone instead of shuffling
     # them (Configuration "rightOrder": "tone"), e.g. all tones of a syllable.
     sort_right_by_tone: bool = False
+    # Fixed color ("#rrggbb") of each right value, including fake_right ones,
+    # e.g. the color of each part of speech. Empty to use the default colors.
+    right_colors: dict[str, str] = field(default_factory=lambda: dict[str, str]())
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
             raise ValueError(f"Left and Right must have equal lengths: left={len(self.left)}, right={len(self.right)}")
         if self.explanation and len(self.explanation) != len(self.left):
             raise ValueError(f"Explanation must have same length as Left/Right: explanation={len(self.explanation)}, left={len(self.left)}")
+        if self.right_colors:
+            uncolored = sorted((set(self.right) | set(self.fake_right)) - set(self.right_colors))
+            if uncolored:
+                raise ValueError(f"right_colors has no color for right value(s) {uncolored} of note {self.key}")
 
     def get_sorted_tuples(self) -> list[tuple[str, str, str]]:
         """Get (left, right, explanation) tuples sorted by left element, or in their original order if `ordered`"""
@@ -487,7 +497,13 @@ class ConnectDotsNote:
         values = [v for v in (*self.right, *self.fake_right) if v]
         return bool(values) and all(contains_zhuyin(v) for v in values)
 
-    def configuration(self) -> dict[str, str]:
+    def color_by(self) -> str:
+        """The "colorBy" option: fixed right_colors, else by tone for pronunciations, else the palette."""
+        if self.right_colors:
+            return "fixed"
+        return "tone" if self.right_is_pronunciation() else "palette"
+
+    def configuration(self) -> dict[str, Any]:
         """
         The display options read by the card template, see CONFIGURATION_DEFAULTS.
 
@@ -497,9 +513,15 @@ class ConnectDotsNote:
         options = {
             "leftOrder": "fixed" if self.ordered else "shuffled",
             "rightOrder": "tone" if self.sort_right_by_tone else "shuffled",
-            "colorBy": "tone" if self.right_is_pronunciation() else "palette",
+            "colorBy": self.color_by(),
         }
-        return {name: value for name, value in options.items() if value != CONFIGURATION_DEFAULTS[name]}
+        configuration: dict[str, Any] = {name: value for name, value in options.items() if value != CONFIGURATION_DEFAULTS[name]}
+        if self.right_colors:
+            # Keyed like the Right / Fake Right fields, whose commas are escaped
+            configuration["rightColors"] = {
+                escape_comma(value): color for value, color in self.right_colors.items() if value in self.right or value in self.fake_right
+            }
+        return configuration
 
     def configuration_str(self) -> str:
         """
@@ -586,6 +608,7 @@ class ConnectDotsNote:
                     explanation=explanation_slice if self.explanation else [],
                     fake_right=fake_right,
                     sort_right_by_tone=self.sort_right_by_tone,
+                    right_colors=self.right_colors,
                 )
             )
 
@@ -1003,21 +1026,30 @@ class PosSentenceToPos(ConnectDotsGenerator):
     Left = the sentence's words in sentence order (punctuation dropped),
     Right = their POS codes with English names (e.g. "N (noun)", "Vaux (auxiliary verbs)"),
     Explanation = the word's gloss and note,
-    Fake Right = a few labelled POS codes that do not occur in the sentence.
+    Fake Right = a few labelled POS codes that do not occur in the sentence,
+    Configuration rightColors = the color of each POS code, as on the app's /pos page.
 
     The notes are `ordered`, so the left side reads as the sentence and is
     never split; the template still shuffles the right side.
     """
 
-    def __init__(self, sentence: dict[str, Any], pos_names: dict[str, str], fake_count: int = POS_SENTENCE_FAKE_COUNT):
+    def __init__(
+        self,
+        sentence: dict[str, Any],
+        pos_names: dict[str, str],
+        pos_colors: dict[str, str],
+        fake_count: int = POS_SENTENCE_FAKE_COUNT,
+    ):
         """
         Args:
             sentence: One entry of app/data/pos_sentences.json
             pos_names: POS code -> English name, see load_pos_names()
+            pos_colors: POS code -> "#rrggbb", see load_pos_colors()
             fake_count: Number of POS codes not in the sentence to add as decoys
         """
         self.sentence = sentence
         self.pos_names = pos_names
+        self.pos_colors = pos_colors
         self.fake_count = fake_count
 
     @property
@@ -1031,13 +1063,13 @@ class PosSentenceToPos(ConnectDotsGenerator):
             raise ValueError(f"POS sentence has no tagged words: {self.sentence['en']}")
 
         codes = [word["pos"] for word in words]
-        unknown = sorted(set(codes) - set(self.pos_names))
+        unknown = sorted(set(codes) - (set(self.pos_names) & set(self.pos_colors)))
         if unknown:
             raise ValueError(f"Unknown POS code(s) {unknown} in sentence: {self.sentence['en']}")
 
         key = f"{self.generator_type}:{''.join(token['zh'] for token in tokens)}"
         explanation = [": ".join(filter(None, [word.get("gloss", ""), word.get("note", "")])) for word in words]
-        fake_codes = pick_fake_pos_codes(key, set(codes), list(self.pos_names), self.fake_count)
+        fake_codes = pick_fake_pos_codes(key, set(codes), [code for code in self.pos_names if code in self.pos_colors], self.fake_count)
 
         return [
             ConnectDotsNote(
@@ -1046,6 +1078,7 @@ class PosSentenceToPos(ConnectDotsGenerator):
                 right=[pos_label(code, self.pos_names) for code in codes],
                 explanation=explanation,
                 fake_right=[pos_label(code, self.pos_names) for code in fake_codes],
+                right_colors={pos_label(code, self.pos_names): self.pos_colors[code] for code in {*codes, *fake_codes}},
                 ordered=True,
             )
         ]
@@ -1799,8 +1832,9 @@ def main():
     # Sentence generators: match each word of a sentence to its part of speech
     pos_sentences = load_pos_sentences()
     pos_names = load_pos_names()
+    pos_colors = load_pos_colors()
     print(f"Adding {len(pos_sentences)} POS sentence(s)...")
-    generators.extend(PosSentenceToPos(sentence, pos_names) for sentence in pos_sentences)
+    generators.extend(PosSentenceToPos(sentence, pos_names, pos_colors) for sentence in pos_sentences)
 
     if not generators:
         print("No generators to run")

@@ -56,6 +56,7 @@ POS_JSON = PROJECT_ROOT / "app" / "data" / "pos.json"
 POS_DETAILS_JSON = PROJECT_ROOT / "app" / "data" / "pos_details.json"
 POS_VERB_KINDS_JSON = PROJECT_ROOT / "app" / "data" / "pos_verb_kinds.json"
 POS_SENTENCES_JSON = PROJECT_ROOT / "app" / "data" / "pos_sentences.json"
+POS_COLORS_JSON = PROJECT_ROOT / "app" / "data" / "pos_colors.json"
 
 
 def load_char_json(directory: Path, character: str) -> dict[str, Any] | None:
@@ -135,3 +136,23 @@ def load_pos_sentences() -> list[dict[str, Any]]:
     with POS_SENTENCES_JSON.open(encoding="utf-8") as f:
         sentences: list[dict[str, Any]] = json.load(f)
     return sentences
+
+
+def load_pos_colors() -> dict[str, str]:
+    """
+    Load `app/data/pos_colors.json`, the color of each part-of-speech code,
+    shared with the app's `/pos` page.
+
+    Returns:
+        Mapping of POS code (e.g. "N") to its color as "#rrggbb"
+
+    Raises:
+        ValueError: If a POS code uses a color that has no hex value
+    """
+    with POS_COLORS_JSON.open(encoding="utf-8") as f:
+        data: dict[str, dict[str, str]] = json.load(f)
+    colors, pos_colors = data["colors"], data["pos"]
+    unknown = sorted({color for color in pos_colors.values() if color not in colors})
+    if unknown:
+        raise ValueError(f"{POS_COLORS_JSON} uses color(s) {unknown} that are not in its 'colors'")
+    return {code: colors[color] for code, color in pos_colors.items()}

@@ -1,0 +1,37 @@
+{
+  "colors": {
+    "slate": "#64748b",
+    "gray": "#6b7280",
+    "green": "#22c55e",
+    "teal": "#14b8a6",
+    "amber": "#f59e0b",
+    "pink": "#ec4899",
+    "purple": "#a855f7",
+    "indigo": "#6366f1",
+    "sky": "#0ea5e9",
+    "orange": "#f97316"
+  },
+  "pos": {
+    "Ph": "gray",
+    "Id": "gray",
+    "Adv": "amber",
+    "Conj": "purple",
+    "Det": "sky",
+    "M": "orange",
+    "N": "slate",
+    "Prep": "indigo",
+    "Ptc": "pink",
+    "V": "green",
+    "Vi": "green",
+    "V-sep": "green",
+    "Vs": "green",
+    "Vst": "green",
+    "Vs-attr": "green",
+    "Vs-pred": "green",
+    "Vs-sep": "green",
+    "Vaux": "teal",
+    "Vp": "green",
+    "Vpt": "green",
+    "Vp-sep": "green"
+  }
+}

@@ -23,6 +23,7 @@ from connect_dots_notes import (
     SyllableInitialHanziToPinyin,
     TagUnionHanziToPinyin,
     calculate_coverage_from_notes,
+    escape_comma,
     get_tone_number,
     pick_fake_pos_codes,
     pinyin_with_zhuyin,
@@ -519,6 +520,7 @@ POS_NAMES = {
     "Vaux": "auxiliary verbs",
 }
 POS_CODES = list(POS_NAMES)
+POS_COLORS = {code: f"#0000{i:02x}" for i, code in enumerate(POS_CODES)}
 
 SENTENCE = {
     "en": "This cup of coffee is too sweet.",
@@ -541,7 +543,7 @@ class TestPosSentenceToPos:
     """Tests for the sentence -> part of speech generator"""
 
     def test_left_in_sentence_order_without_punctuation(self):
-        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES).generate_notes()
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, POS_COLORS).generate_notes()
         assert note.left == ["這", "杯", "咖啡", "太", "甜", "了", "杯"]
         assert note.right == [
             "Det (determiner)",
@@ -558,11 +560,11 @@ class TestPosSentenceToPos:
         assert note.explanation[4] == "sweet: A state verb."
 
     def test_key_is_the_sentence(self):
-        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES).generate_notes()
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, POS_COLORS).generate_notes()
         assert note.key == "pos_sentence:這杯咖啡太甜了。杯。"
 
     def test_fake_right_are_codes_not_in_sentence(self):
-        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, fake_count=3).generate_notes()
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, POS_COLORS, fake_count=3).generate_notes()
         assert len(note.fake_right) == 3
         assert not set(note.fake_right) & set(note.right)
         assert set(note.fake_right) <= {pos_label(code, POS_NAMES) for code in POS_CODES}
@@ -574,13 +576,13 @@ class TestPosSentenceToPos:
 
     def test_long_sentence_is_not_split(self):
         tokens = [{"zh": f"字{i}", "pos": POS_CODES[i % len(POS_CODES)]} for i in range(15)]
-        (note,) = PosSentenceToPos({"en": "long", "tokens": tokens}, POS_NAMES).generate_notes()
+        (note,) = PosSentenceToPos({"en": "long", "tokens": tokens}, POS_NAMES, POS_COLORS).generate_notes()
         assert note.split_stably(max_items=10) == [note]
 
     def test_unknown_pos_code_raises(self):
         sentence = {"en": "bad", "tokens": [{"zh": "我", "pos": "Nope"}]}
         with pytest.raises(ValueError, match="Unknown POS code"):
-            PosSentenceToPos(sentence, POS_NAMES).generate_notes()
+            PosSentenceToPos(sentence, POS_NAMES, POS_COLORS).generate_notes()
 
 
 class TestConfiguration:
@@ -599,6 +601,36 @@ class TestConfiguration:
     def test_ordered_note_keeps_left_order(self):
         note = ConnectDotsNote(key="pos_sentence:我走。", left=["我", "走"], right=["N (noun)", "V (verb)"], ordered=True)
         assert note.configuration_str() == '{"leftOrder":"fixed"}'
+
+    def test_right_colors_give_fixed_colors_keyed_like_the_right_field(self):
+        note = ConnectDotsNote(
+            key="k",
+            left=["我", "夠"],
+            right=["N (noun)", "Vs-pred (state, predicative)"],
+            fake_right=["M (measure)"],
+            right_colors={
+                "N (noun)": "#000001",
+                "Vs-pred (state, predicative)": "#000002",
+                "M (measure)": "#000003",
+                "V (verb)": "#000004",
+            },
+        )
+        assert note.configuration() == {
+            "colorBy": "fixed",
+            # Escaped commas, as in the Right field; unused colors are left out
+            "rightColors": {"N (noun)": "#000001", escape_comma("Vs-pred (state, predicative)"): "#000002", "M (measure)": "#000003"},
+        }
+
+    def test_right_colors_must_cover_every_right_value(self):
+        with pytest.raises(ValueError, match="no color"):
+            ConnectDotsNote(key="k", left=["我", "走"], right=["N", "V"], fake_right=["M"], right_colors={"N": "#000001", "V": "#000002"})
+
+    def test_pos_sentence_colors_real_and_fake_values(self):
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, POS_COLORS).generate_notes()
+        configuration = note.configuration()
+        assert configuration["colorBy"] == "fixed"
+        assert set(configuration["rightColors"]) == set(note.right) | set(note.fake_right)
+        assert configuration["rightColors"]["N (noun)"] == POS_COLORS["N"]
 
     def test_syllable_note_sorts_right_by_tone_and_keeps_it_when_split(self, monkeypatch: pytest.MonkeyPatch):
         chars = "媽麻馬罵嗎抹碼瑪螞蟆嘛"
