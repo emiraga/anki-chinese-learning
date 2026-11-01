@@ -20,8 +20,6 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.anki_utils import (
     AnkiNoteInfo,
-    cards_to_notes,
-    find_cards_by_query,
     find_notes_by_query,
     get_field_value,
     get_notes_info,
@@ -888,11 +886,11 @@ def build_sentence_updates(fields: dict[str, Any], sentence: str, english: str) 
     return updates
 
 
-def fill_sentence_traditional_for_due_cards(known_characters: set[str], pos_mapping: dict[str, Any], gemini_client: Any) -> int:
+def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str, Any], gemini_client: Any) -> int:
     """
-    Fill the Sentence Traditional and Sentence 2 Traditional fields for cards
-    that are due (now or within the next 7 days) or new, whose Traditional
-    field has fewer than 4 characters.
+    Fill the Sentence Traditional and Sentence 2 Traditional fields for all
+    unsuspended notes whose Traditional field has fewer than 4 characters,
+    regardless of when their cards are due.
 
     For each matching note, every empty field of the two gets a Traditional
     example sentence from Examples JSON whose characters are all known, picked
@@ -921,21 +919,11 @@ def fill_sentence_traditional_for_due_cards(known_characters: set[str], pos_mapp
             does not appear in Examples JSON (it was modified manually), or if
             Sentence Traditional is empty and no eligible sentence exists for it
     """
-    # is:due matches cards waiting to be reviewed now (due today or overdue),
-    # prop:due<=7 matches cards due within the next 7 days.
-    query = "(is:due OR prop:due<=7 OR is:new) -is:suspended"
+    query = '"Examples JSON:_*" ("Sentence Traditional:" OR "Sentence 2 Traditional:") -is:suspended'
     print(f"Query: {query}")
 
-    card_ids = find_cards_by_query(query)
-    print(f"Found {len(card_ids)} due (within 7 days) or new, non-suspended card(s)")
-
-    if not card_ids:
-        return 0
-
-    # Map cards to notes and deduplicate (multiple cards can belong to one note)
-    response = cards_to_notes(card_ids)
-    note_ids = list(dict.fromkeys(response))
-    print(f"Found {len(note_ids)} note(s) for those cards")
+    note_ids = find_notes_by_query(query)
+    print(f"Found {len(note_ids)} non-suspended note(s) with an empty Sentence Traditional or Sentence 2 Traditional")
 
     if not note_ids:
         return 0
@@ -1479,9 +1467,9 @@ def main():
         print(f"\nCompleted processing {note_type}")
         print(f"Total processed: {total_processed}, Updated: {total_updated}")
 
-    # Fill Sentence Traditional / Sentence 2 Traditional for due cards with a short Traditional field
-    print("\n=== Filling Sentence Traditional and Sentence 2 Traditional for due cards ===")
-    sentences_updated = fill_sentence_traditional_for_due_cards(known_characters, pos_mapping, gemini_client)
+    # Fill Sentence Traditional / Sentence 2 Traditional for notes with a short Traditional field
+    print("\n=== Filling Sentence Traditional and Sentence 2 Traditional ===")
+    sentences_updated = fill_sentence_traditional(known_characters, pos_mapping, gemini_client)
     print(f"Updated Sentence Traditional / Sentence 2 Traditional on {sentences_updated} note(s)")
 
     # Generate all missing Sentence Cloze Traditional values
