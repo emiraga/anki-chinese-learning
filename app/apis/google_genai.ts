@@ -1,16 +1,27 @@
 import { DEFAULT_GEN_AI_MODEL, type AppSettings } from "~/settings/schema";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  type GenerativeModel,
+} from "@google/generative-ai";
 import { useMemo } from "react";
+
+export function createGenerativeModel(
+  apiKey: string,
+  modelName: string,
+): GenerativeModel {
+  return new GoogleGenerativeAI(apiKey).getGenerativeModel({
+    model: modelName,
+  });
+}
 
 export function useGenerativeModel(settings: AppSettings) {
   // Memoize the AI model instance to avoid re-creation on every render
   const model = useMemo(() => {
     if (!settings.googleCloudApiKey) return null;
-    const genAI = new GoogleGenerativeAI(settings.googleCloudApiKey);
-    const model = genAI.getGenerativeModel({
-      model: settings.generativeAi?.llmModelName ?? DEFAULT_GEN_AI_MODEL,
-    });
-    return model;
+    return createGenerativeModel(
+      settings.googleCloudApiKey,
+      settings.generativeAi?.llmModelName ?? DEFAULT_GEN_AI_MODEL,
+    );
   }, [settings]);
 
   return model;

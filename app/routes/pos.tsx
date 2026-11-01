@@ -13,6 +13,7 @@ import {
 } from "~/components/PosExamples";
 import { POS_SENTENCES } from "~/data/pos_sentences";
 import { usePhrasesByPos } from "~/components/PosPhrases";
+import { PosBreakdown } from "~/components/PosBreakdown";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -199,6 +200,17 @@ export default function PartsOfSpeech() {
             <AnnotatedSentence key={sentence.en} sentence={sentence} />
           ))}
         </div>
+
+        <h2 className="text-2xl font-semibold mb-2">
+          Break down your own text
+        </h2>
+        <p className="mb-2 text-gray-700 dark:text-gray-300">
+          Gemini splits the text and labels it the same way. It is given the
+          explanations on this page, the examples above, and the TOCFL codes of
+          the words it finds in the text, but it can still be wrong. Flash Lite
+          often splits words into single characters.
+        </p>
+        <PosBreakdown />
 
         <h2 className="text-2xl font-semibold mb-2">All codes</h2>
         <table className="border-collapse text-sm mb-8">
