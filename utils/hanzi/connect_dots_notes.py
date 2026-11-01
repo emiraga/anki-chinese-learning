@@ -18,6 +18,7 @@ Tests: See test_connect_dots_notes.py (run with: uv run test_connect_dots_notes.
 
 import argparse
 import hashlib
+import json
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -54,6 +55,17 @@ SYLLABLE_MIN_COUNT = 3  # Minimum characters sharing a syllable
 TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
 POS_SENTENCE_FAKE_COUNT = 3  # POS codes not in a sentence, offered as decoys
+
+# Fields of the ConnectDots note type that this script writes.
+NOTE_FIELDS = ["Key", "Left", "Right", "Explanation", "Fake Right", "Configuration"]
+
+# Options of the "Configuration" field (a JSON object) and their defaults, which
+# apply when an option is left out. Keep in sync with CONFIGURATION_OPTIONS in
+# anki/connect-dots/front-template.html.
+#   leftOrder:  "shuffled" | "fixed" - "fixed" keeps the left items in order
+#   rightOrder: "shuffled" | "tone"  - "tone" lists right items by tone 1-5
+#   colorBy:    "palette"  | "tone"  - "tone" colors pronunciations by tone
+CONFIGURATION_DEFAULTS = {"leftOrder": "shuffled", "rightOrder": "shuffled", "colorBy": "palette"}
 
 # Tags to generate Hanzi-to-Pinyin ConnectDots notes for (using TagHanziToPinyin generator)
 # Full tag names in format "prefix::name"
@@ -420,9 +432,12 @@ class ConnectDotsNote:
     explanation: list[str] = field(default_factory=lambda: list[str]())
     fake_right: list[str] = field(default_factory=lambda: list[str]())
     # When True the order of `left` is meaningful (e.g. the words of a
-    # sentence): fields keep it instead of sorting, and the note is never split.
-    # The front template must also keep it - see `keepLeftOrder` there.
+    # sentence): fields keep it instead of sorting, the note is never split, and
+    # the card shows it unshuffled (Configuration "leftOrder": "fixed").
     ordered: bool = False
+    # When True the card lists the right values by tone instead of shuffling
+    # them (Configuration "rightOrder": "tone"), e.g. all tones of a syllable.
+    sort_right_by_tone: bool = False
 
     def __post_init__(self):
         if len(self.left) != len(self.right):
@@ -467,14 +482,45 @@ class ConnectDotsNote:
 
         True when every non-empty right value (including fake_right) contains a
         zhuyin character, i.e. the note maps Hanzi to pronunciations rather than
-        to meanings. Used to populate the "Right Is Pronunciation" field ("1"/"0").
+        to meanings. Such cards are colored by tone (Configuration "colorBy": "tone").
         """
         values = [v for v in (*self.right, *self.fake_right) if v]
         return bool(values) and all(contains_zhuyin(v) for v in values)
 
-    def right_is_pronunciation_str(self) -> str:
-        """Get the "Right Is Pronunciation" field value as "1" or "0"."""
-        return "1" if self.right_is_pronunciation() else "0"
+    def configuration(self) -> dict[str, str]:
+        """
+        The display options read by the card template, see CONFIGURATION_DEFAULTS.
+
+        Only options that differ from their default are included, so a plain
+        card has an empty configuration.
+        """
+        options = {
+            "leftOrder": "fixed" if self.ordered else "shuffled",
+            "rightOrder": "tone" if self.sort_right_by_tone else "shuffled",
+            "colorBy": "tone" if self.right_is_pronunciation() else "palette",
+        }
+        return {name: value for name, value in options.items() if value != CONFIGURATION_DEFAULTS[name]}
+
+    def configuration_str(self) -> str:
+        """
+        Get the "Configuration" field value: compact JSON with sorted keys, so the
+        same note always gives the same text, or "" when every option is default.
+        """
+        configuration = self.configuration()
+        if not configuration:
+            return ""
+        return json.dumps(configuration, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    def fields(self) -> dict[str, str]:
+        """Get the values of all Anki fields (see NOTE_FIELDS) of this note."""
+        return {
+            "Key": self.key,
+            "Left": self.left_str(),
+            "Right": self.right_str(),
+            "Explanation": self.explanation_str(),
+            "Fake Right": self.fake_right_str(),
+            "Configuration": self.configuration_str(),
+        }
 
     def split_stably(self, max_items: int = MAX_ITEMS_PER_NOTE) -> list["ConnectDotsNote"]:
         """
@@ -539,6 +585,7 @@ class ConnectDotsNote:
                     right=right_slice,
                     explanation=explanation_slice if self.explanation else [],
                     fake_right=fake_right,
+                    sort_right_by_tone=self.sort_right_by_tone,
                 )
             )
 
@@ -580,7 +627,10 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
 
     Optionally override:
     - get_fake_right(): Returns fake_right values for the note
+    - sort_right_by_tone: Whether the card lists the right values by tone
     """
+
+    sort_right_by_tone = False
 
     @abstractmethod
     def get_key_suffix(self) -> str:
@@ -612,7 +662,16 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
 
         key = f"{self.generator_type}:{self.get_key_suffix()}"
         fake_right = self.get_fake_right(notes)
-        return [ConnectDotsNote(key=key, left=left, right=right, explanation=explanation, fake_right=fake_right)]
+        return [
+            ConnectDotsNote(
+                key=key,
+                left=left,
+                right=right,
+                explanation=explanation,
+                fake_right=fake_right,
+                sort_right_by_tone=self.sort_right_by_tone,
+            )
+        ]
 
 
 class SoundComponentHanziToPinyin(BaseHanziToPinyinGenerator):
@@ -694,8 +753,11 @@ class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
     Generate notes mapping Hanzi with same syllable to their pinyin.
 
     Uses pre-fetched data from HanziDataStore.
-    Left = Traditional characters, Right = Pinyin pronunciations
+    Left = Traditional characters, Right = Pinyin pronunciations.
+    The right values (all tones of the syllable) are listed by tone.
     """
+
+    sort_right_by_tone = True
 
     def __init__(self, syllable: str):
         self.syllable = syllable.lower()
@@ -1069,14 +1131,10 @@ class CustomHanziToPinyin(BaseHanziToPinyinGenerator):
 
 
 class ExistingNoteInfo(TypedDict):
-    """Type for existing note info dictionary"""
+    """An existing ConnectDots note: its ID and the values of its NOTE_FIELDS"""
 
     noteId: int
-    left: str
-    right: str
-    explanation: str
-    fake_right: str
-    right_is_pronunciation: str
+    fields: dict[str, str]
 
 
 class ProcessStats(TypedDict):
@@ -1129,15 +1187,16 @@ class ConnectDotsManager:
         existing: dict[str, ExistingNoteInfo] = {}
 
         for note in notes_info:
+            missing_fields = [name for name in NOTE_FIELDS if name not in note["fields"]]
+            if missing_fields:
+                raise ValueError(
+                    f"The {self.NOTE_TYPE} note type has no field(s) {missing_fields}; add them in Anki (Tools > Manage Note Types)"
+                )
             key = get_field_value(note, "Key")
             if key:
                 existing[key] = {
                     "noteId": note["noteId"],
-                    "left": get_field_value(note, "Left"),
-                    "right": get_field_value(note, "Right"),
-                    "explanation": get_field_value(note, "Explanation"),
-                    "fake_right": get_field_value(note, "Fake Right"),
-                    "right_is_pronunciation": get_field_value(note, "Right Is Pronunciation"),
+                    "fields": {name: get_field_value(note, name) for name in NOTE_FIELDS},
                 }
 
         return existing
@@ -1152,93 +1211,39 @@ class ConnectDotsManager:
         Returns:
             The note ID of the created note
         """
+        fields = note.fields()
         if self.dry_run:
             print(f"  [DRY RUN] Would create note: {note.key}")
-            print(f"    Left: {note.left_str()}")
-            print(f"    Right: {note.right_str()}")
-            if note.explanation_str():
-                print(f"    Explanation: {note.explanation_str()}")
-            if note.fake_right_str():
-                print(f"    Fake Right: {note.fake_right_str()}")
-            print(f"    Right Is Pronunciation: {note.right_is_pronunciation_str()}")
+            for name, value in fields.items():
+                if name != "Key" and value:
+                    print(f"    {name}: {value}")
             return 0
 
-        note_id = add_note(
-            self.DECK_NAME,
-            self.NOTE_TYPE,
-            {
-                "Key": note.key,
-                "Left": note.left_str(),
-                "Right": note.right_str(),
-                "Explanation": note.explanation_str(),
-                "Fake Right": note.fake_right_str(),
-                "Right Is Pronunciation": note.right_is_pronunciation_str(),
-            },
-            ["auto-generated", "connect-dots"],
-        )
+        note_id = add_note(self.DECK_NAME, self.NOTE_TYPE, fields, ["auto-generated", "connect-dots"])
 
         print(f"  Created note {note_id} for key '{note.key}'")
         return note_id
 
-    def update_note(self, note_id: int, note: ConnectDotsNote, existing: ExistingNoteInfo | None = None) -> None:
+    def update_note(self, existing: ExistingNoteInfo, note: ConnectDotsNote) -> None:
         """
         Update an existing ConnectDots note
 
         Args:
-            note_id: The ID of the note to update
+            existing: The note as it is in Anki (its ID, and its fields for the dry run diff)
             note: The new note data
-            existing: Optional existing note data for diff display in dry run
         """
+        note_id = existing["noteId"]
+        fields = note.fields()
         if self.dry_run:
             print(f"  [DRY RUN] Would update note {note_id}: {note.key}")
-            new_left = note.left_str()
-            new_right = note.right_str()
-            new_explanation = note.explanation_str()
-            new_fake_right = note.fake_right_str()
-            new_right_is_pronunciation = note.right_is_pronunciation_str()
-
-            if existing:
-                if existing["left"] != new_left:
-                    print("    Left:")
-                    print(f"      - {existing['left']}")
-                    print(f"      + {new_left}")
-                if existing["right"] != new_right:
-                    print("    Right:")
-                    print(f"      - {existing['right']}")
-                    print(f"      + {new_right}")
-                if existing["explanation"] != new_explanation:
-                    print("    Explanation:")
-                    print(f"      - {existing['explanation']}")
-                    print(f"      + {new_explanation}")
-                if existing["fake_right"] != new_fake_right:
-                    print("    Fake Right:")
-                    print(f"      - {existing['fake_right']}")
-                    print(f"      + {new_fake_right}")
-                if existing["right_is_pronunciation"] != new_right_is_pronunciation:
-                    print("    Right Is Pronunciation:")
-                    print(f"      - {existing['right_is_pronunciation']}")
-                    print(f"      + {new_right_is_pronunciation}")
-            else:
-                print(f"    Left: {new_left}")
-                print(f"    Right: {new_right}")
-                if new_explanation:
-                    print(f"    Explanation: {new_explanation}")
-                if new_fake_right:
-                    print(f"    Fake Right: {new_fake_right}")
-                print(f"    Right Is Pronunciation: {new_right_is_pronunciation}")
+            for name, value in fields.items():
+                if existing["fields"][name] != value:
+                    print(f"    {name}:")
+                    print(f"      - {existing['fields'][name]}")
+                    print(f"      + {value}")
             return
 
-        update_note_fields(
-            note_id,
-            {
-                "Key": note.key,
-                "Left": note.left_str(),
-                "Right": note.right_str(),
-                "Explanation": note.explanation_str(),
-                "Fake Right": note.fake_right_str(),
-                "Right Is Pronunciation": note.right_is_pronunciation_str(),
-            },
-        )
+        update_note_fields(note_id, fields)
 
         # Reset due date to today and interval to 1 day using "1!"
         if not self.skip_reschedule:
@@ -1305,23 +1310,10 @@ class ConnectDotsManager:
                         existing = existing_notes.get(split_note.key)
 
                         if existing:
-                            # Check if content changed
-                            new_left = split_note.left_str()
-                            new_right = split_note.right_str()
-                            new_explanation = split_note.explanation_str()
-                            new_fake_right = split_note.fake_right_str()
-                            new_right_is_pronunciation = split_note.right_is_pronunciation_str()
-
-                            if (
-                                existing["left"] == new_left
-                                and existing["right"] == new_right
-                                and existing["explanation"] == new_explanation
-                                and existing["fake_right"] == new_fake_right
-                                and existing["right_is_pronunciation"] == new_right_is_pronunciation
-                            ):
+                            if existing["fields"] == split_note.fields():
                                 stats["unchanged"] += 1
                             else:
-                                self.update_note(existing["noteId"], split_note, existing)
+                                self.update_note(existing, split_note)
                                 stats["updated"] += 1
                         else:
                             self.create_note(split_note)

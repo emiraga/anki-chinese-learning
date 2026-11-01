@@ -19,6 +19,7 @@ from connect_dots_notes import (
     HanziDataStore,
     HanziNote,
     PosSentenceToPos,
+    SyllableHanziToPinyin,
     SyllableInitialHanziToPinyin,
     TagUnionHanziToPinyin,
     calculate_coverage_from_notes,
@@ -580,6 +581,38 @@ class TestPosSentenceToPos:
         sentence = {"en": "bad", "tokens": [{"zh": "我", "pos": "Nope"}]}
         with pytest.raises(ValueError, match="Unknown POS code"):
             PosSentenceToPos(sentence, POS_NAMES).generate_notes()
+
+
+class TestConfiguration:
+    """Tests for the Configuration field read by the card template"""
+
+    def test_plain_note_has_empty_configuration(self):
+        note = ConnectDotsNote(key="tag:food", left=["飯", "麵"], right=["rice", "noodles"])
+        assert note.configuration() == {}
+        assert note.configuration_str() == ""
+        assert note.fields()["Configuration"] == ""
+
+    def test_pronunciation_note_is_colored_by_tone(self):
+        note = ConnectDotsNote(key="sound_component:青", left=["清", "情"], right=[pinyin_with_zhuyin("qīng"), pinyin_with_zhuyin("qíng")])
+        assert note.configuration_str() == '{"colorBy":"tone"}'
+
+    def test_ordered_note_keeps_left_order(self):
+        note = ConnectDotsNote(key="pos_sentence:我走。", left=["我", "走"], right=["N (noun)", "V (verb)"], ordered=True)
+        assert note.configuration_str() == '{"leftOrder":"fixed"}'
+
+    def test_syllable_note_sorts_right_by_tone_and_keeps_it_when_split(self, monkeypatch: pytest.MonkeyPatch):
+        chars = "媽麻馬罵嗎抹碼瑪螞蟆嘛"
+        tones = [1, 2, 3, 4, 5, 3, 3, 3, 3, 2, 5]
+        notes = [HanziNote(i, ch, syllable_with_tone("ma", t), "", "", set()) for i, (ch, t) in enumerate(zip(chars, tones, strict=True))]
+        store = HanziDataStore(hanzi_notes=notes)
+        store.build_indexes()
+        monkeypatch.setattr(connect_dots_notes, "_data_store", store)
+
+        (note,) = SyllableHanziToPinyin("ma").generate_notes()
+        assert note.configuration_str() == '{"colorBy":"tone","rightOrder":"tone"}'
+        split = note.split_stably(max_items=10)
+        assert len(split) > 1
+        assert all(n.configuration() == note.configuration() for n in split)
 
 
 if __name__ == "__main__":

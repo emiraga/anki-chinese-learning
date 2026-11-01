@@ -8,11 +8,8 @@
 <script type="text/template" id="data-fake-right">
   {{Fake Right}}
 </script>
-<script type="text/template" id="data-key">
-  {{Key}}
-</script>
-<script type="text/template" id="data-right-is-pronunciation">
-  {{Right Is Pronunciation}}
+<script type="text/template" id="data-configuration">
+  {{Configuration}}
 </script>
 
 <div class="connect-dots-container">
@@ -49,11 +46,71 @@
     const leftRaw = document.getElementById("data-left").textContent;
     const rightRaw = document.getElementById("data-right").textContent;
     const fakeRightRaw = document.getElementById("data-fake-right").textContent;
-    const keyRaw = document.getElementById("data-key").textContent.trim();
-    const rightIsPronunciation =
-      document
-        .getElementById("data-right-is-pronunciation")
-        .textContent.trim() === "1";
+    const configurationRaw = document
+      .getElementById("data-configuration")
+      .textContent.trim();
+
+    // Show a problem with this card's fields above the card
+    function showCardError(message) {
+      const banner = document.getElementById("error-banner");
+      banner.style.display = "block";
+      const line = document.createElement("div");
+      line.textContent = "Card Error: " + message;
+      banner.appendChild(line);
+    }
+
+    // Display options from the Configuration field (a JSON object). The first
+    // value of each option is its default, used when the option is left out.
+    // Keep in sync with CONFIGURATION_DEFAULTS in utils/hanzi/connect_dots_notes.py.
+    const CONFIGURATION_OPTIONS = {
+      leftOrder: ["shuffled", "fixed"], // "fixed": keep the left items in order
+      rightOrder: ["shuffled", "tone"], // "tone": list right items by tone 1-5
+      colorBy: ["palette", "tone"], // "tone": color pronunciations by tone
+    };
+
+    function parseConfiguration(raw) {
+      const configuration = {};
+      for (const name in CONFIGURATION_OPTIONS) {
+        configuration[name] = CONFIGURATION_OPTIONS[name][0];
+      }
+      if (!raw) return configuration;
+
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        showCardError("Configuration is not valid JSON: " + raw);
+        return configuration;
+      }
+      if (
+        parsed === null ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed)
+      ) {
+        showCardError("Configuration must be a JSON object: " + raw);
+        return configuration;
+      }
+      for (const name in parsed) {
+        const allowed = CONFIGURATION_OPTIONS[name];
+        if (!allowed) {
+          showCardError("Unknown Configuration option: " + name);
+        } else if (!allowed.includes(parsed[name])) {
+          showCardError(
+            "Configuration " +
+              name +
+              " must be one of " +
+              allowed.join(", ") +
+              ", got: " +
+              parsed[name],
+          );
+        } else {
+          configuration[name] = parsed[name];
+        }
+      }
+      return configuration;
+    }
+
+    const configuration = parseConfiguration(configurationRaw);
 
     const leftItems = leftRaw
       .split(",")
@@ -70,14 +127,13 @@
 
     // Validate item counts match
     if (leftItems.length !== rightItems.length) {
-      const banner = document.getElementById("error-banner");
-      banner.style.display = "block";
-      banner.innerHTML =
-        "<strong>Card Error:</strong> Left has " +
-        leftItems.length +
-        " items, Right has " +
-        rightItems.length +
-        " items. Please fix this card.";
+      showCardError(
+        "Left has " +
+          leftItems.length +
+          " items, Right has " +
+          rightItems.length +
+          " items. Please fix this card.",
+      );
     }
 
     // Get unique right items for display (real + fake combined)
@@ -111,19 +167,16 @@
       return 5; // neutral tone
     }
 
-    // For syllable cards, sort right items by tone; otherwise shuffle
-    const isSyllableCard = keyRaw.startsWith("syllable:");
-    const shuffledRight = isSyllableCard
-      ? [...uniqueRight].sort((a, b) => getToneNumber(a) - getToneNumber(b))
-      : shuffle(uniqueRight);
+    // Right items display order: by tone (e.g. all tones of one syllable) or shuffled
+    const shuffledRight =
+      configuration.rightOrder === "tone"
+        ? [...uniqueRight].sort((a, b) => getToneNumber(a) - getToneNumber(b))
+        : shuffle(uniqueRight);
 
-    // Left items display order. Sentence cards keep the words in sentence order
-    // (the script writes them with `ordered=True`); all others are shuffled.
-    const keepLeftOrder = keyRaw.startsWith("pos_sentence:");
+    // Left items display order: as stored (e.g. the words of a sentence) or shuffled
     const leftIndices = leftItems.map((_, i) => i);
-    const shuffledLeftIndices = keepLeftOrder
-      ? leftIndices
-      : shuffle(leftIndices);
+    const shuffledLeftIndices =
+      configuration.leftOrder === "fixed" ? leftIndices : shuffle(leftIndices);
 
     // Color palette for connections
     const colors = [
@@ -187,9 +240,9 @@
 
     // Render functions
     function getColorForRight(rightValue) {
-      // When the right value is a pronunciation, color by tone:
+      // Color pronunciations by tone:
       // tone 1 red, 2 green, 3 blue, 4 purple, 5 gray (first five colors).
-      if (rightIsPronunciation) {
+      if (configuration.colorBy === "tone") {
         return colors[(getToneNumber(rightValue) - 1) % colors.length];
       }
       const idx = shuffledRight.indexOf(rightValue);
