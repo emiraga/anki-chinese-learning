@@ -58,6 +58,10 @@ CLOZE_STYLE_EXAMPLE_COUNT = 20
 # whole sentences themselves, and clozing them would only test the hint
 MAX_CLOZE_WORD_LENGTH = 4
 
+# Number of times a cloze sentence is generated for one note while looking for
+# one that does not repeat characters of the hidden word outside the cloze
+MAX_CLOZE_ATTEMPTS = 3
+
 
 def format_pos_description(pos_value: str, pos_mapping: dict[str, Any]) -> tuple[str, list[str]]:
     """
@@ -1120,6 +1124,21 @@ def validate_cloze_sentence(cloze: str, traditional: str) -> str:
     return ""
 
 
+def find_repeated_word_characters(cloze: str, traditional: str) -> set[str]:
+    """
+    Find characters of the hidden word that also appear outside the cloze,
+    giving the answer away (e.g. 救 in "救生員聽到有人喊「{{c1::救命}}」").
+
+    Args:
+        cloze (str): The sentence with cloze markup
+        traditional (str): The clozed word
+
+    Returns:
+        set: Characters of the word that appear in the visible part of the sentence
+    """
+    return extract_all_characters(CLOZE_PATTERN.sub("", cloze)) & extract_all_characters(traditional)
+
+
 def generate_cloze_sentence_with_gemini(note_info: AnkiNoteInfo, style_examples: list[str], gemini_client: Any) -> str:
     """
     Use Gemini to write a cloze sentence for a TOCFL note, matching the style
@@ -1127,8 +1146,11 @@ def generate_cloze_sentence_with_gemini(note_info: AnkiNoteInfo, style_examples:
 
     The word should be guessable from the context alone; a hint is only added
     when the context cannot disambiguate it. An invalid sentence (see
-    validate_cloze_sentence) is discarded; the note stays empty and is picked
-    again in a later run.
+    validate_cloze_sentence) is discarded. A sentence that repeats characters
+    of the word outside the cloze is regenerated, up to MAX_CLOZE_ATTEMPTS
+    times in total; if every attempt repeats some, the valid sentence with the
+    fewest repeated characters is used. If no attempt is valid, the note stays
+    empty and is picked again in a later run.
 
     Args:
         note_info (dict): The TOCFL note
@@ -1165,19 +1187,42 @@ Requirements:
    word, add a short English hint: {{{{c1::{traditional}::hint}}}}. Most cards should have no hint.
 3. If the word is a separable verb, you may split it, clozing each part: {{{{c1::看}}}}了兩次{{{{c1::病}}}}.
 4. Use common, everyday vocabulary around the word.
-5. Do not reuse these sentences, which the learner has already seen:
+5. Outside the cloze, do NOT use any character of the hidden word ({"、".join(sorted(extract_all_characters(traditional)))}),
+   neither alone nor as part of another word: a repeated character gives the answer away. For example,
+   for 救命, "救生員聽到有人喊「{{{{c1::救命}}}}」" is bad, because 救生員 reveals 救.
+6. Do not reuse these sentences, which the learner has already seen:
 {avoid_list}
 
 Reply in this EXACT JSON format (no markdown, no code blocks):
 {{"Cloze": "sentence with cloze markup"}}"""
 
-    result = gemini_generate_json(prompt, client=gemini_client, model_name=STRONG_GEMINI_MODEL)
-    cloze = result.get("Cloze", "").strip() if isinstance(result, dict) else ""
-    problem = validate_cloze_sentence(cloze, traditional) if cloze else "the reply has no Cloze value"
-    if problem:
-        print(f"  Rejected cloze for '{traditional}': '{cloze}': {problem}")
-        return ""
-    return cloze
+    best_cloze = ""
+    best_repeated: set[str] = set()
+    rejected_feedback: list[str] = []
+    for attempt in range(1, MAX_CLOZE_ATTEMPTS + 1):
+        feedback = ""
+        if rejected_feedback:
+            feedback = "\n\nYour previous attempts were rejected, write a different sentence:\n" + "\n".join(rejected_feedback)
+
+        result = gemini_generate_json(prompt + feedback, client=gemini_client, model_name=STRONG_GEMINI_MODEL)
+        cloze = result.get("Cloze", "").strip() if isinstance(result, dict) else ""
+        problem = validate_cloze_sentence(cloze, traditional) if cloze else "the reply has no Cloze value"
+        if problem:
+            print(f"  Rejected cloze for '{traditional}' (attempt {attempt}/{MAX_CLOZE_ATTEMPTS}): '{cloze}': {problem}")
+            rejected_feedback.append(f"- {cloze}: {problem}")
+            continue
+
+        repeated = find_repeated_word_characters(cloze, traditional)
+        if not repeated:
+            return cloze
+
+        repeated_list = "、".join(sorted(repeated))
+        print(f"  Cloze for '{traditional}' repeats {repeated_list} outside the cloze (attempt {attempt}/{MAX_CLOZE_ATTEMPTS}): '{cloze}'")
+        rejected_feedback.append(f"- {cloze}: the characters {repeated_list} appear outside the cloze")
+        if not best_cloze or len(repeated) < len(best_repeated):
+            best_cloze, best_repeated = cloze, repeated
+
+    return best_cloze
 
 
 def fill_sentence_cloze_traditional(gemini_client: Any) -> int:

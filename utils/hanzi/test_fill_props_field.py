@@ -15,7 +15,7 @@ Unit tests for the cloze sentence helpers in fill_props_field.
 """
 
 import pytest
-from fill_props_field import strip_cloze_hints, strip_cloze_markup, validate_cloze_sentence
+from fill_props_field import find_repeated_word_characters, strip_cloze_hints, strip_cloze_markup, validate_cloze_sentence
 
 
 class TestStripCloze:
@@ -50,6 +50,20 @@ class TestValidateClozeSentence:
 
     def test_non_chinese_script(self):
         assert "Japanese or Korean" in validate_cloze_sentence("我喜歡喝{{c1::奶茶}}。ふふ", "奶茶")
+
+
+class TestFindRepeatedWordCharacters:
+    def test_no_repetition(self):
+        assert find_repeated_word_characters("小孩掉進水裡大喊「{{c1::救命}}」。", "救命") == set()
+
+    def test_repeated_character(self):
+        assert find_repeated_word_characters("救生員聽到有人喊「{{c1::救命}}」。", "救命") == {"救"}
+
+    def test_separable_word(self):
+        assert find_repeated_word_characters("他{{c1::看}}了兩次{{c1::病}}還是生病。", "看病") == {"病"}
+
+    def test_hint_is_ignored(self):
+        assert find_repeated_word_characters("我喜歡喝{{c1::奶茶::milk tea}}。", "奶茶") == set()
 
 
 if __name__ == "__main__":
