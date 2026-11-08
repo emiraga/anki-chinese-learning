@@ -11,13 +11,17 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import random
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, cast
 from xml.sax.saxutils import escape as xml_escape
 
 import dragonmapper.transcriptions
+import requests
 from google.cloud import texttospeech
 
 # Add shared utilities to path
@@ -31,6 +35,7 @@ from shared.anki_utils import (
     store_media_file,
     update_note_audio_field,
 )
+from shared.gemini_utils import get_gemini_api_key
 from shared.google_credentials import setup_google_credentials
 
 # Define maximum lengths for filename components to keep them reasonable
@@ -43,7 +48,24 @@ _MAX_PINYIN_FILENAME_LEN = 50
 # 放 and 進, which is heard as a break mid-word. Wavenet-C keeps the same reset
 # down to +1.4 semitones. cmn-TW only offers Standard and Wavenet - the Chirp3-HD
 # and Neural2 voices are cmn-CN (Mainland) only.
-_DEFAULT_VOICE = "cmn-TW-Wavenet-C"
+_WAVENET_VOICES = ("cmn-TW-Wavenet-A", "cmn-TW-Wavenet-B", "cmn-TW-Wavenet-C")
+
+# Gemini TTS has no Taiwan voices as such; the accent comes from a written style
+# instruction sent ahead of the text. In a side-by-side listening test the pro
+# model sounded better than flash, and of its voices Kore, Aoede and Charon were
+# kept and Puck dropped. Gemini voices take no SSML and no speaking rate, so a
+# pinned reading (pinyin hint, _PRONUNCIATION_OVERRIDES) is written into the text
+# as pinyin in brackets, which _GEMINI_PINYIN_INSTRUCTION tells it to follow.
+_GEMINI_TTS_MODEL = "gemini-2.5-pro-preview-tts"
+_GEMINI_VOICE_PREFIX = "gemini-pro-"
+_GEMINI_VOICES = tuple(f"{_GEMINI_VOICE_PREFIX}{speaker}" for speaker in ("Kore", "Aoede", "Charon"))
+_GEMINI_STYLE_INSTRUCTION = "請用台灣人說國語的自然口音和語調（不是中國大陸普通話的口音），用正常語速唸出下面這句話："  # noqa: RUF001
+_GEMINI_PINYIN_INSTRUCTION = "句中括號裡的漢語拼音是括號前面那幾個字的正確讀音：請照拼音唸那幾個字，但不要唸出括號和拼音本身。"  # noqa: RUF001
+_GEMINI_TTS_ATTEMPTS = 3
+
+# Unless --voice names one, each audio file gets a voice picked at random from
+# these, so that cards are not all heard in the same voice.
+_RANDOM_VOICES = _WAVENET_VOICES + _GEMINI_VOICES
 
 # Words the voice misreads when it is given plain text, most often in sentences,
 # which have no pinyin field to pass as a hint. Each entry has one numbered pinyin
@@ -54,6 +76,9 @@ _PRONUNCIATION_OVERRIDES: dict[str, tuple[str | None, ...]] = {
     # 都會 meaning "metropolis" is dūhuì, but the voice reads it as dōu huì
     # ("all will"). Keyed on 都會生活 because bare 都會 is usually dōu huì.
     "都會生活": ("du1", "hui4", None, None),
+    # 還 meaning "to return (something)" is huán, but the voice reads it as hái
+    # ("still"), e.g. in 我要還書. Keyed on 還書 because bare 還 is usually hái.
+    "還書": ("huan2", None),
     # The voice reads 個 as de in sentences such as 這是一個很大的負擔. Keyed on
     # 個 alone so that 這個, 那個, 幾個 etc. are covered too; Taiwan reads it gè.
     "個": ("ge4",),
@@ -103,12 +128,39 @@ def convert_pinyin_to_numbered(pinyin_text: str) -> str:
     return re.sub(r"(\d)([a-zA-Z])", r"\1 \2", numbered)
 
 
-def build_pronunciation_override_ssml(text: str) -> str | None:
+# A span of text and the numbered pinyin it must be read with, or None to leave
+# the span to the voice's own reading.
+Reading = tuple[str, str | None]
+
+
+def _is_hanzi(char: str) -> bool:
+    return "\u4e00" <= char <= "\u9fff"
+
+
+def pinyin_hint_readings(text: str, pinyin_hint: str) -> list[Reading]:
+    """Pin every character of text to its syllable from pinyin_hint."""
+    # Convert pinyin to numbered format
+    numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
+    syllables = numbered_pinyin.split()
+    print(f"Original pinyin: {pinyin_hint}")
+    print(f"Converted to numbered: {numbered_pinyin}")
+
+    hanzi_count = sum(map(_is_hanzi, text))
+    if len(syllables) != hanzi_count:
+        # Pin the whole text to the whole pinyin if they cannot be aligned
+        print(f"Warning: Syllable count ({len(syllables)}) doesn't match character count ({hanzi_count}). Using fallback method.")
+        return [(text, numbered_pinyin)]
+
+    remaining = iter(syllables)
+    return [(char, next(remaining) if _is_hanzi(char) else None) for char in text]
+
+
+def pronunciation_override_readings(text: str) -> list[Reading] | None:
     """
-    Build SSML that pins the reading of every _PRONUNCIATION_OVERRIDES word in text.
+    Pin the reading of every _PRONUNCIATION_OVERRIDES word in text.
 
     Returns:
-        str | None: The SSML, or None if text contains no override word.
+        list[Reading] | None: The readings, or None if text contains no override word.
     """
     # Longest first, so a longer override wins over one it contains.
     words = sorted(_PRONUNCIATION_OVERRIDES, key=len, reverse=True)
@@ -116,80 +168,136 @@ def build_pronunciation_override_ssml(text: str) -> str | None:
     if not pattern.search(text):
         return None
 
-    ssml_parts = ["<speak>"]
+    readings: list[Reading] = []
     pos = 0
     for match in pattern.finditer(text):
-        ssml_parts.append(xml_escape(text[pos : match.start()]))
-        for char, pinyin in zip(match.group(), _PRONUNCIATION_OVERRIDES[match.group()], strict=True):
-            ssml_parts.append(f'<phoneme alphabet="pinyin" ph="{pinyin}">{char}</phoneme>' if pinyin else char)
+        readings.append((text[pos : match.start()], None))
+        readings.extend(zip(match.group(), _PRONUNCIATION_OVERRIDES[match.group()], strict=True))
         pos = match.end()
-    ssml_parts.append(xml_escape(text[pos:]))
-    ssml_parts.append("</speak>")
-    return "".join(ssml_parts)
+    readings.append((text[pos:], None))
+    return [reading for reading in readings if reading[0]]
 
 
-def chinese_tts(
-    text: str,
-    output_file: str = "output.mp3",
-    voice_name: str = _DEFAULT_VOICE,
-    pinyin_hint: str | None = None,
-    speaking_rate: float = 1.0,
-) -> bytes:
+def readings_to_ssml(readings: list[Reading]) -> str:
+    """Render readings as SSML, with a phoneme tag on every pinned span."""
+    parts = (
+        f'<phoneme alphabet="pinyin" ph="{pinyin}">{xml_escape(span)}</phoneme>' if pinyin else xml_escape(span)
+        for span, pinyin in readings
+    )
+    return f"<speak>{''.join(parts)}</speak>"
+
+
+def readings_to_annotated_text(readings: list[Reading]) -> str:
     """
-    Convert text to speech using Chinese Mandarin voice (Taiwanese or Mainland)
+    Render readings as text with the pinyin of each pinned run in brackets after it.
 
-    Args:
-        text (str): Text to convert (Chinese characters)
-        output_file (str): Output audio file path (will be saved in script directory)
-        voice_name (str): Voice to use - supports both cmn-TW-* (Taiwanese) and cmn-CN-* (Mainland) voices
-        pinyin_hint (str): Optional pinyin pronunciation hint
-        speaking_rate (float): Speed of speech (0.25 to 4.0, default 1.0). Slower rates may improve clarity.
+    Consecutive pinned spans are merged so that a word keeps together, e.g.
+    臺北市(tái běi shì) rather than 臺(tái)北(běi)市(shì). Tone marks rather than
+    tone numbers, as that is how pinyin is normally written.
     """
-    # Get script directory and ensure output file is saved there
-    script_dir = Path(__file__).resolve().parent
-    output_path = script_dir / Path(output_file).name
-
-    # Initialize the client
-    client: Any = texttospeech.TextToSpeechClient()
-
-    # Set the text input - use SSML if pinyin hint provided
-    synthesis_input: Any
-    if pinyin_hint:
-        # Convert pinyin to numbered format
-        numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
-        syllables = numbered_pinyin.split()
-
-        # Remove non-Chinese characters from text for alignment
-        chinese_chars = [char for char in text if "\u4e00" <= char <= "\u9fff"]
-
-        # Build SSML with individual phoneme tags per character
-        if len(syllables) == len(chinese_chars):
-            ssml_parts = ["<speak>"]
-            char_idx = 0
-            for char in text:
-                if "\u4e00" <= char <= "\u9fff":
-                    # This is a Chinese character, wrap with phoneme tag
-                    ssml_parts.append(f'<phoneme alphabet="pinyin" ph="{syllables[char_idx]}">{char}</phoneme>')
-                    char_idx += 1
-                else:
-                    # Non-Chinese character, add as-is
-                    ssml_parts.append(char)
-            ssml_parts.append("</speak>")
-            ssml_text = "".join(ssml_parts)
-        else:
-            # Fallback to old method if syllable count doesn't match
-            print(
-                f"Warning: Syllable count ({len(syllables)}) doesn't match character count ({len(chinese_chars)}). Using fallback method."
+    annotated: list[str] = []
+    run_text: list[str] = []
+    run_pinyin: list[str] = []
+    for span, pinyin in [*readings, ("", None)]:
+        if pinyin:
+            run_text.append(span)
+            run_pinyin.append(pinyin)
+            continue
+        if run_text:
+            accented = cast(
+                "str", dragonmapper.transcriptions.numbered_to_accented(" ".join(run_pinyin).replace("u:", "ü").replace("v", "ü"))
             )
-            ssml_text = f'<speak><phoneme alphabet="pinyin" ph="{numbered_pinyin}">{text}</phoneme></speak>'
+            annotated.append(f"{''.join(run_text)}({accented})")
+            run_text.clear()
+            run_pinyin.clear()
+        annotated.append(span)
+    return "".join(annotated)
 
-        synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
-        print(f"Original pinyin: {pinyin_hint}")
-        print(f"Converted to numbered: {numbered_pinyin}")
+
+def build_gemini_prompt(text: str, readings: list[Reading] | None) -> str:
+    """Build the Gemini TTS prompt: the style instruction, then text, annotated with its readings if any."""
+    if readings is None:
+        return f"{_GEMINI_STYLE_INSTRUCTION}\n{text}"
+    return f"{_GEMINI_STYLE_INSTRUCTION}\n{_GEMINI_PINYIN_INSTRUCTION}\n{readings_to_annotated_text(readings)}"
+
+
+def pick_voice(speaking_rate: float) -> str:
+    """
+    Pick a voice at random from _RANDOM_VOICES.
+
+    Gemini voices are left out for a speaking rate other than 1.0, which only
+    the Cloud TTS voices support.
+    """
+    if speaking_rate != 1.0:
+        return random.choice(_WAVENET_VOICES)
+    return random.choice(_RANDOM_VOICES)
+
+
+class GeminiNoAudioError(RuntimeError):
+    """Gemini TTS kept answering with no audio (finishReason OTHER)."""
+
+
+def gemini_tts(prompt: str, voice_name: str) -> bytes:
+    """
+    Synthesize a prompt from build_gemini_prompt with a Gemini TTS voice and return it as MP3.
+
+    The preview TTS models now and then return a response with no audio, so an
+    empty response is retried before giving up. Some prompts get no audio on
+    every attempt - in testing, the repeated character of a multi-pronunciation
+    Hanzi note (得, 得, 得 pinned to dé, de, děi) mostly did, for all three voices.
+
+    Raises:
+        GeminiNoAudioError: If every attempt came back without audio
+    """
+    speaker = voice_name.removeprefix(_GEMINI_VOICE_PREFIX)
+    response_json: Any = None
+    for attempt in range(1, _GEMINI_TTS_ATTEMPTS + 1):
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_TTS_MODEL}:generateContent",
+            headers={"x-goog-api-key": get_gemini_api_key()},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "responseModalities": ["AUDIO"],
+                    "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": speaker}}},
+                },
+            },
+            timeout=180,
+        )
+        response.raise_for_status()
+        response_json = response.json()
+        candidates = response_json.get("candidates") or [{}]
+        parts = candidates[0].get("content", {}).get("parts") or [{}]
+        inline_data = parts[0].get("inlineData")
+        if inline_data:
+            return pcm_to_mp3(base64.b64decode(inline_data["data"]), inline_data["mimeType"])
+        print(f"Gemini TTS attempt {attempt}/{_GEMINI_TTS_ATTEMPTS} returned no audio")
+
+    raise GeminiNoAudioError(f"Gemini TTS returned no audio after {_GEMINI_TTS_ATTEMPTS} attempts. Last response: {response_json}")
+
+
+def pcm_to_mp3(pcm: bytes, mime_type: str) -> bytes:
+    """Encode the raw 16-bit mono PCM Gemini returns (e.g. audio/L16;codec=pcm;rate=24000) as MP3."""
+    rate_match = re.search(r"rate=(\d+)", mime_type)
+    if not mime_type.startswith("audio/L16") or not rate_match:
+        raise ValueError(f"Unexpected Gemini TTS audio format: {mime_type}")
+    result = subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-f", "s16le", "-ar", rate_match.group(1), "-ac", "1", "-i", "-", "-f", "mp3", "-"],
+        input=pcm,
+        capture_output=True,
+        check=True,
+    )
+    return result.stdout
+
+
+def cloud_tts(text: str, readings: list[Reading] | None, voice_name: str, speaking_rate: float) -> bytes:
+    """Synthesize with a Google Cloud TTS voice (cmn-TW-* or cmn-CN-*) and return MP3, as SSML if readings are pinned."""
+    client: Any = texttospeech.TextToSpeechClient()
+    synthesis_input: Any
+    if readings is not None:
+        ssml_text = readings_to_ssml(readings)
         print(f"SSML: {ssml_text}")
-    elif override_ssml := build_pronunciation_override_ssml(text):
-        synthesis_input = texttospeech.SynthesisInput(ssml=override_ssml)
-        print(f"SSML (pronunciation overrides): {override_ssml}")
+        synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
     else:
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
@@ -198,8 +306,7 @@ def chinese_tts(
 
     # Build the voice request. No ssml_gender: it is only a hint used to pick a
     # voice when none is named, and naming one (as we always do) makes the API
-    # ignore it. Setting it here just invited the reader to believe the default
-    # cmn-TW-Wavenet-C was female.
+    # ignore it.
     voice: Any = texttospeech.VoiceSelectionParams(
         language_code=language_code,
         name=voice_name,
@@ -213,16 +320,72 @@ def chinese_tts(
         volume_gain_db=0.0,  # Volume (-96.0 to 16.0)
     )
 
-    # Perform the text-to-speech request
     response: Any = client.synthesize_speech(input=synthesis_input, voice=voice, audio_config=audio_config)
-
-    # Write the response to an audio file
-    with output_path.open("wb") as out:
-        out.write(response.audio_content)
-        print(f'Audio generated: "{output_path}"')
-
     audio_content: bytes = response.audio_content
     return audio_content
+
+
+def chinese_tts(
+    text: str,
+    voice_name: str | None = None,
+    pinyin_hint: str | None = None,
+    speaking_rate: float = 1.0,
+) -> tuple[bytes, str]:
+    """
+    Convert text to speech using Chinese Mandarin voice (Taiwanese or Mainland)
+
+    Args:
+        text (str): Text to convert (Chinese characters)
+        voice_name (str | None): Voice to use - cmn-TW-* (Taiwanese), cmn-CN-* (Mainland) or one of
+            _GEMINI_VOICES. None picks one at random, see pick_voice.
+        pinyin_hint (str): Optional pinyin pronunciation hint
+        speaking_rate (float): Speed of speech (0.25 to 4.0, default 1.0). Slower rates may improve clarity.
+
+    Returns:
+        tuple[bytes, str]: The MP3 audio and the voice that actually spoke it, which
+            differs from the picked one if a Gemini voice fell back to Wavenet.
+
+    Raises:
+        ValueError: If a Gemini voice is requested with a speaking rate other than 1.0
+        GeminiNoAudioError: If a Gemini voice named in voice_name gave no audio. A
+            randomly picked one falls back to a Wavenet voice instead.
+    """
+    # Readings to pin: from the pinyin hint, else from any override word in the text
+    readings = pinyin_hint_readings(text, pinyin_hint) if pinyin_hint else pronunciation_override_readings(text)
+
+    voice_is_random = voice_name is None
+    if voice_name is None:
+        voice_name = pick_voice(speaking_rate)
+    print(f"Voice: {voice_name}")
+
+    audio_content: bytes | None = None
+    if voice_name in _GEMINI_VOICES:
+        if speaking_rate != 1.0:
+            raise ValueError(f"{voice_name} does not support a speaking rate, got {speaking_rate}")
+        prompt = build_gemini_prompt(text, readings)
+        print(f"Gemini prompt: {prompt}")
+        try:
+            audio_content = gemini_tts(prompt, voice_name)
+        except GeminiNoAudioError:
+            if not voice_is_random:
+                raise
+            voice_name = random.choice(_WAVENET_VOICES)
+            print(f"Gemini gave no audio, falling back to {voice_name}")
+
+    if audio_content is None:
+        audio_content = cloud_tts(text, readings, voice_name=voice_name, speaking_rate=speaking_rate)
+
+    return audio_content, voice_name
+
+
+def save_audio(note_id: int, audio_filename: str, audio_data: bytes, field_name: str = "Audio") -> None:
+    """Write a local copy of the audio to the script directory, store it in Anki's media and point the note's field at it."""
+    output_path = Path(__file__).resolve().parent / audio_filename
+    output_path.write_bytes(audio_data)
+    print(f'Audio generated: "{output_path}"')
+
+    store_media_file(audio_filename, audio_data)
+    update_note_audio_field(note_id, audio_filename, field_name=field_name)
 
 
 def find_note_by_traditional(note_type: str, traditional_text: str) -> int | None:
@@ -269,7 +432,7 @@ def update_audio_for_note(
     note_info: AnkiNoteInfo,
     target_text: str,
     pinyin_hint: str | None = None,
-    voice_name: str = _DEFAULT_VOICE,
+    voice_name: str | None = None,
     speaking_rate: float = 1.0,
 ) -> None:
     """
@@ -286,9 +449,15 @@ def update_audio_for_note(
 
     print(f"Found note: {note_info['fields'].get('Traditional', {}).get('value', 'N/A')}")
 
-    # Generate audio filename
-    clean_text = clean_text_for_filename(target_text)
+    # Generate TTS audio
+    if pinyin_hint:
+        print(f"Generating TTS audio for: {target_text} with pinyin hint: {pinyin_hint}")
+    else:
+        print(f"Generating TTS audio for: {target_text}")
+    audio_data, used_voice = chinese_tts(target_text, voice_name=voice_name, pinyin_hint=pinyin_hint, speaking_rate=speaking_rate)
 
+    # Generate audio filename, after synthesis so that it names the voice actually used
+    clean_text = clean_text_for_filename(target_text)
     if pinyin_hint:
         # Convert pinyin to numbered format and clean for filename
         numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
@@ -296,22 +465,11 @@ def update_audio_for_note(
         # Truncate clean_pinyin
         if len(clean_pinyin) > _MAX_PINYIN_FILENAME_LEN:
             clean_pinyin = clean_pinyin[:_MAX_PINYIN_FILENAME_LEN]
-        audio_filename = f"emir_tts_{clean_text}_{clean_pinyin}_{note_id}.mp3"
+        audio_filename = f"emir_tts_{clean_text}_{clean_pinyin}_{used_voice}_{note_id}.mp3"
     else:
-        audio_filename = f"emir_tts_{clean_text}_{note_id}.mp3"
+        audio_filename = f"emir_tts_{clean_text}_{used_voice}_{note_id}.mp3"
 
-    # Generate TTS audio
-    if pinyin_hint:
-        print(f"Generating TTS audio for: {target_text} with pinyin hint: {pinyin_hint}")
-    else:
-        print(f"Generating TTS audio for: {target_text}")
-    audio_data = chinese_tts(
-        target_text, output_file=audio_filename, voice_name=voice_name, pinyin_hint=pinyin_hint, speaking_rate=speaking_rate
-    )
-
-    # Store audio file in Anki media collection and update the note's Audio field
-    store_media_file(audio_filename, audio_data)
-    update_note_audio_field(note_id, audio_filename)
+    save_audio(note_id, audio_filename, audio_data)
     print("Successfully updated note with new audio!")
 
 
@@ -340,7 +498,7 @@ def find_notes_with_empty_sentence_audio() -> list[int]:
 def process_sentence_audio(
     note_id: int,
     note_info: AnkiNoteInfo,
-    voice_name: str = _DEFAULT_VOICE,
+    voice_name: str | None = None,
     speaking_rate: float = 1.0,
 ) -> bool:
     """
@@ -361,20 +519,12 @@ def process_sentence_audio(
         print(f"No Sentence Traditional found for note {note_id}, skipping")
         return False
 
-    clean_text = clean_sentence_for_filename(sentence)
-    audio_filename = f"emir_tts_sentence_{clean_text}_{note_id}.mp3"
-
     print(f"Generating sentence TTS audio for: {sentence}")
-    audio_data = chinese_tts(
-        sentence,
-        output_file=audio_filename,
-        voice_name=voice_name,
-        pinyin_hint=None,
-        speaking_rate=speaking_rate,
-    )
+    audio_data, used_voice = chinese_tts(sentence, voice_name=voice_name, pinyin_hint=None, speaking_rate=speaking_rate)
 
-    store_media_file(audio_filename, audio_data)
-    update_note_audio_field(note_id, audio_filename, field_name="Sentence Audio")
+    clean_text = clean_sentence_for_filename(sentence)
+    audio_filename = f"emir_tts_sentence_{clean_text}_{used_voice}_{note_id}.mp3"
+    save_audio(note_id, audio_filename, audio_data, field_name="Sentence Audio")
     print("Successfully updated note with new sentence audio!")
     return True
 
@@ -436,8 +586,7 @@ def process_note_audio(
     note_id: int,
     note_info: AnkiNoteInfo,
     note_type: str,
-    use_pinyin_hint: bool,
-    voice_name: str = _DEFAULT_VOICE,
+    voice_name: str | None = None,
     speaking_rate: float = 1.0,
 ) -> bool:
     """
@@ -447,7 +596,6 @@ def process_note_audio(
         note_id: The note ID
         note_info: Note information from get_note_info
         note_type: The note type (e.g., "TOCFL", "Hanzi")
-        use_pinyin_hint: Whether to use pinyin hints from notes
         voice_name: Voice to use for TTS
         speaking_rate: Speed of speech (0.25 to 4.0)
 
@@ -471,12 +619,10 @@ def process_note_audio(
             update_audio_for_note(note_id, note_info, repeated_text, combined_pinyin, voice_name=voice_name, speaking_rate=speaking_rate)
             return True
 
-    # Get pinyin from note if available and flag is set
-    pinyin_hint = None
-    if use_pinyin_hint:
-        pinyin_hint = get_clean_field_value(note_info, "Pinyin")
-        if pinyin_hint:
-            print(f"Using Pinyin field from note: {pinyin_hint}")
+    # Pin the reading to the note's Pinyin field, if it has one
+    pinyin_hint = get_clean_field_value(note_info, "Pinyin")
+    if pinyin_hint:
+        print(f"Using Pinyin field from note: {pinyin_hint}")
 
     # Use the more efficient version that reuses note_info
     update_audio_for_note(note_id, note_info, traditional, pinyin_hint or None, voice_name=voice_name, speaking_rate=speaking_rate)
@@ -487,8 +633,7 @@ def rebuild_note_audio(
     note_id: int,
     note_info: AnkiNoteInfo,
     note_type: str,
-    use_pinyin_hint: bool,
-    voice_name: str = _DEFAULT_VOICE,
+    voice_name: str | None = None,
     speaking_rate: float = 1.0,
 ) -> bool:
     """
@@ -502,7 +647,7 @@ def rebuild_note_audio(
         bool: True only if every applicable field was regenerated, so that a
         partial rebuild keeps the tag and gets retried on the next run.
     """
-    rebuilt = process_note_audio(note_id, note_info, note_type, use_pinyin_hint, voice_name=voice_name, speaking_rate=speaking_rate)
+    rebuilt = process_note_audio(note_id, note_info, note_type, voice_name=voice_name, speaking_rate=speaking_rate)
 
     # Note types without a sentence (e.g. Hanzi) yield an empty value here and are skipped.
     if get_clean_field_value(note_info, "Sentence Traditional"):
@@ -513,11 +658,10 @@ def rebuild_note_audio(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate TTS audio for Anki notes")
-    parser.add_argument("--use-pinyin-hint", action="store_true", help="Use Pinyin field from notes as pronunciation hints")
     parser.add_argument(
         "--voice",
         type=str,
-        default=_DEFAULT_VOICE,
+        default=None,
         choices=[
             # Taiwanese Mandarin voices
             "cmn-TW-Standard-A",
@@ -535,8 +679,14 @@ def main() -> None:
             "cmn-CN-Wavenet-B",
             "cmn-CN-Wavenet-C",
             "cmn-CN-Wavenet-D",
+            # Gemini TTS voices, Taiwanese accent by style instruction
+            *_GEMINI_VOICES,
         ],
-        help="Voice to use for TTS. TW=Taiwanese, CN=Mainland. Wavenet voices are higher quality.",
+        help=(
+            "Voice to use for TTS. TW=Taiwanese, CN=Mainland. Wavenet voices are higher quality. "
+            f"Default: a random pick per audio file from {', '.join(_RANDOM_VOICES)}; "
+            "with a speaking rate other than 1.0 it only picks from the Wavenet voices."
+        ),
     )
     parser.add_argument(
         "--speaking-rate",
@@ -546,7 +696,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    print(f"Using voice: {args.voice}, speaking rate: {args.speaking_rate}")
+    print(f"Using voice: {args.voice or 'random from ' + ', '.join(_RANDOM_VOICES)}, speaking rate: {args.speaking_rate}")
 
     # Setup Google Cloud credentials
     setup_google_credentials()
@@ -556,16 +706,14 @@ def main() -> None:
         for note_id in find_notes_by_tag(note_type, _REBUILD_AUDIO_TAG):
             note_info = get_note_info(note_id)
             print(f"Rebuilding audio for note {note_id} (tagged with {_REBUILD_AUDIO_TAG})")
-            if rebuild_note_audio(
-                note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate
-            ):
+            if rebuild_note_audio(note_id, note_info, note_type, voice_name=args.voice, speaking_rate=args.speaking_rate):
                 # Remove the rebuild tag after successful audio generation
                 remove_tag_from_note(note_id, _REBUILD_AUDIO_TAG)
 
         # Then, process notes with empty audio
         for note_id in find_note_by_empty_audio(note_type)[0:100]:
             note_info = get_note_info(note_id)
-            process_note_audio(note_id, note_info, note_type, args.use_pinyin_hint, voice_name=args.voice, speaking_rate=args.speaking_rate)
+            process_note_audio(note_id, note_info, note_type, voice_name=args.voice, speaking_rate=args.speaking_rate)
 
     # Finally, fill empty Sentence Audio on TOCFL notes that have a sentence
     print("\n=== Filling Sentence Audio for TOCFL notes ===")

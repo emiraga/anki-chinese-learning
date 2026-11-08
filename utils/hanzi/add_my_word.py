@@ -265,7 +265,7 @@ def main():
         # Step 4.2: Fill audio for the new note
         fill_audio_script = Path(__file__).resolve().parent.parent / "tts" / "fill_audio_anki.py"
         print("\n⋯ Running fill_audio_anki.py...")
-        subprocess.run([str(fill_audio_script), "--use-pinyin-hint"], check=True)
+        subprocess.run([str(fill_audio_script)], check=True)
         print("✓ Audio filled")
 
         # Step 5: Sync with AnkiWeb

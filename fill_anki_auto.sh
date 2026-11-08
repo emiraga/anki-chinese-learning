@@ -12,7 +12,7 @@ set -e
 
 ./utils/zhuyin/fill_zhuyin_anki.py
 
-./utils/tts/fill_audio_anki.py --use-pinyin-hint
+./utils/tts/fill_audio_anki.py
 
 ./utils/video/augment_translation.py
 ./utils/video/fill_trimmed_audio.py --audio-preset speech
