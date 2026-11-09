@@ -38,9 +38,10 @@ from shared.anki_utils import (
 from shared.gemini_utils import get_gemini_api_key
 from shared.google_credentials import setup_google_credentials
 
-# Define maximum lengths for filename components to keep them reasonable
-_MAX_TEXT_FILENAME_LEN = 50
-_MAX_PINYIN_FILENAME_LEN = 50
+# Anki limits media filenames to 120 bytes (UTF-8), and a CJK character takes 3
+# bytes, so a long word or sentence plus pinyin used to go over it. Keep a
+# margin below the limit.
+_MAX_AUDIO_FILENAME_BYTES = 100
 
 # Wavenet rather than Standard: the Standard voices do not compress the first
 # falling tone in a tone4+tone4 pair, so they fully realize both falls and reset
@@ -85,20 +86,36 @@ _PRONUNCIATION_OVERRIDES: dict[str, tuple[str | None, ...]] = {
 }
 
 
-def clean_text_for_filename(text: str, max_len: int = _MAX_TEXT_FILENAME_LEN) -> str:
-    """Clean a text snippet so it is safe to use inside an audio filename."""
-    clean_text = text.replace("?", "").replace("*", "")
-    if len(clean_text) > max_len:
-        clean_text = clean_text[:max_len]
-    return clean_text
+def short_voice_name(voice_name: str) -> str:
+    """
+    Shorten a voice name for use in a filename.
+
+    cmn-TW-Wavenet-A -> TWWA, cmn-CN-Standard-D -> CNSD, gemini-pro-Kore -> Kore.
+    """
+    if voice_name.startswith(_GEMINI_VOICE_PREFIX):
+        return voice_name.removeprefix(_GEMINI_VOICE_PREFIX)
+    _, region, kind, letter = voice_name.split("-")
+    return f"{region}{kind[0]}{letter}"
 
 
-def clean_sentence_for_filename(sentence: str, max_len: int = _MAX_TEXT_FILENAME_LEN) -> str:
-    """Clean a sentence for filenames by keeping only word characters (CJK, letters, digits, underscores)."""
-    clean_text = re.sub(r"[^\w]", "", sentence)
-    if len(clean_text) > max_len:
-        clean_text = clean_text[:max_len]
-    return clean_text
+def build_audio_filename(text: str, voice_name: str, note_id: int) -> str:
+    """
+    Name an audio file emir_tts_<text>_<voice>_<note id>.mp3, within _MAX_AUDIO_FILENAME_BYTES.
+
+    The text keeps only word characters (CJK, letters, digits, underscores) and
+    is cut short to fit the byte limit; the note id keeps the name unique.
+
+    All lowercase, because AnkiConnect's storeMediaFile lowercases the name it
+    writes. A [sound:] tag in any other case still plays on macOS and Windows,
+    whose filesystems ignore case, but AnkiDroid reports the file as missing.
+    """
+    suffix = f"_{short_voice_name(voice_name)}_{note_id}.mp3"
+    prefix = "emir_tts_"
+    budget = _MAX_AUDIO_FILENAME_BYTES - len(prefix.encode()) - len(suffix.encode())
+    clean_text = re.sub(r"[^\w]", "", text)
+    while len(clean_text.encode()) > budget:
+        clean_text = clean_text[:-1]
+    return f"{prefix}{clean_text}{suffix}".lower()
 
 
 # Generate API key via https://console.cloud.google.com/apis/credentials
@@ -384,8 +401,9 @@ def save_audio(note_id: int, audio_filename: str, audio_data: bytes, field_name:
     output_path.write_bytes(audio_data)
     print(f'Audio generated: "{output_path}"')
 
-    store_media_file(audio_filename, audio_data)
-    update_note_audio_field(note_id, audio_filename, field_name=field_name)
+    # Reference the file by the name Anki stored it under, which can differ from audio_filename
+    stored_filename = store_media_file(audio_filename, audio_data)
+    update_note_audio_field(note_id, stored_filename, field_name=field_name)
 
 
 def find_note_by_traditional(note_type: str, traditional_text: str) -> int | None:
@@ -457,19 +475,7 @@ def update_audio_for_note(
     audio_data, used_voice = chinese_tts(target_text, voice_name=voice_name, pinyin_hint=pinyin_hint, speaking_rate=speaking_rate)
 
     # Generate audio filename, after synthesis so that it names the voice actually used
-    clean_text = clean_text_for_filename(target_text)
-    if pinyin_hint:
-        # Convert pinyin to numbered format and clean for filename
-        numbered_pinyin = convert_pinyin_to_numbered(pinyin_hint)
-        clean_pinyin = numbered_pinyin.replace(" ", "_").replace(":", "").replace("*", "").replace("?", "")
-        # Truncate clean_pinyin
-        if len(clean_pinyin) > _MAX_PINYIN_FILENAME_LEN:
-            clean_pinyin = clean_pinyin[:_MAX_PINYIN_FILENAME_LEN]
-        audio_filename = f"emir_tts_{clean_text}_{clean_pinyin}_{used_voice}_{note_id}.mp3"
-    else:
-        audio_filename = f"emir_tts_{clean_text}_{used_voice}_{note_id}.mp3"
-
-    save_audio(note_id, audio_filename, audio_data)
+    save_audio(note_id, build_audio_filename(target_text, used_voice, note_id), audio_data)
     print("Successfully updated note with new audio!")
 
 
@@ -522,9 +528,7 @@ def process_sentence_audio(
     print(f"Generating sentence TTS audio for: {sentence}")
     audio_data, used_voice = chinese_tts(sentence, voice_name=voice_name, pinyin_hint=None, speaking_rate=speaking_rate)
 
-    clean_text = clean_sentence_for_filename(sentence)
-    audio_filename = f"emir_tts_sentence_{clean_text}_{used_voice}_{note_id}.mp3"
-    save_audio(note_id, audio_filename, audio_data, field_name="Sentence Audio")
+    save_audio(note_id, build_audio_filename(sentence, used_voice, note_id), audio_data, field_name="Sentence Audio")
     print("Successfully updated note with new sentence audio!")
     return True
 
