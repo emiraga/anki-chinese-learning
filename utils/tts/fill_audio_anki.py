@@ -83,6 +83,9 @@ _PRONUNCIATION_OVERRIDES: dict[str, tuple[str | None, ...]] = {
     # The voice reads 個 as de in sentences such as 這是一個很大的負擔. Keyed on
     # 個 alone so that 這個, 那個, 幾個 etc. are covered too; Taiwan reads it gè.
     "個": ("ge4",),
+    # Taiwan reads 酪 as luò (酪梨, 乳酪, 奶酪), but the voice uses the Mainland
+    # reading lào. Keyed on 酪 alone: it has no other reading in Taiwan.
+    "酪": ("luo4",),
 }
 
 

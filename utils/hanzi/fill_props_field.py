@@ -890,6 +890,43 @@ def build_sentence_updates(fields: dict[str, Any], sentence: str, english: str) 
     return updates
 
 
+def build_missing_english_updates(
+    fields: dict[str, Any], sentences: dict[str, str], english_fields: tuple[tuple[str, str], ...]
+) -> dict[str, str]:
+    """
+    Build the updates for English fields that are empty although their
+    Traditional sentence is set (e.g. picked before the English field existed).
+
+    Args:
+        fields (dict): The note's fields
+        sentences (dict): Example sentences mapped to their translations
+        english_fields (tuple): (English field name, its current Traditional sentence) pairs
+
+    Returns:
+        dict: English field name mapped to the translation from Examples JSON
+    """
+    updates: dict[str, str] = {}
+    for field_name, sentence in english_fields:
+        if not sentence or field_name not in fields or fields[field_name].get("value", "").strip():
+            continue
+        if sentences.get(sentence):
+            updates[field_name] = sentences[sentence]
+    return updates
+
+
+def apply_note_updates(note_id: int, fields_to_update: dict[str, str]) -> None:
+    """
+    Write the updated fields to the note and log each change.
+
+    Args:
+        note_id (int): The note to update
+        fields_to_update (dict): Field name mapped to its new value
+    """
+    update_note_fields(note_id, fields_to_update)
+    for field_name, value in fields_to_update.items():
+        print(f"Updated note {note_id} with {field_name}: '{value}'")
+
+
 def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str, Any], gemini_client: Any) -> int:
     """
     Fill the Sentence Traditional and Sentence 2 Traditional fields for all
@@ -902,7 +939,10 @@ def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str,
     are never changed. Sentence English and Sentence 2 English are set to the
     translations of the sentences picked for Sentence Traditional and
     Sentence 2 Traditional, and Sentence Audio is emptied whenever Sentence
-    Traditional is set.
+    Traditional is set. An empty Sentence English or Sentence 2 English is also
+    filled when its Traditional sentence was set earlier, and a Sentence 2
+    Traditional that repeats Sentence Traditional is picked again (or emptied
+    if there is no other eligible sentence).
 
     When Examples JSON has no eligible sentence for a field, new examples are
     generated with Gemini (instructed to avoid the unknown characters found in
@@ -923,16 +963,16 @@ def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str,
             does not appear in Examples JSON (it was modified manually), or if
             Sentence Traditional is empty and no eligible sentence exists for it
     """
-    query = '"Examples JSON:_*" ("Sentence Traditional:" OR "Sentence 2 Traditional:") -is:suspended'
+    # Every note with examples is checked, since a Sentence 2 Traditional that
+    # repeats Sentence Traditional cannot be expressed as an Anki search
+    query = '"Examples JSON:_*" -is:suspended'
     print(f"Query: {query}")
 
     note_ids = find_notes_by_query(query)
-    print(f"Found {len(note_ids)} non-suspended note(s) with an empty Sentence Traditional or Sentence 2 Traditional")
+    print(f"Found {len(note_ids)} non-suspended note(s) with Examples JSON")
 
     if not note_ids:
         return 0
-
-    notes_info = get_notes_info(note_ids)
 
     updated = 0
     regenerated = 0
@@ -941,7 +981,7 @@ def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str,
     skipped_sentence_already_filled = 0
     missing_sentence_2 = 0
 
-    for note_info in notes_info:
+    for note_info in iter_notes_info(note_ids):
         note_id = note_info["noteId"]
         fields = note_info.get("fields", {})
 
@@ -968,11 +1008,26 @@ def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str,
                     f"Note {note_id} ('{traditional}'): {field_name} '{value}' does not appear in Examples JSON (was it modified manually?)"
                 )
 
+        # A Sentence 2 Traditional that repeats Sentence Traditional is picked
+        # again (Sentence Traditional is kept, since it has Sentence Audio)
+        sentence_2_is_duplicate = bool(current_sentence_2) and current_sentence_2 == current_sentence
+        if sentence_2_is_duplicate:
+            print(f"Note {note_id} ('{traditional}'): Sentence 2 Traditional repeats Sentence Traditional, picking it again")
+            current_sentence_2 = ""
+
+        fields_to_update = build_missing_english_updates(
+            fields, sentences, (("Sentence English", current_sentence), ("Sentence 2 English", current_sentence_2))
+        )
+
         # Only fill the sentence fields that are empty
         needs_sentence = not current_sentence
         needs_sentence_2 = "Sentence 2 Traditional" in fields and not current_sentence_2
         if not needs_sentence and not needs_sentence_2:
-            skipped_sentence_already_filled += 1
+            if fields_to_update:
+                apply_note_updates(note_id, fields_to_update)
+                updated += 1
+            else:
+                skipped_sentence_already_filled += 1
             continue
 
         if not sentences:
@@ -1006,8 +1061,6 @@ def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str,
             sentences = extract_example_sentences(examples_json_str)
             sentence, sentence_2 = pick_sentence_pair(list(sentences), known_characters, current_sentence, current_sentence_2)
 
-        fields_to_update: dict[str, str] = {}
-
         if examples_json_str != current_examples_json:
             fields_to_update["Examples JSON"] = examples_json_str
             fields_to_update.update(build_examples_html_updates(note_info, examples_json_str, pos_mapping))
@@ -1032,13 +1085,16 @@ def fill_sentence_traditional(known_characters: set[str], pos_mapping: dict[str,
                     f" (unknown: {''.join(sorted(find_unknown_characters(list(sentences), known_characters)))})"
                 )
                 missing_sentence_2 += 1
+                if sentence_2_is_duplicate:
+                    # An empty field is better than a repeat of Sentence Traditional
+                    fields_to_update["Sentence 2 Traditional"] = ""
+                    if "Sentence 2 English" in fields:
+                        fields_to_update["Sentence 2 English"] = ""
 
         if not fields_to_update:
             continue
 
-        update_note_fields(note_id, fields_to_update)
-        for field_name, value in fields_to_update.items():
-            print(f"Updated note {note_id} with {field_name}: '{value}'")
+        apply_note_updates(note_id, fields_to_update)
         updated += 1
 
     print(f"Updated {updated} note(s)")
