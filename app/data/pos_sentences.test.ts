@@ -19,4 +19,21 @@ describe("POS_SENTENCES", () => {
       expect(sentence.tokens.some((token) => token.pos)).toBe(true);
     }
   });
+
+  it("lists confusions for words of the sentence, with codes not in it", () => {
+    const invalid = POS_SENTENCES.flatMap((sentence) => {
+      const words = new Set(sentence.tokens.map((token) => token.zh));
+      const codes = new Set(sentence.tokens.map((token) => token.pos));
+      return (sentence.confusions ?? [])
+        .filter(
+          (confusion) =>
+            !isPosCode(confusion.pos) ||
+            !words.has(confusion.zh) ||
+            codes.has(confusion.pos) ||
+            confusion.note === "",
+        )
+        .map((confusion) => `${sentence.en}: ${confusion.zh} ${confusion.pos}`);
+    });
+    expect(invalid).toEqual([]);
+  });
 });

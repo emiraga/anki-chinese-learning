@@ -64,7 +64,8 @@
     // Keep in sync with CONFIGURATION_DEFAULTS in utils/hanzi/connect_dots_notes.py.
     const CONFIGURATION_OPTIONS = {
       leftOrder: ["shuffled", "fixed"], // "fixed": keep the left items in order
-      rightOrder: ["shuffled", "tone"], // "tone": list right items by tone 1-5
+      // "tone": list right items by tone 1-5, "alphabetical": in alphabetical order
+      rightOrder: ["shuffled", "tone", "alphabetical"],
       // "tone": color pronunciations by tone, "fixed": colors of rightColors
       colorBy: ["palette", "tone", "fixed"],
     };
@@ -205,11 +206,20 @@
       return 5; // neutral tone
     }
 
-    // Right items display order: by tone (e.g. all tones of one syllable) or shuffled
-    const shuffledRight =
-      configuration.rightOrder === "tone"
-        ? [...uniqueRight].sort((a, b) => getToneNumber(a) - getToneNumber(b))
-        : shuffle(uniqueRight);
+    // Right items display order: by tone (e.g. all tones of one syllable),
+    // alphabetical (e.g. parts of speech, always in the same place) or shuffled
+    function orderRight(values) {
+      if (configuration.rightOrder === "tone") {
+        return [...values].sort((a, b) => getToneNumber(a) - getToneNumber(b));
+      }
+      if (configuration.rightOrder === "alphabetical") {
+        return [...values].sort((a, b) =>
+          a.localeCompare(b, "en", { sensitivity: "base" }),
+        );
+      }
+      return shuffle(values);
+    }
+    const shuffledRight = orderRight(uniqueRight);
 
     // Left items display order: as stored (e.g. the words of a sentence) or shuffled
     const leftIndices = leftItems.map((_, i) => i);

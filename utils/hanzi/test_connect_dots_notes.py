@@ -569,6 +569,37 @@ class TestPosSentenceToPos:
         assert not set(note.fake_right) & set(note.right)
         assert set(note.fake_right) <= {pos_label(code, POS_NAMES) for code in POS_CODES}
 
+    def test_random_fake_right_skips_phrase_and_idiom(self):
+        names = {**POS_NAMES, "Ph": "phrase", "Id": "idiom"}
+        colors = {**POS_COLORS, "Ph": "#ff0000", "Id": "#ff0001"}
+        # Every other code not in SENTENCE is a confusion, so only Ph or Id could top it up
+        confusions = [{"zh": "甜", "pos": code} for code in ["V", "Prep", "Conj", "Vaux"]]
+        (note,) = PosSentenceToPos({**SENTENCE, "confusions": confusions}, names, colors, fake_count=6).generate_notes()
+        assert not {"Ph (phrase)", "Id (idiom)"} & set(note.fake_right)
+
+    def test_confusions_go_into_fake_right(self):
+        sentence = {**SENTENCE, "confusions": [{"zh": "甜", "pos": "V"}, {"zh": "這", "pos": "Prep"}]}
+        (note,) = PosSentenceToPos(sentence, POS_NAMES, POS_COLORS, fake_count=3).generate_notes()
+        assert {"V (verb)", "Prep (preposition)"} <= set(note.fake_right)
+        # Topped up with one random code not in the sentence
+        assert len(note.fake_right) == 3
+        assert not set(note.fake_right) & set(note.right)
+
+    def test_confusions_are_all_kept_beyond_fake_count(self):
+        confusions = [{"zh": "甜", "pos": code} for code in ["V", "Prep", "Conj"]]
+        (note,) = PosSentenceToPos({**SENTENCE, "confusions": confusions}, POS_NAMES, POS_COLORS, fake_count=2).generate_notes()
+        assert set(note.fake_right) == {"V (verb)", "Prep (preposition)", "Conj (conjunction)"}
+
+    def test_confusion_code_in_sentence_raises(self):
+        sentence = {**SENTENCE, "confusions": [{"zh": "甜", "pos": "N"}]}
+        with pytest.raises(ValueError, match="also occur in sentence"):
+            PosSentenceToPos(sentence, POS_NAMES, POS_COLORS).generate_notes()
+
+    def test_unknown_confusion_code_raises(self):
+        sentence = {**SENTENCE, "confusions": [{"zh": "甜", "pos": "Nope"}]}
+        with pytest.raises(ValueError, match="Unknown confusion POS code"):
+            PosSentenceToPos(sentence, POS_NAMES, POS_COLORS).generate_notes()
+
     def test_fake_right_is_deterministic(self):
         first = pick_fake_pos_codes("k", {"N"}, POS_CODES, 3)
         assert first == pick_fake_pos_codes("k", {"N"}, POS_CODES, 3)
@@ -621,6 +652,10 @@ class TestConfiguration:
             "rightColors": {"N (noun)": "#000001", escape_comma("Vs-pred (state, predicative)"): "#000002", "M (measure)": "#000003"},
         }
 
+    def test_fake_right_must_not_overlap_right(self):
+        with pytest.raises(ValueError, match="also right values"):
+            ConnectDotsNote(key="k", left=["我", "走"], right=["N", "V"], fake_right=["V", "M"])
+
     def test_right_colors_must_cover_every_right_value(self):
         with pytest.raises(ValueError, match="no color"):
             ConnectDotsNote(key="k", left=["我", "走"], right=["N", "V"], fake_right=["M"], right_colors={"N": "#000001", "V": "#000002"})
@@ -631,6 +666,12 @@ class TestConfiguration:
         assert configuration["colorBy"] == "fixed"
         assert set(configuration["rightColors"]) == set(note.right) | set(note.fake_right)
         assert configuration["rightColors"]["N (noun)"] == POS_COLORS["N"]
+
+    def test_pos_sentence_lists_right_alphabetically(self):
+        (note,) = PosSentenceToPos(SENTENCE, POS_NAMES, POS_COLORS).generate_notes()
+        configuration = note.configuration()
+        assert configuration["leftOrder"] == "fixed"
+        assert configuration["rightOrder"] == "alphabetical"
 
     def test_syllable_note_sorts_right_by_tone_and_keeps_it_when_split(self, monkeypatch: pytest.MonkeyPatch):
         chars = "媽麻馬罵嗎抹碼瑪螞蟆嘛"

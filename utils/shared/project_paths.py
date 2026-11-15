@@ -130,8 +130,10 @@ def load_pos_sentences() -> list[dict[str, Any]]:
     and tagged with their POS codes, shown on the app's `/pos` page.
 
     Returns:
-        One entry per sentence, with "en", "note" and "tokens"; each token has
-        "zh" and, unless it is punctuation, "pos" and "gloss"
+        One entry per sentence, with "en", "note", "tokens" and "confusions";
+        each token has "zh" and, unless it is punctuation, "pos" and "gloss";
+        each confusion has "zh" (a token), "pos" (a tempting but wrong POS code
+        that does not occur in the sentence) and "note" (why it is wrong)
     """
     with POS_SENTENCES_JSON.open(encoding="utf-8") as f:
         sentences: list[dict[str, Any]] = json.load(f)

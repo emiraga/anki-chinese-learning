@@ -20,11 +20,26 @@ export type PosToken = {
   note?: string;
 };
 
+/**
+ * A POS that a student might wrongly pick for a word of the sentence. Its code
+ * never occurs in the sentence, so it can be offered as a decoy answer.
+ */
+export type PosConfusion = {
+  /** The word (one of the sentence's tokens) the wrong POS is tempting for. */
+  zh: string;
+  /** The tempting but wrong POS code. */
+  pos: PosCode;
+  /** Why it looks right, and why it is wrong. */
+  note: string;
+};
+
 export type PosSentence = {
   tokens: PosToken[];
   en: string;
   /** What the sentence shows about parts of speech. */
   note: string;
+  /** A short list of misleading POS codes; absent for generated sentences. */
+  confusions?: PosConfusion[];
 };
 
 export const POS_SENTENCES = posSentencesJSON as PosSentence[];

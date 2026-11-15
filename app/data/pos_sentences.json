@@ -2,6 +2,18 @@
   {
     "en": "I bought three books at the bookstore yesterday.",
     "note": "Numbers and time words are nouns. A number needs a measure word before the noun it counts.",
+    "confusions": [
+      {
+        "zh": "在",
+        "pos": "Adv",
+        "note": "Here 在 is followed by a place, so it is the preposition, not the progressive adverb."
+      },
+      {
+        "zh": "三",
+        "pos": "Det",
+        "note": "Numbers feel like determiners (這, 每), but the TOCFL list makes them nouns."
+      }
+    ],
     "tokens": [
       {
         "zh": "我",
@@ -61,6 +73,13 @@
   {
     "en": "My older brother is riding a bike.",
     "note": "The same 在 is an adverb when it goes straight before the verb: the action is in progress.",
+    "confusions": [
+      {
+        "zh": "在",
+        "pos": "Prep",
+        "note": "No place follows, so 在 is the progressive adverb, not 'at'."
+      }
+    ],
     "tokens": [
       {
         "zh": "哥哥",
@@ -91,6 +110,13 @@
   {
     "en": "Because he got sick, he can't come to class today.",
     "note": "因為…所以… are conjunctions linking two clauses. The auxiliary 能 goes before the main verb, and 不 before the auxiliary.",
+    "confusions": [
+      {
+        "zh": "生病",
+        "pos": "Vs",
+        "note": "'Sick' is an adjective in English, but 生病 is the change into being sick."
+      }
+    ],
     "tokens": [
       {
         "zh": "因為",
@@ -158,6 +184,18 @@
   {
     "en": "This coffee is too sweet. Could you give me a cup of tea?",
     "note": "Determiner + measure word + noun. A state verb like 甜 is the predicate on its own, with no 'is'.",
+    "confusions": [
+      {
+        "zh": "給",
+        "pos": "Prep",
+        "note": "給 is often a preposition (給我打電話), but here it is the main verb 'give'."
+      },
+      {
+        "zh": "甜",
+        "pos": "Vs-pred",
+        "note": "甜 is the predicate here, but it can also stand before a noun: 甜的咖啡."
+      }
+    ],
     "tokens": [
       {
         "zh": "這",
@@ -239,6 +277,13 @@
   {
     "en": "We play basketball together every weekend.",
     "note": "Several adverbs can stand in a row between the subject and the verb.",
+    "confusions": [
+      {
+        "zh": "打",
+        "pos": "V-sep",
+        "note": "打籃球 looks like a verb + object word, but 打 and 籃球 are separate words."
+      }
+    ],
     "tokens": [
       {
         "zh": "我們",
@@ -289,6 +334,23 @@
   {
     "en": "He broke my phone.",
     "note": "把 moves the object before the verb. The action verb 弄 and the process verb 壞 together say what was done and how it ended.",
+    "confusions": [
+      {
+        "zh": "把",
+        "pos": "Prep",
+        "note": "Many textbooks call 把 a preposition; the TOCFL list makes it a particle."
+      },
+      {
+        "zh": "把",
+        "pos": "M",
+        "note": "把 is also a measure word (一把椅子), but not before an object and a verb."
+      },
+      {
+        "zh": "壞",
+        "pos": "Vs",
+        "note": "壞 can mean 'bad' (a state), but here it is the change into broken."
+      }
+    ],
     "tokens": [
       {
         "zh": "他",
@@ -341,6 +403,13 @@
   {
     "en": "I only slept five hours last night.",
     "note": "A separable verb splits to let in 了 and the duration: 睡覺 becomes 睡…覺.",
+    "confusions": [
+      {
+        "zh": "睡",
+        "pos": "Vi",
+        "note": "On its own 睡 is an intransitive verb, but here it is half of the split 睡覺."
+      }
+    ],
     "tokens": [
       {
         "zh": "我",
@@ -402,6 +471,13 @@
   {
     "en": "Although I really like this phone, I don't have enough money.",
     "note": "喜歡 is a state verb that takes an object; 夠 is a state verb that can only be the predicate, never placed before a noun to describe it (not *很夠的錢).",
+    "confusions": [
+      {
+        "zh": "喜歡",
+        "pos": "Vs",
+        "note": "很 makes 喜歡 look like an adjective, but it takes an object, so it is Vst."
+      }
+    ],
     "tokens": [
       {
         "zh": "雖然",
@@ -482,6 +558,18 @@
   {
     "en": "He walked home from school.",
     "note": "A preposition phrase (從 + place) goes before the verb. Two verbs in a row: walk, return.",
+    "confusions": [
+      {
+        "zh": "走",
+        "pos": "Vi",
+        "note": "走 alone has no object, but the TOCFL list makes it a plain verb."
+      },
+      {
+        "zh": "回",
+        "pos": "Ptc",
+        "note": "回 looks like a direction ending (like 完 or 掉), but here it is a verb."
+      }
+    ],
     "tokens": [
       {
         "zh": "他",
@@ -515,6 +603,331 @@
       },
       {
         "zh": "。"
+      }
+    ]
+  },
+  {
+    "en": "Don't be angry with me, I forgot.",
+    "note": "A separable state verb splits around the person: 生…的氣, not *生氣我.",
+    "confusions": [
+      {
+        "zh": "生",
+        "pos": "Vp-sep",
+        "note": "生…氣 splits like 生病, but being angry is a state, not a change."
+      },
+      {
+        "zh": "忘記",
+        "pos": "Vst",
+        "note": "'Forget' sounds like a state, but it is a change: knew, now don't."
+      }
+    ],
+    "tokens": [
+      {
+        "zh": "別",
+        "pos": "Adv",
+        "gloss": "don't"
+      },
+      {
+        "zh": "生",
+        "pos": "Vs-sep",
+        "gloss": "be angry",
+        "note": "First half of 生氣."
+      },
+      {
+        "zh": "我",
+        "pos": "N",
+        "gloss": "me"
+      },
+      {
+        "zh": "的",
+        "pos": "Ptc",
+        "gloss": "'s"
+      },
+      {
+        "zh": "氣",
+        "pos": "Vs-sep",
+        "gloss": "(anger)",
+        "note": "Second half of 生氣."
+      },
+      {
+        "zh": "，"
+      },
+      {
+        "zh": "我",
+        "pos": "N",
+        "gloss": "I"
+      },
+      {
+        "zh": "忘記",
+        "pos": "Vpt",
+        "gloss": "forget",
+        "note": "A change (knew, now don't). It takes an object, left out here because it is clear."
+      },
+      {
+        "zh": "了",
+        "pos": "Ptc",
+        "gloss": "(happened)"
+      },
+      {
+        "zh": "。"
+      }
+    ]
+  },
+  {
+    "en": "He's the only one who didn't laugh.",
+    "note": "笑 is an action verb with no object. 唯一 can only stand before a noun (not *他很唯一).",
+    "confusions": [
+      {
+        "zh": "是",
+        "pos": "V",
+        "note": "是 is not an action; the TOCFL list makes it a state verb."
+      },
+      {
+        "zh": "唯一",
+        "pos": "Det",
+        "note": "唯一 points at a noun like 每 or 這, but it takes no measure word, so it is a state verb."
+      }
+    ],
+    "tokens": [
+      {
+        "zh": "他",
+        "pos": "N",
+        "gloss": "he"
+      },
+      {
+        "zh": "是",
+        "pos": "Vst",
+        "gloss": "is",
+        "note": "是 is a transitive state verb in the TOCFL list."
+      },
+      {
+        "zh": "唯一",
+        "pos": "Vs-attr",
+        "gloss": "only",
+        "note": "Only before a noun."
+      },
+      {
+        "zh": "沒",
+        "pos": "Adv",
+        "gloss": "didn't"
+      },
+      {
+        "zh": "笑",
+        "pos": "Vi",
+        "gloss": "laugh",
+        "note": "An action with no object."
+      },
+      {
+        "zh": "的",
+        "pos": "Ptc",
+        "gloss": "(who)"
+      },
+      {
+        "zh": "人",
+        "pos": "N",
+        "gloss": "person"
+      },
+      {
+        "zh": "。"
+      }
+    ]
+  },
+  {
+    "en": "I want to see him, but he isn't home.",
+    "note": "見面 already contains its object, so the person comes first with 跟. 在 + place on its own is the verb: 'is at'.",
+    "confusions": [
+      {
+        "zh": "想",
+        "pos": "Vaux",
+        "note": "想 + verb looks like an auxiliary, but 想 is a state verb."
+      },
+      {
+        "zh": "見面",
+        "pos": "V",
+        "note": "見面 is not a plain verb that takes an object: not *見面他."
+      }
+    ],
+    "tokens": [
+      {
+        "zh": "我",
+        "pos": "N",
+        "gloss": "I"
+      },
+      {
+        "zh": "想",
+        "pos": "Vst",
+        "gloss": "want",
+        "note": "A state verb, not an auxiliary, even before another verb."
+      },
+      {
+        "zh": "跟",
+        "pos": "Prep",
+        "gloss": "with"
+      },
+      {
+        "zh": "他",
+        "pos": "N",
+        "gloss": "him"
+      },
+      {
+        "zh": "見面",
+        "pos": "V-sep",
+        "gloss": "meet",
+        "note": "Not *見面他."
+      },
+      {
+        "zh": "，"
+      },
+      {
+        "zh": "可是",
+        "pos": "Conj",
+        "gloss": "but"
+      },
+      {
+        "zh": "他",
+        "pos": "N",
+        "gloss": "he"
+      },
+      {
+        "zh": "不",
+        "pos": "Adv",
+        "gloss": "not"
+      },
+      {
+        "zh": "在",
+        "pos": "Vst",
+        "gloss": "be at",
+        "note": "The third use of 在: the main verb."
+      },
+      {
+        "zh": "家",
+        "pos": "N",
+        "gloss": "home"
+      },
+      {
+        "zh": "。"
+      }
+    ]
+  },
+  {
+    "en": "It's crowded here; my wallet got stolen.",
+    "note": "多 can only be the predicate: 人很多, not *多人. 被 marks the passive and is a particle in the TOCFL list.",
+    "confusions": [
+      {
+        "zh": "被",
+        "pos": "Prep",
+        "note": "Many textbooks call 被 a preposition; the TOCFL list makes it a particle."
+      },
+      {
+        "zh": "多",
+        "pos": "Det",
+        "note": "'Many' feels like a determiner, but 多 can't stand before a noun: not *多人."
+      }
+    ],
+    "tokens": [
+      {
+        "zh": "這裡",
+        "pos": "N",
+        "gloss": "here",
+        "note": "Place words like 這裡 are nouns."
+      },
+      {
+        "zh": "人",
+        "pos": "N",
+        "gloss": "people"
+      },
+      {
+        "zh": "很",
+        "pos": "Adv",
+        "gloss": "very"
+      },
+      {
+        "zh": "多",
+        "pos": "Vs-pred",
+        "gloss": "many",
+        "note": "Only as a predicate, after the noun."
+      },
+      {
+        "zh": "，"
+      },
+      {
+        "zh": "我",
+        "pos": "N",
+        "gloss": "I"
+      },
+      {
+        "zh": "的",
+        "pos": "Ptc",
+        "gloss": "'s"
+      },
+      {
+        "zh": "錢包",
+        "pos": "N",
+        "gloss": "wallet"
+      },
+      {
+        "zh": "被",
+        "pos": "Ptc",
+        "gloss": "(passive)",
+        "note": "被 + verb: something was done to the subject. Many textbooks call it a preposition."
+      },
+      {
+        "zh": "偷",
+        "pos": "V",
+        "gloss": "steal"
+      },
+      {
+        "zh": "了",
+        "pos": "Ptc",
+        "gloss": "(done)"
+      },
+      {
+        "zh": "。"
+      }
+    ]
+  },
+  {
+    "en": "How many years have you known each other?",
+    "note": "認識 is a change (getting to know someone), so 了 at the end counts how long since it happened. 幾 is a determiner, like 這 and 每.",
+    "confusions": [
+      {
+        "zh": "認識",
+        "pos": "Vst",
+        "note": "'Know' sounds like a state like 知道, but 認識 is getting to know."
+      }
+    ],
+    "tokens": [
+      {
+        "zh": "你們",
+        "pos": "N",
+        "gloss": "you (plural)"
+      },
+      {
+        "zh": "認識",
+        "pos": "Vpt",
+        "gloss": "get to know",
+        "note": "Getting to know someone is a change; 知道 is a state."
+      },
+      {
+        "zh": "幾",
+        "pos": "Det",
+        "gloss": "how many",
+        "note": "A determiner: needs a measure word after it."
+      },
+      {
+        "zh": "年",
+        "pos": "M",
+        "gloss": "year",
+        "note": "年 is its own measure word: 三年, not *三個年."
+      },
+      {
+        "zh": "了",
+        "pos": "Ptc",
+        "gloss": "(so far)",
+        "note": "With a duration: how long up to now."
+      },
+      {
+        "zh": "？"
       }
     ]
   }

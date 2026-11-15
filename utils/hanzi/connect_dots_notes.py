@@ -23,7 +23,7 @@ import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 # Add parent directory to path for shared imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -54,7 +54,9 @@ SOUND_COMPONENT_MIN_COUNT = 3  # Minimum characters sharing a sound component
 SYLLABLE_MIN_COUNT = 3  # Minimum characters sharing a syllable
 TWO_CHAR_PHRASE_MIN_COUNT = 3  # Minimum two-char phrases sharing a character
 MAX_ITEMS_PER_NOTE = 10  # Maximum items per ConnectDots note before splitting
-POS_SENTENCE_FAKE_COUNT = 3  # POS codes not in a sentence, offered as decoys
+POS_SENTENCE_FAKE_COUNT = 3  # Minimum number of POS codes not in a sentence, offered as decoys
+# POS codes never picked as random decoys: phrases and idioms are too easy to rule out
+POS_SENTENCE_NON_DECOY_CODES = {"Ph", "Id"}
 
 # Fields of the ConnectDots note type that this script writes.
 NOTE_FIELDS = ["Key", "Left", "Right", "Explanation", "Fake Right", "Configuration"]
@@ -63,11 +65,14 @@ NOTE_FIELDS = ["Key", "Left", "Right", "Explanation", "Fake Right", "Configurati
 # apply when an option is left out. Keep in sync with CONFIGURATION_OPTIONS in
 # anki/connect-dots/front-template.html.
 #   leftOrder:  "shuffled" | "fixed"          - "fixed" keeps the left items in order
-#   rightOrder: "shuffled" | "tone"           - "tone" lists right items by tone 1-5
+#   rightOrder: "shuffled" | "tone" | "alphabetical" - "tone" lists right items by tone 1-5,
+#                                               "alphabetical" in alphabetical order
 #   colorBy:    "palette"  | "tone" | "fixed" - "tone" colors pronunciations by tone,
 #                                               "fixed" uses the colors of rightColors
 #   rightColors: {right value: "#rrggbb"}     - required by, and only allowed with,
 #                                               colorBy "fixed"; has no default
+RightOrder = Literal["shuffled", "tone", "alphabetical"]
+
 CONFIGURATION_DEFAULTS = {"leftOrder": "shuffled", "rightOrder": "shuffled", "colorBy": "palette"}
 
 # Tags to generate Hanzi-to-Pinyin ConnectDots notes for (using TagHanziToPinyin generator)
@@ -438,9 +443,10 @@ class ConnectDotsNote:
     # sentence): fields keep it instead of sorting, the note is never split, and
     # the card shows it unshuffled (Configuration "leftOrder": "fixed").
     ordered: bool = False
-    # When True the card lists the right values by tone instead of shuffling
-    # them (Configuration "rightOrder": "tone"), e.g. all tones of a syllable.
-    sort_right_by_tone: bool = False
+    # How the card orders the right values (Configuration "rightOrder"):
+    # "shuffled", "tone" (e.g. all tones of a syllable) or "alphabetical"
+    # (e.g. parts of speech, so each one always appears in the same place).
+    right_order: RightOrder = "shuffled"
     # Fixed color ("#rrggbb") of each right value, including fake_right ones,
     # e.g. the color of each part of speech. Empty to use the default colors.
     right_colors: dict[str, str] = field(default_factory=lambda: dict[str, str]())
@@ -450,6 +456,9 @@ class ConnectDotsNote:
             raise ValueError(f"Left and Right must have equal lengths: left={len(self.left)}, right={len(self.right)}")
         if self.explanation and len(self.explanation) != len(self.left):
             raise ValueError(f"Explanation must have same length as Left/Right: explanation={len(self.explanation)}, left={len(self.left)}")
+        overlap = sorted(set(self.right) & set(self.fake_right))
+        if overlap:
+            raise ValueError(f"fake_right value(s) {overlap} are also right values of note {self.key}")
         if self.right_colors:
             uncolored = sorted((set(self.right) | set(self.fake_right)) - set(self.right_colors))
             if uncolored:
@@ -512,7 +521,7 @@ class ConnectDotsNote:
         """
         options = {
             "leftOrder": "fixed" if self.ordered else "shuffled",
-            "rightOrder": "tone" if self.sort_right_by_tone else "shuffled",
+            "rightOrder": self.right_order,
             "colorBy": self.color_by(),
         }
         configuration: dict[str, Any] = {name: value for name, value in options.items() if value != CONFIGURATION_DEFAULTS[name]}
@@ -607,7 +616,7 @@ class ConnectDotsNote:
                     right=right_slice,
                     explanation=explanation_slice if self.explanation else [],
                     fake_right=fake_right,
-                    sort_right_by_tone=self.sort_right_by_tone,
+                    right_order=self.right_order,
                     right_colors=self.right_colors,
                 )
             )
@@ -650,10 +659,10 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
 
     Optionally override:
     - get_fake_right(): Returns fake_right values for the note
-    - sort_right_by_tone: Whether the card lists the right values by tone
+    - right_order: How the card orders the right values, see ConnectDotsNote
     """
 
-    sort_right_by_tone = False
+    right_order: RightOrder = "shuffled"
 
     @abstractmethod
     def get_key_suffix(self) -> str:
@@ -692,7 +701,7 @@ class BaseHanziToPinyinGenerator(ConnectDotsGenerator):
                 right=right,
                 explanation=explanation,
                 fake_right=fake_right,
-                sort_right_by_tone=self.sort_right_by_tone,
+                right_order=self.right_order,
             )
         ]
 
@@ -780,7 +789,7 @@ class SyllableHanziToPinyin(BaseHanziToPinyinGenerator):
     The right values (all tones of the syllable) are listed by tone.
     """
 
-    sort_right_by_tone = True
+    right_order: RightOrder = "tone"
 
     def __init__(self, syllable: str):
         self.syllable = syllable.lower()
@@ -1026,11 +1035,14 @@ class PosSentenceToPos(ConnectDotsGenerator):
     Left = the sentence's words in sentence order (punctuation dropped),
     Right = their POS codes with English names (e.g. "N (noun)", "Vaux (auxiliary verbs)"),
     Explanation = the word's gloss and note,
-    Fake Right = a few labelled POS codes that do not occur in the sentence,
+    Fake Right = the sentence's "confusions" (POS codes a student might wrongly
+        pick), topped up with random POS codes not in the sentence to `fake_count`
+        (never Ph or Id, see POS_SENTENCE_NON_DECOY_CODES),
     Configuration rightColors = the color of each POS code, as on the app's /pos page.
 
     The notes are `ordered`, so the left side reads as the sentence and is
-    never split; the template still shuffles the right side.
+    never split; the right side is listed alphabetically, so each POS code
+    always appears in the same place (N above V, Adv above N, ...).
     """
 
     def __init__(
@@ -1045,7 +1057,8 @@ class PosSentenceToPos(ConnectDotsGenerator):
             sentence: One entry of app/data/pos_sentences.json
             pos_names: POS code -> English name, see load_pos_names()
             pos_colors: POS code -> "#rrggbb", see load_pos_colors()
-            fake_count: Number of POS codes not in the sentence to add as decoys
+            fake_count: Minimum number of decoys; random POS codes not in the
+                sentence are added when it has fewer confusions
         """
         self.sentence = sentence
         self.pos_names = pos_names
@@ -1067,9 +1080,23 @@ class PosSentenceToPos(ConnectDotsGenerator):
         if unknown:
             raise ValueError(f"Unknown POS code(s) {unknown} in sentence: {self.sentence['en']}")
 
+        confusion_codes = list(dict.fromkeys(confusion["pos"] for confusion in self.sentence.get("confusions", [])))
+        unknown = sorted(set(confusion_codes) - (set(self.pos_names) & set(self.pos_colors)))
+        if unknown:
+            raise ValueError(f"Unknown confusion POS code(s) {unknown} in sentence: {self.sentence['en']}")
+        real = sorted(set(confusion_codes) & set(codes))
+        if real:
+            raise ValueError(f"Confusion POS code(s) {real} also occur in sentence: {self.sentence['en']}")
+
         key = f"{self.generator_type}:{''.join(token['zh'] for token in tokens)}"
         explanation = [": ".join(filter(None, [word.get("gloss", ""), word.get("note", "")])) for word in words]
-        fake_codes = pick_fake_pos_codes(key, set(codes), [code for code in self.pos_names if code in self.pos_colors], self.fake_count)
+        random_codes = pick_fake_pos_codes(
+            key,
+            {*codes, *confusion_codes},
+            [code for code in self.pos_names if code in self.pos_colors and code not in POS_SENTENCE_NON_DECOY_CODES],
+            max(0, self.fake_count - len(confusion_codes)),
+        )
+        fake_codes = [*confusion_codes, *random_codes]
 
         return [
             ConnectDotsNote(
@@ -1080,6 +1107,7 @@ class PosSentenceToPos(ConnectDotsGenerator):
                 fake_right=[pos_label(code, self.pos_names) for code in fake_codes],
                 right_colors={pos_label(code, self.pos_names): self.pos_colors[code] for code in {*codes, *fake_codes}},
                 ordered=True,
+                right_order="alphabetical",
             )
         ]
 
