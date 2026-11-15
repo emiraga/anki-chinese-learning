@@ -24,6 +24,7 @@ set -e
 ./utils/hackchinese/convert.py
 ./utils/hackchinese/fill_hackchinese_outlier.py
 
-./utils/pleco/outlier_copy_paste.py --rebuild
+./utils/pleco/outlier_copy_paste.py --rebuild --variant tc
+./utils/pleco/outlier_copy_paste.py --rebuild --variant sc
 
 ./utils/sync_ankiweb.py

@@ -1,6 +1,8 @@
-// Type definitions for the Pleco Outlier (traditional) dictionary entries in
-// public/data/pleco/tc_dictionary_entries_json, written by convert_to_json.py
-// of pleco-reverse-engineering2.
+// Type definitions for the Pleco Outlier dictionary entries in
+// public/data/pleco/tc_dictionary_entries_json (traditional) and
+// public/data/pleco/sc_dictionary_entries_json (simplified), written by
+// convert_to_json.py of pleco-reverse-engineering2. Paths below are given for
+// the traditional dictionary; the simplified one uses sc_ instead of tc_.
 
 /** A node of rich text. */
 export type RichNode =
@@ -125,3 +127,9 @@ export interface PlecoOutlierIndexEntry {
 export interface PlecoOutlierIndex {
   entries: PlecoOutlierIndexEntry[];
 }
+
+/**
+ * sc_dictionary_entries_json/traditional_index.json: traditional form ->
+ * ids of the simplified entries
+ */
+export type PlecoOutlierTraditionalIndex = Record<string, number[]>;

@@ -17,7 +17,7 @@ from .project_paths import (
     DONG_DIR,
     HACKCHINESE_OUTLIER_DIR,
     HANZIYUAN_CONVERTED_DIR,
-    PLECO_OUTLIER_SERIES_DIR,
+    PLECO_OUTLIER_SERIES_TC_DIR,
     YELLOWBRIDGE_RAW_DIR,
 )
 
@@ -44,7 +44,7 @@ class OutlierReference(TypedDict):
 
 class OutlierSeriesData(TypedDict):
     """
-    The parts of a `public/data/pleco/outlier_series/*.json` file that hold
+    The parts of a `public/data/pleco/outlier_series_tc/*.json` file that hold
     characters. Every key is optional: the files only carry the blocks that
     apply to the character they describe.
     """
@@ -158,7 +158,7 @@ def _scan_data_directories(normalize: bool = False) -> tuple[set[str], Counter[s
         # RTEGA_DIR
         HANZIYUAN_CONVERTED_DIR,
         HACKCHINESE_OUTLIER_DIR,
-        PLECO_OUTLIER_SERIES_DIR,
+        PLECO_OUTLIER_SERIES_TC_DIR,
     ]
 
     all_chars: set[str] = set()
@@ -198,7 +198,7 @@ def _scan_outlier_series_json(normalize: bool = False) -> tuple[set[str], Counte
     - empty_component.characters[].traditional
     - radical.characters[].traditional
     """
-    outlier_dir = PLECO_OUTLIER_SERIES_DIR
+    outlier_dir = PLECO_OUTLIER_SERIES_TC_DIR
 
     all_chars: set[str] = set()
     char_frequency: Counter[str] = Counter()
@@ -252,8 +252,8 @@ def discover_all_characters(
     3. public/data/yellowbridge/raw
     4. public/data/hanziyuan/converted
     5. public/data/hackchinese/outlier
-    6. public/data/pleco/outlier_series (filenames)
-    7. public/data/pleco/outlier_series JSON files (referenced characters)
+    6. public/data/pleco/outlier_series_tc (filenames)
+    7. public/data/pleco/outlier_series_tc JSON files (referenced characters)
 
     Args:
         include_anki (bool): Whether to include Anki characters (default: True)

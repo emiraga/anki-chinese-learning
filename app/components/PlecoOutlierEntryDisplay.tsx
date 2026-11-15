@@ -1,4 +1,4 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import type {
   PlecoComponent,
   PlecoMeaning,
@@ -9,18 +9,20 @@ import type {
   RichNode,
   RichText as RichTextValue,
 } from "~/types/pleco_outlier_dictionary";
-import { PLECO_OUTLIER_DIR } from "~/hooks/usePlecoOutlierDictionary";
+import type { PlecoDictionary } from "~/hooks/usePlecoOutlierDictionary";
 import { CharLink } from "./CharCard";
 
-/** Id (and URL hash) of the Pleco Outlier tab on the character page */
-export const PLECO_OUTLIER_TAB = "plecooutlier";
+/** Dictionary whose images, pages and tab the rendered entries refer to */
+const PlecoDictionaryContext = createContext<PlecoDictionary | null>(null);
 
-function glyphUrl(id: number): string {
-  return `${PLECO_OUTLIER_DIR}/tc_pngs/${id}.png`;
-}
+export const PlecoDictionaryProvider = PlecoDictionaryContext.Provider;
 
-function pageUrl(page: number): string {
-  return `${PLECO_OUTLIER_DIR}/tc_pages_html/${page}.html`;
+export function usePlecoDictionary(): PlecoDictionary {
+  const dictionary = useContext(PlecoDictionaryContext);
+  if (!dictionary) {
+    throw new Error("Pleco entries rendered outside PlecoDictionaryProvider");
+  }
+  return dictionary;
 }
 
 // Glyph images are black on transparent, so they are inverted in dark mode.
@@ -34,9 +36,10 @@ function Glyph({
   className: string;
   colored?: boolean;
 }) {
+  const { pngsDir } = usePlecoDictionary();
   return (
     <img
-      src={glyphUrl(id)}
+      src={`${pngsDir}/${id}.png`}
       alt={`${colored ? "diagram" : "glyph"} ${id}`}
       className={colored ? className : `${className} dark:invert`}
     />
@@ -50,9 +53,10 @@ function PageLink({
   page: number;
   children: React.ReactNode;
 }) {
+  const { pagesDir } = usePlecoDictionary();
   return (
     <a
-      href={pageUrl(page)}
+      href={`${pagesDir}/${page}.html`}
       target="_blank"
       rel="noreferrer"
       className="text-blue-600 dark:text-blue-400 hover:underline"
@@ -63,6 +67,7 @@ function PageLink({
 }
 
 function RichNodeView({ node }: { node: RichNode }) {
+  const { tab } = usePlecoDictionary();
   switch (node.type) {
     case "text":
       return <>{node.text}</>;
@@ -82,7 +87,7 @@ function RichNodeView({ node }: { node: RichNode }) {
       if (!node.character) return display;
       return (
         <CharLink
-          hash={PLECO_OUTLIER_TAB}
+          hash={tab}
           traditional={node.character}
           className="text-blue-600 dark:text-blue-400 hover:underline"
           title={node.pinyin ?? undefined}

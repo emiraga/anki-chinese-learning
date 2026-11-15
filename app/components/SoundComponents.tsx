@@ -12,6 +12,7 @@ import { getScoreBadgeClasses } from "~/utils/sound_component_helpers";
 import { useYellowBridgeIndexes } from "~/hooks/useYellowBridgeIndexes";
 import type { YellowBridgeIndexes } from "~/types/yellowbridge_character";
 import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
+import { PLECO_TC_DICTIONARY } from "~/hooks/usePlecoOutlierDictionary";
 import type { PlecoOutlier } from "~/types/pleco_outlier";
 
 enum CandidateSource {
@@ -167,7 +168,10 @@ function SoundComponentGroup({
 
   // Get merged candidates from all sources with error tracking
   const { character: dongCharacter, error: dongError } = useDongCharacter(soundComponent);
-  const { character: plecoOutlier, error: plecoError } = usePlecoOutlier(soundComponent);
+  const { character: plecoOutlier, error: plecoError } = usePlecoOutlier(
+    soundComponent,
+    PLECO_TC_DICTIONARY,
+  );
   const mergedCandidates = getMergedCandidates(
     soundComponent,
     chars,

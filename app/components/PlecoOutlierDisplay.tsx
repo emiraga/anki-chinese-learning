@@ -2,17 +2,21 @@ import React from "react";
 import type { PlecoOutlier, Character, Series } from "~/types/pleco_outlier";
 import type { PlecoOutlierEntry } from "~/types/pleco_outlier_dictionary";
 import {
-  PLECO_OUTLIER_TAB,
+  PlecoDictionaryProvider,
   PlecoOutlierEntryDisplay,
+  usePlecoDictionary,
 } from "./PlecoOutlierEntryDisplay";
+import type { PlecoDictionary } from "~/hooks/usePlecoOutlierDictionary";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
 import { useOutletContext } from "react-router";
 import type { OutletContext } from "~/data/types";
 
 interface PlecoOutlierDisplayProps {
+  /** Series data, with characters in their traditional form */
   character?: PlecoOutlier;
   entries: PlecoOutlierEntry[];
+  dictionary: PlecoDictionary;
 }
 
 // Section header component
@@ -81,6 +85,7 @@ interface CharacterHeaderProps {
 }
 
 function CharacterHeader({ character }: CharacterHeaderProps) {
+  const { tab } = usePlecoDictionary();
   const isImage = isImageCharacter(character.traditional);
 
   return (
@@ -138,7 +143,7 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
                   const isRefImage = isImageCharacter(ref.char);
                   return (
                     <CharLink
-                      hash={PLECO_OUTLIER_TAB}
+                      hash={tab}
                       key={index}
                       traditional={ref.char}
                       className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -175,6 +180,7 @@ interface CharacterItemProps {
 }
 
 function CharacterItem({ char, isKnown }: CharacterItemProps) {
+  const { tab } = usePlecoDictionary();
   const pinyinDisplay =
     char.pinyin && char.pinyin.length > 0 ? char.pinyin.join(", ") : "";
 
@@ -190,7 +196,7 @@ function CharacterItem({ char, isKnown }: CharacterItemProps) {
 
   return (
     <CharLink
-      hash={PLECO_OUTLIER_TAB}
+      hash={tab}
       traditional={char.traditional}
       className={`flex flex-col items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded ${!isKnown ? "opacity-60" : ""}`}
       title={title}
@@ -365,52 +371,55 @@ function entryTitle(entry: PlecoOutlierEntry): string {
 export function PlecoOutlierDisplay({
   character,
   entries,
+  dictionary,
 }: PlecoOutlierDisplayProps) {
   // Get known characters from context
   const { characters } = useOutletContext<OutletContext>();
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      {/* Header Section (includes character, note, and references) */}
-      {character && <CharacterHeader character={character} />}
+    <PlecoDictionaryProvider value={dictionary}>
+      <div className="max-w-6xl mx-auto p-6 space-y-8">
+        {/* Header Section (includes character, note, and references) */}
+        {character && <CharacterHeader character={character} />}
 
-      {/* Dictionary entries */}
-      {entries.map((entry) => (
-        <Section key={entry.id} title={entryTitle(entry)}>
-          <PlecoOutlierEntryDisplay entry={entry} />
-        </Section>
-      ))}
+        {/* Dictionary entries */}
+        {entries.map((entry) => (
+          <Section key={entry.id} title={entryTitle(entry)}>
+            <PlecoOutlierEntryDisplay entry={entry} />
+          </Section>
+        ))}
 
-      {/* Sound Series Section */}
-      {character && (
-        <SeriesSection
-          title="Sound Series"
-          series={character.sound_series}
-          characters={characters}
-        />
-      )}
+        {/* Sound Series Section */}
+        {character && (
+          <SeriesSection
+            title="Sound Series"
+            series={character.sound_series}
+            characters={characters}
+          />
+        )}
 
-      {/* Semantic Series Section */}
-      {character && (
-        <SeriesSection
-          title="Semantic Series"
-          series={character.semantic_series}
-          characters={characters}
-        />
-      )}
+        {/* Semantic Series Section */}
+        {character && (
+          <SeriesSection
+            title="Semantic Series"
+            series={character.semantic_series}
+            characters={characters}
+          />
+        )}
 
-      {/* Empty Component Section */}
-      {character && (
-        <EmptyComponentSection
-          emptyComponent={character.empty_component}
-          characters={characters}
-        />
-      )}
+        {/* Empty Component Section */}
+        {character && (
+          <EmptyComponentSection
+            emptyComponent={character.empty_component}
+            characters={characters}
+          />
+        )}
 
-      {/* Radical Section */}
-      {character && (
-        <RadicalSection radical={character.radical} characters={characters} />
-      )}
-    </div>
+        {/* Radical Section */}
+        {character && (
+          <RadicalSection radical={character.radical} characters={characters} />
+        )}
+      </div>
+    </PlecoDictionaryProvider>
   );
 }

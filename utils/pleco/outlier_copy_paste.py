@@ -11,9 +11,11 @@ Rich text paste handler for macOS
 Accepts paste from clipboard and displays text with formatting details
 
 Usage:
-    ./utils/pleco/outlier_copy_paste.py                    # Process clipboard content
+    ./utils/pleco/outlier_copy_paste.py                    # Process clipboard content (traditional, saved to *_tc)
+    ./utils/pleco/outlier_copy_paste.py --variant sc       # Process clipboard content (simplified, saved to *_sc)
     ./utils/pleco/outlier_copy_paste.py --auto-copy        # Auto-copy from iPhone Mirroring window
-    ./utils/pleco/outlier_copy_paste.py --rebuild          # Rebuild JSON files from HTML files in outlier_series_tc/
+    ./utils/pleco/outlier_copy_paste.py --rebuild          # Rebuild JSON files from HTML files in outlier_series_{tc,sc}/
+    ./utils/pleco/outlier_copy_paste.py --rebuild --variant sc  # Rebuild only outlier_series_sc/
     ./utils/pleco/outlier_copy_paste.py --preload-list     # Generate top 50 sound components to explore
 """
 
@@ -25,17 +27,19 @@ import re
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 # Add shared utilities to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from shared.project_paths import (
     DONG_DIR,
     PLECO_IMAGES_DIR,
-    PLECO_OUTLIER_HTML_DIR,
+    PLECO_OUTLIER_HTML_SC_DIR,
     PLECO_OUTLIER_HTML_TC_DIR,
-    PLECO_OUTLIER_SERIES_DIR,
+    PLECO_OUTLIER_SERIES_SC_DIR,
+    PLECO_OUTLIER_SERIES_TC_DIR,
 )
 
 try:
@@ -44,6 +48,24 @@ try:
     BS4_AVAILABLE = True
 except ImportError:
     BS4_AVAILABLE = False
+
+
+Variant = Literal["tc", "sc"]
+
+
+@dataclass(frozen=True)
+class VariantDirs:
+    """Where the HTML source and parsed JSON of one Outlier dictionary variant live"""
+
+    html_dir: Path
+    json_dir: Path
+
+
+# tc = Outlier dictionary for Traditional Chinese, sc = for Simplified Chinese
+VARIANT_DIRS: dict[Variant, VariantDirs] = {
+    "tc": VariantDirs(html_dir=PLECO_OUTLIER_HTML_TC_DIR, json_dir=PLECO_OUTLIER_SERIES_TC_DIR),
+    "sc": VariantDirs(html_dir=PLECO_OUTLIER_HTML_SC_DIR, json_dir=PLECO_OUTLIER_SERIES_SC_DIR),
+}
 
 
 # Type definitions for Outlier dictionary data
@@ -516,8 +538,10 @@ def parse_outlier_html(html_str: str) -> OutlierData:
             else:
                 raise ValueError(f"Failed to extract image ID from img tag in h1: {h1}")
         else:
-            # Extract character from "System level info for component 神"
-            match = re.search(r"component\s+(.)", h1_text)
+            # Extract character from "System level info for component 神", or a
+            # bracketed description for components without a Unicode codepoint,
+            # e.g. "System level info for component [盾-丨-目]"
+            match = re.search(r"component\s+(\[[^\]]+\]|.)", h1_text)
             if match:
                 data["traditional"] = match.group(1)
 
@@ -703,7 +727,8 @@ def generate_preload_list():
     For each sound component, include one sample character that uses it.
     """
     dong_dir = DONG_DIR
-    outlier_dir = PLECO_OUTLIER_SERIES_DIR
+    # Dong Chinese data is keyed by traditional characters, so compare against the tc series
+    outlier_dir = VARIANT_DIRS["tc"].json_dir
 
     if not dong_dir.exists():
         raise FileNotFoundError(f"Dong Chinese directory not found: {dong_dir}")
@@ -794,24 +819,27 @@ def generate_preload_list():
     print()
 
 
-def rebuild_from_html_files(html_dir: Path) -> None:
-    """Rebuild JSON files from saved HTML files"""
-    json_dir = PLECO_OUTLIER_SERIES_DIR
+def write_json(json_file: Path, outlier_data: OutlierData) -> None:
+    """Write parsed Outlier data as pretty-printed JSON"""
+    json_file.parent.mkdir(parents=True, exist_ok=True)
+    with json_file.open("w", encoding="utf-8") as f:
+        json.dump(outlier_data, f, ensure_ascii=False, indent=2)
+
+
+def rebuild_from_html_files(variant: Variant) -> None:
+    """Rebuild JSON files from saved HTML files of the given variant"""
+    html_dir = VARIANT_DIRS[variant].html_dir
+    json_dir = VARIANT_DIRS[variant].json_dir
 
     if not html_dir.exists():
-        print(f"Directory not found: {html_dir}", file=sys.stderr)
-        return
+        raise FileNotFoundError(f"Directory not found: {html_dir}")
 
     html_files = list(html_dir.glob("*.html"))
 
     if not html_files:
-        print(f"No HTML files found in {html_dir}", file=sys.stderr)
-        return
+        raise FileNotFoundError(f"No HTML files found in {html_dir}")
 
-    # Ensure JSON output directory exists
-    json_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"Found {len(html_files)} HTML files to rebuild")
+    print(f"[{variant}] Found {len(html_files)} HTML files in {html_dir} to rebuild into {json_dir}")
     print("=" * 80)
 
     for html_file in sorted(html_files):
@@ -824,12 +852,8 @@ def rebuild_from_html_files(html_dir: Path) -> None:
             outlier_data = parse_outlier_html(html_content)
 
             if outlier_data.get("traditional"):
-                char = outlier_data["traditional"]
-                json_file = json_dir / f"{char}.json"
-
-                with json_file.open("w", encoding="utf-8") as f:
-                    json.dump(outlier_data, f, ensure_ascii=False, indent=2)
-
+                json_file = json_dir / f"{outlier_data['traditional']}.json"
+                write_json(json_file, outlier_data)
                 print(f"  ✓ Saved: {json_file}")
             else:
                 print("  ✗ No character found in HTML", file=sys.stderr)
@@ -838,12 +862,19 @@ def rebuild_from_html_files(html_dir: Path) -> None:
             print(f"  ✗ Error processing {html_file.name}: {e}", file=sys.stderr)
 
     print("\n" + "=" * 80)
-    print("Rebuild complete!")
+    print(f"[{variant}] Rebuild complete!")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Extract Outlier dictionary data from clipboard")
     parser.add_argument("--rebuild", action="store_true", help="Rebuild JSON files from saved HTML files")
+    parser.add_argument(
+        "--variant",
+        choices=list(VARIANT_DIRS),
+        default=None,
+        help="Outlier dictionary variant: tc (traditional) or sc (simplified). "
+        "Selects the outlier_series_{tc,sc} directories. Defaults to tc for clipboard mode and to both for --rebuild.",
+    )
     parser.add_argument("--preload-list", action="store_true", help="Generate list of top 50 sound components to preload")
     parser.add_argument("--auto-copy", action="store_true", help="Automatically copy from iPhone Mirroring window before processing")
     parser.add_argument(
@@ -852,8 +883,12 @@ def main():
     args = parser.parse_args()
 
     if args.rebuild:
-        rebuild_from_html_files(PLECO_OUTLIER_HTML_TC_DIR)
+        variants: list[Variant] = [args.variant] if args.variant else list(VARIANT_DIRS)
+        for variant in variants:
+            rebuild_from_html_files(variant)
         return
+
+    variant: Variant = args.variant or "tc"
 
     if args.preload_list:
         generate_preload_list()
@@ -960,33 +995,24 @@ def main():
             # Save to file
             if outlier_data.get("traditional"):
                 char = outlier_data["traditional"]
+                dirs = VARIANT_DIRS[variant]
 
-                json_dir = PLECO_OUTLIER_SERIES_DIR
-                html_dir = PLECO_OUTLIER_HTML_DIR
+                json_file = dirs.json_dir / f"{char}.json"
+                html_file = dirs.html_dir / f"{char}.html"
 
-                # Ensure directories exist
-                json_dir.mkdir(parents=True, exist_ok=True)
-                html_dir.mkdir(parents=True, exist_ok=True)
+                # Save JSON to public/data
+                write_json(json_file, outlier_data)
 
-                json_file = json_dir / f"{char}.json"
-                html_file = html_dir / f"{char}.html"
+                # Save HTML to data
+                html_file.parent.mkdir(parents=True, exist_ok=True)
+                with html_file.open("w", encoding="utf-8") as f:
+                    f.write(parsed_html)
 
-                try:
-                    # Save JSON to public/data
-                    with json_file.open("w", encoding="utf-8") as f:
-                        json.dump(outlier_data, f, ensure_ascii=False, indent=2)
-
-                    # Save HTML to data
-                    with html_file.open("w", encoding="utf-8") as f:
-                        f.write(parsed_html)
-
-                    print("=" * 80)
-                    print(f"JSON SAVED TO: {json_file}")
-                    print(f"HTML SAVED TO: {html_file}")
-                    print("-" * 80)
-                    print()
-                except Exception as e:
-                    print(f"Error saving files: {e}", file=sys.stderr)
+                print("=" * 80)
+                print(f"[{variant}] JSON SAVED TO: {json_file}")
+                print(f"[{variant}] HTML SAVED TO: {html_file}")
+                print("-" * 80)
+                print()
             else:
                 print("No character found in data, skipping file save", file=sys.stderr)
 

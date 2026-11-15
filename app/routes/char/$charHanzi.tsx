@@ -30,9 +30,12 @@ import { YellowBridgeDisplay } from "~/components/YellowBridgeDisplay";
 import { useHackChineseOutlier } from "~/hooks/useHackChineseOutlier";
 import { HackChineseOutlierDisplay } from "~/components/HackChineseOutlierDisplay";
 import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
-import { usePlecoOutlierDictionary } from "~/hooks/usePlecoOutlierDictionary";
+import {
+  PLECO_SC_DICTIONARY,
+  PLECO_TC_DICTIONARY,
+  usePlecoOutlierDictionary,
+} from "~/hooks/usePlecoOutlierDictionary";
 import { PlecoOutlierDisplay } from "~/components/PlecoOutlierDisplay";
-import { PLECO_OUTLIER_TAB } from "~/components/PlecoOutlierEntryDisplay";
 import { Tabs } from "~/components/Tabs";
 import { SoundComponentCandidates } from "~/components/SoundComponentCandidates";
 import { useSoundComponentCandidates } from "~/hooks/useSoundComponentCandidates";
@@ -117,14 +120,28 @@ export default function CharDetail() {
     character: plecoOutlierCharacter,
     loading: plecoOutlierLoading,
     error: plecoOutlierError,
-  } = usePlecoOutlier(char.traditional);
+  } = usePlecoOutlier(char.traditional, PLECO_TC_DICTIONARY);
+
+  // Load Pleco SC Outlier character data (series of the simplified forms)
+  const {
+    character: plecoScOutlierCharacter,
+    loading: plecoScOutlierLoading,
+    error: plecoScOutlierError,
+  } = usePlecoOutlier(char.traditional, PLECO_SC_DICTIONARY);
 
   // Load Pleco Outlier Dictionary data
   const {
     entries: plecoOutlierEntries,
     loading: plecoOutlierDictionaryLoading,
     error: plecoOutlierDictionaryError,
-  } = usePlecoOutlierDictionary(char.traditional);
+  } = usePlecoOutlierDictionary(char.traditional, PLECO_TC_DICTIONARY);
+
+  // Load Pleco SC Outlier Dictionary data (simplified entries)
+  const {
+    entries: plecoScOutlierEntries,
+    loading: plecoScOutlierDictionaryLoading,
+    error: plecoScOutlierDictionaryError,
+  } = usePlecoOutlierDictionary(char.traditional, PLECO_SC_DICTIONARY);
 
   // Get sound component candidates for prop suggestions
   const mainCharPinyin =
@@ -208,7 +225,23 @@ export default function CharDetail() {
       !plecoOutlierDictionaryError &&
       plecoOutlierEntries.length > 0);
   if (hasPlecoOutlierData) {
-    tabs.push({ id: PLECO_OUTLIER_TAB, label: "Pleco Outlier" });
+    tabs.push({
+      id: PLECO_TC_DICTIONARY.tab,
+      label: PLECO_TC_DICTIONARY.label,
+    });
+  }
+  const hasPlecoScOutlierData =
+    (!plecoScOutlierLoading &&
+      !plecoScOutlierError &&
+      plecoScOutlierCharacter) ||
+    (!plecoScOutlierDictionaryLoading &&
+      !plecoScOutlierDictionaryError &&
+      plecoScOutlierEntries.length > 0);
+  if (hasPlecoScOutlierData) {
+    tabs.push({
+      id: PLECO_SC_DICTIONARY.tab,
+      label: PLECO_SC_DICTIONARY.label,
+    });
   }
 
   const loadingErrors = [
@@ -221,6 +254,11 @@ export default function CharDetail() {
     {
       source: "Pleco Outlier Dictionary",
       error: plecoOutlierDictionaryError,
+    },
+    { source: "Pleco SC Outlier", error: plecoScOutlierError },
+    {
+      source: "Pleco SC Outlier Dictionary",
+      error: plecoScOutlierDictionaryError,
     },
   ].filter((e): e is { source: string; error: string } => e.error !== null);
 
@@ -417,10 +455,19 @@ export default function CharDetail() {
           <HackChineseOutlierDisplay character={hackChineseOutlierCharacter} />
         )}
 
-        {activeTab === PLECO_OUTLIER_TAB && hasPlecoOutlierData && (
+        {activeTab === PLECO_TC_DICTIONARY.tab && hasPlecoOutlierData && (
           <PlecoOutlierDisplay
             character={plecoOutlierCharacter ?? undefined}
             entries={plecoOutlierEntries}
+            dictionary={PLECO_TC_DICTIONARY}
+          />
+        )}
+
+        {activeTab === PLECO_SC_DICTIONARY.tab && hasPlecoScOutlierData && (
+          <PlecoOutlierDisplay
+            character={plecoScOutlierCharacter ?? undefined}
+            entries={plecoScOutlierEntries}
+            dictionary={PLECO_SC_DICTIONARY}
           />
         )}
       </div>

@@ -15,7 +15,8 @@ Script to extract and parse rich text content from Pleco's Outlier dictionary (v
 5. Run the script:
 
 ```bash
-./utils/pleco/outlier_copy_paste.py
+./utils/pleco/outlier_copy_paste.py                 # Traditional (outlier_series_tc)
+./utils/pleco/outlier_copy_paste.py --variant sc    # Simplified (outlier_series_sc)
 ```
 
 #### Rebuild from HTML
@@ -23,7 +24,8 @@ Script to extract and parse rich text content from Pleco's Outlier dictionary (v
 To rebuild all JSON files from saved HTML files:
 
 ```bash
-./utils/pleco/outlier_copy_paste.py --rebuild
+./utils/pleco/outlier_copy_paste.py --rebuild                # Both tc and sc
+./utils/pleco/outlier_copy_paste.py --rebuild --variant sc   # Only sc
 ```
 
 This is useful when you've updated the parsing logic and want to regenerate all JSON files without re-copying from Pleco.
@@ -39,8 +41,10 @@ This is useful when you've updated the parsing logic and want to regenerate all 
   - Radical information
 - Outputs structured JSON
 - **Automatically saves files:**
-  - JSON: `public/data/pleco/outlier_series/{character}.json`
-  - HTML: `data/pleco/outlier_series/{character}.html`
+  - JSON: `public/data/pleco/outlier_series_{tc,sc}/{character}.json`
+  - HTML: `data/pleco/outlier_series_{tc,sc}/{character}.html`
+  - The suffix is chosen with `--variant tc|sc` (default `tc`, the Traditional
+    Chinese Outlier dictionary; `sc` is the Simplified Chinese one)
 
 ### Output Structure
 
