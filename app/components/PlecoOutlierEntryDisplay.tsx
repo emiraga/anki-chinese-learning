@@ -24,12 +24,21 @@ function pageUrl(page: number): string {
 }
 
 // Glyph images are black on transparent, so they are inverted in dark mode.
-function Glyph({ id, className }: { id: number; className: string }) {
+// Diagrams are colored (red over grey) and keep their colors.
+function Glyph({
+  id,
+  className,
+  colored = false,
+}: {
+  id: number;
+  className: string;
+  colored?: boolean;
+}) {
   return (
     <img
       src={glyphUrl(id)}
-      alt={`glyph ${id}`}
-      className={`${className} dark:invert`}
+      alt={`${colored ? "diagram" : "glyph"} ${id}`}
+      className={colored ? className : `${className} dark:invert`}
     />
   );
 }
@@ -82,8 +91,9 @@ function RichNodeView({ node }: { node: RichNode }) {
         </CharLink>
       );
     }
-    case "ancientForm":
-      return <AncientForm content={node.content} />;
+    case "diagram":
+      // How the simplified form derives from the traditional one.
+      return <Glyph id={node.id} className="block h-24 my-2" colored />;
     case "lineBreak":
       return <br />;
     case "paragraphBreak":
@@ -144,12 +154,10 @@ function Callout({
   color,
   children,
 }: {
-  color: "amber" | "indigo" | "teal";
+  color: "indigo" | "teal";
   children: React.ReactNode;
 }) {
   const colors = {
-    amber:
-      "bg-amber-50 dark:bg-amber-950 border-amber-500 dark:border-amber-400",
     indigo:
       "bg-indigo-50 dark:bg-indigo-950 border-indigo-500 dark:border-indigo-400",
     teal: "bg-teal-50 dark:bg-teal-950 border-teal-500 dark:border-teal-400",
@@ -294,7 +302,7 @@ export function PlecoOutlierEntryDisplay({
     <div className="space-y-6">
       {hasForm && (
         <SubSection title="Form">
-          <Callout color="amber">
+          <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
             <RichText value={form.text} />
             {form.ancientForms.map((ancientForm, index) => (
               <div key={index} className="mt-3">
@@ -302,7 +310,7 @@ export function PlecoOutlierEntryDisplay({
                 <AncientForm content={ancientForm.content} />
               </div>
             ))}
-          </Callout>
+          </div>
         </SubSection>
       )}
 

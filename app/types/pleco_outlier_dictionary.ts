@@ -22,8 +22,12 @@ export type RichNode =
       entry: number | null;
       display: RichText;
     }
-  /** An ancient form shown in the text, e.g. a diagram */
-  | { type: "ancientForm"; content: RichText }
+  /**
+   * Image public/data/pleco/tc_pngs/<id>.png shown as a block in the FORM
+   * text: how a simplified form derives from the traditional one (the
+   * simplified strokes in red over the traditional character in grey)
+   */
+  | { type: "diagram"; id: number }
   | { type: "lineBreak" }
   | { type: "paragraphBreak" };
 
