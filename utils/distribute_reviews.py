@@ -11,12 +11,17 @@ Distribute the currently-due review cards of a deck evenly over the next N days.
 This takes all non-suspended review cards that are due now (due date is today or
 any previous day), then reschedules their due dates so they are spread out
 evenly across the next N days. Only the due date is moved; card intervals are
-left untouched. New (never reviewed) cards are left alone so they stay pending.
+left untouched. New (never reviewed) cards are left alone so they stay pending,
+and (re)learning cards (recently answered "Again") are left alone so they keep
+going through their learning steps. Cards answered "Again" within the last few
+days (--skip-again-days, default 4) are also left alone, even if they already
+finished relearning, so recently failed cards are not pushed further out.
 
 Examples:
     ./distribute_reviews.py --days 7
     ./distribute_reviews.py --days 5 --dry-run
     ./distribute_reviews.py --deck "Chinese::.Phrases" --days 10
+    ./distribute_reviews.py --days 7 --skip-again-days 0   # don't skip recent "Again" cards
 """
 
 import argparse
@@ -29,11 +34,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from shared.anki_utils import find_cards_by_query, set_due_date
 
 
-def build_due_query(deck: str) -> str:
-    """Build the Anki search query for due, non-suspended review cards in a deck."""
+def build_due_query(deck: str, skip_again_days: int) -> str:
+    """
+    Build the Anki search query for due, non-suspended review cards in a deck.
+
+    Cards answered "Again" within the last `skip_again_days` days are excluded;
+    pass 0 to not exclude any.
+    """
+    if skip_again_days < 0:
+        raise ValueError(f"--skip-again-days must not be negative, got {skip_again_days}")
     # prop:due<=0 matches review cards whose due date is today (0) or earlier.
     # -is:new keeps never-reviewed cards pending instead of turning them into reviews.
-    return f'deck:"{deck}" -is:suspended -is:new prop:due<=0'
+    # -is:learn skips (re)learning cards, i.e. the "red" cards recently answered
+    # "Again"; rescheduling them would knock them out of their relearning steps.
+    query = f'deck:"{deck}" -is:suspended -is:new -is:learn prop:due<=0'
+    if skip_again_days > 0:
+        # -rated:N:1 skips cards answered "Again" in the last N days (Anki caps N at 365).
+        query += f" -rated:{skip_again_days}:1"
+    return query
 
 
 def distribute(card_ids: list[int], days: int) -> list[list[int]]:
@@ -60,13 +78,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Distribute currently-due review cards evenly over the next N days.")
     parser.add_argument("--days", type=int, required=True, help="Number of days to distribute the cards over")
     parser.add_argument("--deck", default="Chinese", help="Deck name to pull cards from (default: Chinese)")
+    parser.add_argument(
+        "--skip-again-days",
+        type=int,
+        default=4,
+        help='Skip cards answered "Again" within this many days, 0 to disable (default: 4)',
+    )
     parser.add_argument("--dry-run", action="store_true", help="Show what would happen without changing any cards")
     args = parser.parse_args()
 
     if args.days < 1:
         parser.error("--days must be at least 1")
+    if not 0 <= args.skip_again_days <= 365:
+        parser.error("--skip-again-days must be between 0 and 365")
 
-    due_query = build_due_query(args.deck)
+    due_query = build_due_query(args.deck, args.skip_again_days)
     print(f"=== Distribute reviews over {args.days} day(s) ===")
     print(f"Deck: {args.deck}")
     print(f"Due query: {due_query}")
