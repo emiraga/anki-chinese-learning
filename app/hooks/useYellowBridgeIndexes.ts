@@ -1,5 +1,6 @@
 import { useAsync } from "react-async-hook";
 import type { YellowBridgeIndexes } from "~/types/yellowbridge_character";
+import { fetchJson } from "~/utils/fetch_json";
 
 interface UseYellowBridgeIndexesResult {
   indexes: YellowBridgeIndexes | null;
@@ -13,13 +14,8 @@ interface UseYellowBridgeIndexesResult {
  * @returns Object with indexes, loading state, and error state
  */
 export function useYellowBridgeIndexes(): UseYellowBridgeIndexesResult {
-  const fetchIndexes = async (): Promise<YellowBridgeIndexes> => {
-    const res = await fetch("/data/yellowbridge/processed.json");
-    if (!res.ok) {
-      throw new Error(`Failed to load YellowBridge indexes: ${res.statusText}`);
-    }
-    return res.json();
-  };
+  const fetchIndexes = (): Promise<YellowBridgeIndexes> =>
+    fetchJson<YellowBridgeIndexes>("/data/yellowbridge/processed.json");
 
   const { result, loading, error } = useAsync(fetchIndexes, []);
 

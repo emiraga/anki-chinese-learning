@@ -3,6 +3,7 @@ import type {
   PlecoOutlierEntry,
   PlecoOutlierIndex,
 } from "~/types/pleco_outlier_dictionary";
+import { fetchJson } from "~/utils/fetch_json";
 
 export const PLECO_OUTLIER_DIR = "/data/pleco";
 const ENTRIES_DIR = `${PLECO_OUTLIER_DIR}/tc_dictionary_entries_json`;
@@ -12,14 +13,6 @@ interface UsePlecoOutlierDictionaryResult {
   entries: PlecoOutlierEntry[];
   loading: boolean;
   error: string | null;
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to load "${url}": ${res.statusText}`);
-  }
-  return res.json();
 }
 
 // headword -> entry ids, loaded once and shared by all hook instances.

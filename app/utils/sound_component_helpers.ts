@@ -2,6 +2,7 @@ import type { DongCharacter } from "~/types/dong_character";
 import type { YellowBridgeCharacter } from "~/types/yellowbridge_character";
 import { scoreSoundSimilarity } from "~/utils/sound_similarity";
 import { getNewCharacter } from "~/data/characters";
+import { fetchJsonOrNull } from "~/utils/fetch_json";
 
 export interface SoundComponentCandidate {
   character: string;
@@ -89,30 +90,20 @@ export function getPrimaryPinyin(char: string, dongChar: DongCharacter): string 
   return "";
 }
 
-// Fetch DongCharacter data directly
-export async function fetchDongCharacter(char: string): Promise<DongCharacter | null> {
+// Fetch DongCharacter data directly (null if there is no data for the char)
+export async function fetchDongCharacter(
+  char: string,
+): Promise<DongCharacter | null> {
   if (!char) return null;
-
-  try {
-    const res = await fetch(`/data/dong/${char}.json`);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+  return fetchJsonOrNull<DongCharacter>(`/data/dong/${char}.json`);
 }
 
-// Fetch YellowBridge character data
-export async function fetchYellowBridgeCharacter(char: string): Promise<YellowBridgeCharacter | null> {
+// Fetch YellowBridge character data (null if there is no data for the char)
+export async function fetchYellowBridgeCharacter(
+  char: string,
+): Promise<YellowBridgeCharacter | null> {
   if (!char) return null;
-
-  try {
-    const res = await fetch(`/data/yellowbridge/info/${char}.json`);
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
+  return fetchJsonOrNull<YellowBridgeCharacter>(`/data/yellowbridge/info/${char}.json`);
 }
 
 // Extract phonetic components from YellowBridge data

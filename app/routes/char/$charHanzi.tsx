@@ -211,6 +211,19 @@ export default function CharDetail() {
     tabs.push({ id: PLECO_OUTLIER_TAB, label: "Pleco Outlier" });
   }
 
+  const loadingErrors = [
+    { source: "Dong Chinese", error: dongError },
+    { source: "YellowBridge", error: yellowBridgeError },
+    { source: "Rtega", error: rtegaError },
+    { source: "HanziYuan", error: hanziYuanError },
+    { source: "HackChinese Outlier", error: hackChineseOutlierError },
+    { source: "Pleco Outlier", error: plecoOutlierError },
+    {
+      source: "Pleco Outlier Dictionary",
+      error: plecoOutlierDictionaryError,
+    },
+  ].filter((e): e is { source: string; error: string } => e.error !== null);
+
   // Derive activeTab from URL hash, defaulting to "general"
   const activeTab = tabs.some((t) => t.id === hashTab) ? hashTab : "general";
 
@@ -340,48 +353,20 @@ export default function CharDetail() {
             ) : undefined}
 
             {/* Loading Errors Section */}
-            {(dongError ||
-              yellowBridgeError ||
-              rtegaError ||
-              hanziYuanError ||
-              hackChineseOutlierError ||
-              plecoOutlierError) && (
+            {loadingErrors.length > 0 && (
               <>
                 <h2 className="text-2xl text-red-600 dark:text-red-400">
                   Data Loading Errors
                 </h2>
                 <div className="space-y-2">
-                  {dongError && (
-                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
-                      <strong>Dong Chinese:</strong> {dongError}
+                  {loadingErrors.map(({ source, error }) => (
+                    <div
+                      key={source}
+                      className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded"
+                    >
+                      <strong>{source}:</strong> {error}
                     </div>
-                  )}
-                  {yellowBridgeError && (
-                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
-                      <strong>YellowBridge:</strong> {yellowBridgeError}
-                    </div>
-                  )}
-                  {rtegaError && (
-                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
-                      <strong>Rtega:</strong> {rtegaError}
-                    </div>
-                  )}
-                  {hanziYuanError && (
-                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
-                      <strong>HanziYuan:</strong> {hanziYuanError}
-                    </div>
-                  )}
-                  {hackChineseOutlierError && (
-                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
-                      <strong>HackChinese Outlier:</strong>{" "}
-                      {hackChineseOutlierError}
-                    </div>
-                  )}
-                  {plecoOutlierError && (
-                    <div className="text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-950 rounded">
-                      <strong>Pleco Outlier:</strong> {plecoOutlierError}
-                    </div>
-                  )}
+                  ))}
                 </div>
                 <hr className="my-4" />
               </>
