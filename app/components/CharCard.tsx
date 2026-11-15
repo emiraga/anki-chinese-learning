@@ -16,9 +16,15 @@ export const CharLink: React.FC<{
   className?: string;
   children?: React.ReactNode;
   title?: string;
-}> = ({ traditional, className, children, title }) => {
+  /** Tab to open on the character page, e.g. "plecooutlier" */
+  hash?: string;
+}> = ({ traditional, className, children, title, hash }) => {
   return (
-    <Link to={`/char/${traditional}`} className={className} title={title}>
+    <Link
+      to={{ pathname: `/char/${traditional}`, hash }}
+      className={className}
+      title={title}
+    >
       {children || traditional}
     </Link>
   );

@@ -1,10 +1,10 @@
 import React from "react";
-import type {
-  PlecoOutlier,
-  PlecoOutlierDictionary,
-  Character,
-  Series,
-} from "~/types/pleco_outlier";
+import type { PlecoOutlier, Character, Series } from "~/types/pleco_outlier";
+import type { PlecoOutlierEntry } from "~/types/pleco_outlier_dictionary";
+import {
+  PLECO_OUTLIER_TAB,
+  PlecoOutlierEntryDisplay,
+} from "./PlecoOutlierEntryDisplay";
 import { CharLink } from "./CharCard";
 import { HanziText } from "./HanziText";
 import { useOutletContext } from "react-router";
@@ -12,7 +12,7 @@ import type { OutletContext } from "~/data/types";
 
 interface PlecoOutlierDisplayProps {
   character?: PlecoOutlier;
-  dictionary?: PlecoOutlierDictionary;
+  entries: PlecoOutlierEntry[];
 }
 
 // Section header component
@@ -138,6 +138,7 @@ function CharacterHeader({ character }: CharacterHeaderProps) {
                   const isRefImage = isImageCharacter(ref.char);
                   return (
                     <CharLink
+                      hash={PLECO_OUTLIER_TAB}
                       key={index}
                       traditional={ref.char}
                       className="flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
@@ -189,6 +190,7 @@ function CharacterItem({ char, isKnown }: CharacterItemProps) {
 
   return (
     <CharLink
+      hash={PLECO_OUTLIER_TAB}
       traditional={char.traditional}
       className={`flex flex-col items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded ${!isKnown ? "opacity-60" : ""}`}
       title={title}
@@ -346,9 +348,23 @@ function RadicalSection({ radical, characters }: RadicalSectionProps) {
   );
 }
 
+// Title of a dictionary entry: its headword and pinyin, e.g. "神 shén"
+function entryTitle(entry: PlecoOutlierEntry): string {
+  const pinyin = [
+    ...new Set(
+      entry.meanings.flatMap((block) =>
+        block.readings.flatMap((reading) => reading.pinyin),
+      ),
+    ),
+  ];
+  return [entry.headword ?? "Dictionary", pinyin.join(", ")]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function PlecoOutlierDisplay({
   character,
-  dictionary,
+  entries,
 }: PlecoOutlierDisplayProps) {
   // Get known characters from context
   const { characters } = useOutletContext<OutletContext>();
@@ -358,36 +374,12 @@ export function PlecoOutlierDisplay({
       {/* Header Section (includes character, note, and references) */}
       {character && <CharacterHeader character={character} />}
 
-      {/* Form Section - from outlier_dictionary */}
-      {dictionary?.form_html && (
-        <Section title="Form">
-          <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-amber-50 dark:bg-amber-950 border-l-4 border-amber-500 dark:border-amber-400 rounded">
-            <span dangerouslySetInnerHTML={{ __html: dictionary.form_html }} />
-          </div>
+      {/* Dictionary entries */}
+      {entries.map((entry) => (
+        <Section key={entry.id} title={entryTitle(entry)}>
+          <PlecoOutlierEntryDisplay entry={entry} />
         </Section>
-      )}
-
-      {/* Meanings Section - from outlier_dictionary */}
-      {dictionary?.meanings_html && (
-        <Section title="Meanings">
-          <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-teal-50 dark:bg-teal-950 border-l-4 border-teal-500 dark:border-teal-400 rounded">
-            <span
-              dangerouslySetInnerHTML={{ __html: dictionary.meanings_html }}
-            />
-          </div>
-        </Section>
-      )}
-
-      {/* Components Section - from outlier_dictionary */}
-      {dictionary?.components_html && (
-        <Section title="Components">
-          <div className="text-gray-700 dark:text-gray-300 leading-relaxed p-4 bg-indigo-50 dark:bg-indigo-950 border-l-4 border-indigo-500 dark:border-indigo-400 rounded">
-            <span
-              dangerouslySetInnerHTML={{ __html: dictionary.components_html }}
-            />
-          </div>
-        </Section>
-      )}
+      ))}
 
       {/* Sound Series Section */}
       {character && (

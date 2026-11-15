@@ -1,6 +1,12 @@
 import MainFrame from "~/toolbar/frame";
 import type { Route } from "./+types/$charHanzi";
-import { Link, useLocation, useNavigate, useOutletContext, useParams } from "react-router";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useParams,
+} from "react-router";
 import type { OutletContext } from "~/data/types";
 import { CharCardDetails } from "~/components/CharCard";
 import { PropList } from "~/components/PropList";
@@ -26,6 +32,7 @@ import { HackChineseOutlierDisplay } from "~/components/HackChineseOutlierDispla
 import { usePlecoOutlier } from "~/hooks/usePlecoOutlier";
 import { usePlecoOutlierDictionary } from "~/hooks/usePlecoOutlierDictionary";
 import { PlecoOutlierDisplay } from "~/components/PlecoOutlierDisplay";
+import { PLECO_OUTLIER_TAB } from "~/components/PlecoOutlierEntryDisplay";
 import { Tabs } from "~/components/Tabs";
 import { SoundComponentCandidates } from "~/components/SoundComponentCandidates";
 import { useSoundComponentCandidates } from "~/hooks/useSoundComponentCandidates";
@@ -114,7 +121,7 @@ export default function CharDetail() {
 
   // Load Pleco Outlier Dictionary data
   const {
-    dictionary: plecoOutlierDictionary,
+    entries: plecoOutlierEntries,
     loading: plecoOutlierDictionaryLoading,
     error: plecoOutlierDictionaryError,
   } = usePlecoOutlierDictionary(char.traditional);
@@ -199,9 +206,9 @@ export default function CharDetail() {
     (!plecoOutlierLoading && !plecoOutlierError && plecoOutlierCharacter) ||
     (!plecoOutlierDictionaryLoading &&
       !plecoOutlierDictionaryError &&
-      plecoOutlierDictionary);
+      plecoOutlierEntries.length > 0);
   if (hasPlecoOutlierData) {
-    tabs.push({ id: "plecooutlier", label: "Pleco Outlier" });
+    tabs.push({ id: PLECO_OUTLIER_TAB, label: "Pleco Outlier" });
   }
 
   // Derive activeTab from URL hash, defaulting to "general"
@@ -425,10 +432,10 @@ export default function CharDetail() {
           <HackChineseOutlierDisplay character={hackChineseOutlierCharacter} />
         )}
 
-        {activeTab === "plecooutlier" && hasPlecoOutlierData && (
+        {activeTab === PLECO_OUTLIER_TAB && hasPlecoOutlierData && (
           <PlecoOutlierDisplay
             character={plecoOutlierCharacter ?? undefined}
-            dictionary={plecoOutlierDictionary ?? undefined}
+            entries={plecoOutlierEntries}
           />
         )}
       </div>
