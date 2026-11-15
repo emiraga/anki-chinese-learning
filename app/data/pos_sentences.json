@@ -401,7 +401,7 @@
   },
   {
     "en": "Although I really like this phone, I don't have enough money.",
-    "note": "喜歡 is a state verb that takes an object; 夠 is a state verb that can only be the predicate (not *夠錢).",
+    "note": "喜歡 is a state verb that takes an object; 夠 is a state verb that can only be the predicate, never placed before a noun to describe it (not *很夠的錢).",
     "tokens": [
       {
         "zh": "雖然",
