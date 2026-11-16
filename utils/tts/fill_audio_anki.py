@@ -64,9 +64,14 @@ _GEMINI_STYLE_INSTRUCTION = "請用台灣人說國語的自然口音和語調（
 _GEMINI_PINYIN_INSTRUCTION = "句中括號裡的漢語拼音是括號前面那幾個字的正確讀音：請照拼音唸那幾個字，但不要唸出括號和拼音本身。"  # noqa: RUF001
 _GEMINI_TTS_ATTEMPTS = 3
 
+# The Taiwanese voices this script uses, i.e. the ones a generated filename can name.
+_TW_VOICES = _WAVENET_VOICES + _GEMINI_VOICES
+
 # Unless --voice names one, each audio file gets a voice picked at random from
-# these, so that cards are not all heard in the same voice.
-_RANDOM_VOICES = _WAVENET_VOICES + _GEMINI_VOICES
+# these, so that cards are not all heard in the same voice. Only the Gemini
+# voices: they sound more natural than Wavenet, which is kept for a speaking
+# rate other than 1.0 and as the fallback when Gemini returns no audio.
+_RANDOM_VOICES = _GEMINI_VOICES
 
 # Words the voice misreads when it is given plain text, most often in sentences,
 # which have no pinyin field to pass as a hint. Each entry has one numbered pinyin
@@ -99,6 +104,20 @@ def short_voice_name(voice_name: str) -> str:
         return voice_name.removeprefix(_GEMINI_VOICE_PREFIX)
     _, region, kind, letter = voice_name.split("-")
     return f"{region}{kind[0]}{letter}"
+
+
+def voice_of_audio_field(field_value: str) -> str | None:
+    """
+    Tell which of _TW_VOICES spoke the [sound:] file in an audio field, from its build_audio_filename name.
+
+    Returns:
+        str | None: The voice name, or None if the field has no file named by one of _TW_VOICES.
+    """
+    match = re.search(r"\[sound:[^\]]*_([^_\]]+)_\d+\.mp3\]", field_value, re.IGNORECASE)
+    if not match:
+        return None
+    short_name = match.group(1).lower()
+    return next((voice for voice in _TW_VOICES if short_voice_name(voice).lower() == short_name), None)
 
 
 def build_audio_filename(text: str, voice_name: str, note_id: int) -> str:
@@ -245,8 +264,8 @@ def pick_voice(speaking_rate: float) -> str:
     """
     Pick a voice at random from _RANDOM_VOICES.
 
-    Gemini voices are left out for a speaking rate other than 1.0, which only
-    the Cloud TTS voices support.
+    For a speaking rate other than 1.0, which the Gemini voices do not support,
+    a Wavenet voice is picked instead.
     """
     if speaking_rate != 1.0:
         return random.choice(_WAVENET_VOICES)
@@ -692,7 +711,7 @@ def main() -> None:
         help=(
             "Voice to use for TTS. TW=Taiwanese, CN=Mainland. Wavenet voices are higher quality. "
             f"Default: a random pick per audio file from {', '.join(_RANDOM_VOICES)}; "
-            "with a speaking rate other than 1.0 it only picks from the Wavenet voices."
+            "with a speaking rate other than 1.0 it picks from the Wavenet voices instead."
         ),
     )
     parser.add_argument(
