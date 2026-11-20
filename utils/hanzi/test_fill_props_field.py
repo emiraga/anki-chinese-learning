@@ -14,6 +14,8 @@
 Unit tests for the cloze sentence helpers in fill_props_field.
 """
 
+import sys
+
 import pytest
 from fill_props_field import find_repeated_word_characters, strip_cloze_hints, strip_cloze_markup, validate_cloze_sentence
 
@@ -67,4 +69,4 @@ class TestFindRepeatedWordCharacters:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    sys.exit(pytest.main([__file__, "-v"]))
