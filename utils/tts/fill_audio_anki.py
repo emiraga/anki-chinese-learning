@@ -35,7 +35,7 @@ from shared.anki_utils import (
     store_media_file,
     update_note_audio_field,
 )
-from shared.gemini_utils import get_gemini_api_key
+from shared.gemini_utils import STRONG_GEMINI_MODEL, get_gemini_api_key
 from shared.google_credentials import setup_google_credentials
 
 # Anki limits media filenames to 120 bytes (UTF-8), and a CJK character takes 3
@@ -51,18 +51,42 @@ _MAX_AUDIO_FILENAME_BYTES = 100
 # and Neural2 voices are cmn-CN (Mainland) only.
 _WAVENET_VOICES = ("cmn-TW-Wavenet-A", "cmn-TW-Wavenet-B", "cmn-TW-Wavenet-C")
 
-# Gemini TTS has no Taiwan voices as such; the accent comes from a written style
-# instruction sent ahead of the text. In a side-by-side listening test the pro
-# model sounded better than flash, and of its voices Kore, Aoede and Charon were
-# kept and Puck dropped. Gemini voices take no SSML and no speaking rate, so a
-# pinned reading (pinyin hint, _PRONUNCIATION_OVERRIDES) is written into the text
-# as pinyin in brackets, which _GEMINI_PINYIN_INSTRUCTION tells it to follow.
-_GEMINI_TTS_MODEL = "gemini-2.5-pro-preview-tts"
-_GEMINI_VOICE_PREFIX = "gemini-pro-"
+# Gemini TTS has no Taiwan voices as such; the accent comes from written director's
+# notes sent ahead of the text. In a side-by-side listening test of the (since
+# shut down) 2.5 preview models, Kore, Aoede and Charon were kept and Puck
+# dropped. Puck was retried on gemini-3.8-flash-lite-tts and dropped again: it
+# garbled the start of 2 of 29 sentences, where the other voices read all 33
+# word for word. Gemini voices take no SSML and no speaking rate, so a pinned
+# reading (pinyin hint, _PRONUNCIATION_OVERRIDES) is written into the text as
+# pinyin in brackets, which _GEMINI_PINYIN_NOTE tells it to follow.
+#
+# The 3.8 models read a plain-text instruction aloud (and reject
+# systemInstruction), which is why the notes and the transcript are in separate
+# headed sections.
+#
+# Models are tried in order, each up to its number of attempts. The flagship
+# sounds the most natural but ad-libs even when told not to - in a test of 18
+# sentence/voice pairs it added 欸/呢/嗯 three times and once swapped 只好 for 就要 -
+# so each clip is transcribed back (gemini_tts_check) and a clip that does not
+# say the text is thrown away. Flash-lite read all 18 word for word, so it is the
+# fallback.
+_GEMINI_TTS_MODELS = (("gemini-3.8-flash-tts", 2), ("gemini-3.8-flash-lite-tts", 2))
+# The model that transcribes a clip to check it, see gemini_tts_check.
+_GEMINI_CHECK_MODEL = STRONG_GEMINI_MODEL
+_GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+_GEMINI_VOICE_PREFIX = "gemini-"
 _GEMINI_VOICES = tuple(f"{_GEMINI_VOICE_PREFIX}{speaker}" for speaker in ("Kore", "Aoede", "Charon"))
-_GEMINI_STYLE_INSTRUCTION = "請用台灣人說國語的自然口音和語調（不是中國大陸普通話的口音），用正常語速唸出下面這句話："  # noqa: RUF001
-_GEMINI_PINYIN_INSTRUCTION = "句中括號裡的漢語拼音是括號前面那幾個字的正確讀音：請照拼音唸那幾個字，但不要唸出括號和拼音本身。"  # noqa: RUF001
-_GEMINI_TTS_ATTEMPTS = 3
+_GEMINI_DIRECTOR_NOTES = (
+    "## DIRECTOR'S NOTES\n"
+    "Voice: a native speaker from Taiwan, speaking Taiwanese Mandarin (國語) with a natural Taiwanese accent and"
+    " intonation, not Mainland Putonghua. Pace: normal.\n"
+    "Script: read the transcript exactly as written, word for word. Do not add, drop or change any word, and do"
+    " not add interjections or sentence-final particles."
+)
+_GEMINI_PINYIN_NOTE = (
+    "Pronunciation: pinyin in parentheses gives the correct reading of the characters right before it."
+    " Pronounce those characters that way; never read the parentheses or the pinyin aloud."
+)
 
 # The Taiwanese voices this script uses, i.e. the ones a generated filename can name.
 _TW_VOICES = _WAVENET_VOICES + _GEMINI_VOICES
@@ -98,7 +122,7 @@ def short_voice_name(voice_name: str) -> str:
     """
     Shorten a voice name for use in a filename.
 
-    cmn-TW-Wavenet-A -> TWWA, cmn-CN-Standard-D -> CNSD, gemini-pro-Kore -> Kore.
+    cmn-TW-Wavenet-A -> TWWA, cmn-CN-Standard-D -> CNSD, gemini-Kore -> Kore.
     """
     if voice_name.startswith(_GEMINI_VOICE_PREFIX):
         return voice_name.removeprefix(_GEMINI_VOICE_PREFIX)
@@ -254,10 +278,10 @@ def readings_to_annotated_text(readings: list[Reading]) -> str:
 
 
 def build_gemini_prompt(text: str, readings: list[Reading] | None) -> str:
-    """Build the Gemini TTS prompt: the style instruction, then text, annotated with its readings if any."""
+    """Build the Gemini TTS prompt: the director's notes, then text as the transcript, annotated with its readings if any."""
     if readings is None:
-        return f"{_GEMINI_STYLE_INSTRUCTION}\n{text}"
-    return f"{_GEMINI_STYLE_INSTRUCTION}\n{_GEMINI_PINYIN_INSTRUCTION}\n{readings_to_annotated_text(readings)}"
+        return f"{_GEMINI_DIRECTOR_NOTES}\n\n## TRANSCRIPT\n{text}"
+    return f"{_GEMINI_DIRECTOR_NOTES}\n{_GEMINI_PINYIN_NOTE}\n\n## TRANSCRIPT\n{readings_to_annotated_text(readings)}"
 
 
 def pick_voice(speaking_rate: float) -> str:
@@ -272,57 +296,181 @@ def pick_voice(speaking_rate: float) -> str:
     return random.choice(_RANDOM_VOICES)
 
 
-class GeminiNoAudioError(RuntimeError):
-    """Gemini TTS kept answering with no audio (finishReason OTHER)."""
+class GeminiTTSFailedError(RuntimeError):
+    """No Gemini TTS model gave a clip that says the text: each attempt had no audio or failed gemini_tts_check."""
 
 
-def gemini_tts(prompt: str, voice_name: str) -> bytes:
+def gemini_generate_content(model: str, body: dict[str, Any]) -> dict[str, Any]:
+    """POST a generateContent request to the Gemini API and return the first part of the first candidate ({} if none)."""
+    response = requests.post(
+        _GEMINI_API_URL.format(model=model),
+        headers={"x-goog-api-key": get_gemini_api_key()},
+        json=body,
+        timeout=180,
+    )
+    response.raise_for_status()
+    candidates = response.json().get("candidates") or [{}]
+    parts = candidates[0].get("content", {}).get("parts") or [{}]
+    first_part: dict[str, Any] = parts[0]
+    return first_part
+
+
+def gemini_synthesize(model: str, prompt: str, speaker: str) -> bytes | None:
     """
-    Synthesize a prompt from build_gemini_prompt with a Gemini TTS voice and return it as MP3.
+    Synthesize a prompt from build_gemini_prompt with one Gemini TTS model and speaker, and return it as MP3.
 
-    The preview TTS models now and then return a response with no audio, so an
-    empty response is retried before giving up. Some prompts get no audio on
-    every attempt - in testing, the repeated character of a multi-pronunciation
-    Hanzi note (得, 得, 得 pinned to dé, de, děi) mostly did, for all three voices.
+    Returns:
+        bytes | None: The MP3, or None if the model answered with no audio, which
+            the TTS models now and then do (finishReason OTHER).
+    """
+    part = gemini_generate_content(
+        model,
+        {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "responseModalities": ["AUDIO"],
+                "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": speaker}}},
+            },
+        },
+    )
+    inline_data = part.get("inlineData")
+    if not inline_data:
+        return None
+    return gemini_audio_to_mp3(base64.b64decode(inline_data["data"]), inline_data["mimeType"])
+
+
+def hanzi_only(text: str) -> str:
+    """Keep only the CJK characters of text, dropping punctuation, spaces and pinyin."""
+    return re.sub(r"[^\u3400-\u9fff\uf900-\ufaff]", "", text)
+
+
+# Fillers the flagship TTS model likes to add, which only colour the tone of a
+# sentence and so are allowed in a clip although the text does not have them.
+# Not allowed, as they change the meaning: 嗎 (makes a yes/no question), 吧
+# (suggestion or guess), 了/囉 (change of state), 呢 (question or ongoing), 嘛
+# (obviousness, pushback), 的 (assertion, structure). 啦 is allowed although it
+# can be 了+啊, since in Taiwan it is mostly a softener. 欸/誒/耶 are the same
+# Taiwanese softener as the transcriber variously writes it.
+_ALLOWED_TRAILING_FILLERS = frozenset("啊呀哇啦喔哦噢欸誒耶嗯")
+_MAX_TRAILING_FILLERS = 2
+# Hesitation sounds before the sentence.
+_ALLOWED_LEADING_FILLERS = frozenset("嗯欸誒")
+_MAX_LEADING_FILLERS = 1
+
+
+def says_text(transcript: str, text: str) -> bool:
+    """
+    Tell whether a transcript of a clip says text, allowing for added fillers.
+
+    Compares only the Hanzi. The transcript may add up to _MAX_LEADING_FILLERS of
+    _ALLOWED_LEADING_FILLERS before text and up to _MAX_TRAILING_FILLERS of
+    _ALLOWED_TRAILING_FILLERS after it, but text itself must be said in full and
+    unchanged, so a dropped particle of text still fails.
+    """
+    heard, expected = hanzi_only(transcript), hanzi_only(text)
+    for start in range(_MAX_LEADING_FILLERS + 1):
+        leading, trailing = heard[:start], heard[start + len(expected) :]
+        if (
+            heard[start:].startswith(expected)
+            and set(leading) <= _ALLOWED_LEADING_FILLERS
+            and len(trailing) <= _MAX_TRAILING_FILLERS
+            and set(trailing) <= _ALLOWED_TRAILING_FILLERS
+        ):
+            return True
+    return False
+
+
+def gemini_tts_check(mp3: bytes, text: str) -> str | None:
+    """
+    Transcribe a clip with _GEMINI_CHECK_MODEL and tell whether it says text (see says_text).
+
+    The transcriber is given text as a reference so that it writes homophones and
+    variant forms (他/她, 台/臺, 裡/裏) the way text does; it is told to write what
+    is actually said, so added particles and changed words still show.
+
+    Returns:
+        str | None: None if the clip says text, else the transcript.
+    """
+    part = gemini_generate_content(
+        _GEMINI_CHECK_MODEL,
+        {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": (
+                                "Transcribe this Mandarin audio in Traditional Chinese characters. The speaker was asked to"
+                                f" read: {text}\nWrite exactly what is actually said, including any added, missing or"
+                                " changed words, interjections and sentence-final particles. Where a word is said as in"
+                                " the reference, write it with the same characters as the reference. Output only the"
+                                " transcript."
+                            )
+                        },
+                        {"inlineData": {"mimeType": "audio/mp3", "data": base64.b64encode(mp3).decode()}},
+                    ]
+                }
+            ]
+        },
+    )
+    transcript = str(part.get("text", ""))
+    if not says_text(transcript, text):
+        return transcript
+    if hanzi_only(transcript) != hanzi_only(text):
+        print(f"Allowed fillers in {transcript!r}")
+    return None
+
+
+def gemini_tts(text: str, readings: list[Reading] | None, voice_name: str) -> bytes:
+    """
+    Synthesize text with a Gemini TTS voice and return MP3, trying _GEMINI_TTS_MODELS in order.
+
+    A clip is kept only if gemini_tts_check finds it says text word for word; an
+    attempt with no audio or a failed check moves on to the next attempt. Some
+    prompts get no audio on every attempt - with the 2.5 preview models, the
+    repeated character of a multi-pronunciation Hanzi note (得, 得, 得 pinned to
+    dé, de, děi) mostly did, for all three voices.
 
     Raises:
-        GeminiNoAudioError: If every attempt came back without audio
+        GeminiTTSFailedError: If no attempt of any model gave a clip that passed the check
     """
     speaker = voice_name.removeprefix(_GEMINI_VOICE_PREFIX)
-    response_json: Any = None
-    for attempt in range(1, _GEMINI_TTS_ATTEMPTS + 1):
-        response = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{_GEMINI_TTS_MODEL}:generateContent",
-            headers={"x-goog-api-key": get_gemini_api_key()},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "responseModalities": ["AUDIO"],
-                    "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": speaker}}},
-                },
-            },
-            timeout=180,
-        )
-        response.raise_for_status()
-        response_json = response.json()
-        candidates = response_json.get("candidates") or [{}]
-        parts = candidates[0].get("content", {}).get("parts") or [{}]
-        inline_data = parts[0].get("inlineData")
-        if inline_data:
-            return pcm_to_mp3(base64.b64decode(inline_data["data"]), inline_data["mimeType"])
-        print(f"Gemini TTS attempt {attempt}/{_GEMINI_TTS_ATTEMPTS} returned no audio")
+    prompt = build_gemini_prompt(text, readings)
+    print(f"Gemini prompt: {prompt}")
+    for model, attempts in _GEMINI_TTS_MODELS:
+        for attempt in range(1, attempts + 1):
+            mp3 = gemini_synthesize(model, prompt, speaker)
+            if mp3 is None:
+                print(f"{model} attempt {attempt}/{attempts} returned no audio")
+                continue
+            mismatch = gemini_tts_check(mp3, text)
+            if mismatch is None:
+                print(f"Gemini TTS model: {model}")
+                return mp3
+            print(f"{model} attempt {attempt}/{attempts} said {mismatch!r}, not {text!r}")
 
-    raise GeminiNoAudioError(f"Gemini TTS returned no audio after {_GEMINI_TTS_ATTEMPTS} attempts. Last response: {response_json}")
+    raise GeminiTTSFailedError(f"No Gemini TTS model in {_GEMINI_TTS_MODELS} gave a clip that says {text!r}")
 
 
-def pcm_to_mp3(pcm: bytes, mime_type: str) -> bytes:
-    """Encode the raw 16-bit mono PCM Gemini returns (e.g. audio/L16;codec=pcm;rate=24000) as MP3."""
-    rate_match = re.search(r"rate=(\d+)", mime_type)
-    if not mime_type.startswith("audio/L16") or not rate_match:
-        raise ValueError(f"Unexpected Gemini TTS audio format: {mime_type}")
+def gemini_audio_to_mp3(audio: bytes, mime_type: str) -> bytes:
+    """
+    Encode the audio Gemini TTS returns as MP3.
+
+    The 3.8 TTS models return a WAV file (audio/wav); the older preview models
+    returned raw 16-bit mono PCM (e.g. audio/L16;codec=pcm;rate=24000).
+
+    Raises:
+        ValueError: If the audio is in neither format
+    """
+    if mime_type == "audio/wav":
+        input_format = ["-f", "wav"]
+    else:
+        rate_match = re.search(r"rate=(\d+)", mime_type)
+        if not mime_type.startswith("audio/L16") or not rate_match:
+            raise ValueError(f"Unexpected Gemini TTS audio format: {mime_type}")
+        input_format = ["-f", "s16le", "-ar", rate_match.group(1), "-ac", "1"]
     result = subprocess.run(
-        ["ffmpeg", "-loglevel", "error", "-f", "s16le", "-ar", rate_match.group(1), "-ac", "1", "-i", "-", "-f", "mp3", "-"],
-        input=pcm,
+        ["ffmpeg", "-loglevel", "error", *input_format, "-i", "-", "-f", "mp3", "-"],
+        input=audio,
         capture_output=True,
         check=True,
     )
@@ -386,7 +534,7 @@ def chinese_tts(
 
     Raises:
         ValueError: If a Gemini voice is requested with a speaking rate other than 1.0
-        GeminiNoAudioError: If a Gemini voice named in voice_name gave no audio. A
+        GeminiTTSFailedError: If a Gemini voice named in voice_name gave no usable audio. A
             randomly picked one falls back to a Wavenet voice instead.
     """
     # Readings to pin: from the pinyin hint, else from any override word in the text
@@ -401,15 +549,13 @@ def chinese_tts(
     if voice_name in _GEMINI_VOICES:
         if speaking_rate != 1.0:
             raise ValueError(f"{voice_name} does not support a speaking rate, got {speaking_rate}")
-        prompt = build_gemini_prompt(text, readings)
-        print(f"Gemini prompt: {prompt}")
         try:
-            audio_content = gemini_tts(prompt, voice_name)
-        except GeminiNoAudioError:
+            audio_content = gemini_tts(text, readings, voice_name)
+        except GeminiTTSFailedError:
             if not voice_is_random:
                 raise
             voice_name = random.choice(_WAVENET_VOICES)
-            print(f"Gemini gave no audio, falling back to {voice_name}")
+            print(f"Gemini gave no usable audio, falling back to {voice_name}")
 
     if audio_content is None:
         audio_content = cloud_tts(text, readings, voice_name=voice_name, speaking_rate=speaking_rate)
