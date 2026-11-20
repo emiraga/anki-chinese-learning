@@ -67,11 +67,11 @@ _WAVENET_VOICES = ("cmn-TW-Wavenet-A", "cmn-TW-Wavenet-B", "cmn-TW-Wavenet-C")
 # Models are tried in order, each up to its number of attempts. The flagship
 # sounds the most natural but ad-libs even when told not to - in a test of 18
 # sentence/voice pairs it added 欸/呢/嗯 three times and once swapped 只好 for 就要 -
-# so each clip is transcribed back (gemini_tts_check) and a clip that does not
+# so each clip is transcribed back (gemini_transcribe) and a clip that does not
 # say the text is thrown away. Flash-lite read all 18 word for word, so it is the
 # fallback.
 _GEMINI_TTS_MODELS = (("gemini-3.8-flash-tts", 2), ("gemini-3.8-flash-lite-tts", 2))
-# The model that transcribes a clip to check it, see gemini_tts_check.
+# The model that transcribes a clip to check it, see gemini_transcribe.
 _GEMINI_CHECK_MODEL = STRONG_GEMINI_MODEL
 _GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 _GEMINI_VOICE_PREFIX = "gemini-"
@@ -277,11 +277,15 @@ def readings_to_annotated_text(readings: list[Reading]) -> str:
     return "".join(annotated)
 
 
+def gemini_transcript(text: str, readings: list[Reading] | None) -> str:
+    """The transcript section of the Gemini TTS prompt: text, annotated with its readings if any."""
+    return text if readings is None else readings_to_annotated_text(readings)
+
+
 def build_gemini_prompt(text: str, readings: list[Reading] | None) -> str:
-    """Build the Gemini TTS prompt: the director's notes, then text as the transcript, annotated with its readings if any."""
-    if readings is None:
-        return f"{_GEMINI_DIRECTOR_NOTES}\n\n## TRANSCRIPT\n{text}"
-    return f"{_GEMINI_DIRECTOR_NOTES}\n{_GEMINI_PINYIN_NOTE}\n\n## TRANSCRIPT\n{readings_to_annotated_text(readings)}"
+    """Build the Gemini TTS prompt: the director's notes, then the gemini_transcript."""
+    notes = _GEMINI_DIRECTOR_NOTES if readings is None else f"{_GEMINI_DIRECTOR_NOTES}\n{_GEMINI_PINYIN_NOTE}"
+    return f"{notes}\n\n## TRANSCRIPT\n{gemini_transcript(text, readings)}"
 
 
 def pick_voice(speaking_rate: float) -> str:
@@ -297,7 +301,7 @@ def pick_voice(speaking_rate: float) -> str:
 
 
 class GeminiTTSFailedError(RuntimeError):
-    """No Gemini TTS model gave a clip that says the text: each attempt had no audio or failed gemini_tts_check."""
+    """No Gemini TTS model gave a clip that says the text: each attempt had no audio or failed says_text."""
 
 
 def gemini_generate_content(model: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -380,16 +384,13 @@ def says_text(transcript: str, text: str) -> bool:
     return False
 
 
-def gemini_tts_check(mp3: bytes, text: str) -> str | None:
+def gemini_transcribe(mp3: bytes, text: str) -> str:
     """
-    Transcribe a clip with _GEMINI_CHECK_MODEL and tell whether it says text (see says_text).
+    Transcribe a clip with _GEMINI_CHECK_MODEL, to check with says_text that it says text.
 
     The transcriber is given text as a reference so that it writes homophones and
     variant forms (他/她, 台/臺, 裡/裏) the way text does; it is told to write what
     is actually said, so added particles and changed words still show.
-
-    Returns:
-        str | None: None if the clip says text, else the transcript.
     """
     part = gemini_generate_content(
         _GEMINI_CHECK_MODEL,
@@ -412,19 +413,15 @@ def gemini_tts_check(mp3: bytes, text: str) -> str | None:
             ]
         },
     )
-    transcript = str(part.get("text", ""))
-    if not says_text(transcript, text):
-        return transcript
-    if hanzi_only(transcript) != hanzi_only(text):
-        print(f"Allowed fillers in {transcript!r}")
-    return None
+    return str(part.get("text", "")).strip()
 
 
 def gemini_tts(text: str, readings: list[Reading] | None, voice_name: str) -> bytes:
     """
     Synthesize text with a Gemini TTS voice and return MP3, trying _GEMINI_TTS_MODELS in order.
 
-    A clip is kept only if gemini_tts_check finds it says text word for word; an
+    Each clip is transcribed back (gemini_transcribe) and kept only if it says
+    text (says_text), and every attempt is logged with what was heard; an
     attempt with no audio or a failed check moves on to the next attempt. Some
     prompts get no audio on every attempt - with the 2.5 preview models, the
     repeated character of a multi-pronunciation Hanzi note (得, 得, 得 pinned to
@@ -435,18 +432,21 @@ def gemini_tts(text: str, readings: list[Reading] | None, voice_name: str) -> by
     """
     speaker = voice_name.removeprefix(_GEMINI_VOICE_PREFIX)
     prompt = build_gemini_prompt(text, readings)
-    print(f"Gemini prompt: {prompt}")
+    print(f"Gemini TTS target: {gemini_transcript(text, readings)}")
     for model, attempts in _GEMINI_TTS_MODELS:
         for attempt in range(1, attempts + 1):
+            label = f"  {model} #{attempt}"
             mp3 = gemini_synthesize(model, prompt, speaker)
             if mp3 is None:
-                print(f"{model} attempt {attempt}/{attempts} returned no audio")
+                print(f"{label}: no audio -> retry")
                 continue
-            mismatch = gemini_tts_check(mp3, text)
-            if mismatch is None:
-                print(f"Gemini TTS model: {model}")
-                return mp3
-            print(f"{model} attempt {attempt}/{attempts} said {mismatch!r}, not {text!r}")
+            heard = gemini_transcribe(mp3, text)
+            if not says_text(heard, text):
+                print(f"{label} heard: {heard}  -> rejected")
+                continue
+            exact = hanzi_only(heard) == hanzi_only(text)
+            print(f"{label} heard: {heard}  -> accepted{'' if exact else ' (allowed fillers)'}")
+            return mp3
 
     raise GeminiTTSFailedError(f"No Gemini TTS model in {_GEMINI_TTS_MODELS} gave a clip that says {text!r}")
 
