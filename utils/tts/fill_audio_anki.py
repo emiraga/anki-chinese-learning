@@ -531,7 +531,7 @@ def process_sentence_audio(
 ) -> bool:
     """
     Generate and store TTS audio for a note's Sentence Traditional field,
-    updating the Sentence Audio field.
+    updating the Sentence Audio field and removing _SENTENCE_OUTDATED_VOICE_TAG.
 
     Args:
         note_id: The note ID
@@ -552,6 +552,10 @@ def process_sentence_audio(
 
     save_audio(note_id, build_audio_filename(sentence, used_voice, note_id), audio_data, field_name="Sentence Audio")
     print("Successfully updated note with new sentence audio!")
+
+    # The new audio is in a current voice, so the note no longer needs flagging
+    if _SENTENCE_OUTDATED_VOICE_TAG in (tag.lower() for tag in note_info.get("tags", [])):
+        remove_tag_from_note(note_id, _SENTENCE_OUTDATED_VOICE_TAG)
     return True
 
 
@@ -606,6 +610,8 @@ def build_multi_pronunciation_audio(note_info: AnkiNoteInfo, traditional: str) -
 
 _REBUILD_AUDIO_TAG = "chinese::rebuild-audio-field"
 _MULTI_PRONUNCIATION_TAG = "chinese::multiple-pronounciation-character"
+# Marks a note whose Sentence Audio is in a voice no longer used; process_sentence_audio removes it.
+_SENTENCE_OUTDATED_VOICE_TAG = "chinese::sentence-outdated-tts-voice"
 
 
 def process_note_audio(

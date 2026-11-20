@@ -230,7 +230,7 @@
   },
   "Det": {
     "summary": "Points to or picks out a noun: 這/那/哪/每/某 + (number) + measure word + noun.",
-    "description": "Determiners come first in a noun phrase and specify which or how many: demonstratives (這, 那), the question word 哪, and quantifiers like 每 and 某. They normally need a measure word before the noun.",
+    "description": "Determiners come first in a noun phrase and specify which or how many: demonstratives (這, 那), the question words 哪 and 幾, and quantifiers like 每 and 某. They normally need a measure word before the noun.",
     "tests": [
       {
         "text": "Pattern: Det + (Number) + M + N, e.g. 這三本書. The number 一 is often dropped: 哪一個 = 哪個.",
@@ -356,8 +356,8 @@
     ]
   },
   "N": {
-    "summary": "People, things, places and times; in this system also numbers, pronouns and 幾.",
-    "description": "Nouns can be subjects and objects and can be counted with a measure word. Note that this classification counts numbers (五), pronouns (他, 我), time words (昨天) and the question word 幾 as nouns too.",
+    "summary": "People, things, places and times; in this system also numbers, pronouns and 什麼.",
+    "description": "Nouns can be subjects and objects and can be counted with a measure word. Note that this classification counts numbers (五), pronouns (他, 我), time words (昨天) and the question word 什麼 as nouns too.",
     "tests": [
       {
         "text": "Can be subject or object: 學校很大 / 我去學校."
@@ -395,8 +395,8 @@
         "en": "He has five children."
       },
       {
-        "zh": "你幾歲？",
-        "en": "How old are you?"
+        "zh": "你叫什麼名字？",
+        "en": "What's your name?"
       },
       {
         "zh": "書在桌子上。",
